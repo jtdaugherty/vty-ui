@@ -51,11 +51,11 @@ instance Widget AnyWidget where
 instance Widget Text where
     attr (Text a _) = a
     growthPolicy _ = Static
-    render _ (Text attr content) = string attr content
+    render _ (Text att content) = string att content
 
 instance Widget Fill where
     growthPolicy (Fill gp _ _) = gp
-    render (Size (w, h)) (Fill _ attr c) = char_fill attr c w h
+    render (Size (w, h)) (Fill _ att c) = char_fill att c w h
 
 instance Widget VBox where
     growthPolicy (VBox top bottom) =
@@ -63,7 +63,7 @@ instance Widget VBox where
         then t else growthPolicy bottom
             where t = growthPolicy top
 
-    render s@(Size (w, h)) (VBox top bottom) =
+    render s (VBox top bottom) =
         t <-> b
             where
               renderHalves = let half = Size ( width s, div (height s) 2 )
@@ -83,7 +83,9 @@ instance Widget VBox where
                          (GrowVertical, GrowVertical) -> renderHalves
                          (Static, _) -> renderTopFirst
                          (_, Static) -> renderBottomFirst
-                         (_, _) -> renderTopFirst
+                         -- Horizontal contents take precedence
+                         (GrowHorizontal, _) -> renderTopFirst
+                         (_, GrowHorizontal) -> renderBottomFirst
 
 width :: Size -> Int
 width (Size t) = fst t
