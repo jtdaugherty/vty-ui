@@ -55,12 +55,22 @@ testHBox3 =
         topFill = VBox (Text titleAttr "Title") (vFill bodyAttr ' ')
     in VBox topFill (HBox left right)
 
+testHBox4 :: VBox
+testHBox4 =
+    let top = VBox (Text titleAttr "First") (vFill bodyAttr ' ')
+        bottom = HBox
+                 (VBox (Text titleAttr "Left") (vFill bodyAttr ' '))
+                 (VBox (Text titleAttr "Right") (vFill bodyAttr ' '))
+        footer = Text titleAttr "Footer"
+    in VBox (VBox top bottom) footer
+
 testWidgets :: [AnyWidget]
 testWidgets = [ AnyWidget mainWidget
               , AnyWidget testVbox
               , AnyWidget testHBox1
               , AnyWidget testHBox2
               , AnyWidget testHBox3
+              , AnyWidget testHBox4
               ]
 
 main :: IO ()
