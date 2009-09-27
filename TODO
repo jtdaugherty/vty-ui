@@ -6,3 +6,8 @@
   VBox)
 
 - Test interactions of various HBox / VBox layouts
+
+- Reconcile the impedance mismatch between Size and DisplayRegion
+  types
+
+- Is VBox growthPolicy sane for all content configurations?
