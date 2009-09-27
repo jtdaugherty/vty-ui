@@ -9,12 +9,6 @@ import Graphics.Vty ( DisplayRegion, Vty, Image, Attr, def_attr
 -- (Width, Height)
 data Size = Size (Int, Int)
 
-width :: Size -> Int
-width (Size t) = fst t
-
-height :: Size -> Int
-height (Size t) = snd t
-
 data GrowthPolicy = Static
                   | GrowVertical
                   | GrowHorizontal
@@ -35,13 +29,6 @@ class Widget w where
 data AnyWidget = forall a. (Widget a) => AnyWidget a
 data Text = Text Attr String
 data Fill = Fill GrowthPolicy Attr Char
-
-hFill :: Attr -> Char -> Fill
-hFill = Fill GrowHorizontal
-
-vFill :: Attr -> Char -> Fill
-vFill = Fill GrowVertical
-
 data VBox = forall a b. (Widget a, Widget b) => VBox a b
 -- data HBox = forall a b. (Widget a, Widget b) => HBox a b
 
@@ -86,6 +73,18 @@ instance Widget VBox where
                          (Static, _) -> renderTopFirst
                          (_, Static) -> renderBottomFirst
                          (_, _) -> renderTopFirst
+
+width :: Size -> Int
+width (Size t) = fst t
+
+height :: Size -> Int
+height (Size t) = snd t
+
+hFill :: Attr -> Char -> Fill
+hFill = Fill GrowHorizontal
+
+vFill :: Attr -> Char -> Fill
+vFill = Fill GrowVertical
 
 regionToSize :: DisplayRegion -> Size
 regionToSize db = Size ( fromIntegral $ region_width db
