@@ -32,7 +32,7 @@ class Widget w where
 
     growthPolicy :: w -> GrowthPolicy
 
-data Wrapper = forall a. (Widget a) => Wrapper a
+data AnyWidget = forall a. (Widget a) => AnyWidget a
 data Text = Text Attr String
 data Fill = Fill GrowthPolicy Attr Char
 
@@ -45,10 +45,10 @@ vFill = Fill GrowVertical
 data VBox = forall a b. (Widget a, Widget b) => VBox a b
 -- data HBox = forall a b. (Widget a, Widget b) => HBox a b
 
-instance Widget Wrapper where
-    attr (Wrapper w) = attr w
-    growthPolicy (Wrapper w) = growthPolicy w
-    render s (Wrapper w) = render s w
+instance Widget AnyWidget where
+    attr (AnyWidget w) = attr w
+    growthPolicy (AnyWidget w) = growthPolicy w
+    render s (AnyWidget w) = render s w
 
 instance Widget Text where
     attr (Text a _) = a

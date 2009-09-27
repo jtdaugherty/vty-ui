@@ -34,9 +34,9 @@ testVbox =
         footer = Text titleAttr "Footer"
     in VBox (VBox top bottom) footer
 
-testWidgets :: [Wrapper]
-testWidgets = [ Wrapper mainWidget
-              , Wrapper testVbox
+testWidgets :: [AnyWidget]
+testWidgets = [ AnyWidget mainWidget
+              , AnyWidget testVbox
               ]
 
 main :: IO ()
