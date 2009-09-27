@@ -87,6 +87,34 @@ instance Widget VBox where
                          (GrowHorizontal, _) -> renderTopFirst
                          (_, GrowHorizontal) -> renderBottomFirst
 
+instance Widget HBox where
+    growthPolicy (HBox left right) =
+        if l == GrowHorizontal
+        then l else growthPolicy right
+            where l = growthPolicy left
+
+    render s (HBox left right) =
+        t <|> b
+            where
+              renderHalves = let half = Size ( div (width s) 2, height s )
+                             in ( render half left
+                                , render half right )
+              renderLeftFirst = let renderedLeft = render s left
+                                    renderedRight = render s' right
+                                    s' = Size ( width s - (fromIntegral $ image_width renderedLeft)
+                                              , fromIntegral $ image_height renderedLeft )
+                                in (renderedLeft, renderedRight)
+              renderRightFirst = let renderedLeft = render s' left
+                                     renderedRight = render s right
+                                     s' = Size ( width s - (fromIntegral $ image_width renderedRight)
+                                               , fromIntegral $ image_height renderedRight )
+                                 in (renderedLeft, renderedRight)
+              (t, b) = case (growthPolicy left, growthPolicy right) of
+                         (GrowHorizontal, GrowHorizontal) -> renderHalves
+                         (Static, _) -> renderLeftFirst
+                         (_, Static) -> renderRightFirst
+                         (_, _) -> renderLeftFirst
+
 width :: Size -> Int
 width (Size t) = fst t
 

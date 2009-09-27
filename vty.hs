@@ -35,9 +35,32 @@ testVbox =
         footer = Text titleAttr "Footer"
     in VBox (VBox top bottom) footer
 
+testHBox1 :: HBox
+testHBox1 =
+    let left = Text titleAttr "First"
+        right = Text bodyAttr "Second"
+    in HBox left right
+
+testHBox2 :: VBox
+testHBox2 =
+    let left = Text titleAttr "First"
+        right = Text bodyAttr "Second"
+        topFill = VBox (Text titleAttr "Title") (vFill bodyAttr ' ')
+    in VBox topFill (HBox left right)
+
+testHBox3 :: VBox
+testHBox3 =
+    let left = Text titleAttr "- First "
+        right = hFill titleAttr '-'
+        topFill = VBox (Text titleAttr "Title") (vFill bodyAttr ' ')
+    in VBox topFill (HBox left right)
+
 testWidgets :: [AnyWidget]
 testWidgets = [ AnyWidget mainWidget
               , AnyWidget testVbox
+              , AnyWidget testHBox1
+              , AnyWidget testHBox2
+              , AnyWidget testHBox3
               ]
 
 main :: IO ()
