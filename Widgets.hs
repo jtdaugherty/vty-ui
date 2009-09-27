@@ -1,5 +1,16 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module Widgets where
+module Widgets
+    ( Widget(..)
+    , AnyWidget(AnyWidget)
+    , Text(Text)
+    , Fill
+    , hFill
+    , vFill
+    , VBox(VBox)
+    , HBox(HBox)
+    , mkImage
+    )
+where
 
 import Graphics.Vty ( DisplayRegion, Vty, Image, Attr, def_attr
                     , string, char_fill, (<|>), (<->), image_width
