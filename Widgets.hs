@@ -41,7 +41,7 @@ data AnyWidget = forall a. (Widget a) => AnyWidget a
 data Text = Text Attr String
 data Fill = Fill GrowthPolicy Attr Char
 data VBox = forall a b. (Widget a, Widget b) => VBox a b
--- data HBox = forall a b. (Widget a, Widget b) => HBox a b
+data HBox = forall a b. (Widget a, Widget b) => HBox a b
 
 instance Widget AnyWidget where
     attr (AnyWidget w) = attr w
