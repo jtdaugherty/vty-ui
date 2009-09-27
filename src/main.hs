@@ -2,7 +2,7 @@ module Main where
 
 import Control.Applicative ( (<$>) )
 import Control.Monad ( forM_ )
-import Widgets
+import Graphics.Vty.Widgets.Base
 
 import Graphics.Vty
 

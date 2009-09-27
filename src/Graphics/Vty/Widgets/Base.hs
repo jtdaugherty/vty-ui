@@ -1,5 +1,5 @@
 {-# LANGUAGE ExistentialQuantification #-}
-module Widgets
+module Graphics.Vty.Widgets.Base
     ( Widget(..)
     , AnyWidget(AnyWidget)
     , Text(Text)
