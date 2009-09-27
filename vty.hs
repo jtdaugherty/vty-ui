@@ -1,5 +1,6 @@
 module Main where
 
+import Control.Applicative ( (<$>) )
 import Control.Monad ( forM_ )
 import Widgets
 
@@ -44,8 +45,7 @@ main = do
   vty <- mkVty
 
   forM_ testWidgets $ \w -> do
-         img <- mkImage vty w
-         update vty $ pic_for_image img
+         pic_for_image <$> mkImage vty w >>= update vty
          next_event vty
 
   shutdown vty
