@@ -113,6 +113,7 @@ instance Widget HBox where
                          (GrowHorizontal, GrowHorizontal) -> renderHalves
                          (Static, _) -> renderLeftFirst
                          (_, Static) -> renderRightFirst
+                         (GrowVertical, GrowVertical) -> renderHalves
                          (_, _) -> renderLeftFirst
 
 width :: Size -> Int
