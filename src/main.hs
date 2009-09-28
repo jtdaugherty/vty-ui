@@ -93,8 +93,13 @@ main :: IO ()
 main = do
   vty <- mkVty
 
-  forM_ testWidgets $ \w -> do
+  let drawIt w = do
          pic_for_image <$> mkImage vty w >>= update vty
-         next_event vty
+         evt <- next_event vty
+         case evt of
+           EvResize _ _ -> drawIt w
+           _ -> return ()
+
+  forM_ testWidgets drawIt
 
   shutdown vty
