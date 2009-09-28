@@ -2,12 +2,11 @@
 - Fix one-off issue when available space for a vbox has odd number of
   rows, resulting in one unused row
 
-- Implement HBox support (make HBox an instance of Widget, similar to
-  VBox)
-
 - Test interactions of various HBox / VBox layouts
 
 - Reconcile the impedance mismatch between Size and DisplayRegion
   types
 
 - Is VBox growthPolicy sane for all content configurations?
+
+- Cabal-ize package
