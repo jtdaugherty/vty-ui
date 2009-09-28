@@ -2,7 +2,9 @@ module Main where
 
 import Control.Applicative ( (<$>) )
 import Control.Monad ( forM_ )
+
 import Graphics.Vty.Widgets.Base
+import Graphics.Vty.Widgets.List
 
 import Graphics.Vty
 
@@ -15,6 +17,11 @@ bodyAttr :: Attr
 bodyAttr = def_attr
            `with_back_color` black
            `with_fore_color` bright_green
+
+selAttr :: Attr
+selAttr = def_attr
+           `with_back_color` yellow
+           `with_fore_color` black
 
 mainWidget :: VBox
 mainWidget =
@@ -64,6 +71,14 @@ testHBox4 =
         footer = Text titleAttr "Footer"
     in VBox (VBox top bottom) footer
 
+listTest1 :: VBox
+listTest1 = VBox
+            (mkList bodyAttr selAttr 3 ["First", "Second", "Third"])
+            (VBox
+             (Text titleAttr "middle bar")
+             (Text bodyAttr "body stuff")
+            )
+
 testWidgets :: [AnyWidget]
 testWidgets = [ AnyWidget mainWidget
               , AnyWidget testVbox
@@ -71,6 +86,7 @@ testWidgets = [ AnyWidget mainWidget
               , AnyWidget testHBox2
               , AnyWidget testHBox3
               , AnyWidget testHBox4
+              , AnyWidget listTest1
               ]
 
 main :: IO ()
