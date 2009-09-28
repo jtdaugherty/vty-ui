@@ -1,6 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 module Graphics.Vty.Widgets.Base
     ( Widget(..)
+    , GrowthPolicy(..)
     , AnyWidget(AnyWidget)
     , Text(Text)
     , Fill
