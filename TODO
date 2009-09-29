@@ -8,5 +8,3 @@
   types
 
 - Is VBox growthPolicy sane for all content configurations?
-
-- Cabal-ize package
