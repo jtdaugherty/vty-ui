@@ -12,7 +12,7 @@
 --   automatically shifts as the list is scrolled
 --
 -- To create a list, see 'mkList'.  To modify the list's state, see
--- 'scrollDown' and 'scrollUp'.  To inspect the list, see, see
+-- 'scrollDown' and 'scrollUp'.  To inspect the list, see
 -- 'getSelected' and 'getVisibleItems'.
 module Graphics.Vty.Widgets.List
     ( List
