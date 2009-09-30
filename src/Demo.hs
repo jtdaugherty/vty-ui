@@ -3,7 +3,6 @@ module Main where
 import Data.Maybe ( fromJust )
 
 import Control.Applicative ( (<$>) )
-import Control.Monad ( forM_ )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.State ( StateT, put, get, gets, evalStateT )
 
