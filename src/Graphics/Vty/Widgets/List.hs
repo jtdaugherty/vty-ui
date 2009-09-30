@@ -1,6 +1,9 @@
 module Graphics.Vty.Widgets.List
     ( List
     , mkList
+    , scrollDown
+    , scrollUp
+    , getSelected
     )
 where
 
@@ -22,6 +25,35 @@ data List = List { normalAttr :: Attr
 mkList :: Attr -> Attr -> Int -> [String] -> List
 mkList _ _ _ [] = error "Lists cannot be empty"
 mkList normAttr selAttr swSize contents = List normAttr selAttr 0 0 swSize contents
+
+-- note that !! here will always succeed because selectedIndex will
+-- never be out of bounds and the list will always be non-empty.
+getSelected :: List -> String
+getSelected list = (listItems list) !! (selectedIndex list)
+
+scrollDown :: List -> List
+scrollDown list
+    -- If the list is already at the last position, do nothing.
+    | selectedIndex list == length (listItems list) - 1 = list
+    -- If the list requires scrolling the visible area, scroll it.
+    | selectedIndex list == scrollTopIndex list + scrollWindowSize list - 1 =
+        list { selectedIndex = selectedIndex list + 1
+             , scrollTopIndex = scrollTopIndex list + 1
+             }
+    -- Otherwise, just increment the selectedIndex.
+    | otherwise = list { selectedIndex = selectedIndex list + 1 }
+
+scrollUp :: List -> List
+scrollUp list
+    -- If the list is already at the first position, do nothing.
+    | selectedIndex list == 0 = list
+    -- If the list requires scrolling the visible area, scroll it.
+    | selectedIndex list == scrollTopIndex list =
+        list { selectedIndex = selectedIndex list - 1
+             , scrollTopIndex = scrollTopIndex list - 1
+             }
+    -- Otherwise, just decrement the selectedIndex.
+    | otherwise = list { selectedIndex = selectedIndex list - 1 }
 
 getVisibleItems :: List -> [(String, Bool)]
 getVisibleItems list =
