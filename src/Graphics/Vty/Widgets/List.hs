@@ -67,7 +67,6 @@ instance Widget List where
     -- Statically sized, because we know how many items should be
     -- visible.
     growthPolicy _ = Static
-    attr = normalAttr
 
     render s w =
         foldl (<->) (head widgets) (tail widgets)

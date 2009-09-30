@@ -15,8 +15,8 @@ where
 import GHC.Word ( Word )
 
 import Graphics.Vty ( DisplayRegion(DisplayRegion), Vty, Image, Attr
-                    , def_attr, string, char_fill, (<|>), (<->)
-                    , image_width, image_height, region_width, region_height
+                    , string, char_fill, (<|>), (<->), image_width
+                    , image_height, region_width, region_height
                     , terminal, display_bounds )
 
 data GrowthPolicy = Static
@@ -29,11 +29,6 @@ class Widget w where
     -- resulting Image should not be larger than the specified
     -- dimensions, but may be smaller.
     render :: DisplayRegion -> w -> Image
-
-    -- The attribute of the widget, if any.
-    attr :: w -> Attr
-    attr _ = def_attr
-
     growthPolicy :: w -> GrowthPolicy
 
 data AnyWidget = forall a. (Widget a) => AnyWidget a
@@ -44,12 +39,10 @@ data VBox = forall a b. (Widget a, Widget b) => VBox a b
 data HBox = forall a b. (Widget a, Widget b) => HBox a b
 
 instance Widget AnyWidget where
-    attr (AnyWidget w) = attr w
     growthPolicy (AnyWidget w) = growthPolicy w
     render s (AnyWidget w) = render s w
 
 instance Widget Text where
-    attr (Text a _) = a
     growthPolicy _ = Static
     render _ (Text att content) = string att content
 
