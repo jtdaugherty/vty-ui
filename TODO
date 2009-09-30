@@ -1,6 +1,9 @@
 
 - Haddock
 
+- WrappedText widget? (Just plain vty "string" truncates at the
+  terminal boundary!)
+
 - Figure out how to cleanly clear the screen on VTY shutdown.
 
 - List: implement a "resizeWindow" function which will adjust the
