@@ -1,14 +1,12 @@
 module Main where
 
 import Data.Maybe ( fromJust )
-
 import Control.Applicative ( (<$>) )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.State ( StateT, put, get, gets, evalStateT )
 
 import Graphics.Vty.Widgets.Base
 import Graphics.Vty.Widgets.List
-
 import Graphics.Vty
 
 titleAttr :: Attr
