@@ -13,13 +13,12 @@ module Graphics.Vty.Widgets.Base
     )
 where
 
-import Graphics.Vty ( DisplayRegion, Vty, Image, Attr, def_attr
-                    , string, char_fill, (<|>), (<->), image_width
-                    , image_height, region_width, region_height
-                    , terminal, display_bounds )
+import GHC.Word ( Word )
 
--- (Width, Height)
-data Size = Size (Int, Int)
+import Graphics.Vty ( DisplayRegion(DisplayRegion), Vty, Image, Attr
+                    , def_attr, string, char_fill, (<|>), (<->)
+                    , image_width, image_height, region_width, region_height
+                    , terminal, display_bounds )
 
 data GrowthPolicy = Static
                   | GrowVertical
@@ -30,7 +29,7 @@ class Widget w where
     -- Given a widget, render it with the given dimensions.  The
     -- resulting Image should not be larger than the specified
     -- dimensions, but may be smaller.
-    render :: Size -> w -> Image
+    render :: DisplayRegion -> w -> Image
 
     -- The attribute of the widget, if any.
     attr :: w -> Attr
@@ -56,7 +55,7 @@ instance Widget Text where
 
 instance Widget Fill where
     growthPolicy (Fill gp _ _) = gp
-    render (Size (w, h)) (Fill _ att c) = char_fill att c w h
+    render s (Fill _ att c) = char_fill att c (width s) (height s)
 
 instance Widget VBox where
     growthPolicy (VBox top bottom) =
@@ -67,21 +66,19 @@ instance Widget VBox where
     render s (VBox top bottom) =
         t <-> b
             where
-              renderHalves = let half = Size ( width s, div (height s) 2 )
+              renderHalves = let half = s `withHeight` div (height s) 2
                                  half' = if height s `mod` 2 == 0
                                          then half
-                                         else Size ( width half, height half + 1 )
+                                         else region (width half) (height half + 1)
                              in ( render half top
                                 , render half' bottom )
               renderTopFirst = let renderedTop = render s top
                                    renderedBottom = render s' bottom
-                                   s' = Size ( width s
-                                             , height s - (fromIntegral $ image_height renderedTop) )
+                                   s' = s `withHeight` (height s - image_height renderedTop)
                                in (renderedTop, renderedBottom)
               renderBottomFirst = let renderedTop = render s' top
                                       renderedBottom = render s bottom
-                                      s' = Size ( width s
-                                                , height s - (fromIntegral $ image_height renderedBottom) )
+                                      s' = s `withHeight` (height s - image_height renderedBottom)
                                   in (renderedTop, renderedBottom)
               (t, b) = case (growthPolicy top, growthPolicy bottom) of
                          (GrowVertical, GrowVertical) -> renderHalves
@@ -100,21 +97,21 @@ instance Widget HBox where
     render s (HBox left right) =
         t <|> b
             where
-              renderHalves = let half = Size ( div (width s) 2, height s )
+              renderHalves = let half = s `withWidth` div (width s) 2
                                  half' = if width s `mod` 2 == 0
                                          then half
-                                         else Size ( width half + 1, height half )
+                                         else region (width half + 1) (height half)
                              in ( render half left
                                 , render half' right )
               renderLeftFirst = let renderedLeft = render s left
                                     renderedRight = render s' right
-                                    s' = Size ( width s - (fromIntegral $ image_width renderedLeft)
-                                              , fromIntegral $ image_height renderedLeft )
+                                    s' = region (width s - image_width renderedLeft)
+                                         (image_height renderedLeft)
                                 in (renderedLeft, renderedRight)
               renderRightFirst = let renderedLeft = render s' left
                                      renderedRight = render s right
-                                     s' = Size ( width s - (fromIntegral $ image_width renderedRight)
-                                               , fromIntegral $ image_height renderedRight )
+                                     s' = region (width s - image_width renderedRight)
+                                          (image_height renderedRight)
                                  in (renderedLeft, renderedRight)
               (t, b) = case (growthPolicy left, growthPolicy right) of
                          (GrowHorizontal, GrowHorizontal) -> renderHalves
@@ -123,11 +120,20 @@ instance Widget HBox where
                          (GrowVertical, GrowVertical) -> renderHalves
                          (_, _) -> renderLeftFirst
 
-width :: Size -> Int
-width (Size t) = fst t
+width :: DisplayRegion -> Word
+width = region_width
 
-height :: Size -> Int
-height (Size t) = snd t
+height :: DisplayRegion -> Word
+height = region_height
+
+region :: Word -> Word -> DisplayRegion
+region = DisplayRegion
+
+withWidth :: DisplayRegion -> Word -> DisplayRegion
+withWidth (DisplayRegion _ h) w = DisplayRegion w h
+
+withHeight :: DisplayRegion -> Word -> DisplayRegion
+withHeight (DisplayRegion w _) h = DisplayRegion w h
 
 hFill :: Attr -> Char -> Fill
 hFill = Fill GrowHorizontal
@@ -135,11 +141,7 @@ hFill = Fill GrowHorizontal
 vFill :: Attr -> Char -> Fill
 vFill = Fill GrowVertical
 
-regionToSize :: DisplayRegion -> Size
-regionToSize db = Size ( fromIntegral $ region_width db
-                       , fromIntegral $ region_height db)
-
 mkImage :: (Widget a) => Vty -> a -> IO Image
 mkImage vty w = do
   size <- display_bounds $ terminal vty
-  return $ render (regionToSize size) w
+  return $ render size w
