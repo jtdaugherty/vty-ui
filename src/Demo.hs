@@ -42,11 +42,15 @@ buildUi = do
 
   return ui
 
+-- The application state; this encapsulates what can vary based on
+-- user input and what is used to construct the interface.  This is a
+-- place for widgets whose state need to be stored so they can be
+-- modified and used to reconstruct the interface as input is handled
 data AppState = AppState { theList :: List
                          , theMessages :: [(String, String)]
                          }
 
--- Process events from VTY.
+-- Process events from VTY, possibly modifying the application state.
 eventloop :: Vty -> StateT AppState IO ()
 eventloop vty = do
   w <- buildUi
