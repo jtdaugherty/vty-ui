@@ -11,3 +11,9 @@
   currently selected index.
 
 - Is VBox growthPolicy sane for all content configurations?
+
+- Add functions to get access to information about specific widgets
+  (attributes, height settings, etc.) so they aren't totally opaque
+
+- Box layout widget documentation so it's clear from the docs how
+  widgets get laid out
