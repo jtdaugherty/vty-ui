@@ -68,8 +68,11 @@ instance Widget VBox where
         t <-> b
             where
               renderHalves = let half = Size ( width s, div (height s) 2 )
+                                 half' = if height s `mod` 2 == 0
+                                         then half
+                                         else Size ( width half, height half + 1 )
                              in ( render half top
-                                , render half bottom )
+                                , render half' bottom )
               renderTopFirst = let renderedTop = render s top
                                    renderedBottom = render s' bottom
                                    s' = Size ( width s
@@ -98,8 +101,11 @@ instance Widget HBox where
         t <|> b
             where
               renderHalves = let half = Size ( div (width s) 2, height s )
+                                 half' = if width s `mod` 2 == 0
+                                         then half
+                                         else Size ( width half + 1, height half )
                              in ( render half left
-                                , render half right )
+                                , render half' right )
               renderLeftFirst = let renderedLeft = render s left
                                     renderedRight = render s' right
                                     s' = Size ( width s - (fromIntegral $ image_width renderedLeft)

@@ -1,7 +1,4 @@
 
-- Fix one-off issue when available space for a vbox has odd number of
-  rows, resulting in one unused row
-
 - Test interactions of various HBox / VBox layouts
 
 - Reconcile the impedance mismatch between Size and DisplayRegion
