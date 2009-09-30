@@ -14,10 +14,6 @@ License-File:        LICENSE
 Cabal-Version:       >= 1.2
 Homepage:            http://repos.codevine.org/vty-ui/
 
-Flag vty-ui-demo
-    Description:     Build the vty-ui demonstration program
-    Default:         False
-
 Library
   Build-Depends:
     base >= 4 && < 5,
@@ -29,9 +25,6 @@ Library
           Graphics.Vty.Widgets.List
 
 Executable vty-ui-demo
-  if !flag(vty-ui-demo)
-    Buildable:     False
-  end
   Hs-Source-Dirs:  src
   Main-is:         Demo.hs
   Build-Depends:
