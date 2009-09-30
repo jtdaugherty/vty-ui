@@ -1,14 +1,30 @@
 {-# LANGUAGE ExistentialQuantification #-}
+-- |A collection of primitive user interface widgets for composing and
+-- laying out 'Graphics.Vty' user interfaces.  This module provides
+-- basic static and box layout widgets and a type class for rendering
+-- widgets to Vty 'Graphics.Vty.Image's.
+--
+-- Each widget type supplied by this library is exported as a type and
+-- an associated constructor function (e.g., 'Text' and 'text', 'VBox'
+-- and 'vBox').
 module Graphics.Vty.Widgets.Base
     ( Widget(..)
     , GrowthPolicy(..)
-    , AnyWidget, anyWidget
-    , Text, text
-    , HFill, hFill
-    , VFill, vFill
-    , VBox, vBox, (<-->)
-    , HBox, hBox, (<++>)
     , mkImage
+    , AnyWidget
+    , Text
+    , HBox
+    , VBox
+    , HFill
+    , VFill
+    , (<++>)
+    , (<-->)
+    , anyWidget
+    , text
+    , hBox
+    , vBox
+    , hFill
+    , vFill
     )
 where
 
@@ -19,23 +35,51 @@ import Graphics.Vty ( DisplayRegion(DisplayRegion), Vty, Image, Attr
                     , image_height, region_width, region_height
                     , terminal, display_bounds )
 
+-- |The growth policy of a widget determines how its container will
+-- reserve space to render it.
 data GrowthPolicy = Static
+                  -- ^'Static' widgets have a fixed size that is not
+                  -- influenced by available space
                   | GrowVertical
+                  -- ^'GrowVertical' widgets may grow vertically with
+                  -- available space
                   | GrowHorizontal
+                    -- ^'GrowHorizontal' widgets may grow horizontally
+                    -- with available space
                     deriving (Show, Eq)
 
+-- |The class of user interface widgets.
 class Widget w where
-    -- Given a widget, render it with the given dimensions.  The
+    -- |Given a widget, render it with the given dimensions.  The
     -- resulting Image should not be larger than the specified
     -- dimensions, but may be smaller.
     render :: DisplayRegion -> w -> Image
+
+    -- |The growth policy of this widget.
     growthPolicy :: w -> GrowthPolicy
 
+-- |A wrapper for all widget types used in normalizing heterogeneous
+-- lists of widgets.  See 'anyWidget'.
 data AnyWidget = forall a. (Widget a) => AnyWidget a
+
+-- |A text widget consisting of a string rendered using an
+-- attribute. See 'text'.
 data Text = Text Attr String
+
+-- |A vertical fill widget for filling available vertical space in a
+-- box layout.  See 'vFill'.
 data VFill = VFill Attr Char
+
+-- |A horizontal fill widget for filling available horizontal space in
+-- a box layout.  See 'hFill'.
 data HFill = HFill Attr Char Int
+
+-- |A vertical box layout widget capable of containing two 'Widget's.
+-- See 'vBox'.
 data VBox = forall a b. (Widget a, Widget b) => VBox a b
+
+-- |A horizontal box layout widget capable of containing two
+-- 'Widget's.  See 'hBox'.
 data HBox = forall a b. (Widget a, Widget b) => HBox a b
 
 instance Widget AnyWidget where
@@ -132,31 +176,59 @@ withWidth (DisplayRegion _ h) w = DisplayRegion w h
 withHeight :: DisplayRegion -> Word -> DisplayRegion
 withHeight (DisplayRegion w _) h = DisplayRegion w h
 
+-- |Given a 'Widget' and a 'Vty' object, render the widget using the
+-- current size of the terminal controlled by Vty. Returns the
+-- rendered 'Widget' as an 'Image'.
 mkImage :: (Widget a) => Vty -> a -> IO Image
 mkImage vty w = do
   size <- display_bounds $ terminal vty
   return $ render size w
 
+-- |Wrap a 'Widget' in the 'AnyWidget' type for normalization
+-- purposes.
 anyWidget :: (Widget a) => a -> AnyWidget
 anyWidget = AnyWidget
 
-text :: Attr -> String -> Text
+-- |Create a 'Text' widget.
+text :: Attr -- ^The attribute to use to render the text
+     -> String -- ^The text to display
+     -> Text
 text = Text
 
-hFill :: Attr -> Char -> Int -> HFill
+-- |Create an horizonal fill widget.
+hFill :: Attr -- ^The attribute to use to render the fill
+      -> Char -- ^The character to fill
+      -> Int -- ^The height, in rows, of the filled area; width of the
+             -- fill depends on available space
+      -> HFill
 hFill = HFill
 
-vFill :: Attr -> Char -> VFill
+-- |Create a vertical fill widget.  The dimensions of the widget will
+-- depend on available space.
+vFill :: Attr -- ^The attribute to use to render the fill
+      -> Char -- ^The character to fill
+      -> VFill
 vFill = VFill
 
-hBox :: (Widget a, Widget b) => a -> b -> HBox
+-- |Create a horizontal box layout widget containing two widgets side
+-- by side.  Space consumed by the box will depend on its contents and
+-- the available space.
+hBox :: (Widget a, Widget b) => a -- ^The left widget
+     -> b -- ^The right widget
+     -> HBox
 hBox = HBox
 
+-- |An alias for 'hBox' intended as sugar to chain widgets
+-- horizontally.
 (<++>) :: (Widget a, Widget b) => a -> b -> HBox
 (<++>) = HBox
 
+-- |Create a vertical box layout widget containing two widgets.  Space
+-- consumed by the box will depend on its contents and the available
+-- space.
 vBox :: (Widget a, Widget b) => a -> b -> VBox
 vBox = VBox
 
+-- |An alias for 'vBox' intended as sugar to chain widgets vertically.
 (<-->) :: (Widget a, Widget b) => a -> b -> VBox
 (<-->) = VBox
