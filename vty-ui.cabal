@@ -1,8 +1,10 @@
 Name:                vty-ui
 Version:             0.1
-Synopsis:            A library of user interface widgets for VTY
+Synopsis:            A user interface composition library for VTY
 Description:         A library of user interface widgets for composing
-                     and laying out VTY user interfaces.
+                     and laying out VTY user interfaces.  This library
+                     provides basic static and box layout widgets and
+                     a type class for rendering widgets to VTY Images.
 Category:            Graphics
 Author:              Jonathan Daugherty <drcygnus@gmail.com>
 Maintainer:          Jonathan Daugherty <drcygnus@gmail.com>
