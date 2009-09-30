@@ -46,6 +46,7 @@ data AppState = AppState { theList :: List
                          , theMessages :: [(String, String)]
                          }
 
+-- Process events from VTY.
 eventloop :: Vty -> StateT AppState IO ()
 eventloop vty = do
   w <- buildUi
@@ -70,6 +71,7 @@ eventloop vty = do
     -- Any other key means keep looping (including terminal resize).
     _ -> eventloop vty
 
+-- Construct the application state using the message map.
 mkAppState :: [(String, String)] -> AppState
 mkAppState messages =
     let list = mkList bodyAttr selAttr 3 $ map fst messages
@@ -81,7 +83,7 @@ main :: IO ()
 main = do
   vty <- mkVty
 
-  -- Set up the initial app state.
+  -- The data that we'll present in the interface.
   let messages = [ ("First", "the first message")
                  , ("Second", "the second message")
                  , ("Third", "the third message")
