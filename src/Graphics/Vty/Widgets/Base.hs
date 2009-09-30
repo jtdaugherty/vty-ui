@@ -4,9 +4,8 @@ module Graphics.Vty.Widgets.Base
     , GrowthPolicy(..)
     , AnyWidget(AnyWidget)
     , Text(Text)
-    , Fill
-    , hFill
-    , vFill
+    , HFill(HFill)
+    , VFill(VFill)
     , VBox(VBox)
     , HBox(HBox)
     , mkImage
@@ -39,7 +38,8 @@ class Widget w where
 
 data AnyWidget = forall a. (Widget a) => AnyWidget a
 data Text = Text Attr String
-data Fill = Fill GrowthPolicy Attr Char
+data VFill = VFill Attr Char
+data HFill = HFill Attr Char Int
 data VBox = forall a b. (Widget a, Widget b) => VBox a b
 data HBox = forall a b. (Widget a, Widget b) => HBox a b
 
@@ -53,9 +53,13 @@ instance Widget Text where
     growthPolicy _ = Static
     render _ (Text att content) = string att content
 
-instance Widget Fill where
-    growthPolicy (Fill gp _ _) = gp
-    render s (Fill _ att c) = char_fill att c (width s) (height s)
+instance Widget VFill where
+    growthPolicy _ = GrowVertical
+    render s (VFill att c) = char_fill att c (width s) (height s)
+
+instance Widget HFill where
+    growthPolicy _ = Static
+    render s (HFill att c h) = char_fill att c (width s) (toEnum h)
 
 instance Widget VBox where
     growthPolicy (VBox top bottom) =
@@ -134,12 +138,6 @@ withWidth (DisplayRegion _ h) w = DisplayRegion w h
 
 withHeight :: DisplayRegion -> Word -> DisplayRegion
 withHeight (DisplayRegion w _) h = DisplayRegion w h
-
-hFill :: Attr -> Char -> Fill
-hFill = Fill GrowHorizontal
-
-vFill :: Attr -> Char -> Fill
-vFill = Fill GrowVertical
 
 mkImage :: (Widget a) => Vty -> a -> IO Image
 mkImage vty w = do
