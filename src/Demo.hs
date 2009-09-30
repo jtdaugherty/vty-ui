@@ -39,7 +39,7 @@ buildUi = do
            <--> text bodyAttr body
            <--> vFill bodyAttr ' '
            <--> footer
-      footer = text titleAttr "- Status -"
+      footer = text titleAttr "- Status "
                <++> hFill titleAttr '-' 1
 
   return ui
