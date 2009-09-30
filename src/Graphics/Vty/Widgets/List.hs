@@ -10,7 +10,7 @@ where
 import Graphics.Vty ( Attr, (<->) )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
-    , Text(Text)
+    , text
     , GrowthPolicy(Static)
     )
 
@@ -76,4 +76,4 @@ instance Widget List where
               mkWidget (str, selected) = let att = if selected
                                                    then selectedAttr
                                                    else normalAttr
-                                         in Text (att w) str
+                                         in text (att w) str

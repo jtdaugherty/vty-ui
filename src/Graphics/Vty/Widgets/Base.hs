@@ -2,12 +2,12 @@
 module Graphics.Vty.Widgets.Base
     ( Widget(..)
     , GrowthPolicy(..)
-    , AnyWidget(AnyWidget)
-    , Text(Text)
-    , HFill(HFill)
-    , VFill(VFill)
-    , VBox(VBox)
-    , HBox(HBox)
+    , AnyWidget, anyWidget
+    , Text, text
+    , HFill, hFill
+    , VFill, vFill
+    , VBox, vBox
+    , HBox, hBox
     , mkImage
     )
 where
@@ -143,3 +143,21 @@ mkImage :: (Widget a) => Vty -> a -> IO Image
 mkImage vty w = do
   size <- display_bounds $ terminal vty
   return $ render size w
+
+anyWidget :: (Widget a) => a -> AnyWidget
+anyWidget = AnyWidget
+
+text :: Attr -> String -> Text
+text = Text
+
+hFill :: Attr -> Char -> Int -> HFill
+hFill = HFill
+
+vFill :: Attr -> Char -> VFill
+vFill = VFill
+
+hBox :: (Widget a, Widget b) => a -> b -> HBox
+hBox = HBox
+
+vBox :: (Widget a, Widget b) => a -> b -> VBox
+vBox = VBox
