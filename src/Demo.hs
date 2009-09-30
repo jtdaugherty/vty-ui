@@ -27,6 +27,8 @@ selAttr = def_attr
            `with_back_color` yellow
            `with_fore_color` black
 
+-- Construct the user interface based on the contents of the
+-- application state.
 buildUi :: StateT AppState IO VBox
 buildUi = do
   list <- gets theList
