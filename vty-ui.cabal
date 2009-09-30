@@ -5,7 +5,7 @@ Description:         A library of user interface widgets for composing
                      and laying out VTY user interfaces.  This library
                      provides basic static and box layout widgets and
                      a type class for rendering widgets to VTY Images.
-Category:            Graphics
+Category:            User Interfaces
 Author:              Jonathan Daugherty <drcygnus@gmail.com>
 Maintainer:          Jonathan Daugherty <drcygnus@gmail.com>
 Build-Type:          Simple
