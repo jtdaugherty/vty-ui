@@ -1,6 +1,4 @@
 
-- Haddock
-
 - WrappedText widget? (Just plain vty "string" truncates at the
   terminal boundary!)
 
