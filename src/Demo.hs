@@ -100,4 +100,6 @@ main = do
                  ]
 
   evalStateT (eventloop vty) $ mkAppState messages
+  -- Clear the screen.
+  reserve_display $ terminal vty
   shutdown vty
