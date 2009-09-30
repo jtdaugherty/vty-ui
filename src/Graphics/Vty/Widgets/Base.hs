@@ -6,8 +6,8 @@ module Graphics.Vty.Widgets.Base
     , Text, text
     , HFill, hFill
     , VFill, vFill
-    , VBox, vBox
-    , HBox, hBox
+    , VBox, vBox, (<-->)
+    , HBox, hBox, (<++>)
     , mkImage
     )
 where
@@ -159,5 +159,11 @@ vFill = VFill
 hBox :: (Widget a, Widget b) => a -> b -> HBox
 hBox = HBox
 
+(<++>) :: (Widget a, Widget b) => a -> b -> HBox
+(<++>) = HBox
+
 vBox :: (Widget a, Widget b) => a -> b -> VBox
 vBox = VBox
+
+(<-->) :: (Widget a, Widget b) => a -> b -> VBox
+(<-->) = VBox

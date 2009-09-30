@@ -32,17 +32,13 @@ buildUi = do
   list <- gets theList
   msgs <- gets theMessages
   let body = fromJust $ lookup (getSelected list) msgs
-      bodyArea = vBox
-                 (hFill titleAttr '-' 1)
-                 (vBox
-                  (text bodyAttr body)
-                  (vFill bodyAttr ' ')
-                 )
-      footer = hBox
-               (text titleAttr "- Status -")
-               (hFill titleAttr '-' 1)
+      bodyArea = hFill titleAttr '-' 1 <-->
+                 text bodyAttr body <-->
+                 vFill bodyAttr ' '
+      footer = text titleAttr "- Status -" <++>
+               hFill titleAttr '-' 1
 
-  return $ vBox (vBox list bodyArea) footer
+  return $ list <--> bodyArea <--> footer
 
 data AppState = AppState { theList :: List
                          , theMessages :: [(String, String)]
