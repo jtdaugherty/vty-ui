@@ -1,7 +1,11 @@
 module Main where
 
+import Data.Maybe ( fromJust )
+
 import Control.Applicative ( (<$>) )
 import Control.Monad ( forM_ )
+import Control.Monad.Trans ( liftIO )
+import Control.Monad.State ( StateT, put, get, gets, evalStateT )
 
 import Graphics.Vty.Widgets.Base
 import Graphics.Vty.Widgets.List
@@ -23,83 +27,71 @@ selAttr = def_attr
            `with_back_color` yellow
            `with_fore_color` black
 
-mainWidget :: VBox
-mainWidget =
-    let title = Text titleAttr " Title "
-        body = Text bodyAttr "Body"
-        footer = Text titleAttr " Footer"
-        fill = vFill bodyAttr ' '
-    in VBox title
-           (VBox
-            (VBox body fill)
-            footer
-           )
+buildUi :: StateT AppState IO VBox
+buildUi = do
+  list <- gets theList
+  msgs <- gets theMessages
+  let body = fromJust $ lookup (getSelected list) msgs
+      bodyArea = VBox
+                 (HFill titleAttr '-' 1)
+                 (VBox
+                  (Text bodyAttr body)
+                  (VFill bodyAttr ' ')
+                 )
+      footer = HBox
+               (Text titleAttr "- Status -")
+               (HFill titleAttr '-' 1)
 
-testVbox :: VBox
-testVbox =
-    let top = VBox (Text titleAttr "First") (vFill bodyAttr ' ')
-        bottom = VBox (Text titleAttr "Third") (vFill bodyAttr ' ')
-        footer = Text titleAttr "Footer"
-    in VBox (VBox top bottom) footer
+  return $ VBox (VBox list bodyArea) footer
 
-testHBox1 :: HBox
-testHBox1 =
-    let left = Text titleAttr "First"
-        right = Text bodyAttr "Second"
-    in HBox left right
+data AppState = AppState { theList :: List
+                         , theMessages :: [(String, String)]
+                         }
 
-testHBox2 :: VBox
-testHBox2 =
-    let left = Text titleAttr "First"
-        right = Text bodyAttr "Second"
-        topFill = VBox (Text titleAttr "Title") (vFill bodyAttr ' ')
-    in VBox topFill (HBox left right)
+eventloop :: Vty -> StateT AppState IO ()
+eventloop vty = do
+  w <- buildUi
+  evt <- liftIO $ do
+                  pic_for_image <$> mkImage vty w >>= update vty
+                  next_event vty
+  case evt of
+    -- If we got an up or down arrow key, modify the app state (list
+    -- widget) and continue processing events.
+    EvKey KUp [] -> do
+                  appst <- get
+                  put (appst { theList = scrollUp $ theList appst })
+                  eventloop vty
+    EvKey KDown [] -> do
+                  appst <- get
+                  put (appst { theList = scrollDown $ theList appst })
+                  eventloop vty
 
-testHBox3 :: VBox
-testHBox3 =
-    let left = Text titleAttr "- First "
-        right = hFill titleAttr '-'
-        topFill = VBox (Text titleAttr "Title") (vFill bodyAttr ' ')
-    in VBox topFill (HBox left right)
+    -- If we get 'q', quit.
+    EvKey (KASCII 'q') [] -> return ()
 
-testHBox4 :: VBox
-testHBox4 =
-    let top = VBox (Text titleAttr "First") (vFill bodyAttr ' ')
-        bottom = HBox
-                 (VBox (Text titleAttr "Left") (vFill bodyAttr ' '))
-                 (VBox (Text titleAttr "Right") (vFill bodyAttr ' '))
-        footer = Text titleAttr "Footer"
-    in VBox (VBox top bottom) footer
+    -- Any other key means keep looping (including terminal resize).
+    _ -> eventloop vty
 
-listTest1 :: VBox
-listTest1 = VBox
-            (mkList bodyAttr selAttr 3 ["First", "Second", "Third"])
-            (VBox
-             (Text titleAttr "middle bar")
-             (Text bodyAttr "body stuff")
-            )
-
-testWidgets :: [AnyWidget]
-testWidgets = [ AnyWidget mainWidget
-              , AnyWidget testVbox
-              , AnyWidget testHBox1
-              , AnyWidget testHBox2
-              , AnyWidget testHBox3
-              , AnyWidget testHBox4
-              , AnyWidget listTest1
-              ]
+mkAppState :: [(String, String)] -> AppState
+mkAppState messages =
+    let list = mkList bodyAttr selAttr 3 $ map fst messages
+    in AppState { theList = list
+                , theMessages = messages
+                }
 
 main :: IO ()
 main = do
   vty <- mkVty
 
-  let drawIt w = do
-         pic_for_image <$> mkImage vty w >>= update vty
-         evt <- next_event vty
-         case evt of
-           EvResize _ _ -> drawIt w
-           _ -> return ()
+  -- Set up the initial app state.
+  let messages = [ ("First", "the first message")
+                 , ("Second", "the second message")
+                 , ("Third", "the third message")
+                 , ("Fourth", "the fourth message")
+                 , ("Fifth", "the fifth message")
+                 , ("Sixth", "the sixth message")
+                 , ("Seventh", "the seventh message")
+                 ]
 
-  forM_ testWidgets drawIt
-
+  evalStateT (eventloop vty) $ mkAppState messages
   shutdown vty
