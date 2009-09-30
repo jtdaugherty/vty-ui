@@ -1,4 +1,12 @@
 
+- Figure out how to cleanly clear the screen on VTY shutdown.
+
+- List: implement a "resizeWindow" function which will adjust the
+  visible window size; one might want to size a list widget's visible
+  window as a function of terminal height.  This should automatically
+  change what is selected if the window size gets smaller than the
+  currently selected index.
+
 - Test interactions of various HBox / VBox layouts
 
 - Is VBox growthPolicy sane for all content configurations?
