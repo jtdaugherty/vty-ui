@@ -55,20 +55,31 @@ scrollListDown :: StateT AppState IO ()
 scrollListDown = modify (\appst -> appst { theList = scrollDown $ theList appst })
 
 -- Process events from VTY, possibly modifying the application state.
-eventloop :: Vty -> StateT AppState IO ()
-eventloop vty = do
-  w <- buildUi
+eventloop :: (Widget a) => Vty
+          -> StateT AppState IO a
+          -> (Event -> StateT AppState IO Bool)
+          -> StateT AppState IO ()
+eventloop vty uiBuilder handle = do
+  w <- uiBuilder
   evt <- liftIO $ do
                   pic_for_image <$> mkImage vty w >>= update vty
                   next_event vty
-  case evt of
-    EvKey KUp [] -> scrollListUp >> eventloop vty
-    EvKey KDown [] -> scrollListDown >> eventloop vty
-    -- If we get 'q', quit.
-    EvKey (KASCII 'q') [] -> return ()
+  next <- handle evt
+  if next then
+      eventloop vty uiBuilder handle else
+      return ()
 
-    -- Any other key means keep looping (including terminal resize).
-    _ -> eventloop vty
+continue :: StateT AppState IO Bool
+continue = return True
+
+stop :: StateT AppState IO Bool
+stop = return False
+
+handleEvent :: Event -> StateT AppState IO Bool
+handleEvent (EvKey KUp []) = scrollListUp >> continue
+handleEvent (EvKey KDown []) = scrollListDown >> continue
+handleEvent (EvKey (KASCII 'q') []) = stop
+handleEvent _ = continue
 
 -- Construct the application state using the message map.
 mkAppState :: [(String, String)] -> AppState
@@ -95,7 +106,7 @@ main = do
                  , ("Seventh", "the seventh message")
                  ]
 
-  evalStateT (eventloop vty) $ mkAppState messages
+  evalStateT (eventloop vty buildUi handleEvent) $ mkAppState messages
   -- Clear the screen.
   reserve_display $ terminal vty
   shutdown vty
