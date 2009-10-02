@@ -3,7 +3,7 @@ module Main where
 import Data.Maybe ( fromJust )
 import Control.Applicative ( (<$>) )
 import Control.Monad.Trans ( liftIO )
-import Control.Monad.State ( StateT, put, get, gets, evalStateT )
+import Control.Monad.State ( StateT, gets, modify, evalStateT )
 
 import Graphics.Vty.Widgets.Base
 import Graphics.Vty.Widgets.List
@@ -61,12 +61,10 @@ eventloop vty = do
     -- If we got an up or down arrow key, modify the app state (list
     -- widget) and continue processing events.
     EvKey KUp [] -> do
-                  appst <- get
-                  put (appst { theList = scrollUp $ theList appst })
+                  modify (\appst -> appst { theList = scrollUp $ theList appst })
                   eventloop vty
     EvKey KDown [] -> do
-                  appst <- get
-                  put (appst { theList = scrollDown $ theList appst })
+                  modify (\appst -> appst { theList = scrollDown $ theList appst })
                   eventloop vty
 
     -- If we get 'q', quit.
