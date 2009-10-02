@@ -21,6 +21,7 @@ Library
 
   Hs-Source-Dirs:    src
   Exposed-Modules:
+          Graphics.Vty.Widgets.All
           Graphics.Vty.Widgets.Base
           Graphics.Vty.Widgets.List
           Graphics.Vty.Widgets.WrappedText

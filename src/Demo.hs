@@ -5,10 +5,8 @@ import Control.Applicative ( (<$>) )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.State ( StateT, gets, modify, evalStateT )
 
-import Graphics.Vty.Widgets.Base
-import Graphics.Vty.Widgets.List
-import Graphics.Vty.Widgets.WrappedText
 import Graphics.Vty
+import Graphics.Vty.Widgets.All
 
 titleAttr :: Attr
 titleAttr = def_attr
