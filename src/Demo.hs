@@ -32,8 +32,7 @@ buildUi = do
   let body = fromJust $ lookup (getSelected list) msgs
       ui = list
            <--> hFill titleAttr '-' 1
-           <--> wrappedText bodyAttr body
-           <--> vFill bodyAttr ' '
+           <--> (bottomPadded (wrappedText bodyAttr body))
            <--> footer
       footer = text titleAttr "- Status "
                <++> hFill titleAttr '-' 1
