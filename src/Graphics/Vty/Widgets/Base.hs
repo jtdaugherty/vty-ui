@@ -58,6 +58,9 @@ class Widget w where
     -- |The growth policy of this widget.
     growthPolicy :: w -> GrowthPolicy
 
+    -- |The primary attribute of this widget, used for augmentation.
+    primaryAttribute :: w -> Attr
+
 -- |A wrapper for all widget types used in normalizing heterogeneous
 -- lists of widgets.  See 'anyWidget'.
 data AnyWidget = forall a. (Widget a) => AnyWidget a
@@ -85,24 +88,32 @@ data HBox = forall a b. (Widget a, Widget b) => HBox a b
 instance Widget AnyWidget where
     growthPolicy (AnyWidget w) = growthPolicy w
     render s (AnyWidget w) = render s w
+    primaryAttribute (AnyWidget w) = primaryAttribute w
 
 instance Widget Text where
     growthPolicy _ = Static
     render _ (Text att content) = string att content
+    primaryAttribute (Text att _) = att
 
 instance Widget VFill where
     growthPolicy _ = GrowVertical
     render s (VFill att c) = char_fill att c (width s) (height s)
+    primaryAttribute (VFill att _) = att
 
 instance Widget HFill where
     growthPolicy _ = Static
     render s (HFill att c h) = char_fill att c (width s) (toEnum h)
+    primaryAttribute (HFill att _ _) = att
 
 instance Widget VBox where
     growthPolicy (VBox top bottom) =
         if t == GrowVertical
         then t else growthPolicy bottom
             where t = growthPolicy top
+
+    -- Not the best way to choose this, but it seems like anything
+    -- here is going to be arbitrary.
+    primaryAttribute (VBox top _) = primaryAttribute top
 
     render s (VBox top bottom) =
         t <-> b
@@ -134,6 +145,10 @@ instance Widget HBox where
         if l == GrowHorizontal
         then l else growthPolicy right
             where l = growthPolicy left
+
+    -- Not the best way to choose this, but it seems like anything
+    -- here is going to be arbitrary.
+    primaryAttribute (HBox left _) = primaryAttribute left
 
     render s (HBox left right) =
         t <|> b

@@ -49,6 +49,8 @@ wrappedText = WrappedText
 instance Widget WrappedText where
     growthPolicy _ = Static
 
+    primaryAttribute (WrappedText att _) = att
+
     render s (WrappedText attr str) =
         let widgets = map (render s . text attr) $ lines wrapped
             wrapped = wrap (fromEnum $ region_width s) str

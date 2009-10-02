@@ -112,6 +112,8 @@ instance Widget List where
     -- visible.
     growthPolicy _ = Static
 
+    primaryAttribute = normalAttr
+
     render s w =
         foldl (<->) (head widgets) (tail widgets)
             where
