@@ -48,6 +48,12 @@ data AppState = AppState { theList :: List
                          , theMessages :: [(String, String)]
                          }
 
+scrollListUp :: StateT AppState IO ()
+scrollListUp = modify (\appst -> appst { theList = scrollUp $ theList appst })
+
+scrollListDown :: StateT AppState IO ()
+scrollListDown = modify (\appst -> appst { theList = scrollDown $ theList appst })
+
 -- Process events from VTY, possibly modifying the application state.
 eventloop :: Vty -> StateT AppState IO ()
 eventloop vty = do
@@ -56,15 +62,8 @@ eventloop vty = do
                   pic_for_image <$> mkImage vty w >>= update vty
                   next_event vty
   case evt of
-    -- If we got an up or down arrow key, modify the app state (list
-    -- widget) and continue processing events.
-    EvKey KUp [] -> do
-                  modify (\appst -> appst { theList = scrollUp $ theList appst })
-                  eventloop vty
-    EvKey KDown [] -> do
-                  modify (\appst -> appst { theList = scrollDown $ theList appst })
-                  eventloop vty
-
+    EvKey KUp [] -> scrollListUp >> eventloop vty
+    EvKey KDown [] -> scrollListDown >> eventloop vty
     -- If we get 'q', quit.
     EvKey (KASCII 'q') [] -> return ()
 
