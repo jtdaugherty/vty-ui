@@ -7,6 +7,8 @@
 
 - Is VBox growthPolicy sane for all content configurations?
 
+- Is the current GrowthPolicy type sufficient?
+
 - Add functions to get access to information about specific widgets
   (attributes, height settings, etc.) so they aren't totally opaque
 
@@ -16,4 +18,8 @@
 - Widgets:
 
   - Scrollable area (a generalization of the List) which can wrap a
-    widget and make it scrollable in a confined space
+    widget and make it scrollable in a confined space.  To make this
+    work, we may need masking support in Vty.  Scrolling is really
+    just (top, left, widget, mask window size) where the window size
+    depends on available space and top/left positions are modified by
+    the application as scrolling requests are received.
