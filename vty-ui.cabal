@@ -23,6 +23,7 @@ Library
   Exposed-Modules:
           Graphics.Vty.Widgets.Base
           Graphics.Vty.Widgets.List
+          Graphics.Vty.Widgets.WrappedText
 
 Executable vty-ui-demo
   Hs-Source-Dirs:  src

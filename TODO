@@ -1,7 +1,4 @@
 
-- WrappedText widget? (Just plain vty "string" truncates at the
-  terminal boundary!)
-
 - List: implement a "resizeWindow" function which will adjust the
   visible window size; one might want to size a list widget's visible
   window as a function of terminal height.  This should automatically

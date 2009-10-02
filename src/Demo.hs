@@ -7,6 +7,7 @@ import Control.Monad.State ( StateT, put, get, gets, evalStateT )
 
 import Graphics.Vty.Widgets.Base
 import Graphics.Vty.Widgets.List
+import Graphics.Vty.Widgets.WrappedText
 import Graphics.Vty
 
 titleAttr :: Attr
@@ -33,7 +34,7 @@ buildUi = do
   let body = fromJust $ lookup (getSelected list) msgs
       ui = list
            <--> hFill titleAttr '-' 1
-           <--> text bodyAttr body
+           <--> wrappedText bodyAttr body
            <--> vFill bodyAttr ' '
            <--> footer
       footer = text titleAttr "- Status "
@@ -87,7 +88,10 @@ main = do
   vty <- mkVty
 
   -- The data that we'll present in the interface.
-  let messages = [ ("First", "the first message")
+  let messages = [ ("First", "This text is long enough that it will get wrapped \
+                             \if you resize your terminal to something small. \
+                             \It also contains enough text to get truncated at \
+                             \the bottom if the display area is too small." )
                  , ("Second", "the second message")
                  , ("Third", "the third message")
                  , ("Fourth", "the fourth message")
