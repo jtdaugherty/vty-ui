@@ -12,3 +12,8 @@
 
 - Box layout widget documentation so it's clear from the docs how
   widgets get laid out
+
+- Widgets:
+
+  - Scrollable area (a generalization of the List) which can wrap a
+    widget and make it scrollable in a confined space
