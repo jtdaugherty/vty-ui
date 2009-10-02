@@ -23,3 +23,11 @@
     just (top, left, widget, mask window size) where the window size
     depends on available space and top/left positions are modified by
     the application as scrolling requests are received.
+
+  - horizontal / vertical boxes which can take absolute values or
+    percentages to determine how to allocate space to their children
+    (this may entail re-tooling the existing types to take one of
+    various space allocation specifiers)
+
+  - HBox / VBox compositions which have styled borders in between
+    their children
