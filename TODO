@@ -27,7 +27,12 @@
   - horizontal / vertical boxes which can take absolute values or
     percentages to determine how to allocate space to their children
     (this may entail re-tooling the existing types to take one of
-    various space allocation specifiers)
+    various space allocation specifiers).  Maybe something like:
+
+    SpaceAllocation = Absolute Int
+                    | Percent Int
+                    | Implicit (current behavior)
+    (Widget a, Widget b) => HBox SpaceAllocation a b
 
   - HBox / VBox compositions which have styled borders in between
     their children
