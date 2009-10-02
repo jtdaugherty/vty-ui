@@ -1,3 +1,5 @@
+-- |This module provides a widget which automatically wraps text in
+-- the available space.  To create a 'WrappedText', see 'wrappedText'.
 module Graphics.Vty.Widgets.WrappedText
     ( WrappedText
     , wrappedText
@@ -15,6 +17,8 @@ import Graphics.Vty.Widgets.Base
     , text
     )
 
+-- |A text widget which automatically wraps its contents to fit in the
+-- available space.
 data WrappedText = WrappedText Attr String
 
 nextLine :: Int -> String -> (String, Maybe String)
@@ -37,6 +41,8 @@ wrap cols s = first ++ "\n" ++ rest
     where (first, mRest) = nextLine cols s
           rest = maybe "" (wrap cols) mRest
 
+-- |Create a 'WrappedText' widget from the specified attribute and
+-- text.
 wrappedText :: Attr -> String -> WrappedText
 wrappedText = WrappedText
 
