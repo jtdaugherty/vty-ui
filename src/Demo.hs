@@ -3,7 +3,7 @@ module Main where
 import Data.Maybe ( fromJust )
 import Control.Applicative ( (<$>) )
 import Control.Monad.Trans ( liftIO )
-import Control.Monad.State ( StateT, gets, modify, evalStateT )
+import Control.Monad.State ( StateT, get, modify, evalStateT )
 
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
@@ -23,21 +23,22 @@ selAttr = def_attr
            `with_back_color` yellow
            `with_fore_color` black
 
--- Construct the user interface based on the contents of the
--- application state.
-buildUi :: StateT AppState IO VBox
-buildUi = do
-  list <- gets theList
-  msgs <- gets theMessages
+buildUi :: AppState -> VBox
+buildUi appst =
   let body = fromJust $ lookup (getSelected list) msgs
-      ui = list
-           <--> hBorder titleAttr
-           <--> (bottomPadded (wrappedText bodyAttr body))
-           <--> footer
       footer = text titleAttr "- Status "
                <++> hFill titleAttr '-' 1
+      msgs = theMessages appst
+      list = theList appst
+  in list
+      <--> hBorder titleAttr
+      <--> (bottomPadded (wrappedText bodyAttr body))
+      <--> footer
 
-  return ui
+-- Construct the user interface based on the contents of the
+-- application state.
+uiFromState :: StateT AppState IO VBox
+uiFromState = buildUi <$> get
 
 -- The application state; this encapsulates what can vary based on
 -- user input and what is used to construct the interface.  This is a
@@ -105,7 +106,7 @@ main = do
                  , ("Seventh", "the seventh message")
                  ]
 
-  evalStateT (eventloop vty buildUi handleEvent) $ mkAppState messages
+  evalStateT (eventloop vty uiFromState handleEvent) $ mkAppState messages
   -- Clear the screen.
   reserve_display $ terminal vty
   shutdown vty
