@@ -31,7 +31,7 @@ buildUi = do
   msgs <- gets theMessages
   let body = fromJust $ lookup (getSelected list) msgs
       ui = list
-           <--> hFill titleAttr '-' 1
+           <--> hBorder titleAttr
            <--> (bottomPadded (wrappedText bodyAttr body))
            <--> footer
       footer = text titleAttr "- Status "

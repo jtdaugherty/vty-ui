@@ -59,7 +59,3 @@
     know prior to rendering how much space you will need to consume;
     in other cases, you need to wait until rendering has occurred and
     measure the size of the resulting image.
-
-  - HBox / VBox compositions which have styled borders in between
-    their children (absolutely-sized children of boxes will make this
-    trivial)
