@@ -46,7 +46,7 @@ wrappedText :: Attr -> String -> WrappedText
 wrappedText = WrappedText
 
 instance Widget WrappedText where
-    growHorizontal _ = False
+    growHorizontal _ = True
     growVertical _ = False
 
     primaryAttribute (WrappedText att _) = att
