@@ -40,22 +40,3 @@
     for the "first" child and b rows or columns for the "second"
     child.  Auto implies that the box may grow to accomodate the size
     of its children.
-
-    Growth policy of boxes based on size policy:
-
-    growthPolicy Auto = Grow(Vertical|Horizontal)
-    growthPolicy (Percent _) = Grow(Vertical|Horizontal)
-    growthPolicy (Absolute _ _) = Static
-
-    A box can grow to fill available space if its children do not have
-    a fixed size.  Currently that is already expressed by letting the
-    most restrictive child growth policy propagate to the parent box
-    container.
-
-  - Is there a need to distinguish between GrowHorizontal and
-    GrowVertical?  Need to distinguish clearly between "size that the
-    user can control" and "policy for how to use available space".
-    Part of the problem with unifying these is that sometimes you can
-    know prior to rendering how much space you will need to consume;
-    in other cases, you need to wait until rendering has occurred and
-    measure the size of the resulting image.
