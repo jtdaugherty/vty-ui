@@ -9,7 +9,6 @@
 -- and 'vBox').
 module Graphics.Vty.Widgets.Base
     ( Widget(..)
-    , GrowthPolicy(..)
     , mkImage
     , AnyWidget
     , Text
@@ -35,28 +34,25 @@ import Graphics.Vty ( DisplayRegion(DisplayRegion), Vty, Image, Attr
                     , image_height, region_width, region_height
                     , terminal, display_bounds )
 
--- |The growth policy of a widget determines how its container will
--- reserve space to render it.
-data GrowthPolicy = Static
-                  -- ^'Static' widgets have a fixed size that is not
-                  -- influenced by available space
-                  | GrowVertical
-                  -- ^'GrowVertical' widgets may grow vertically with
-                  -- available space
-                  | GrowHorizontal
-                    -- ^'GrowHorizontal' widgets may grow horizontally
-                    -- with available space
-                    deriving (Show, Eq)
-
--- |The class of user interface widgets.
+-- |The class of user interface widgets.  Note that the growth
+-- properties 'growHorizontal' and 'growVertical' are used to control
+-- rendering order; if a widget /can/ grow to fill available space,
+-- then neighboring fixed-size widgets will be rendered first so
+-- remaining space can be computed.  Then, variable-sized (growable)
+-- widgets will be rendered last to consume that space.
 class Widget w where
     -- |Given a widget, render it with the given dimensions.  The
     -- resulting Image should not be larger than the specified
     -- dimensions, but may be smaller.
     render :: DisplayRegion -> w -> Image
 
-    -- |The growth policy of this widget.
-    growthPolicy :: w -> GrowthPolicy
+    -- |Will this widget expand to take advantage of available
+    -- horizontal space?
+    growHorizontal :: w -> Bool
+
+    -- |Will this widget expand to take advantage of available
+    -- vertical space?
+    growVertical :: w -> Bool
 
     -- |The primary attribute of this widget, used for augmentation.
     primaryAttribute :: w -> Attr
@@ -86,30 +82,35 @@ data VBox = forall a b. (Widget a, Widget b) => VBox a b
 data HBox = forall a b. (Widget a, Widget b) => HBox a b
 
 instance Widget AnyWidget where
-    growthPolicy (AnyWidget w) = growthPolicy w
+    growHorizontal (AnyWidget w) = growHorizontal w
+    growVertical (AnyWidget w) = growVertical w
     render s (AnyWidget w) = render s w
     primaryAttribute (AnyWidget w) = primaryAttribute w
 
 instance Widget Text where
-    growthPolicy _ = Static
+    growHorizontal _ = False
+    growVertical _ = False
     render _ (Text att content) = string att content
     primaryAttribute (Text att _) = att
 
 instance Widget VFill where
-    growthPolicy _ = GrowVertical
+    growHorizontal _ = False
+    growVertical _ = True
     render s (VFill att c) = char_fill att c (width s) (height s)
     primaryAttribute (VFill att _) = att
 
 instance Widget HFill where
-    growthPolicy _ = Static
+    growHorizontal _ = True
+    growVertical _ = False
     render s (HFill att c h) = char_fill att c (width s) (toEnum h)
     primaryAttribute (HFill att _ _) = att
 
 instance Widget VBox where
-    growthPolicy (VBox top bottom) =
-        if t == GrowVertical
-        then t else growthPolicy bottom
-            where t = growthPolicy top
+    growHorizontal (VBox top bottom) =
+        growHorizontal top || growHorizontal bottom
+
+    growVertical (VBox top bottom) =
+        growVertical top || growVertical bottom
 
     -- Not the best way to choose this, but it seems like anything
     -- here is going to be arbitrary.
@@ -132,19 +133,17 @@ instance Widget VBox where
                                       renderedBottom = render s bottom
                                       s' = s `withHeight` (height s - image_height renderedBottom)
                                   in (renderedTop, renderedBottom)
-              (t, b) = case (growthPolicy top, growthPolicy bottom) of
-                         (GrowVertical, GrowVertical) -> renderHalves
-                         (Static, _) -> renderTopFirst
-                         (_, Static) -> renderBottomFirst
-                         -- Horizontal contents take precedence
-                         (GrowHorizontal, _) -> renderTopFirst
-                         (_, GrowHorizontal) -> renderBottomFirst
+              (t, b) = case (growVertical top, growVertical bottom) of
+                         (True, True) -> renderHalves
+                         (False, _) -> renderTopFirst
+                         (_, False) -> renderBottomFirst
 
 instance Widget HBox where
-    growthPolicy (HBox left right) =
-        if l == GrowHorizontal
-        then l else growthPolicy right
-            where l = growthPolicy left
+    growHorizontal (HBox left right) =
+        growHorizontal left || growHorizontal right
+
+    growVertical (HBox left right) =
+        growVertical left || growVertical right
 
     -- Not the best way to choose this, but it seems like anything
     -- here is going to be arbitrary.
@@ -169,12 +168,10 @@ instance Widget HBox where
                                      s' = region (width s - image_width renderedRight)
                                           (image_height renderedRight)
                                  in (renderedLeft, renderedRight)
-              (t, b) = case (growthPolicy left, growthPolicy right) of
-                         (GrowHorizontal, GrowHorizontal) -> renderHalves
-                         (Static, _) -> renderLeftFirst
-                         (_, Static) -> renderRightFirst
-                         (GrowVertical, GrowVertical) -> renderHalves
-                         (_, _) -> renderLeftFirst
+              (t, b) = case (growHorizontal left, growHorizontal right) of
+                         (True, True) -> renderHalves
+                         (False, _) -> renderLeftFirst
+                         (_, False) -> renderRightFirst
 
 width :: DisplayRegion -> Word
 width = region_width

@@ -28,7 +28,6 @@ import Graphics.Vty ( Attr, (<->) )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
     , text
-    , GrowthPolicy(Static)
     )
 
 -- |The list widget type.
@@ -108,9 +107,8 @@ getVisibleItems list =
              | i <- [start..adjustedStop] ]
 
 instance Widget List where
-    -- Statically sized, because we know how many items should be
-    -- visible.
-    growthPolicy _ = Static
+    growHorizontal _ = False
+    growVertical _ = False
 
     primaryAttribute = normalAttr
 

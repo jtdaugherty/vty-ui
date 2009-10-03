@@ -13,7 +13,6 @@ import Graphics.Vty
     )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
-    , GrowthPolicy(Static)
     , text
     )
 
@@ -47,7 +46,8 @@ wrappedText :: Attr -> String -> WrappedText
 wrappedText = WrappedText
 
 instance Widget WrappedText where
-    growthPolicy _ = Static
+    growHorizontal _ = False
+    growVertical _ = False
 
     primaryAttribute (WrappedText att _) = att
 
