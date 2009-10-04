@@ -10,16 +10,18 @@
 --
 -- * An internal pointer to the start of the visible window, which
 --   automatically shifts as the list is scrolled
---
--- To create a list, see 'mkList'.  To modify the list's state, see
--- 'scrollDown' and 'scrollUp'.  To inspect the list, see
--- 'getSelected', 'getSelectedIndex', and 'getVisibleItems'.
 module Graphics.Vty.Widgets.List
-    ( List ( selectedIndex )
+    ( List
+    -- ** List creation
     , mkList
+    -- ** List manipulation
     , scrollDown
     , scrollUp
+    -- ** List inspection
     , getSelected
+    , selectedIndex
+    , scrollTopIndex
+    , scrollWindowSize
     , getVisibleItems
     )
 where
@@ -33,9 +35,9 @@ import Graphics.Vty.Widgets.Base
 -- |The list widget type.
 data List = List { normalAttr :: Attr
                  , selectedAttr :: Attr
-                 , selectedIndex :: Int -- ^Get the currently selected list index.
-                 , scrollTopIndex :: Int
-                 , scrollWindowSize :: Int
+                 , selectedIndex :: Int -- ^The currently selected list index.
+                 , scrollTopIndex :: Int -- ^The start index of the window of visible list items.
+                 , scrollWindowSize :: Int -- ^The size of the window of visible list items.
                  , listItems :: [String]
                  }
 
