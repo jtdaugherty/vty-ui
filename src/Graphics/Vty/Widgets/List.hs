@@ -12,6 +12,7 @@
 --   automatically shifts as the list is scrolled
 module Graphics.Vty.Widgets.List
     ( List
+    , ListItem
     -- ** List creation
     , mkList
     -- ** List manipulation
@@ -35,6 +36,8 @@ import Graphics.Vty.Widgets.Base
     , hFill
     )
 
+-- |A list item. Each item contains an arbitrary internal identifier
+-- @a@ and a label.
 type ListItem a = (a, String)
 
 -- |The list widget type.
