@@ -54,7 +54,10 @@ class Widget w where
     -- vertical space?
     growVertical :: w -> Bool
 
-    -- |The primary attribute of this widget, used for augmentation.
+    -- |The primary attribute of this widget, used when composing
+    -- widgets.  For example, if you want to compose a widget /A/ with
+    -- a space-filling widget /B/, you probably want /B/'s text
+    -- attributes to be identical to those of /A/.
     primaryAttribute :: w -> Attr
 
 -- |A wrapper for all widget types used in normalizing heterogeneous
