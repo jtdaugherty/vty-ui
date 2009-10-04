@@ -8,10 +8,10 @@ where
 
 import Text.Trans.Wrap ( wrap )
 import Graphics.Vty
-    ( (<->)
-    , Attr
+    ( Attr
     , region_width
     , region_height
+    , vert_cat
     )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
@@ -36,13 +36,10 @@ instance Widget WrappedText where
     primaryAttribute (WrappedText att _) = att
 
     render s (WrappedText attr str) =
-        let widgets = map (render s . convert) $ lines wrapped
+        let images = map (render s . convert) $ lines wrapped
             wrapped = wrap (fromEnum $ region_width s) str
             -- Convert empty lines into hFills because otherwise Vty
             -- will collapse them.
             convert [] = anyWidget $ hFill attr ' ' 1
             convert line = anyWidget $ text attr line
-        in if length widgets == 1
-           then head widgets
-           else foldl (<->) (head widgets)
-                    (take (fromEnum $ region_height s - 1) $ tail widgets)
+        in vert_cat $ take (fromEnum $ region_height s) images
