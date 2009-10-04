@@ -30,9 +30,9 @@ where
 import GHC.Word ( Word )
 
 import Graphics.Vty ( DisplayRegion(DisplayRegion), Vty, Image, Attr
-                    , string, char_fill, (<|>), image_width
-                    , image_height, region_width, region_height
-                    , terminal, display_bounds, vert_cat )
+                    , string, char_fill, image_width, image_height
+                    , region_width, region_height, terminal
+                    , display_bounds, vert_cat, horiz_cat )
 
 -- |The class of user interface widgets.  Note that the growth
 -- properties 'growHorizontal' and 'growVertical' are used to control
@@ -159,28 +159,32 @@ instance Widget HBox where
     primaryAttribute (HBox left _) = primaryAttribute left
 
     render s (HBox left right) =
-        t <|> b
+        horiz_cat ws
             where
               renderHalves = let half = s `withWidth` div (width s) 2
                                  half' = if width s `mod` 2 == 0
                                          then half
                                          else region (width half + 1) (height half)
-                             in ( render half left
-                                , render half' right )
+                             in [ render half left
+                                , render half' right ]
               renderLeftFirst = let renderedLeft = render s left
                                     renderedRight = render s' right
-                                    s' = region (width s - image_width renderedLeft)
-                                         (image_height renderedLeft)
-                                in (renderedLeft, renderedRight)
+                                    remainingWidth = width s - image_width renderedLeft
+                                    s' = region remainingWidth (image_height renderedLeft)
+                                in if image_width renderedLeft >= width s
+                                   then [renderedLeft]
+                                   else [renderedLeft, renderedRight]
               renderRightFirst = let renderedLeft = render s' left
                                      renderedRight = render s right
-                                     s' = region (width s - image_width renderedRight)
-                                          (image_height renderedRight)
-                                 in (renderedLeft, renderedRight)
-              (t, b) = case (growHorizontal left, growHorizontal right) of
-                         (True, True) -> renderHalves
-                         (False, _) -> renderLeftFirst
-                         (_, False) -> renderRightFirst
+                                     remainingWidth = width s - image_width renderedRight
+                                     s' = region remainingWidth (image_height renderedRight)
+                                in if image_width renderedRight >= width s
+                                   then [renderedRight]
+                                   else [renderedLeft, renderedRight]
+              ws = case (growHorizontal left, growHorizontal right) of
+                     (True, True) -> renderHalves
+                     (False, _) -> renderLeftFirst
+                     (_, False) -> renderRightFirst
 
 width :: DisplayRegion -> Word
 width = region_width
