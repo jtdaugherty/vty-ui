@@ -40,6 +40,3 @@
     for the "first" child and b rows or columns for the "second"
     child.  Auto implies that the box may grow to accomodate the size
     of its children.
-
-  - Address issue where, e.g., a WrappedText's contents do not fit
-    into available space, causing VTY to explode

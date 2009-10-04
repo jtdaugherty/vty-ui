@@ -10,6 +10,7 @@ import Graphics.Vty
     ( (<->)
     , Attr
     , region_width
+    , region_height
     )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
@@ -54,4 +55,7 @@ instance Widget WrappedText where
     render s (WrappedText attr str) =
         let widgets = map (render s . text attr) $ lines wrapped
             wrapped = wrap (fromEnum $ region_width s) str
-        in foldl (<->) (head widgets) (tail widgets)
+        in if length widgets == 1
+           then head widgets
+           else foldl (<->) (head widgets)
+                    (take (fromEnum $ region_height s - 1) $ tail widgets)
