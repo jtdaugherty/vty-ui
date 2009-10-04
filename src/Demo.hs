@@ -30,7 +30,7 @@ selAttr = def_attr
 
 buildUi :: AppState -> Bordered
 buildUi appst =
-  let body = fromJust $ lookup (getSelected list) msgs
+  let body = fromJust $ lookup (fst $ getSelected list) msgs
       currentItem = selectedIndex list + 1
       footer = (text titleAttr $ " " ++ (show currentItem) ++ "/" ++ (show $ length msgs) ++ " ")
                <++> hFill titleAttr '-' 1
@@ -50,7 +50,7 @@ uiFromState = buildUi <$> get
 -- user input and what is used to construct the interface.  This is a
 -- place for widgets whose state need to be stored so they can be
 -- modified and used to reconstruct the interface as input is handled
-data AppState = AppState { theList :: List
+data AppState = AppState { theList :: List String
                          , theMessages :: [(String, String)]
                          }
 
@@ -90,7 +90,8 @@ handleEvent _ = continue
 -- Construct the application state using the message map.
 mkAppState :: [(String, String)] -> AppState
 mkAppState messages =
-    let list = mkList bodyAttr selAttr 3 $ map fst messages
+    let list = mkList bodyAttr selAttr 3 $ map (\l -> (l, l)) labels
+        labels = map fst messages
     in AppState { theList = list
                 , theMessages = messages
                 }

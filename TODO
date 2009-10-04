@@ -38,10 +38,4 @@
 - Generalize list scrolling function to take an amount to scroll by
   (useful for paging down)
 
-- Generalize list to associate an internal identifier with each
-  displayed item (useful for decoupling the interface from the data
-  being represented)
-
-  - Once the content of the list has been generalized, it will be
-    easier to generalize lists to take a list of widgets instead of
-    strings
+- Generalize lists to take a list of widgets instead of strings
