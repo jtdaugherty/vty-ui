@@ -16,6 +16,8 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
     , text
+    , hFill
+    , anyWidget
     )
 
 -- |A text widget which automatically wraps its contents to fit in the
@@ -34,8 +36,12 @@ instance Widget WrappedText where
     primaryAttribute (WrappedText att _) = att
 
     render s (WrappedText attr str) =
-        let widgets = map (render s . text attr) $ lines wrapped
+        let widgets = map (render s . convert) $ lines wrapped
             wrapped = wrap (fromEnum $ region_width s) str
+            -- Convert empty lines into hFills because otherwise Vty
+            -- will collapse them.
+            convert [] = anyWidget $ hFill attr ' ' 1
+            convert line = anyWidget $ text attr line
         in if length widgets == 1
            then head widgets
            else foldl (<->) (head widgets)
