@@ -38,10 +38,15 @@ import Graphics.Vty.Widgets.Base
 -- |The list widget type.
 data List = List { normalAttr :: Attr
                  , selectedAttr :: Attr
-                 , selectedIndex :: Int -- ^The currently selected list index.
-                 , scrollTopIndex :: Int -- ^The start index of the window of visible list items.
-                 , scrollWindowSize :: Int -- ^The size of the window of visible list items.
-                 , listItems :: [String] -- ^The items in the list.
+                 , selectedIndex :: Int
+                 -- ^The currently selected list index.
+                 , scrollTopIndex :: Int
+                 -- ^The start index of the window of visible list
+                 -- items.
+                 , scrollWindowSize :: Int
+                 -- ^The size of the window of visible list items.
+                 , listItems :: [String]
+                 -- ^The items in the list.
                  }
 
 -- |Create a new list.  Emtpy lists are not allowed.
