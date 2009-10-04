@@ -1,6 +1,7 @@
 -- |This module provides text-wrapping functionality.
 module Text.Trans.Wrap
     ( wrap
+    , wrapLine
     )
 where
 
