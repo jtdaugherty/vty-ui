@@ -30,9 +30,9 @@ where
 import GHC.Word ( Word )
 
 import Graphics.Vty ( DisplayRegion(DisplayRegion), Vty, Image, Attr
-                    , string, char_fill, (<|>), (<->), image_width
+                    , string, char_fill, (<|>), image_width
                     , image_height, region_width, region_height
-                    , terminal, display_bounds )
+                    , terminal, display_bounds, vert_cat )
 
 -- |The class of user interface widgets.  Note that the growth
 -- properties 'growHorizontal' and 'growVertical' are used to control
@@ -120,26 +120,32 @@ instance Widget VBox where
     primaryAttribute (VBox top _) = primaryAttribute top
 
     render s (VBox top bottom) =
-        t <-> b
+        vert_cat ws
             where
               renderHalves = let half = s `withHeight` div (height s) 2
                                  half' = if height s `mod` 2 == 0
                                          then half
                                          else region (width half) (height half + 1)
-                             in ( render half top
-                                , render half' bottom )
+                             in [ render half top
+                                , render half' bottom ]
               renderTopFirst = let renderedTop = render s top
                                    renderedBottom = render s' bottom
-                                   s' = s `withHeight` (height s - image_height renderedTop)
-                               in (renderedTop, renderedBottom)
+                                   remaining = height s - image_height renderedTop
+                                   s' = s `withHeight` remaining
+                               in if image_height renderedTop >= height s
+                                  then [renderedTop]
+                                  else [renderedTop, renderedBottom]
               renderBottomFirst = let renderedTop = render s' top
                                       renderedBottom = render s bottom
-                                      s' = s `withHeight` (height s - image_height renderedBottom)
-                                  in (renderedTop, renderedBottom)
-              (t, b) = case (growVertical top, growVertical bottom) of
-                         (True, True) -> renderHalves
-                         (False, _) -> renderTopFirst
-                         (_, False) -> renderBottomFirst
+                                      remaining = height s - image_height renderedBottom
+                                      s' = s `withHeight` remaining
+                                  in if image_height renderedBottom >= height s
+                                     then [renderedBottom]
+                                     else [renderedTop, renderedBottom]
+              ws = case (growVertical top, growVertical bottom) of
+                     (True, True) -> renderHalves
+                     (False, _) -> renderTopFirst
+                     (_, False) -> renderBottomFirst
 
 instance Widget HBox where
     growHorizontal (HBox left right) =
