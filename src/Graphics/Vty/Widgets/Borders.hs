@@ -13,14 +13,18 @@ where
 
 import Graphics.Vty
     ( Attr
+    , DisplayRegion(DisplayRegion)
+    , (<|>)
     , char_fill
     , region_height
     , region_width
+    , image_width
+    , image_height
+    , vert_cat
     )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
     , (<++>)
-    , (<-->)
     , text
     )
 
@@ -58,11 +62,20 @@ instance Widget Bordered where
     primaryAttribute (Bordered att _) = att
     withAttribute (Bordered _ w) att = Bordered att (withAttribute w att)
     render s (Bordered att w) =
-        render s (topBottom <--> middle <--> topBottom)
+        -- Render the contained widget with enough room to draw
+        -- borders.  Then, use the size of the rendered widget to
+        -- constrain the space used by the (expanding) borders.
+        vert_cat [topBottom, middle, topBottom]
             where
-              topBottom = corner <++> hBorder att <++> corner
-              middle = vBorder att <++> w <++> vBorder att
+              constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
+              renderedChild = render constrained w
+              adjusted = DisplayRegion
+                         (image_width renderedChild + 2)
+                         (image_height renderedChild)
               corner = text att "+"
+              topBottom = render adjusted (corner <++> hBorder att <++> corner)
+              leftRight = render adjusted $ vBorder att
+              middle = leftRight <|> renderedChild <|> leftRight
 
 -- |Create a horizontal border.
 hBorder :: Attr -> HBorder
