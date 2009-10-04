@@ -27,6 +27,8 @@ Library
           Graphics.Vty.Widgets.List
           Graphics.Vty.Widgets.WrappedText
           Graphics.Vty.Widgets.Borders
+  Other-Modules:
+          Text.Trans.Wrap
 
 Executable vty-ui-demo
   Hs-Source-Dirs:  src
