@@ -31,6 +31,8 @@ import Graphics.Vty ( Attr, (<->) )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
     , text
+    , anyWidget
+    , hFill
     )
 
 -- |The list widget type.
@@ -118,7 +120,10 @@ instance Widget List where
     render s w =
         foldl (<->) (head widgets) (tail widgets)
             where
-              widgets = map (render s . mkWidget) (getVisibleItems w)
+              widgets = map (render s) (visible ++ filler)
+              visible = map (anyWidget . mkWidget) $ getVisibleItems w
+              filler = replicate (scrollWindowSize w - length visible)
+                       (anyWidget $ hFill (normalAttr w) ' ' 1)
               mkWidget (str, selected) = let att = if selected
                                                    then selectedAttr
                                                    else normalAttr
