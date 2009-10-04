@@ -18,6 +18,7 @@ module Graphics.Vty.Widgets.List
     , scrollDown
     , scrollUp
     -- ** List inspection
+    , listItems
     , getSelected
     , selectedIndex
     , scrollTopIndex
@@ -38,7 +39,7 @@ data List = List { normalAttr :: Attr
                  , selectedIndex :: Int -- ^The currently selected list index.
                  , scrollTopIndex :: Int -- ^The start index of the window of visible list items.
                  , scrollWindowSize :: Int -- ^The size of the window of visible list items.
-                 , listItems :: [String]
+                 , listItems :: [String] -- ^The items in the list.
                  }
 
 -- |Create a new list.  Emtpy lists are not allowed.
