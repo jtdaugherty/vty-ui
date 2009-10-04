@@ -13,13 +13,14 @@
 --
 -- To create a list, see 'mkList'.  To modify the list's state, see
 -- 'scrollDown' and 'scrollUp'.  To inspect the list, see
--- 'getSelected' and 'getVisibleItems'.
+-- 'getSelected', 'getSelectedIndex', and 'getVisibleItems'.
 module Graphics.Vty.Widgets.List
     ( List
     , mkList
     , scrollDown
     , scrollUp
     , getSelected
+    , getSelectedIndex
     , getVisibleItems
     )
 where
@@ -54,6 +55,10 @@ mkList normAttr selAttr swSize contents = List normAttr selAttr 0 0 swSize conte
 -- |Get the currently selected list item.
 getSelected :: List -> String
 getSelected list = (listItems list) !! (selectedIndex list)
+
+-- |Get the currently selected list index.
+getSelectedIndex :: List -> Int
+getSelectedIndex = selectedIndex
 
 -- |Scroll a list down one position and return the new scrolled list.
 -- This automatically takes care of managing all list state:
