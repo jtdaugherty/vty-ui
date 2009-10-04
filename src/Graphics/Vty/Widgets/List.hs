@@ -15,12 +15,11 @@
 -- 'scrollDown' and 'scrollUp'.  To inspect the list, see
 -- 'getSelected', 'getSelectedIndex', and 'getVisibleItems'.
 module Graphics.Vty.Widgets.List
-    ( List
+    ( List ( selectedIndex )
     , mkList
     , scrollDown
     , scrollUp
     , getSelected
-    , getSelectedIndex
     , getVisibleItems
     )
 where
@@ -34,7 +33,7 @@ import Graphics.Vty.Widgets.Base
 -- |The list widget type.
 data List = List { normalAttr :: Attr
                  , selectedAttr :: Attr
-                 , selectedIndex :: Int
+                 , selectedIndex :: Int -- ^Get the currently selected list index.
                  , scrollTopIndex :: Int
                  , scrollWindowSize :: Int
                  , listItems :: [String]
@@ -55,10 +54,6 @@ mkList normAttr selAttr swSize contents = List normAttr selAttr 0 0 swSize conte
 -- |Get the currently selected list item.
 getSelected :: List -> String
 getSelected list = (listItems list) !! (selectedIndex list)
-
--- |Get the currently selected list index.
-getSelectedIndex :: List -> Int
-getSelectedIndex = selectedIndex
 
 -- |Scroll a list down one position and return the new scrolled list.
 -- This automatically takes care of managing all list state:

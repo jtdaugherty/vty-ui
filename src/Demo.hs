@@ -31,7 +31,7 @@ selAttr = def_attr
 buildUi :: AppState -> Bordered
 buildUi appst =
   let body = fromJust $ lookup (getSelected list) msgs
-      currentItem = getSelectedIndex list + 1
+      currentItem = selectedIndex list + 1
       footer = (text titleAttr $ " " ++ (show currentItem) ++ "/" ++ (show $ length msgs) ++ " ")
                <++> hFill titleAttr '-' 1
       msgs = theMessages appst
