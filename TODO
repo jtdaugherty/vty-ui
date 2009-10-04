@@ -40,3 +40,14 @@
     for the "first" child and b rows or columns for the "second"
     child.  Auto implies that the box may grow to accomodate the size
     of its children.
+
+  - table widget for laying out name/value pairs in nice format
+
+  - support for right-aligning text
+
+- Generalize list scrolling function to take an amount to scroll by
+  (useful for paging down)
+
+- Generalize list to associate an internal identifier with each
+  displayed item (useful for decoupling the interface from the data
+  being represented)
