@@ -55,13 +55,10 @@ instance Widget Bordered where
     growHorizontal (Bordered _ w) = growHorizontal w
     primaryAttribute (Bordered _ w) = primaryAttribute w
     render s (Bordered att w) =
-        render s (top
-                 <--> middle
-                  <--> bottom)
+        render s (topBottom <--> middle <--> topBottom)
             where
-              top = corner <++> hBorder att <++> corner
+              topBottom = corner <++> hBorder att <++> corner
               middle = vBorder att <++> w <++> vBorder att
-              bottom = corner <++> hBorder att <++> corner
               corner = text att "+"
 
 -- |Create a horizontal border.
