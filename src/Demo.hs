@@ -13,6 +13,11 @@ titleAttr = def_attr
             `with_back_color` blue
             `with_fore_color` bright_white
 
+boxAttr :: Attr
+boxAttr = def_attr
+            `with_back_color` black
+            `with_fore_color` bright_yellow
+
 bodyAttr :: Attr
 bodyAttr = def_attr
            `with_back_color` black
@@ -23,21 +28,21 @@ selAttr = def_attr
            `with_back_color` yellow
            `with_fore_color` black
 
-buildUi :: AppState -> VBox
+buildUi :: AppState -> Bordered
 buildUi appst =
   let body = fromJust $ lookup (getSelected list) msgs
       footer = text titleAttr "- Status "
                <++> hFill titleAttr '-' 1
       msgs = theMessages appst
       list = theList appst
-  in list
+  in bordered boxAttr $ list
       <--> hBorder titleAttr
       <--> (bottomPadded (wrappedText bodyAttr body))
       <--> footer
 
 -- Construct the user interface based on the contents of the
 -- application state.
-uiFromState :: StateT AppState IO VBox
+uiFromState :: StateT AppState IO Bordered
 uiFromState = buildUi <$> get
 
 -- The application state; this encapsulates what can vary based on
