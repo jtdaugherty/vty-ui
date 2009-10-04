@@ -60,6 +60,9 @@ class Widget w where
     -- attributes to be identical to those of /A/.
     primaryAttribute :: w -> Attr
 
+    -- |Apply the specified attribute to this widget.
+    withAttribute :: w -> Attr -> w
+
 -- |A wrapper for all widget types used in normalizing heterogeneous
 -- lists of widgets.  See 'anyWidget'.
 data AnyWidget = forall a. (Widget a) => AnyWidget a
@@ -113,24 +116,28 @@ instance Widget AnyWidget where
     growVertical (AnyWidget w) = growVertical w
     render s (AnyWidget w) = render s w
     primaryAttribute (AnyWidget w) = primaryAttribute w
+    withAttribute (AnyWidget w) att = AnyWidget (withAttribute w att)
 
 instance Widget Text where
     growHorizontal _ = False
     growVertical _ = False
     render _ (Text att content) = string att content
     primaryAttribute (Text att _) = att
+    withAttribute (Text _ content) att = Text att content
 
 instance Widget VFill where
     growHorizontal _ = False
     growVertical _ = True
     render s (VFill att c) = char_fill att c (width s) (height s)
     primaryAttribute (VFill att _) = att
+    withAttribute (VFill _ c) att = VFill att c
 
 instance Widget HFill where
     growHorizontal _ = True
     growVertical _ = False
     render s (HFill att c h) = char_fill att c (width s) (toEnum h)
     primaryAttribute (HFill att _ _) = att
+    withAttribute (HFill _ c h) att = HFill att c h
 
 instance Widget VBox where
     growHorizontal (VBox top bottom) =
@@ -138,6 +145,10 @@ instance Widget VBox where
 
     growVertical (VBox top bottom) =
         growVertical top || growVertical bottom
+
+    withAttribute (VBox top bottom) att = VBox
+                                          (withAttribute top att)
+                                          (withAttribute bottom att)
 
     -- Not the best way to choose this, but it seems like anything
     -- here is going to be arbitrary.
@@ -177,6 +188,10 @@ instance Widget HBox where
 
     growVertical (HBox left right) =
         growVertical left || growVertical right
+
+    withAttribute (HBox left right) att = HBox
+                                          (withAttribute left att)
+                                          (withAttribute right att)
 
     -- Not the best way to choose this, but it seems like anything
     -- here is going to be arbitrary.

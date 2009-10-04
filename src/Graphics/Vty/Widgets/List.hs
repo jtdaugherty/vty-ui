@@ -125,6 +125,8 @@ instance Widget (List a) where
     growHorizontal _ = False
     growVertical _ = False
 
+    withAttribute w att = w { normalAttr = att }
+
     primaryAttribute = normalAttr
 
     render s w =

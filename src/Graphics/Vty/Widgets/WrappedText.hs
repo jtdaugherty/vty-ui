@@ -35,6 +35,8 @@ instance Widget WrappedText where
 
     primaryAttribute (WrappedText att _) = att
 
+    withAttribute (WrappedText _ t) att = WrappedText att t
+
     render s (WrappedText attr str) =
         let images = map (render s . convert) $ lines wrapped
             wrapped = wrap (fromEnum $ region_width s) str

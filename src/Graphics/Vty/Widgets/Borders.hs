@@ -42,6 +42,7 @@ instance Widget VBorder where
     primaryAttribute (VBorder a) = a
     render s (VBorder att) =
         char_fill att '|' 1 (region_height s)
+    withAttribute _ att = VBorder att
 
 instance Widget HBorder where
     growVertical _ = False
@@ -49,11 +50,15 @@ instance Widget HBorder where
     primaryAttribute (HBorder a) = a
     render s (HBorder att) =
         char_fill att '-' (region_width s) 1
+    withAttribute _ att = HBorder att
 
 instance Widget Bordered where
     growVertical (Bordered _ w) = growVertical w
     growHorizontal (Bordered _ w) = growHorizontal w
     primaryAttribute (Bordered _ w) = primaryAttribute w
+    -- This is consistent with primaryAttribute here, but it probably
+    -- should be the border attribute, not the child primaryAttribute.
+    withAttribute (Bordered a w) att = Bordered a (withAttribute w att)
     render s (Bordered att w) =
         render s (topBottom <--> middle <--> topBottom)
             where
