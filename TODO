@@ -5,9 +5,6 @@
   change what is selected if the window size gets smaller than the
   currently selected index.
 
-- Box layout widget documentation so it's clear from the docs how
-  widgets get laid out
-
 - Widgets:
 
   - Scrollable area (a generalization of the List) which can wrap a

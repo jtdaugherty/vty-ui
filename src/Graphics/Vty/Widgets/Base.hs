@@ -77,11 +77,35 @@ data VFill = VFill Attr Char
 data HFill = HFill Attr Char Int
 
 -- |A vertical box layout widget capable of containing two 'Widget's.
--- See 'vBox'.
+-- See 'vBox'.  VBoxes lay out their children as follows:
+--
+-- * If both children are vertically expandable (e.g., both 'VBox'es),
+--   the children are each given half of the parent container's
+--   available space
+--
+-- * If one of the children is vertically expandable and the other is
+--   static, the static child is rendered first and the remaining
+--   space is given to the expandable child
+--
+-- * Otherwise, both children are rendered in top to bottom order and
+--   the resulting container uses only as much space as its children
+--   combined
 data VBox = forall a b. (Widget a, Widget b) => VBox a b
 
 -- |A horizontal box layout widget capable of containing two
--- 'Widget's.  See 'hBox'.
+-- 'Widget's.  See 'hBox'.  HBoxes lay out their children as follows:
+--
+-- * If both children are horizontally expandable (e.g., both
+--   'HBox'es), the children are each given half of the parent
+--   container's available space
+--
+-- * If one of the children is horizontally expandable and the other
+--   is static, the static child is rendered first and the remaining
+--   space is given to the expandable child
+--
+-- * Otherwise, both children are rendered in left to right order and
+--   the resulting container uses only as much space as its children
+--   combined
 data HBox = forall a b. (Widget a, Widget b) => HBox a b
 
 instance Widget AnyWidget where
