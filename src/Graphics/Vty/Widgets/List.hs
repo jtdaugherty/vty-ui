@@ -27,7 +27,7 @@ module Graphics.Vty.Widgets.List
     )
 where
 
-import Graphics.Vty ( Attr, (<->) )
+import Graphics.Vty ( Attr, vert_cat )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
     , text
@@ -118,9 +118,9 @@ instance Widget List where
     primaryAttribute = normalAttr
 
     render s w =
-        foldl (<->) (head widgets) (tail widgets)
+        vert_cat images
             where
-              widgets = map (render s) (visible ++ filler)
+              images = map (render s) (visible ++ filler)
               visible = map (anyWidget . mkWidget) $ getVisibleItems w
               filler = replicate (scrollWindowSize w - length visible)
                        (anyWidget $ hFill (normalAttr w) ' ' 1)
