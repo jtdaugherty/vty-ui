@@ -3,22 +3,23 @@ module Text.Trans.Wrap
     )
 where
 
-nextLine :: Int -> String -> (String, Maybe String)
-nextLine cols s
-    | length s <= cols = (s, Nothing)
-    | otherwise = (line, rest)
-    where
-      breakpoint = findBreak cols s
-      (line, rest) = let (h, t) = splitAt breakpoint s
-                     in if breakpoint == 0
-                        then (s, Nothing)
-                        else (h, Just $ drop 1 t)
-      findBreak 0 _ = 0
-      findBreak pos str = if str !! pos `elem` " \t"
-                          then pos
-                          else findBreak (pos - 1) str
+import Data.List ( intercalate )
+
+findBreak :: Int -> String -> Int
+findBreak 0 _ = 0
+findBreak pos str = if str !! pos `elem` " \t"
+                    then pos
+                    else findBreak (pos - 1) str
+
+wrapLine :: Int -> String -> [String]
+wrapLine cols str
+    | length str <= cols = [str]
+    | otherwise = let breakpoint = findBreak cols str
+                      first = take breakpoint str
+                      rest = drop (breakpoint + 1) str
+                  in if breakpoint /= 0
+                     then first:(wrapLine cols rest)
+                     else [str]
 
 wrap :: Int -> String -> String
-wrap cols s = first ++ "\n" ++ rest
-    where (first, mRest) = nextLine cols s
-          rest = maybe "" (wrap cols) mRest
+wrap cols s = intercalate "\n" $ concat $ map (wrapLine cols) $ lines s
