@@ -37,5 +37,3 @@
 
 - Generalize list scrolling function to take an amount to scroll by
   (useful for paging down)
-
-- Generalize lists to take a list of widgets instead of strings

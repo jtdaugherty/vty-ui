@@ -50,7 +50,7 @@ uiFromState = buildUi <$> get
 -- user input and what is used to construct the interface.  This is a
 -- place for widgets whose state need to be stored so they can be
 -- modified and used to reconstruct the interface as input is handled
-data AppState = AppState { theList :: List String
+data AppState = AppState { theList :: SimpleList
                          , theMessages :: [(String, String)]
                          }
 
@@ -90,7 +90,7 @@ handleEvent _ = continue
 -- Construct the application state using the message map.
 mkAppState :: [(String, String)] -> AppState
 mkAppState messages =
-    let list = mkList bodyAttr selAttr 3 $ map (\l -> (l, l)) labels
+    let list = mkSimpleList bodyAttr selAttr 3 labels
         labels = map fst messages
     in AppState { theList = list
                 , theMessages = messages
