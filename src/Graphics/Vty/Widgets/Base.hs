@@ -5,15 +5,14 @@
 -- widgets to Vty 'Graphics.Vty.Image's.
 --
 -- Each widget type supplied by this library is exported as a type and
--- an associated constructor function (e.g., 'Text' and 'text', 'VBox'
--- and 'vBox').
+-- an associated constructor function (e.g., 'Text' and 'text', 'Box'
+-- and 'vBox' / 'hBox').
 module Graphics.Vty.Widgets.Base
     ( Widget(..)
     , mkImage
     , AnyWidget
     , Text
-    , HBox
-    , VBox
+    , Box
     , HFill
     , VFill
     , (<++>)
@@ -79,37 +78,24 @@ data VFill = VFill Attr Char
 -- a box layout.  See 'hFill'.
 data HFill = HFill Attr Char Int
 
--- |A vertical box layout widget capable of containing two 'Widget's.
--- See 'vBox'.  VBoxes lay out their children as follows:
---
--- * If both children are vertically expandable (e.g., both 'VBox'es),
---   the children are each given half of the parent container's
---   available space
---
--- * If one of the children is vertically expandable and the other is
---   static, the static child is rendered first and the remaining
---   space is given to the expandable child
---
--- * Otherwise, both children are rendered in top to bottom order and
---   the resulting container uses only as much space as its children
---   combined
-data VBox = forall a b. (Widget a, Widget b) => VBox a b
+data Orientation = Horizontal | Vertical
 
--- |A horizontal box layout widget capable of containing two
--- 'Widget's.  See 'hBox'.  HBoxes lay out their children as follows:
+-- |A box layout widget capable of containing two 'Widget's
+-- horizontally or vertically.  See 'hBox' and 'vBox'.  Boxes lay out
+-- their children as follows:
 --
--- * If both children are horizontally expandable (e.g., both
---   'HBox'es), the children are each given half of the parent
---   container's available space
+-- * If both children are expandable in the same dimension (i.e., both
+--   vertically or both horizontally), the children are each given
+--   half of the parent container's available space
 --
--- * If one of the children is horizontally expandable and the other
---   is static, the static child is rendered first and the remaining
---   space is given to the expandable child
+-- * If one of the children is expandable and the other is static, the
+--   static child is rendered first and the remaining space is given
+--   to the expandable child
 --
--- * Otherwise, both children are rendered in left to right order and
---   the resulting container uses only as much space as its children
---   combined
-data HBox = forall a b. (Widget a, Widget b) => HBox a b
+-- * Otherwise, both children are rendered in top-to-bottom or
+--   left-to-right order and the resulting container uses only as much
+--   space as its children combined
+data Box = forall a b. (Widget a, Widget b) => Box Orientation a b
 
 instance Widget AnyWidget where
     growHorizontal (AnyWidget w) = growHorizontal w
@@ -139,100 +125,62 @@ instance Widget HFill where
     primaryAttribute (HFill att _ _) = att
     withAttribute (HFill _ c h) att = HFill att c h
 
-instance Widget VBox where
-    growHorizontal (VBox top bottom) =
-        growHorizontal top || growHorizontal bottom
+instance Widget Box where
+    growHorizontal (Box _ a b) =
+        growHorizontal a || growHorizontal b
 
-    growVertical (VBox top bottom) =
-        growVertical top || growVertical bottom
+    growVertical (Box _ a b) =
+        growVertical a || growVertical b
 
-    withAttribute (VBox top bottom) att = VBox
-                                          (withAttribute top att)
-                                          (withAttribute bottom att)
-
-    -- Not the best way to choose this, but it seems like anything
-    -- here is going to be arbitrary.
-    primaryAttribute (VBox top _) = primaryAttribute top
-
-    render s (VBox top bottom) =
-        vert_cat ws
-            where
-              renderHalves = let half = s `withHeight` div (height s) 2
-                                 half' = if height s `mod` 2 == 0
-                                         then half
-                                         else region (width half) (height half + 1)
-                             in [ render half top
-                                , render half' bottom ]
-              renderTopFirst = let renderedTop = render s top
-                                   renderedBottom = render s' bottom
-                                   remaining = height s - image_height renderedTop
-                                   s' = s `withHeight` remaining
-                               in if image_height renderedTop >= height s
-                                  then [renderedTop]
-                                  else [renderedTop, renderedBottom]
-              renderBottomFirst = let renderedTop = render s' top
-                                      renderedBottom = render s bottom
-                                      remaining = height s - image_height renderedBottom
-                                      s' = s `withHeight` remaining
-                                  in if image_height renderedBottom >= height s
-                                     then [renderedBottom]
-                                     else [renderedTop, renderedBottom]
-              ws = case (growVertical top, growVertical bottom) of
-                     (True, True) -> renderHalves
-                     (False, _) -> renderTopFirst
-                     (_, False) -> renderBottomFirst
-
-instance Widget HBox where
-    growHorizontal (HBox left right) =
-        growHorizontal left || growHorizontal right
-
-    growVertical (HBox left right) =
-        growVertical left || growVertical right
-
-    withAttribute (HBox left right) att = HBox
-                                          (withAttribute left att)
-                                          (withAttribute right att)
+    withAttribute (Box o top bottom) att = Box o
+                                           (withAttribute top att)
+                                           (withAttribute bottom att)
 
     -- Not the best way to choose this, but it seems like anything
     -- here is going to be arbitrary.
-    primaryAttribute (HBox left _) = primaryAttribute left
+    primaryAttribute (Box _ top _) = primaryAttribute top
 
-    render s (HBox left right) =
-        horiz_cat ws
-            where
-              renderHalves = let half = s `withWidth` div (width s) 2
-                                 half' = if width s `mod` 2 == 0
-                                         then half
-                                         else region (width half + 1) (height half)
-                             in [ render half left
-                                , render half' right ]
-              renderLeftFirst = let renderedLeft = render s left
-                                    renderedRight = render s' right
-                                    remainingWidth = width s - image_width renderedLeft
-                                    s' = region remainingWidth (image_height renderedLeft)
-                                in if image_width renderedLeft >= width s
-                                   then [renderedLeft]
-                                   else [renderedLeft, renderedRight]
-              renderRightFirst = let renderedLeft = render s' left
-                                     renderedRight = render s right
-                                     remainingWidth = width s - image_width renderedRight
-                                     s' = region remainingWidth (image_height renderedRight)
-                                in if image_width renderedRight >= width s
-                                   then [renderedRight]
-                                   else [renderedLeft, renderedRight]
-              ws = case (growHorizontal left, growHorizontal right) of
-                     (True, True) -> renderHalves
-                     (False, _) -> renderLeftFirst
-                     (_, False) -> renderRightFirst
+    render s (Box Vertical top bottom) =
+        renderBox s (top, bottom) growVertical vert_cat region_height image_height withHeight
+    render s (Box Horizontal left right) =
+        renderBox s (left, right) growHorizontal horiz_cat region_width image_width withWidth
+
+renderBox :: (Widget a, Widget b) =>
+             DisplayRegion
+          -> (a, b)
+          -> (AnyWidget -> Bool) -- growth comparison function
+          -> ([Image] -> Image) -- concatenation function
+          -> (DisplayRegion -> Word) -- region dimension fetch function
+          -> (Image -> Word) -- image dimension fetch function
+          -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
+          -> Image
+renderBox s (first, second) grow concatenate regDimension imgDimension withDim =
+    concatenate ws
+        where
+          ws = case (grow $ anyWidget first, grow $ anyWidget second) of
+                 (True, True) -> renderHalves
+                 (False, _) -> renderOrdered first second
+                 (_, False) -> let [a, b] = renderOrdered second first
+                               in [b, a]
+          renderHalves = let half = s `withDim` div (regDimension s) 2
+                             half' = if regDimension s `mod` 2 == 0
+                                     then half
+                                     else half `withDim` (regDimension half + 1)
+                         in [ render half first
+                            , render half' second ]
+          renderOrdered a b = let renderedA = render s a
+                                  renderedB = render s' b
+                                  remaining = regDimension s - imgDimension renderedA
+                                  s' = s `withDim` remaining
+                              in if imgDimension renderedA >= regDimension s
+                                 then [renderedA]
+                                 else [renderedA, renderedB]
 
 width :: DisplayRegion -> Word
 width = region_width
 
 height :: DisplayRegion -> Word
 height = region_height
-
-region :: Word -> Word -> DisplayRegion
-region = DisplayRegion
 
 withWidth :: DisplayRegion -> Word -> DisplayRegion
 withWidth (DisplayRegion _ h) w = DisplayRegion w h
@@ -279,20 +227,22 @@ vFill = VFill
 -- the available space.
 hBox :: (Widget a, Widget b) => a -- ^The left widget
      -> b -- ^The right widget
-     -> HBox
-hBox = HBox
+     -> Box
+hBox = Box Horizontal
 
 -- |An alias for 'hBox' intended as sugar to chain widgets
 -- horizontally.
-(<++>) :: (Widget a, Widget b) => a -> b -> HBox
-(<++>) = HBox
+(<++>) :: (Widget a, Widget b) => a -> b -> Box
+(<++>) = hBox
 
 -- |Create a vertical box layout widget containing two widgets.  Space
 -- consumed by the box will depend on its contents and the available
 -- space.
-vBox :: (Widget a, Widget b) => a -> b -> VBox
-vBox = VBox
+vBox :: (Widget a, Widget b) => a -- ^The top widget
+     -> b -- ^The bottom widget
+     -> Box
+vBox = Box Vertical
 
 -- |An alias for 'vBox' intended as sugar to chain widgets vertically.
-(<-->) :: (Widget a, Widget b) => a -> b -> VBox
-(<-->) = VBox
+(<-->) :: (Widget a, Widget b) => a -> b -> Box
+(<-->) = vBox

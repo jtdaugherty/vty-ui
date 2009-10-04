@@ -10,13 +10,13 @@ import Graphics.Vty.Widgets.Base
     ( Widget(..)
     , (<-->)
     , vFill
-    , VBox
+    , Box
     )
 
 -- |Add expanding bottom padding to a widget.
-bottomPadded :: (Widget a) => a -> VBox
+bottomPadded :: (Widget a) => a -> Box
 bottomPadded w = w <--> vFill (primaryAttribute w) ' '
 
 -- |Add expanding top padding to a widget.
-topPadded :: (Widget a) => a -> VBox
+topPadded :: (Widget a) => a -> Box
 topPadded w = vFill (primaryAttribute w) ' ' <--> w
