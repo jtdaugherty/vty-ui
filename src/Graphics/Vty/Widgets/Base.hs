@@ -65,14 +65,44 @@ class Widget w where
 -- lists of widgets.  See 'anyWidget'.
 data AnyWidget = forall a. (Widget a) => AnyWidget a
 
+instance Widget AnyWidget where
+    growHorizontal (AnyWidget w) = growHorizontal w
+    growVertical (AnyWidget w) = growVertical w
+    render s (AnyWidget w) = render s w
+    primaryAttribute (AnyWidget w) = primaryAttribute w
+    withAttribute (AnyWidget w) att = AnyWidget (withAttribute w att)
+
 -- |A text widget consisting of a string rendered using an
 -- attribute. See 'text'.
 data Text = Text Attr String
+
+instance Widget Text where
+    growHorizontal _ = False
+    growVertical _ = False
+    render _ (Text att content) = string att content
+    primaryAttribute (Text att _) = att
+    withAttribute (Text _ content) att = Text att content
 
 -- |A fill widget for filling available vertical or horizontal space
 -- in a box layout.  See 'vFill' and 'hFill'.
 data Fill = VFill Attr Char
           | HFill Attr Char Int
+
+instance Widget Fill where
+    growHorizontal (HFill _ _ _) = True
+    growHorizontal (VFill _ _) = False
+
+    growVertical (VFill _ _) = True
+    growVertical (HFill _ _ _) = False
+
+    primaryAttribute (HFill att _ _) = att
+    primaryAttribute (VFill att _) = att
+
+    withAttribute (HFill _ c h) att = HFill att c h
+    withAttribute (VFill _ c) att = VFill att c
+
+    render s (VFill att c) = char_fill att c (region_width s) (region_height s)
+    render s (HFill att c h) = char_fill att c (region_width s) (toEnum h)
 
 data Orientation = Horizontal | Vertical
 
@@ -92,36 +122,6 @@ data Orientation = Horizontal | Vertical
 --   left-to-right order and the resulting container uses only as much
 --   space as its children combined
 data Box = forall a b. (Widget a, Widget b) => Box Orientation a b
-
-instance Widget AnyWidget where
-    growHorizontal (AnyWidget w) = growHorizontal w
-    growVertical (AnyWidget w) = growVertical w
-    render s (AnyWidget w) = render s w
-    primaryAttribute (AnyWidget w) = primaryAttribute w
-    withAttribute (AnyWidget w) att = AnyWidget (withAttribute w att)
-
-instance Widget Text where
-    growHorizontal _ = False
-    growVertical _ = False
-    render _ (Text att content) = string att content
-    primaryAttribute (Text att _) = att
-    withAttribute (Text _ content) att = Text att content
-
-instance Widget Fill where
-    growHorizontal (HFill _ _ _) = True
-    growHorizontal (VFill _ _) = False
-
-    growVertical (VFill _ _) = True
-    growVertical (HFill _ _ _) = False
-
-    primaryAttribute (HFill att _ _) = att
-    primaryAttribute (VFill att _) = att
-
-    withAttribute (HFill _ c h) att = HFill att c h
-    withAttribute (VFill _ c) att = VFill att c
-
-    render s (VFill att c) = char_fill att c (width s) (height s)
-    render s (HFill att c h) = char_fill att c (width s) (toEnum h)
 
 instance Widget Box where
     growHorizontal (Box _ a b) =
@@ -173,12 +173,6 @@ renderBox s (first, second) grow concatenate regDimension imgDimension withDim =
                               in if imgDimension renderedA >= regDimension s
                                  then [renderedA]
                                  else [renderedA, renderedB]
-
-width :: DisplayRegion -> Word
-width = region_width
-
-height :: DisplayRegion -> Word
-height = region_height
 
 withWidth :: DisplayRegion -> Word -> DisplayRegion
 withWidth (DisplayRegion _ h) w = DisplayRegion w h
