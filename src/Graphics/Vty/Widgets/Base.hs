@@ -13,8 +13,7 @@ module Graphics.Vty.Widgets.Base
     , AnyWidget
     , Text
     , Box
-    , HFill
-    , VFill
+    , Fill
     , (<++>)
     , (<-->)
     , anyWidget
@@ -70,13 +69,10 @@ data AnyWidget = forall a. (Widget a) => AnyWidget a
 -- attribute. See 'text'.
 data Text = Text Attr String
 
--- |A vertical fill widget for filling available vertical space in a
--- box layout.  See 'vFill'.
-data VFill = VFill Attr Char
-
--- |A horizontal fill widget for filling available horizontal space in
--- a box layout.  See 'hFill'.
-data HFill = HFill Attr Char Int
+-- |A fill widget for filling available vertical or horizontal space
+-- in a box layout.  See 'vFill' and 'hFill'.
+data Fill = VFill Attr Char
+          | HFill Attr Char Int
 
 data Orientation = Horizontal | Vertical
 
@@ -111,19 +107,21 @@ instance Widget Text where
     primaryAttribute (Text att _) = att
     withAttribute (Text _ content) att = Text att content
 
-instance Widget VFill where
-    growHorizontal _ = False
-    growVertical _ = True
-    render s (VFill att c) = char_fill att c (width s) (height s)
+instance Widget Fill where
+    growHorizontal (HFill _ _ _) = True
+    growHorizontal (VFill _ _) = False
+
+    growVertical (VFill _ _) = True
+    growVertical (HFill _ _ _) = False
+
+    primaryAttribute (HFill att _ _) = att
     primaryAttribute (VFill att _) = att
+
+    withAttribute (HFill _ c h) att = HFill att c h
     withAttribute (VFill _ c) att = VFill att c
 
-instance Widget HFill where
-    growHorizontal _ = True
-    growVertical _ = False
+    render s (VFill att c) = char_fill att c (width s) (height s)
     render s (HFill att c h) = char_fill att c (width s) (toEnum h)
-    primaryAttribute (HFill att _ _) = att
-    withAttribute (HFill _ c h) att = HFill att c h
 
 instance Widget Box where
     growHorizontal (Box _ a b) =
@@ -212,14 +210,14 @@ hFill :: Attr -- ^The attribute to use to render the fill
       -> Char -- ^The character to fill
       -> Int -- ^The height, in rows, of the filled area; width of the
              -- fill depends on available space
-      -> HFill
+      -> Fill
 hFill = HFill
 
 -- |Create a vertical fill widget.  The dimensions of the widget will
 -- depend on available space.
 vFill :: Attr -- ^The attribute to use to render the fill
       -> Char -- ^The character to fill
-      -> VFill
+      -> Fill
 vFill = VFill
 
 -- |Create a horizontal box layout widget containing two widgets side
