@@ -2,8 +2,7 @@
 -- |This module provides visual borders to be placed between and
 -- around widgets.
 module Graphics.Vty.Widgets.Borders
-    ( VBorder
-    , HBorder
+    ( Border
     , Bordered
     , vBorder
     , hBorder
@@ -28,33 +27,32 @@ import Graphics.Vty.Widgets.Base
     , text
     )
 
--- |A vertical border to be placed between horizontally-oriented
--- widgets.  See 'vBorder'.
-data VBorder = VBorder Attr
-
--- |A horizontal border to be placed between vertically-oriented
--- widgets.  See 'hBorder'.
-data HBorder = HBorder Attr
+-- |A horizontal or vertical border to be placed between widgets.  See
+-- 'hBorder' and 'vBorder'.
+data Border = VBorder Attr
+            | HBorder Attr
 
 -- |A container widget which draws a border around all four sides of
 -- the widget it contains.  See 'bordered'.
 data Bordered = forall a. (Widget a) => Bordered Attr a
 
-instance Widget VBorder where
-    growVertical _ = True
-    growHorizontal _ = False
+instance Widget Border where
+    growVertical (VBorder _) = True
+    growVertical (HBorder _) = False
+
+    growHorizontal (VBorder _) = False
+    growHorizontal (HBorder _) = True
+
     primaryAttribute (VBorder a) = a
+    primaryAttribute (HBorder a) = a
+
     render s (VBorder att) =
         char_fill att '|' 1 (region_height s)
-    withAttribute _ att = VBorder att
-
-instance Widget HBorder where
-    growVertical _ = False
-    growHorizontal _ = True
-    primaryAttribute (HBorder a) = a
     render s (HBorder att) =
         char_fill att '-' (region_width s) 1
-    withAttribute _ att = HBorder att
+
+    withAttribute (VBorder _) att = VBorder att
+    withAttribute (HBorder _) att = HBorder att
 
 instance Widget Bordered where
     growVertical (Bordered _ w) = growVertical w
@@ -78,11 +76,11 @@ instance Widget Bordered where
               middle = leftRight <|> renderedChild <|> leftRight
 
 -- |Create a horizontal border.
-hBorder :: Attr -> HBorder
+hBorder :: Attr -> Border
 hBorder = HBorder
 
 -- |Create a vertical border.
-vBorder :: Attr -> VBorder
+vBorder :: Attr -> Border
 vBorder = VBorder
 
 -- |Wrap a widget in a border using the specified attribute.
