@@ -33,7 +33,7 @@
 
   - table widget for laying out name/value pairs in nice format
 
-  - support for right-aligning text
+  - support for right-aligning text (just left-padding?)
 
 - Generalize list scrolling function to take an amount to scroll by
   (useful for paging down)
