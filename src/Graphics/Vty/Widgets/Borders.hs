@@ -75,14 +75,14 @@ instance Widget Bordered where
               leftRight = render adjusted $ vBorder att
               middle = leftRight <|> renderedChild <|> leftRight
 
--- |Create a horizontal border.
+-- |Create a single-row horizontal border.
 hBorder :: Attr -> Border
 hBorder = HBorder
 
--- |Create a vertical border.
+-- |Create a single-column vertical border.
 vBorder :: Attr -> Border
 vBorder = VBorder
 
--- |Wrap a widget in a border using the specified attribute.
+-- |Wrap a widget in a bordering box using the specified attribute.
 bordered :: (Widget a) => Attr -> a -> Bordered
 bordered = Bordered
