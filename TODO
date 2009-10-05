@@ -35,5 +35,10 @@
 
   - support for right-aligning text (just left-padding?)
 
+  - support for text processing and attribute assignment (e.g., how
+    links and e-mail addresses are highlighted in mutt).  In general,
+    it might be nice to take the WrappedWidget and generalize it into
+    TransformedText which takes a transformation function
+
 - Generalize list scrolling function to take an amount to scroll by
   (useful for paging down)
