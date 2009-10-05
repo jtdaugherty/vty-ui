@@ -143,6 +143,11 @@ instance Widget Box where
     render s (Box Horizontal left right) =
         renderBox s (left, right) growHorizontal horiz_cat region_width image_width withWidth
 
+-- Box layout rendering implementation. This is generalized over the
+-- two dimensions in which box layout can be performed; it takes lot
+-- of functions, but mostly those are to query and update the correct
+-- dimensions on regions and images as they are manipulated by the
+-- layout algorithm.
 renderBox :: (Widget a, Widget b) =>
              DisplayRegion
           -> (a, b)
