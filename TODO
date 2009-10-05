@@ -38,7 +38,10 @@
   - support for text processing and attribute assignment (e.g., how
     links and e-mail addresses are highlighted in mutt).  In general,
     it might be nice to take the WrappedWidget and generalize it into
-    TransformedText which takes a transformation function
+    TransformedText which takes a transformation function.  For text
+    highlighting it would be great if we could use a parsec parser to
+    locate and highlight all matches.  Then you could write
+    non-trivial parsers to determine what to highlight.
 
 - Generalize list scrolling function to take an amount to scroll by
   (useful for paging down)
