@@ -19,8 +19,9 @@ module Graphics.Vty.Widgets.List
     , mkList
     , mkSimpleList
     -- ** List manipulation
-    , scrollDown
+    , scrollBy
     , scrollUp
+    , scrollDown
     -- ** List inspection
     , listItems
     , getSelected
@@ -95,45 +96,50 @@ mkSimpleList normAttr selAttr swSize labels =
 getSelected :: List a b -> ListItem a b
 getSelected list = (listItems list) !! (selectedIndex list)
 
--- |Scroll a list down one position and return the new scrolled list.
--- This automatically takes care of managing all list state:
+-- |Scroll a list up or down by the specified number of positions and
+-- return the new scrolled list.  Scrolling by a positive amount
+-- scrolls downward and scrolling by a negative amount scrolls upward.
+-- This automatically takes care of managing internal list state:
 --
--- * Moves the cursor down one position, unless the cursor is already
---   in the last position (in which case this does nothing)
+-- * Moves the cursor by the specified amount and clamps the cursor
+--   position to the beginning or the end of the list where
+--   appropriate
 --
 -- * Moves the scrolling window position if necessary (i.e., if the
 --   cursor moves to an item not currently in view)
-scrollDown :: List a b -> List a b
-scrollDown list
-    -- If the list is already at the last position, do nothing.
-    | selectedIndex list == length (listItems list) - 1 = list
-    -- If the list requires scrolling the visible area, scroll it.
-    | selectedIndex list == scrollTopIndex list + scrollWindowSize list - 1 =
-        list { selectedIndex = selectedIndex list + 1
-             , scrollTopIndex = scrollTopIndex list + 1
-             }
-    -- Otherwise, just increment the selectedIndex.
-    | otherwise = list { selectedIndex = selectedIndex list + 1 }
+scrollBy :: Int -> List a b -> List a b
+scrollBy amount list =
+    list { scrollTopIndex = adjustedTop
+         , selectedIndex = newSelected }
+        where
+          sel = selectedIndex list
+          lastPos = (length $ listItems list) - 1
+          validPositions = [0..lastPos]
+          newPosition = sel + amount
 
--- |Scroll a list up one position and return the new scrolled list.
--- This automatically takes care of managing all list state:
---
--- * Moves the cursor up one position, unless the cursor is already
---   in the first position (in which case this does nothing)
---
--- * Moves the scrolling window position if necessary (i.e., if the
---   cursor moves to an item not currently in view)
+          newSelected = if newPosition `elem` validPositions
+                        then newPosition
+                        else if newPosition > lastPos
+                             then lastPos
+                             else 0
+
+          bottomPosition = scrollTopIndex list + scrollWindowSize list - 1
+          topPosition = scrollTopIndex list
+          windowPositions = [topPosition..bottomPosition]
+
+          adjustedTop = if newPosition `elem` windowPositions
+                        then topPosition
+                        else if newSelected >= bottomPosition
+                             then newSelected - scrollWindowSize list + 1
+                             else newSelected
+
+-- |Scroll a list down by one position.
+scrollDown :: List a b -> List a b
+scrollDown = scrollBy 1
+
+-- |Scroll a list up by one position.
 scrollUp :: List a b -> List a b
-scrollUp list
-    -- If the list is already at the first position, do nothing.
-    | selectedIndex list == 0 = list
-    -- If the list requires scrolling the visible area, scroll it.
-    | selectedIndex list == scrollTopIndex list =
-        list { selectedIndex = selectedIndex list - 1
-             , scrollTopIndex = scrollTopIndex list - 1
-             }
-    -- Otherwise, just decrement the selectedIndex.
-    | otherwise = list { selectedIndex = selectedIndex list - 1 }
+scrollUp = scrollBy (-1)
 
 -- |Given a 'List', return the items that are currently visible
 -- according to the state of the list.  Returns the visible items and
