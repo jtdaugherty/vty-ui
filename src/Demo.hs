@@ -2,6 +2,7 @@ module Main where
 
 import Data.Maybe ( fromJust )
 import Control.Applicative ( (<$>) )
+import Control.Monad ( when )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.State ( StateT, get, modify, evalStateT )
 
@@ -66,6 +67,9 @@ pageListUp = modify (\appst -> appst { theList = pageUp $ theList appst })
 pageListDown :: StateT AppState IO ()
 pageListDown = modify (\appst -> appst { theList = pageDown $ theList appst })
 
+resizeList :: Int -> StateT AppState IO ()
+resizeList s = modify (\appst -> appst { theList = resize s $ theList appst })
+
 -- Process events from VTY, possibly modifying the application state.
 eventloop :: (Widget a) => Vty
           -> StateT AppState IO a
@@ -93,6 +97,10 @@ handleEvent (EvKey KDown []) = scrollListDown >> continue
 handleEvent (EvKey KPageUp []) = pageListUp >> continue
 handleEvent (EvKey KPageDown []) = pageListDown >> continue
 handleEvent (EvKey (KASCII 'q') []) = stop
+handleEvent (EvResize _ h) = do
+  let newSize = ceiling (0.05 * fromIntegral h)
+  when (newSize > 0) $ resizeList newSize
+  continue
 handleEvent _ = continue
 
 -- Construct the application state using the message map.

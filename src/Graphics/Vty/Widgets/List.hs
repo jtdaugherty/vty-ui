@@ -24,6 +24,7 @@ module Graphics.Vty.Widgets.List
     , scrollDown
     , pageUp
     , pageDown
+    , resize
     -- ** List inspection
     , listItems
     , getSelected
@@ -100,6 +101,27 @@ mkSimpleList normAttr selAttr swSize labels =
 -- |Get the currently selected list item.
 getSelected :: List a b -> ListItem a b
 getSelected list = (listItems list) !! (selectedIndex list)
+
+-- |Set the window size of the list.  This automatically adjusts the
+-- window position to keep the selected item visible.
+resize :: Int -> List a b -> List a b
+resize newSize list
+    | newSize == 0 = error "Cannot resize list window to zero"
+    -- Do nothing if the window size isn't changing.
+    | newSize == scrollWindowSize list = list
+    -- If the new window size is larger, just set it.
+    | newSize > scrollWindowSize list = list { scrollWindowSize = newSize }
+    -- Otherwise it's smaller, so we need to look at which item is
+    -- selected and decide whether to change the scrollTopIndex.
+    | otherwise = list { scrollWindowSize = newSize
+                       , selectedIndex = newSelected
+                       }
+    where
+      newBottomPosition = scrollTopIndex list + newSize - 1
+      current = selectedIndex list
+      newSelected = if current > newBottomPosition
+                    then newBottomPosition
+                    else current
 
 -- |Scroll a list up or down by the specified number of positions and
 -- return the new scrolled list.  Scrolling by a positive amount

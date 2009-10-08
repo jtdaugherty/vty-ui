@@ -1,10 +1,4 @@
 
-- List: implement a "resizeWindow" function which will adjust the
-  visible window size; one might want to size a list widget's visible
-  window as a function of terminal height.  This should automatically
-  change what is selected if the window size gets smaller than the
-  currently selected index.
-
 - Widgets:
 
   - Scrollable area (a generalization of the List) which can wrap a
