@@ -67,7 +67,8 @@ data List a b = List { normalAttr :: Attr
 
 type SimpleList = List String Text
 
--- |Create a new list.  Emtpy lists are not allowed.
+-- |Create a new list.  Emtpy lists and empty scrolling windows are
+-- not allowed.
 mkList :: (Widget b) =>
           Attr -- ^The attribute of normal, non-selected items
        -> Attr -- ^The attribute of the selected item
@@ -76,7 +77,9 @@ mkList :: (Widget b) =>
        -> [ListItem a b] -- ^The list items
        -> List a b
 mkList _ _ _ [] = error "Lists cannot be empty"
-mkList normAttr selAttr swSize contents = List normAttr selAttr 0 0 swSize contents
+mkList normAttr selAttr swSize contents
+    | swSize <= 0 = error "Scrolling window size must be > 0"
+    | otherwise = List normAttr selAttr 0 0 swSize contents
 
 -- |A convenience function to create a new list using 'String's as the
 -- internal identifiers and 'Text' widgets to represent those strings.
