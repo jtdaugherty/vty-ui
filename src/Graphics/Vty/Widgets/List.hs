@@ -22,6 +22,8 @@ module Graphics.Vty.Widgets.List
     , scrollBy
     , scrollUp
     , scrollDown
+    , pageUp
+    , pageDown
     -- ** List inspection
     , listItems
     , getSelected
@@ -140,6 +142,14 @@ scrollDown = scrollBy 1
 -- |Scroll a list up by one position.
 scrollUp :: List a b -> List a b
 scrollUp = scrollBy (-1)
+
+-- |Scroll a list down by one page from the current cursor position.
+pageDown :: List a b -> List a b
+pageDown list = scrollBy (scrollWindowSize list) list
+
+-- |Scroll a list up by one page from the current cursor position.
+pageUp :: List a b -> List a b
+pageUp list = scrollBy (-1 * scrollWindowSize list) list
 
 -- |Given a 'List', return the items that are currently visible
 -- according to the state of the list.  Returns the visible items and

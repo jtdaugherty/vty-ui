@@ -60,6 +60,12 @@ scrollListUp = modify (\appst -> appst { theList = scrollUp $ theList appst })
 scrollListDown :: StateT AppState IO ()
 scrollListDown = modify (\appst -> appst { theList = scrollDown $ theList appst })
 
+pageListUp :: StateT AppState IO ()
+pageListUp = modify (\appst -> appst { theList = pageUp $ theList appst })
+
+pageListDown :: StateT AppState IO ()
+pageListDown = modify (\appst -> appst { theList = pageDown $ theList appst })
+
 -- Process events from VTY, possibly modifying the application state.
 eventloop :: (Widget a) => Vty
           -> StateT AppState IO a
@@ -84,6 +90,8 @@ stop = return False
 handleEvent :: Event -> StateT AppState IO Bool
 handleEvent (EvKey KUp []) = scrollListUp >> continue
 handleEvent (EvKey KDown []) = scrollListDown >> continue
+handleEvent (EvKey KPageUp []) = pageListUp >> continue
+handleEvent (EvKey KPageDown []) = pageListDown >> continue
 handleEvent (EvKey (KASCII 'q') []) = stop
 handleEvent _ = continue
 
