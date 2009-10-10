@@ -45,3 +45,5 @@
   event type a.
 
   See Graphics.Vty.Terminal.LLInput
+
+  (patch submitted to vty author; awaiting review)
