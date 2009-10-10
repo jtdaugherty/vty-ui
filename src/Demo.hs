@@ -55,20 +55,20 @@ data AppState = AppState { theList :: List String Bordered
                          , theMessages :: [(String, String)]
                          }
 
-scrollListUp :: StateT AppState IO ()
-scrollListUp = modify (\appst -> appst { theList = scrollUp $ theList appst })
+scrollListUp :: AppState -> AppState
+scrollListUp appst = appst { theList = scrollUp $ theList appst }
 
-scrollListDown :: StateT AppState IO ()
-scrollListDown = modify (\appst -> appst { theList = scrollDown $ theList appst })
+scrollListDown :: AppState -> AppState
+scrollListDown appst = appst { theList = scrollDown $ theList appst }
 
-pageListUp :: StateT AppState IO ()
-pageListUp = modify (\appst -> appst { theList = pageUp $ theList appst })
+pageListUp :: AppState -> AppState
+pageListUp appst = appst { theList = pageUp $ theList appst }
 
-pageListDown :: StateT AppState IO ()
-pageListDown = modify (\appst -> appst { theList = pageDown $ theList appst })
+pageListDown :: AppState -> AppState
+pageListDown appst = appst { theList = pageDown $ theList appst }
 
-resizeList :: Int -> StateT AppState IO ()
-resizeList s = modify (\appst -> appst { theList = resize s $ theList appst })
+resizeList :: Int -> AppState -> AppState
+resizeList s appst = appst { theList = resize s $ theList appst }
 
 -- Process events from VTY, possibly modifying the application state.
 eventloop :: (Widget a) => Vty
@@ -92,14 +92,14 @@ stop :: StateT AppState IO Bool
 stop = return False
 
 handleEvent :: Event -> StateT AppState IO Bool
-handleEvent (EvKey KUp []) = scrollListUp >> continue
-handleEvent (EvKey KDown []) = scrollListDown >> continue
-handleEvent (EvKey KPageUp []) = pageListUp >> continue
-handleEvent (EvKey KPageDown []) = pageListDown >> continue
+handleEvent (EvKey KUp []) = modify scrollListUp >> continue
+handleEvent (EvKey KDown []) = modify scrollListDown >> continue
+handleEvent (EvKey KPageUp []) = modify pageListUp >> continue
+handleEvent (EvKey KPageDown []) = modify pageListDown >> continue
 handleEvent (EvKey (KASCII 'q') []) = stop
 handleEvent (EvResize _ h) = do
   let newSize = ceiling (0.05 * fromIntegral h)
-  when (newSize > 0) $ resizeList newSize
+  when (newSize > 0) $ modify (resizeList newSize)
   continue
 handleEvent _ = continue
 
