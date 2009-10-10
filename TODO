@@ -36,3 +36,12 @@
     highlighting it would be great if we could use a parsec parser to
     locate and highlight all matches.  Then you could write
     non-trivial parsers to determine what to highlight.
+
+- Vty support for concurrently injecting user-defined event types into
+  the next_event (Event) process.  It looks like Vty already uses
+  multiple threads to collect and inject events anyway, so we could
+  patch Vty to wait on concurrently-injected user-defined events; this
+  will involve changing Event to be Event a for some user-defined
+  event type a.
+
+  See Graphics.Vty.Terminal.LLInput
