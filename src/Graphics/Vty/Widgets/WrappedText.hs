@@ -11,13 +11,14 @@ import Graphics.Vty
     ( Attr
     , region_width
     , region_height
-    , vert_cat
     )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
+    , Orientation(..)
     , text
     , hFill
     , anyWidget
+    , renderedMany
     )
 
 -- |A text widget which automatically wraps its contents to fit in the
@@ -38,10 +39,10 @@ instance Widget WrappedText where
     withAttribute (WrappedText _ t) att = WrappedText att t
 
     render s (WrappedText attr str) =
-        let images = map (render s . convert) $ lines wrapped
+        let ws = map (render s . convert) $ lines wrapped
             wrapped = wrap (fromEnum $ region_width s) str
             -- Convert empty lines into hFills because otherwise Vty
             -- will collapse them.
             convert [] = anyWidget $ hFill attr ' ' 1
             convert line = anyWidget $ text attr line
-        in vert_cat $ take (fromEnum $ region_height s) images
+        in renderedMany Vertical $ take (fromEnum $ region_height s) ws

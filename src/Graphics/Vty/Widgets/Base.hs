@@ -11,12 +11,24 @@ module Graphics.Vty.Widgets.Base
     ( Widget(..)
     , mkImage
     , AnyWidget
+    , Orientation(..)
+    , Rendered
+    , Address
     , Text
     , Box
     , Fill
+    , Addressable
     , (<++>)
     , (<-->)
     , anyWidget
+    , addrSize
+    , addrPosition
+    , addressable
+    , renderedImg
+    , renderedAddr
+    , renderedMany
+    , renderedWidth
+    , renderedHeight
     , text
     , hBox
     , vBox
@@ -26,11 +38,50 @@ module Graphics.Vty.Widgets.Base
 where
 
 import GHC.Word ( Word )
+import qualified Data.Map as Map
+import Control.Monad.State ( State, modify, runState )
 
 import Graphics.Vty ( DisplayRegion(DisplayRegion), Vty, Image, Attr
                     , string, char_fill, image_width, image_height
                     , region_width, region_height, terminal
-                    , display_bounds, vert_cat, horiz_cat )
+                    , display_bounds, vert_cat, horiz_cat, (<->), (<|>) )
+
+-- |Information about the rendered state of a widget.
+data Address = Address { addrPosition :: DisplayRegion
+                       -- ^The rendered position of a widget.
+                       , addrSize :: DisplayRegion
+                       -- ^The rendered size of a widget.
+                       }
+               deriving (Eq, Show)
+
+-- |The collection of widget names (see 'addressable') and their
+-- rendering addresses as a result of 'render'.
+type RenderState = Map.Map String Address
+
+data Rendered = Img Image
+              | Addressed String Rendered
+              | Many Orientation [Rendered]
+
+renderedImg :: Image -> Rendered
+renderedImg = Img
+
+renderedAddr :: String -> Rendered -> Rendered
+renderedAddr = Addressed
+
+renderedMany :: Orientation -> [Rendered] -> Rendered
+renderedMany = Many
+
+renderedWidth :: Rendered -> Word
+renderedWidth (Img img) = image_width img
+renderedWidth (Addressed _ w) = renderedWidth w
+renderedWidth (Many Vertical ws) = maximum $ map renderedWidth ws
+renderedWidth (Many Horizontal ws) = sum $ map renderedWidth ws
+
+renderedHeight :: Rendered -> Word
+renderedHeight (Img img) = image_height img
+renderedHeight (Addressed _ w) = renderedHeight w
+renderedHeight (Many Vertical ws) = sum $ map renderedHeight ws
+renderedHeight (Many Horizontal ws) = maximum $ map renderedHeight ws
 
 -- |The class of user interface widgets.  Note that the growth
 -- properties 'growHorizontal' and 'growVertical' are used to control
@@ -40,9 +91,9 @@ import Graphics.Vty ( DisplayRegion(DisplayRegion), Vty, Image, Attr
 -- widgets will be rendered last to consume that space.
 class Widget w where
     -- |Given a widget, render it with the given dimensions.  The
-    -- resulting Image should not be larger than the specified
-    -- dimensions, but may be smaller.
-    render :: DisplayRegion -> w -> Image
+    -- result should not be larger than the specified dimensions, but
+    -- may be smaller.
+    render :: DisplayRegion -> w -> Rendered
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
@@ -60,6 +111,71 @@ class Widget w where
 
     -- |Apply the specified attribute to this widget.
     withAttribute :: w -> Attr -> w
+
+-- |The type of widgets whose rendering addresses should be stored by
+-- the rendering process.  See 'addressable'.  The motivation for this
+-- is the need to be able to locate a widget on the screen once the
+-- layout algorithms have determined the widget's location and size.
+data Addressable = forall w. (Widget w) => Addressable String w
+
+-- |Annotate a widget with a rendering identifier so that its
+-- rendering address will be stored by the rendering process.  Once
+-- the widget has been rendered, its address will be found in the
+-- resulting 'RenderState'; see 'address'.
+addressable :: (Widget a) => String
+            -- ^The identifier of the widget to be used in the
+            -- 'RenderState'.
+            -> a
+            -- ^The widget whose rendering address ('Address') should
+            -- be stored.
+            -> Addressable
+addressable = Addressable
+
+-- |XXX
+doPositioning :: DisplayRegion -> Rendered -> State RenderState Image
+doPositioning _ (Img img) = return img
+doPositioning _ (Many Vertical []) = error "got empty rendered list"
+doPositioning _ (Many Horizontal []) = error "got empty rendered list"
+
+doPositioning pos (Many Vertical widgets) = do
+  let positionNext _ [] = return $ vert_cat []
+      positionNext p (w:ws) = do
+        img <- doPositioning p w
+        let newPos = p `withHeight` (region_height p + image_height img)
+        n <- positionNext newPos ws
+        return (img <-> n)
+
+  positionNext pos widgets
+
+doPositioning pos (Many Horizontal widgets) = do
+  let positionNext _ [] = return $ horiz_cat []
+      positionNext p (w:ws) = do
+        img <- doPositioning p w
+        let newPos = p `withWidth` (region_width p + image_width img)
+        n <- positionNext newPos ws
+        return (img <|> n)
+
+  positionNext pos widgets
+
+doPositioning pos (Addressed s w) = do
+  img <- doPositioning pos w
+  addAddress s pos img
+  return img
+
+addAddress :: String -> DisplayRegion -> Image -> State RenderState ()
+addAddress ident pos img = do
+  let rinfo = Address pos (imageSize img)
+  modify (Map.insert ident rinfo)
+
+imageSize :: Image -> DisplayRegion
+imageSize img = DisplayRegion (image_width img) (image_height img)
+
+instance Widget Addressable where
+    growHorizontal (Addressable _ w) = growHorizontal w
+    growVertical (Addressable _ w) = growVertical w
+    primaryAttribute (Addressable _ w) = primaryAttribute w
+    withAttribute (Addressable ident w) att = Addressable ident (withAttribute w att)
+    render s (Addressable ident w) = Addressed ident (render s w)
 
 -- |A wrapper for all widget types used in normalizing heterogeneous
 -- lists of widgets.  See 'anyWidget'.
@@ -79,7 +195,7 @@ data Text = Text Attr String
 instance Widget Text where
     growHorizontal _ = False
     growVertical _ = False
-    render _ (Text att content) = string att content
+    render _ (Text att content) = Img $ string att content
     primaryAttribute (Text att _) = att
     withAttribute (Text _ content) att = Text att content
 
@@ -101,8 +217,8 @@ instance Widget Fill where
     withAttribute (HFill _ c h) att = HFill att c h
     withAttribute (VFill _ c) att = VFill att c
 
-    render s (VFill att c) = char_fill att c (region_width s) (region_height s)
-    render s (HFill att c h) = char_fill att c (region_width s) (toEnum h)
+    render s (VFill att c) = Img $ char_fill att c (region_width s) (region_height s)
+    render s (HFill att c h) = Img $ char_fill att c (region_width s) (toEnum h)
 
 data Orientation = Horizontal | Vertical
 
@@ -139,9 +255,9 @@ instance Widget Box where
     primaryAttribute (Box _ top _) = primaryAttribute top
 
     render s (Box Vertical top bottom) =
-        renderBox s (top, bottom) growVertical vert_cat region_height image_height withHeight
+        renderBox s (top, bottom) Vertical growVertical region_height renderedHeight withHeight
     render s (Box Horizontal left right) =
-        renderBox s (left, right) growHorizontal horiz_cat region_width image_width withWidth
+        renderBox s (left, right) Horizontal growHorizontal region_width renderedWidth withWidth
 
 -- Box layout rendering implementation. This is generalized over the
 -- two dimensions in which box layout can be performed; it takes lot
@@ -151,14 +267,14 @@ instance Widget Box where
 renderBox :: (Widget a, Widget b) =>
              DisplayRegion
           -> (a, b)
+          -> Orientation
           -> (AnyWidget -> Bool) -- growth comparison function
-          -> ([Image] -> Image) -- concatenation function
           -> (DisplayRegion -> Word) -- region dimension fetch function
-          -> (Image -> Word) -- image dimension fetch function
+          -> (Rendered -> Word) -- image dimension fetch function
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
-          -> Image
-renderBox s (first, second) grow concatenate regDimension imgDimension withDim =
-    concatenate ws
+          -> Rendered
+renderBox s (first, second) orientation grow regDimension renderedDimension withDim =
+    Many orientation ws
         where
           ws = case (grow $ anyWidget first, grow $ anyWidget second) of
                  (True, True) -> renderHalves
@@ -173,9 +289,9 @@ renderBox s (first, second) grow concatenate regDimension imgDimension withDim =
                             , render half' second ]
           renderOrdered a b = let renderedA = render s a
                                   renderedB = render s' b
-                                  remaining = regDimension s - imgDimension renderedA
+                                  remaining = regDimension s - renderedDimension renderedA
                                   s' = s `withDim` remaining
-                              in if imgDimension renderedA >= regDimension s
+                              in if renderedDimension renderedA >= regDimension s
                                  then [renderedA]
                                  else [renderedA, renderedB]
 
@@ -188,10 +304,12 @@ withHeight (DisplayRegion w _) h = DisplayRegion w h
 -- |Given a 'Widget' and a 'Vty' object, render the widget using the
 -- current size of the terminal controlled by Vty. Returns the
 -- rendered 'Widget' as an 'Image'.
-mkImage :: (Widget a) => Vty -> a -> IO Image
+mkImage :: (Widget a) => Vty -> a -> IO (Image, RenderState)
 mkImage vty w = do
   size <- display_bounds $ terminal vty
-  return $ render size w
+  let upperLeft = DisplayRegion 0 0
+      rendered = render size w
+  return $ runState (doPositioning upperLeft rendered) (Map.fromList [])
 
 -- |Wrap a 'Widget' in the 'AnyWidget' type for normalization
 -- purposes.

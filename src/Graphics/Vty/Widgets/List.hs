@@ -35,13 +35,15 @@ module Graphics.Vty.Widgets.List
     )
 where
 
-import Graphics.Vty ( Attr, vert_cat )
+import Graphics.Vty ( Attr )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
     , Text
+    , Orientation(..)
     , text
     , anyWidget
     , hFill
+    , renderedMany
     )
 
 -- |A list item. Each item contains an arbitrary internal identifier
@@ -196,9 +198,9 @@ instance (Widget b) => Widget (List a b) where
     primaryAttribute = normalAttr
 
     render s list =
-        vert_cat images
+        renderedMany Vertical ws
             where
-              images = map (render s) (visible ++ filler)
+              ws = map (render s) (visible ++ filler)
               visible = map highlight items
               items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems list
               filler = replicate (scrollWindowSize list - length visible)

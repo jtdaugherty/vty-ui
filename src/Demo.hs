@@ -78,8 +78,9 @@ eventloop :: (Widget a) => Vty
 eventloop vty uiBuilder handle = do
   w <- uiBuilder
   evt <- liftIO $ do
-                  pic_for_image <$> mkImage vty w >>= update vty
-                  next_event vty
+           (img, _) <- mkImage vty w
+           update vty $ pic_for_image img
+           next_event vty
   next <- handle evt
   if next then
       eventloop vty uiBuilder handle else

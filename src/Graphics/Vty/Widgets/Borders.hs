@@ -13,18 +13,19 @@ where
 import Graphics.Vty
     ( Attr
     , DisplayRegion(DisplayRegion)
-    , (<|>)
     , char_fill
     , region_height
     , region_width
-    , image_width
-    , image_height
-    , vert_cat
     )
 import Graphics.Vty.Widgets.Base
     ( Widget(..)
+    , Orientation(..)
     , (<++>)
     , text
+    , renderedImg
+    , renderedMany
+    , renderedWidth
+    , renderedHeight
     )
 
 -- |A horizontal or vertical border to be placed between widgets.  See
@@ -47,9 +48,9 @@ instance Widget Border where
     primaryAttribute (HBorder a) = a
 
     render s (VBorder att) =
-        char_fill att '|' 1 (region_height s)
+        renderedImg $ char_fill att '|' 1 (region_height s)
     render s (HBorder att) =
-        char_fill att '-' (region_width s) 1
+        renderedImg $ char_fill att '-' (region_width s) 1
 
     withAttribute (VBorder _) att = VBorder att
     withAttribute (HBorder _) att = HBorder att
@@ -63,17 +64,17 @@ instance Widget Bordered where
         -- Render the contained widget with enough room to draw
         -- borders.  Then, use the size of the rendered widget to
         -- constrain the space used by the (expanding) borders.
-        vert_cat [topBottom, middle, topBottom]
+        renderedMany Vertical [topBottom, middle, topBottom]
             where
               constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
               renderedChild = render constrained w
               adjusted = DisplayRegion
-                         (image_width renderedChild + 2)
-                         (image_height renderedChild)
+                         (renderedWidth renderedChild + 2)
+                         (renderedHeight renderedChild)
               corner = text att "+"
               topBottom = render adjusted (corner <++> hBorder att <++> corner)
               leftRight = render adjusted $ vBorder att
-              middle = leftRight <|> renderedChild <|> leftRight
+              middle = renderedMany Horizontal [leftRight, renderedChild, leftRight]
 
 -- |Create a single-row horizontal border.
 hBorder :: Attr -> Border
