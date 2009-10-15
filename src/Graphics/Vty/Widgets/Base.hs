@@ -17,6 +17,7 @@ module Graphics.Vty.Widgets.Base
     , Text
     , Box
     , Fill
+    , RenderState
     , Addressable
     , (<++>)
     , (<-->)
@@ -24,6 +25,7 @@ module Graphics.Vty.Widgets.Base
     , addrSize
     , addrPosition
     , addressable
+    , address
     , renderedImg
     , renderedAddr
     , renderedMany
@@ -161,6 +163,11 @@ doPositioning pos (Addressed s w) = do
   img <- doPositioning pos w
   addAddress s pos img
   return img
+
+-- |Retrieve the rendering address for a given widget.  To annotate a
+-- widget to induce storage of its address, see 'addressable'.
+address :: String -> RenderState -> Maybe Address
+address = Map.lookup
 
 addAddress :: String -> DisplayRegion -> Image -> State RenderState ()
 addAddress ident pos img = do
