@@ -79,7 +79,7 @@ instance Widget Fill where
 
 -- |A box layout widget capable of containing two 'Widget's
 -- horizontally or vertically.  See 'hBox' and 'vBox'.  Boxes lay out
--- their children as follows:
+-- their children by using the growth properties of the children:
 --
 -- * If both children are expandable in the same dimension (i.e., both
 --   vertically or both horizontally), the children are each given

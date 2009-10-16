@@ -73,12 +73,37 @@ import Graphics.Vty
 data Orientation = Horizontal | Vertical
                    deriving (Eq, Show)
 
--- |The class of user interface widgets.  Note that the growth
--- properties 'growHorizontal' and 'growVertical' are used to control
--- rendering order; if a widget /can/ grow to fill available space,
--- then neighboring fixed-size widgets will be rendered first so
--- remaining space can be computed.  Then, variable-sized (growable)
--- widgets will be rendered last to consume that space.
+-- |The class of user interface widget types.  A 'Widget' provides
+-- several properties:
+--
+-- * /Growth properties/ which provide information about how to
+--   allocate space to widgets depending on their propensity to
+--   consume available space
+--
+-- * A /primary attribute/ which is the attribute most easily
+--   identifiable with the widget's visual presentation
+--
+-- * An /attribute override/ which allows the widget and its children
+--   to be rendered using a single attribute specified by the caller
+--
+-- * A /rendering routine/ which converts the widget's internal state
+--   into a 'Render' value.
+--
+-- Of primary concern is the rendering routine, 'render'.  The
+-- rendering routine takes two parameters: the size of the space in
+-- which the widget should be rendered, and the widget itself.  The
+-- space is important because it provides a maximum size for the
+-- widget.  For widgets that consume all available space, the size of
+-- the resulting 'Render' will be equal to the supplied size.  For
+-- smaller widgets (e.g., a simple string of text), the size of the
+-- 'Render' will likely be much smaller than the supplied size.
+--
+-- If the widget has child widgets, the supplied size should be
+-- subdivided to fit the child widgets as appropriate.  How the space
+-- is subdivided may depend on the growth properties of the children
+-- or it may be a matter of policy.  In any case, rendered child
+-- widgets should be constrained to the appropriate size; see other
+-- 'Widget' instances for examples of this.
 class Widget w where
     -- |Given a widget, render it with the given dimensions.  The
     -- result should not be larger than the specified dimensions, but
