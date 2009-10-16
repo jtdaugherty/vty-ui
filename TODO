@@ -47,3 +47,9 @@
   See Graphics.Vty.Terminal.LLInput
 
   (patch submitted to vty author; awaiting review)
+
+- Use RenderState data to write a prototype editable widget and event
+  loop
+
+- Use RenderState data and mouse events to detect which addressable
+  widget was clicked
