@@ -8,16 +8,16 @@ module Graphics.Vty.Widgets.Rendering
     , mkImage
 
     -- ** Rendering process
-    -- |'Widget' instances are converted to Vty 'Image's, but this
+    -- |'Widget's are ultimately converted to Vty 'Image's, but this
     -- library uses an intermediate type, 'Render', to represent the
     -- physical layout of the images.  A 'Render' represents the
     -- various primitive rendering constructs which support vertical
     -- and horizontal concatenation and 'Image' addressing.  Once a
     -- 'Widget' has been rendered (see 'render'), the resulting
-    -- 'Render' is then put through a /positioning/ pass in which the
+    -- 'Render' is then put through a /positioning pass/ in which the
     -- sizes and positions of any addressable image regions are stored
-    -- (see 'RenderState').  Result is a single 'Image' suitable for
-    -- use with Vty's 'Graphics.Vty.pic_for_image' function.
+    -- (see 'RenderState').  The result is a single 'Image' suitable
+    -- for use with Vty's 'Graphics.Vty.pic_for_image' function.
     , RenderState
     , Render
     , renderImg
