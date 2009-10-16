@@ -26,6 +26,7 @@ Library
   Hs-Source-Dirs:    src
   Exposed-Modules:
           Graphics.Vty.Widgets.All
+          Graphics.Vty.Widgets.Rendering
           Graphics.Vty.Widgets.Composed
           Graphics.Vty.Widgets.Base
           Graphics.Vty.Widgets.List

@@ -12,13 +12,15 @@ import Graphics.Vty
     , region_width
     , region_height
     )
-import Graphics.Vty.Widgets.Base
+import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
     , Orientation(..)
-    , text
+    , renderMany
+    )
+import Graphics.Vty.Widgets.Base
+    ( text
     , hFill
     , anyWidget
-    , renderedMany
     )
 
 -- |A text widget which automatically wraps its contents to fit in the
@@ -45,4 +47,4 @@ instance Widget WrappedText where
             -- will collapse them.
             convert [] = anyWidget $ hFill attr ' ' 1
             convert line = anyWidget $ text attr line
-        in renderedMany Vertical $ take (fromEnum $ region_height s) ws
+        in renderMany Vertical $ take (fromEnum $ region_height s) ws

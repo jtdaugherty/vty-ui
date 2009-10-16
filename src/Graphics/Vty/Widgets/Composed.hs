@@ -6,9 +6,9 @@ module Graphics.Vty.Widgets.Composed
     )
 where
 
+import Graphics.Vty.Widgets.Rendering ( Widget(..) )
 import Graphics.Vty.Widgets.Base
-    ( Widget(..)
-    , (<-->)
+    ( (<-->)
     , vFill
     , Box
     )

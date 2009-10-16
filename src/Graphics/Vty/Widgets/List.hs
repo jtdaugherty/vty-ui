@@ -36,14 +36,18 @@ module Graphics.Vty.Widgets.List
 where
 
 import Graphics.Vty ( Attr )
-import Graphics.Vty.Widgets.Base
+import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
-    , Text
     , Orientation(..)
+    )
+import Graphics.Vty.Widgets.Rendering
+    ( renderMany
+    )
+import Graphics.Vty.Widgets.Base
+    ( Text
     , text
     , anyWidget
     , hFill
-    , renderedMany
     )
 
 -- |A list item. Each item contains an arbitrary internal identifier
@@ -198,7 +202,7 @@ instance (Widget b) => Widget (List a b) where
     primaryAttribute = normalAttr
 
     render s list =
-        renderedMany Vertical ws
+        renderMany Vertical ws
             where
               ws = map (render s) (visible ++ filler)
               visible = map highlight items
