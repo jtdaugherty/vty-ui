@@ -1,12 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 -- |A collection of primitive user interface widgets for composing and
 -- laying out 'Graphics.Vty' user interfaces.  This module provides
--- basic static and box layout widgets and a type class for rendering
--- widgets to Vty 'Graphics.Vty.Image's.
---
--- Each widget type supplied by this library is exported as a type and
--- an associated constructor function (e.g., 'Text' and 'text', 'Box'
--- and 'vBox' / 'hBox').
+-- basic static and box layout widgets.
 module Graphics.Vty.Widgets.Base
     ( AnyWidget
     , Text
