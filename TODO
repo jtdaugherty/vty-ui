@@ -48,8 +48,13 @@
 
   (patch submitted to vty author; awaiting review)
 
-- Use RenderState data to write a prototype editable widget and event
-  loop
+- Maybe use RenderState data and mouse events to detect which
+  addressable widget was clicked?
 
-- Use RenderState data and mouse events to detect which addressable
-  widget was clicked
+- Newtype for widget identifiers in RenderState?
+
+- Resolve issue where you have to specify the width of the edit widget
+  (a solution to this should also be applicable to growable Lists)
+
+- Fix bugs in edit widget when scrolling currently-viewed edit text
+  (and maintaining correct cursor position) is broken
