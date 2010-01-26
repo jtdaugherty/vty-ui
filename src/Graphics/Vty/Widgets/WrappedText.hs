@@ -47,4 +47,7 @@ instance Widget WrappedText where
             -- will collapse them.
             convert [] = anyWidget $ hFill attr ' ' 1
             convert line = anyWidget $ text attr line
-        in renderMany Vertical $ take (fromEnum $ region_height s) ws
+            toRender = take (fromEnum $ region_height s) ws
+        in renderMany Vertical $ if null toRender
+                                 then [render s $ hFill attr ' ' 1]
+                                 else toRender

@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExistentialQuantification, CPP #-}
 -- |This module provides a basic infrastructure for modelling a user
 -- interface widget and rendering it to Vty's 'Image' type.  Widget
 -- implementors must provide an instance of 'Widget' for a concrete
@@ -19,7 +19,11 @@ module Graphics.Vty.Widgets.Rendering
     -- (see 'RenderState').  The result is a single 'Image' suitable
     -- for use with Vty's 'Graphics.Vty.pic_for_image' function.
     , RenderState
+#ifdef TESTING
+    , Render(..)
+#else
     , Render
+#endif
     , renderImg
     , renderAddr
     , renderMany
@@ -46,6 +50,10 @@ module Graphics.Vty.Widgets.Rendering
     , Orientation(..)
     , withWidth
     , withHeight
+
+#ifdef TESTING
+    , mkImageSize
+#endif
     )
 where
 
@@ -271,8 +279,13 @@ mkImage :: (Widget a) => Vty -> a -> IO (Image, RenderState)
 mkImage vty w = do
   size <- display_bounds $ terminal vty
   let upperLeft = DisplayRegion 0 0
-      rendered = render size w
-  return $ runState (doPositioning upperLeft rendered) (Map.fromList [])
+  return $ mkImageSize upperLeft size w
+
+mkImageSize :: (Widget a) => DisplayRegion -> DisplayRegion -> a
+            -> (Image, RenderState)
+mkImageSize position size w =
+    let rendered = render size w
+    in runState (doPositioning position rendered) (Map.fromList [])
 
 -- |Modify the width component of a 'DisplayRegion'.
 withWidth :: DisplayRegion -> Word -> DisplayRegion

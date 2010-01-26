@@ -17,6 +17,10 @@ License-File:        LICENSE
 Cabal-Version:       >= 1.2
 Homepage:            http://repos.codevine.org/vty-ui/
 
+Flag testing
+    Description:     Build for testing
+    Default:         False
+
 Library
   Build-Depends:
     base >= 4 && < 5,
@@ -34,6 +38,18 @@ Library
           Graphics.Vty.Widgets.Borders
   Other-Modules:
           Text.Trans.Wrap
+
+Executable vty-ui-tests
+  Build-Depends:
+    QuickCheck == 2.1.*
+
+  CPP-Options: -DTESTING
+
+  if !flag(testing)
+    Buildable:     False
+  end
+  Hs-Source-Dirs:  src,test
+  Main-is:         TestDriver.hs
 
 Executable vty-ui-demo
   Hs-Source-Dirs:  src

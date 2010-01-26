@@ -47,9 +47,15 @@ data Text = Text Attr String
 instance Widget Text where
     growHorizontal _ = False
     growVertical _ = False
-    render _ (Text att content) = renderImg $ string att content
     primaryAttribute (Text att _) = att
     withAttribute (Text _ content) att = Text att content
+    render sz (Text att content) = renderImg img
+        where
+          img = if region_height sz == 0
+                then nullImg
+                else string att truncated
+          truncated = take (fromEnum $ region_width sz) content
+          nullImg = string att ""
 
 -- |A fill widget for filling available vertical or horizontal space
 -- in a box layout.  See 'vFill' and 'hFill'.
