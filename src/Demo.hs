@@ -29,7 +29,7 @@ selAttr = def_attr
            `with_back_color` yellow
            `with_fore_color` black
 
-buildUi :: AppState -> Bordered
+buildUi :: AppState -> Widget
 buildUi appst =
   let body = fromJust $ lookup (fst $ getSelected list) msgs
       currentItem = selectedIndex list + 1
@@ -37,21 +37,21 @@ buildUi appst =
                <++> hFill titleAttr '-' 1
       msgs = theMessages appst
       list = theList appst
-  in bordered boxAttr $ list
+  in bordered boxAttr $ listWidget list
       <--> hBorder titleAttr
       <--> (bottomPadded (wrappedText bodyAttr body))
       <--> footer
 
 -- Construct the user interface based on the contents of the
 -- application state.
-uiFromState :: StateT AppState IO Bordered
+uiFromState :: StateT AppState IO Widget
 uiFromState = buildUi <$> get
 
 -- The application state; this encapsulates what can vary based on
 -- user input and what is used to construct the interface.  This is a
 -- place for widgets whose state need to be stored so they can be
 -- modified and used to reconstruct the interface as input is handled
-data AppState = AppState { theList :: List String Bordered
+data AppState = AppState { theList :: List String
                          , theMessages :: [(String, String)]
                          }
 
@@ -71,8 +71,8 @@ resizeList :: Int -> AppState -> AppState
 resizeList s appst = appst { theList = resize s $ theList appst }
 
 -- Process events from VTY, possibly modifying the application state.
-eventloop :: (Widget a) => Vty
-          -> StateT AppState IO a
+eventloop :: Vty
+          -> StateT AppState IO Widget
           -> (Event -> StateT AppState IO Bool)
           -> StateT AppState IO ()
 eventloop vty uiBuilder handle = do

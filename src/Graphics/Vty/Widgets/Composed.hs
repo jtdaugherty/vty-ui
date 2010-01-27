@@ -6,17 +6,18 @@ module Graphics.Vty.Widgets.Composed
     )
 where
 
-import Graphics.Vty.Widgets.Rendering ( Widget(..) )
+import Graphics.Vty.Widgets.Rendering
+    ( Widget(primaryAttribute)
+    )
 import Graphics.Vty.Widgets.Base
     ( (<-->)
     , vFill
-    , Box
     )
 
 -- |Add expanding bottom padding to a widget.
-bottomPadded :: (Widget a) => a -> Box
+bottomPadded :: Widget -> Widget
 bottomPadded w = w <--> vFill (primaryAttribute w) ' '
 
 -- |Add expanding top padding to a widget.
-topPadded :: (Widget a) => a -> Box
+topPadded :: Widget -> Widget
 topPadded w = vFill (primaryAttribute w) ' ' <--> w

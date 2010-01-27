@@ -35,7 +35,7 @@ instance Arbitrary DisplayRegion where
         where
           coord = sized $ \n -> fromIntegral <$> choose (0, n)
 
-toImage :: (Widget a) => DisplayRegion -> a -> Image
+toImage :: DisplayRegion -> Widget -> Image
 toImage sz w = fst $ mkImageSize upperLeft sz w
     where upperLeft = DisplayRegion 0 0
 
@@ -48,7 +48,7 @@ textSize =
           then image_height img == 0 && image_width img == 0
           else image_width img <= (toEnum $ length str) && image_height img == 1
 
-imageSize :: (Widget a) => a -> DisplayRegion -> Bool
+imageSize :: Widget -> DisplayRegion -> Bool
 imageSize w sz =
     image_width img <= region_width sz && image_height img <= region_height sz
         where

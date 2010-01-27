@@ -40,7 +40,6 @@ module Graphics.Vty.Widgets.Rendering
     -- 'mkImage'.
     , Address
     , address
-    , Addressable
     , addressable
     , addrSize
     , addrPosition
@@ -112,34 +111,29 @@ data Orientation = Horizontal | Vertical
 -- or it may be a matter of policy.  In any case, rendered child
 -- widgets should be constrained to the appropriate size; see other
 -- 'Widget' instances for examples of this.
-class Widget w where
+data Widget = Widget {
     -- |Given a widget, render it with the given dimensions.  The
     -- result should not be larger than the specified dimensions, but
     -- may be smaller.
-    render :: DisplayRegion -> w -> Render
+    render :: DisplayRegion -> Render
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
-    growHorizontal :: w -> Bool
+    , growHorizontal :: Bool
 
     -- |Will this widget expand to take advantage of available
     -- vertical space?
-    growVertical :: w -> Bool
+    , growVertical :: Bool
 
     -- |The primary attribute of this widget, used when composing
     -- widgets.  For example, if you want to compose a widget /A/ with
     -- a space-filling widget /B/, you probably want /B/'s text
     -- attributes to be identical to those of /A/.
-    primaryAttribute :: w -> Attr
+    , primaryAttribute :: Attr
 
     -- |Apply the specified attribute to this widget.
-    withAttribute :: w -> Attr -> w
-
--- |The type of widgets whose rendering addresses should be stored by
--- the rendering process.  See 'addressable'.  The motivation for this
--- is the need to be able to locate a widget on the screen once the
--- layout algorithms have determined the widget's location and size.
-data Addressable = forall w. (Widget w) => Addressable String w
+    , withAttribute :: Attr -> Widget
+    }
 
 -- |Information about the rendered state of a widget.
 data Address = Address { addrPosition :: DisplayRegion
@@ -167,22 +161,20 @@ data Render = Img Image
 -- the widget has been rendered, its address will be found in the
 -- resulting 'RenderState'.  To retrieve the address of such an
 -- identifier, use 'address'.
-addressable :: (Widget a) => String
+addressable :: String
             -- ^The identifier of the widget to be used in the
             -- 'RenderState'.
-            -> a
+            -> Widget
             -- ^The widget whose rendering address ('Address') should
             -- be stored.
-            -> Addressable
-addressable = Addressable
-
-instance Widget Addressable where
-    growHorizontal (Addressable _ w) = growHorizontal w
-    growVertical (Addressable _ w) = growVertical w
-    primaryAttribute (Addressable _ w) = primaryAttribute w
-    withAttribute (Addressable ident w) att = Addressable ident
-                                              (withAttribute w att)
-    render s (Addressable ident w) = renderAddr ident (render s w)
+            -> Widget
+addressable ident w = Widget {
+                        growHorizontal = growHorizontal w
+                      , growVertical = growVertical w
+                      , primaryAttribute = primaryAttribute w
+                      , withAttribute = \att -> addressable ident (withAttribute w att)
+                      , render = \s -> renderAddr ident (render w s)
+                      }
 
 -- |Create a 'Render' containing a single 'Image'.
 renderImg :: Image -> Render
@@ -275,16 +267,16 @@ imageSize img = DisplayRegion (image_width img) (image_height img)
 -- current size of the terminal controlled by Vty. Returns the
 -- rendered 'Widget' as an 'Image' along with the 'RenderState'
 -- containing the 'Address'es of 'addressable' widgets.
-mkImage :: (Widget a) => Vty -> a -> IO (Image, RenderState)
+mkImage :: Vty -> Widget -> IO (Image, RenderState)
 mkImage vty w = do
   size <- display_bounds $ terminal vty
   let upperLeft = DisplayRegion 0 0
   return $ mkImageSize upperLeft size w
 
-mkImageSize :: (Widget a) => DisplayRegion -> DisplayRegion -> a
+mkImageSize :: DisplayRegion -> DisplayRegion -> Widget
             -> (Image, RenderState)
 mkImageSize position size w =
-    let rendered = render size w
+    let rendered = render w size
     in runState (doPositioning position rendered) (Map.fromList [])
 
 -- |Modify the width component of a 'DisplayRegion'.

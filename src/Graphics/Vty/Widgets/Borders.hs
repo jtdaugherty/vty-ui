@@ -2,9 +2,7 @@
 -- |This module provides visual borders to be placed between and
 -- around widgets.
 module Graphics.Vty.Widgets.Borders
-    ( Border
-    , Bordered
-    , vBorder
+    ( vBorder
     , hBorder
     , bordered
     )
@@ -19,6 +17,7 @@ import Graphics.Vty
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
+    , Render
     , Orientation(..)
     , renderImg
     , renderMany
@@ -30,62 +29,49 @@ import Graphics.Vty.Widgets.Base
     , text
     )
 
--- |A horizontal or vertical border to be placed between widgets.  See
--- 'hBorder' and 'vBorder'.
-data Border = VBorder Attr
-            | HBorder Attr
-
--- |A container widget which draws a border around all four sides of
--- the widget it contains.  See 'bordered'.
-data Bordered = forall a. (Widget a) => Bordered Attr a
-
-instance Widget Border where
-    growVertical (VBorder _) = True
-    growVertical (HBorder _) = False
-
-    growHorizontal (VBorder _) = False
-    growHorizontal (HBorder _) = True
-
-    primaryAttribute (VBorder a) = a
-    primaryAttribute (HBorder a) = a
-
-    render s (VBorder att) =
-        renderImg $ char_fill att '|' 1 (region_height s)
-    render s (HBorder att) =
-        renderImg $ char_fill att '-' (region_width s) 1
-
-    withAttribute (VBorder _) att = VBorder att
-    withAttribute (HBorder _) att = HBorder att
-
-instance Widget Bordered where
-    growVertical (Bordered _ w) = growVertical w
-    growHorizontal (Bordered _ w) = growHorizontal w
-    primaryAttribute (Bordered att _) = att
-    withAttribute (Bordered _ w) att = Bordered att (withAttribute w att)
-    render s (Bordered att w) =
-        -- Render the contained widget with enough room to draw
-        -- borders.  Then, use the size of the rendered widget to
-        -- constrain the space used by the (expanding) borders.
-        renderMany Vertical [topBottom, middle, topBottom]
-            where
-              constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
-              renderedChild = render constrained w
-              adjusted = DisplayRegion
-                         (renderWidth renderedChild + 2)
-                         (renderHeight renderedChild)
-              corner = text att "+"
-              topBottom = render adjusted (corner <++> hBorder att <++> corner)
-              leftRight = render adjusted $ vBorder att
-              middle = renderMany Horizontal [leftRight, renderedChild, leftRight]
-
 -- |Create a single-row horizontal border.
-hBorder :: Attr -> Border
-hBorder = HBorder
+hBorder :: Attr -> Widget
+hBorder att = Widget {
+                growVertical = False
+              , growHorizontal = True
+              , primaryAttribute = att
+              , withAttribute = \att' -> hBorder att'
+              , render = \s -> renderImg $ char_fill att '-' (region_width s) 1
+              }
 
 -- |Create a single-column vertical border.
-vBorder :: Attr -> Border
-vBorder = VBorder
+vBorder :: Attr -> Widget
+vBorder att = Widget {
+                growHorizontal = False
+              , growVertical = True
+              , primaryAttribute = att
+              , render = \s -> renderImg $ char_fill att '|' 1 (region_height s)
+              , withAttribute = \att' -> vBorder att'
+              }
 
 -- |Wrap a widget in a bordering box using the specified attribute.
-bordered :: (Widget a) => Attr -> a -> Bordered
-bordered = Bordered
+bordered :: Attr -> Widget -> Widget
+bordered att w = Widget {
+                   growVertical = growVertical w
+                 , growHorizontal = growHorizontal w
+                 , primaryAttribute = att
+                 , withAttribute = \att' -> bordered att' (withAttribute w att')
+                 , render = renderBordered att w
+                 }
+
+renderBordered :: Attr -> Widget -> DisplayRegion -> Render
+renderBordered att w s =
+    -- Render the contained widget with enough room to draw borders.
+    -- Then, use the size of the rendered widget to constrain the
+    -- space used by the (expanding) borders.
+    renderMany Vertical [topBottom, middle, topBottom]
+        where
+          constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
+          renderedChild = render w constrained
+          adjusted = DisplayRegion
+                     (renderWidth renderedChild + 2)
+                     (renderHeight renderedChild)
+          corner = text att "+"
+          topBottom = render (corner <++> hBorder att <++> corner) adjusted
+          leftRight = render (vBorder att) adjusted
+          middle = renderMany Horizontal [leftRight, renderedChild, leftRight]
