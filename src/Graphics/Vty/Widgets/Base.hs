@@ -42,7 +42,7 @@ text att content = Widget {
                      growHorizontal = False
                    , growVertical = False
                    , primaryAttribute = att
-                   , withAttribute = \att' -> text att' content
+                   , withAttribute = flip text content
                    , render = renderText att content
                    }
 
@@ -60,8 +60,9 @@ vFill att c = Widget {
                 growHorizontal = False
               , growVertical = True
               , primaryAttribute = att
-              , withAttribute = \att' -> vFill att' c
-              , render = \s -> renderImg $ char_fill att c (region_width s) (region_height s)
+              , withAttribute = flip vFill c
+              , render = \s -> renderImg $ char_fill att c (region_width s)
+                         (region_height s)
               }
 
 hFill :: Attr -> Char -> Int -> Widget
@@ -70,7 +71,8 @@ hFill att c h = Widget {
                 , growVertical = False
                 , primaryAttribute = att
                 , withAttribute = \att' -> hFill att' c h
-                , render = \s -> renderImg $ char_fill att c (region_width s) (toEnum h)
+                , render = \s -> renderImg $ char_fill att c (region_width s)
+                           (toEnum h)
                 }
 
 -- |A box layout widget capable of containing two 'Widget's
@@ -92,15 +94,18 @@ box :: Orientation -> Widget -> Widget -> Widget
 box o a b = Widget {
               growHorizontal = growHorizontal a || growHorizontal b
             , growVertical = growVertical a || growVertical b
-            , withAttribute = \att -> box o (withAttribute a att) (withAttribute b att)
+            , withAttribute =
+                \att ->
+                    box o (withAttribute a att) (withAttribute b att)
             , primaryAttribute = primaryAttribute a
-            -- XXX
-            , render = \s -> let (f, g, h, i) = case o of
-                                        Vertical ->
-                                            (growVertical, region_height, renderHeight, withHeight)
-                                        Horizontal ->
-                                            (growHorizontal, region_width, renderWidth, withWidth)
-                             in renderBox s (a, b) o f g h i
+            , render =
+                \s -> case o of
+                        Vertical ->
+                            renderBox s (a, b) o growVertical region_height
+                                      renderHeight withHeight
+                        Horizontal ->
+                            renderBox s (a, b) o growHorizontal region_width
+                                      renderWidth withWidth
             }
 
 -- Box layout rendering implementation. This is generalized over the
