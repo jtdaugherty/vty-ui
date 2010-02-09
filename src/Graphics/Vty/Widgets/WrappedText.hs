@@ -30,7 +30,7 @@ wrappedText attr str = Widget {
                          growHorizontal = True
                        , growVertical = False
                        , primaryAttribute = attr
-                       , withAttribute = \attr' -> wrappedText attr' str
+                       , withAttribute = flip wrappedText str
                        , render = renderWrappedText attr str
                        }
 
