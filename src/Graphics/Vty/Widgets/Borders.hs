@@ -35,7 +35,7 @@ hBorder att = Widget {
                 growVertical = False
               , growHorizontal = True
               , primaryAttribute = att
-              , withAttribute = \att' -> hBorder att'
+              , withAttribute = hBorder
               , render = \s -> renderImg $ char_fill att '-' (region_width s) 1
               }
 
@@ -46,7 +46,7 @@ vBorder att = Widget {
               , growVertical = True
               , primaryAttribute = att
               , render = \s -> renderImg $ char_fill att '|' 1 (region_height s)
-              , withAttribute = \att' -> vBorder att'
+              , withAttribute = vBorder
               }
 
 -- |Wrap a widget in a bordering box using the specified attribute.
