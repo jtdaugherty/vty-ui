@@ -21,8 +21,24 @@ where
 import GHC.Word ( Word )
 
 import Graphics.Vty.Widgets.Rendering
-import Graphics.Vty ( DisplayRegion, Attr, string, char_fill
-                    , region_width, region_height )
+    ( Widget(..)
+    , Render
+    , renderImg
+    , renderMany
+    , renderWidth
+    , renderHeight
+    , Orientation(..)
+    , withHeight
+    , withWidth
+    )
+import Graphics.Vty
+    ( DisplayRegion
+    , Attr
+    , string
+    , char_fill
+    , region_width
+    , region_height
+    )
 
 -- |A wrapper for all widget types used in normalizing heterogeneous
 -- lists of widgets.  See 'anyWidget'.
