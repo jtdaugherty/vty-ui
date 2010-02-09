@@ -172,8 +172,8 @@ addressable ident w = Widget {
                         growHorizontal = growHorizontal w
                       , growVertical = growVertical w
                       , primaryAttribute = primaryAttribute w
-                      , withAttribute = \att -> addressable ident (withAttribute w att)
-                      , render = \s -> renderAddr ident (render w s)
+                      , withAttribute = addressable ident . withAttribute w
+                      , render = renderAddr ident . render w
                       }
 
 -- |Create a 'Render' containing a single 'Image'.
