@@ -36,10 +36,8 @@ Library
           Graphics.Vty.Widgets.Composed
           Graphics.Vty.Widgets.Base
           Graphics.Vty.Widgets.List
-          Graphics.Vty.Widgets.WrappedText
           Graphics.Vty.Widgets.Borders
   Other-Modules:
-          Text.Trans.Wrap
           Text.Trans.Tokenize
 
 Executable vty-ui-tests

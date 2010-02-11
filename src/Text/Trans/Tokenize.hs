@@ -6,6 +6,8 @@ module Text.Trans.Tokenize
     , trunc
     , splitWith
     , isNewline
+    , splitLines
+    , wrapLine
     )
 where
 
@@ -55,9 +57,12 @@ isNewline :: Token a -> Bool
 isNewline (Newline _) = True
 isNewline _ = False
 
+splitLines :: (Eq a) => [Token a] -> [[Token a]]
+splitLines ts = splitWith ts isNewline
+
 -- |Truncate a token stream at a given column width.
-trunc :: (Eq a) => [Token a] -> Int -> [Token a]
-trunc ts width = concatMap (truncLine width) (splitWith ts isNewline)
+trunc :: (Eq a) => a -> [Token a] -> Int -> [Token a]
+trunc def ts width = concatMap (\l -> truncLine width l ++ [Newline def]) $ splitLines ts
 
 truncLine :: Int -> [Token a] -> [Token a]
 truncLine width ts = take (length $ head passing) ts
@@ -70,3 +75,14 @@ len :: Token a -> Int
 len (Newline _) = 0
 len (Whitespace s _) = length s
 len (Token s _) = length s
+
+wrapLine :: (Eq a) => a -> Int -> [Token a] -> [Token a]
+wrapLine _ _ [] = []
+wrapLine def width ts = take (length $ head passing) ts ++ [Newline def] ++
+                        if null passing
+                        then []
+                        else wrapLine def width $ drop (length $ head passing) ts
+    where
+      lengths = map len ts
+      cases = reverse $ inits lengths
+      passing = dropWhile (\c -> sum c > width) cases

@@ -39,7 +39,7 @@ buildUi appst =
       list = theList appst
   in bordered boxAttr $ listWidget list
       <--> hBorder titleAttr
-      <--> (bottomPadded (wrappedText bodyAttr body))
+      <--> (bottomPadded $ wrapWidget $ prepareText bodyAttr body)
       <--> footer
 
 -- Construct the user interface based on the contents of the
@@ -123,7 +123,7 @@ main = do
   let messages = [ ("First", "This text is long enough that it will get wrapped \
                              \if you resize your terminal to something small. \
                              \It also contains enough text to get truncated at \
-                             \the bottom if the display area is too small." )
+                             \the bottom if the display area is too small.\n\n\n" )
                  , ("Second", "the second message")
                  , ("Third", "the third message")
                  , ("Fourth", "the fourth message")
