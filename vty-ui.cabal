@@ -27,6 +27,7 @@ Library
     vty >= 4.0 && < 4.1,
     containers >= 0.2 && < 0.3
 
+  GHC-Options:       -Wall -Werror
   Hs-Source-Dirs:    src
   Exposed-Modules:
           Graphics.Vty.Widgets.All
