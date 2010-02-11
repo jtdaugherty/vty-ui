@@ -5,7 +5,6 @@
 module Graphics.Vty.Widgets.Base
     ( (<++>)
     , (<-->)
-    , text
     , hBox
     , vBox
     , hFill
@@ -29,31 +28,10 @@ import Graphics.Vty.Widgets.Rendering
 import Graphics.Vty
     ( DisplayRegion
     , Attr
-    , string
     , char_fill
     , region_width
     , region_height
     )
-
--- |A text widget consisting of a string rendered using an
--- attribute. See 'text'.
-text :: Attr -> String -> Widget
-text att content = Widget {
-                     growHorizontal = False
-                   , growVertical = False
-                   , primaryAttribute = att
-                   , withAttribute = flip text content
-                   , render = renderText att content
-                   }
-
-renderText :: Attr -> String -> DisplayRegion -> Render
-renderText att content sz = renderImg img
-    where
-      img = if region_height sz == 0
-            then nullImg
-            else string att truncated
-      truncated = take (fromEnum $ region_width sz) content
-      nullImg = string att ""
 
 vFill :: Attr -> Char -> Widget
 vFill att c = Widget {

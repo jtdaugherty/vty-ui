@@ -19,8 +19,10 @@ import Graphics.Vty.Widgets.Rendering
     , renderMany
     )
 import Graphics.Vty.Widgets.Base
+    ( hFill
+    )
+import Graphics.Vty.Widgets.Text
     ( text
-    , hFill
     )
 
 -- |Create a wrapped text widget from the specified attribute and

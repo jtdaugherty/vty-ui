@@ -45,8 +45,10 @@ import Graphics.Vty.Widgets.Rendering
     ( renderMany
     )
 import Graphics.Vty.Widgets.Base
+    ( hFill
+    )
+import Graphics.Vty.Widgets.Text
     ( text
-    , hFill
     )
 
 -- |A list item. Each item contains an arbitrary internal identifier

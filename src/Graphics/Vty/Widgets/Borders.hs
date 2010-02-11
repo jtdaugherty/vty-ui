@@ -26,7 +26,9 @@ import Graphics.Vty.Widgets.Rendering
     )
 import Graphics.Vty.Widgets.Base
     ( (<++>)
-    , text
+    )
+import Graphics.Vty.Widgets.Text
+    ( text
     )
 
 -- |Create a single-row horizontal border.

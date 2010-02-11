@@ -10,7 +10,7 @@ import Test.QuickCheck.Test
 import Control.Applicative ( (<$>), (<*>), pure )
 
 import Graphics.Vty
-import Graphics.Vty.Widgets.Base
+import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Rendering
 
 instance (Arbitrary a, Eq a) => Arbitrary (MaybeDefault a) where
