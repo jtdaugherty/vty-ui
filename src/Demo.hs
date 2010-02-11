@@ -33,7 +33,7 @@ buildUi :: AppState -> Widget
 buildUi appst =
   let body = fromJust $ lookup (fst $ getSelected list) msgs
       currentItem = selectedIndex list + 1
-      footer = (text titleAttr $ " " ++ (show currentItem) ++ "/" ++ (show $ length msgs) ++ " ")
+      footer = (simpleText titleAttr $ " " ++ (show currentItem) ++ "/" ++ (show $ length msgs) ++ " ")
                <++> hFill titleAttr '-' 1
       msgs = theMessages appst
       list = theList appst
@@ -109,7 +109,7 @@ mkAppState :: [(String, String)] -> AppState
 mkAppState messages =
     let list = mkList bodyAttr selAttr 3 borederedLabels
         borederedLabels = zip labels $ map mkWidget labels
-        mkWidget = bordered boxAttr . text bodyAttr
+        mkWidget = bordered boxAttr . simpleText bodyAttr
         labels = map fst messages
     in AppState { theList = list
                 , theMessages = messages

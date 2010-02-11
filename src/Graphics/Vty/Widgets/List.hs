@@ -48,7 +48,7 @@ import Graphics.Vty.Widgets.Base
     ( hFill
     )
 import Graphics.Vty.Widgets.Text
-    ( text
+    ( simpleText
     )
 
 -- |A list item. Each item contains an arbitrary internal identifier
@@ -121,7 +121,7 @@ mkSimpleList :: Attr -- ^The attribute of normal, non-selected items
 mkSimpleList normAttr selAttr swSize labels =
     mkList normAttr selAttr swSize widgets
     where
-      widgets = map (\l -> (l, text normAttr l)) labels
+      widgets = map (\l -> (l, simpleText normAttr l)) labels
 
 -- note that !! here will always succeed because selectedIndex will
 -- never be out of bounds and the list will always be non-empty.

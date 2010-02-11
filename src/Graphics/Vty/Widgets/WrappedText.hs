@@ -22,7 +22,7 @@ import Graphics.Vty.Widgets.Base
     ( hFill
     )
 import Graphics.Vty.Widgets.Text
-    ( text
+    ( simpleText
     )
 
 -- |Create a wrapped text widget from the specified attribute and
@@ -43,7 +43,7 @@ renderWrappedText attr str s =
         -- Convert empty lines into hFills because otherwise Vty will
         -- collapse them.
         convert [] = hFill attr ' ' 1
-        convert line = text attr line
+        convert line = simpleText attr line
         toRender = take (fromEnum $ region_height s) ws
     in renderMany Vertical $ if null toRender
                              then [render (hFill attr ' ' 1) s]

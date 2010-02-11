@@ -40,6 +40,7 @@ Library
           Graphics.Vty.Widgets.Borders
   Other-Modules:
           Text.Trans.Wrap
+          Text.Trans.Tokenize
 
 Executable vty-ui-tests
   Build-Depends:

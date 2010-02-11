@@ -28,7 +28,7 @@ import Graphics.Vty.Widgets.Base
     ( (<++>)
     )
 import Graphics.Vty.Widgets.Text
-    ( text
+    ( simpleText
     )
 
 -- |Create a single-row horizontal border.
@@ -73,7 +73,7 @@ renderBordered att w s =
           adjusted = DisplayRegion
                      (renderWidth renderedChild + 2)
                      (renderHeight renderedChild)
-          corner = text att "+"
+          corner = simpleText att "+"
           topBottom = render (corner <++> hBorder att <++> corner) adjusted
           leftRight = render (vBorder att) adjusted
           middle = renderMany Horizontal [leftRight, renderedChild, leftRight]

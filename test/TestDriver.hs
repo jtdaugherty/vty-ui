@@ -42,11 +42,11 @@ toImage sz w = fst $ mkImageSize upperLeft sz w
 textSize :: Property
 textSize =
     property $ forAll textString $ \str attr sz ->
-        let img = toImage sz $ text attr str
+        let img = toImage sz $ simpleText attr str
         in
           if null str || region_height sz == 0 || region_width sz == 0
           then image_height img == 0 && image_width img == 0
-          else image_width img <= (toEnum $ length str) && image_height img == 1
+          else image_width img <= (toEnum $ length str) && image_height img <= 1
 
 imageSize :: Widget -> DisplayRegion -> Bool
 imageSize w sz =
@@ -59,7 +59,7 @@ textString = listOf (arbitrary `suchThat` (\c -> isPrint c && c /= '\n'))
 
 tests :: [Property]
 tests = [ textSize
-        , property $ forAll textString $ \str attr -> imageSize (text attr str)
+        , property $ forAll textString $ \str attr -> imageSize (simpleText attr str)
         ]
 
 main :: IO ()
