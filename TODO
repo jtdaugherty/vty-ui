@@ -1,4 +1,8 @@
 
+- Testing:
+
+  - Write quickcheck properties for Text.Trans.Tokenize!
+
 - Widgets:
 
   - Scrollable area (a generalization of the List) which can wrap a
