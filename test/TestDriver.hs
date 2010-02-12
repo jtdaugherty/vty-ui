@@ -78,7 +78,7 @@ tests = [ textSize
         -- Round-trip property for token serialization and string
         -- tokenization.
         , property $ forAll tokenGen $
-                       \t -> serialize t == (serialize $ tokenize (serialize t) ())
+                       \ts -> serialize ts == (serialize $ tokenize (serialize ts) ())
         ]
 
 main :: IO ()
