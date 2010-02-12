@@ -11,7 +11,7 @@ module Text.Trans.Tokenize
     )
 where
 
-import Data.List ( inits )
+import Data.List ( inits, intersperse )
 
 data Token a = Newline a
              | Whitespace String a
@@ -62,7 +62,9 @@ splitLines ts = splitWith ts isNewline
 
 -- |Truncate a token stream at a given column width.
 trunc :: (Eq a) => a -> [Token a] -> Int -> [Token a]
-trunc def ts width = concatMap (\l -> truncLine width l ++ [Newline def]) $ splitLines ts
+trunc def ts width = concat $ intersperse [Newline def] newLines
+    where
+      newLines = map (\l -> truncLine width l) $ splitLines ts
 
 truncLine :: Int -> [Token a] -> [Token a]
 truncLine width ts = take (length $ head passing) ts
