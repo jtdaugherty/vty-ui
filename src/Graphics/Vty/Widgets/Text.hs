@@ -9,6 +9,9 @@ module Graphics.Vty.Widgets.Text
     )
 where
 
+import Data.List
+    ( intersperse
+    )
 import Graphics.Vty
     ( Attr
     , DisplayRegion
@@ -61,7 +64,10 @@ textWidget t = Widget {
 wrap :: Int -> Formatter
 wrap width t = t { tokens = newTokens }
     where
-      newTokens = concatMap (wrapLine (defaultAttr t) width)
+      newTokens = concat $ intersperse [Newline $ defaultAttr t] $
+                  map (concat .
+                       intersperse [Newline $ defaultAttr t] .
+                       wrapLine (defaultAttr t) width)
                   (splitLines $ tokens t)
 
 wrapWidget :: Text -> Widget
@@ -75,21 +81,20 @@ wrapWidget t = Widget {
     where
       newText att = t { tokens = map (`withAnnotation` att) $ tokens t }
 
--- XXX Still has a bug for completely blank lines (they get collapsed)
 renderText :: Text -> DisplayRegion -> Render
 renderText t sz =
-    if null ls
+    if region_height sz == 0
     then renderImg nullImg
-    else if region_height sz == 0
-         then renderImg nullImg
-         else renderMany Vertical $ take (fromEnum $ region_height sz) lineImgs
+         else if null ls
+              then renderImg nullImg
+              else renderMany Vertical $ take (fromEnum $ region_height sz) lineImgs
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
       ls = splitLines (trunc (defaultAttr t) (tokens t) (fromEnum $ region_width sz))
       lineImgs = map (renderImg . mkLineImg) ls
       mkLineImg line = if null line
-                       then string def_attr ""
+                       then string (defaultAttr t) " "
                        else horiz_cat $ map mkTokenImg line
       nullImg = string def_attr ""
 

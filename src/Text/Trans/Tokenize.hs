@@ -11,7 +11,11 @@ module Text.Trans.Tokenize
     )
 where
 
-import Data.List ( inits, intersperse )
+import Data.List
+    ( inits
+    , intersperse
+    , splitAt
+    )
 
 data Token a = Newline a
              | Whitespace String a
@@ -19,7 +23,7 @@ data Token a = Newline a
                deriving (Show, Eq)
 
 splitWith :: (Eq a) => [a] -> (a -> Bool) -> [[a]]
-splitWith [] _ = [[]]
+splitWith [] _ = []
 splitWith es f = if null rest
                  then [first]
                  else first : splitWith (tail rest) f
@@ -78,13 +82,21 @@ len (Newline _) = 0
 len (Whitespace s _) = length s
 len (Token s _) = length s
 
-wrapLine :: (Eq a) => a -> Int -> [Token a] -> [Token a]
+-- XXX This assumes that the input token list will not contain
+-- newlines (i.e., that splitLines has already been called).
+wrapLine :: (Eq a) => a -> Int -> [Token a] -> [[Token a]]
 wrapLine _ _ [] = []
-wrapLine def width ts = take (length $ head passing) ts ++ [Newline def] ++
-                        if null passing
-                        then []
-                        else wrapLine def width $ drop (length $ head passing) ts
+wrapLine def width ts =
+    -- If there were no passing cases, that means the line can't be
+    -- wrapped so just return it as-is (e.g., one long unbroken
+    -- string).  Otherwise, package up the acceptable tokens and
+    -- continue wrapping.
+    if null passing
+    then [ts]
+    else these : wrapLine def width those
     where
       lengths = map len ts
       cases = reverse $ inits lengths
       passing = dropWhile (\c -> sum c > width) cases
+      numTokens = length $ head passing
+      (these, those) = splitAt numTokens ts
