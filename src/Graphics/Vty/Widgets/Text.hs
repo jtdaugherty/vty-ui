@@ -5,7 +5,6 @@ module Graphics.Vty.Widgets.Text
     , simpleText
     , prepareText
     , textWidget
-    , wrapWidget
     )
 where
 
@@ -37,7 +36,7 @@ import Text.Trans.Tokenize
     , wrapLine
     )
 
-type Formatter = Text -> Text
+type Formatter = DisplayRegion -> Text -> Text
 data Text = Text { defaultAttr :: Attr
                  , tokens :: [Token Attr]
                  }
@@ -48,41 +47,35 @@ prepareText att s = Text { defaultAttr = att
                          }
 
 simpleText :: Attr -> String -> Widget
-simpleText a s = textWidget $ prepareText a s
+simpleText a s = textWidget [] $ prepareText a s
 
-textWidget :: Text -> Widget
-textWidget t = Widget {
-                 growHorizontal = False
-               , growVertical = False
-               , primaryAttribute = defaultAttr t
-               , withAttribute = textWidget . newText
-               , render = renderText t
-               }
-    where
-      newText att = t { tokens = map (\c -> withAnnotation c att) $ tokens t }
-
-wrap :: Int -> Formatter
-wrap width t = t { tokens = newTokens }
+wrap :: Formatter
+wrap sz t = t { tokens = newTokens }
     where
       newTokens = concat $ intersperse [Newline $ defaultAttr t] $
                   map (concat .
                        intersperse [Newline $ defaultAttr t] .
-                       wrapLine (defaultAttr t) width)
+                       wrapLine (defaultAttr t) (fromEnum $ region_width sz))
                   (splitLines $ tokens t)
 
-wrapWidget :: Text -> Widget
-wrapWidget t = Widget {
-                 growHorizontal = False
-               , growVertical = False
-               , primaryAttribute = defaultAttr t
-               , withAttribute = wrapWidget . newText
-               , render = \sz -> renderText (wrap (fromEnum $ region_width sz) t) sz
-               }
+textWidget :: [Formatter] -> Text -> Widget
+textWidget formatters t = Widget {
+                            growHorizontal = False
+                          , growVertical = False
+                          , primaryAttribute = defaultAttr t
+                          , withAttribute =
+                              \att -> textWidget formatters $ newText att
+                          , render = renderText t formatters
+                          }
     where
-      newText att = t { tokens = map (`withAnnotation` att) $ tokens t }
+      newText att = t { tokens = map (\c -> withAnnotation c att) $ tokens t }
 
-renderText :: Text -> DisplayRegion -> Render
-renderText t sz =
+applyFormatters :: [Formatter] -> DisplayRegion -> Text -> Text
+applyFormatters [] _ t = t
+applyFormatters (f:fs) sz t = applyFormatters fs sz $ f sz t
+
+renderText :: Text -> [Formatter] -> DisplayRegion -> Render
+renderText t formatters sz =
     if region_height sz == 0
     then renderImg nullImg
          else if null ls
@@ -91,10 +84,12 @@ renderText t sz =
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
-      ls = splitLines (trunc (defaultAttr t) (tokens t) (fromEnum $ region_width sz))
+      newText = applyFormatters formatters sz t
+      ls = splitLines (trunc (defaultAttr newText) (tokens newText)
+                       (fromEnum $ region_width sz))
       lineImgs = map (renderImg . mkLineImg) ls
       mkLineImg line = if null line
-                       then string (defaultAttr t) " "
+                       then string (defaultAttr newText) " "
                        else horiz_cat $ map mkTokenImg line
       nullImg = string def_attr ""
 

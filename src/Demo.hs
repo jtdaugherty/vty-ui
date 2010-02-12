@@ -39,7 +39,7 @@ buildUi appst =
       list = theList appst
   in bordered boxAttr $ listWidget list
       <--> hBorder titleAttr
-      <--> (bottomPadded $ wrapWidget $ prepareText bodyAttr body)
+      <--> (bottomPadded $ textWidget [wrap] $ prepareText bodyAttr body)
       <--> footer
 
 -- Construct the user interface based on the contents of the
