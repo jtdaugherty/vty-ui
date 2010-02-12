@@ -6,6 +6,7 @@ module Text.Trans.Tokenize
     , trunc
     , splitWith
     , isNewline
+    , isWhitespace
     , splitLines
     , wrapLine
     )
@@ -33,18 +34,18 @@ splitWith es f = if null rest
 wsChars :: [Char]
 wsChars = [' ', '\t']
 
-isWhitespace :: Char -> Bool
-isWhitespace = (`elem` wsChars)
+isWs :: Char -> Bool
+isWs = (`elem` wsChars)
 
 tokenize :: String -> a -> [Token a]
 tokenize [] _ = []
 tokenize ('\n':rest) a = Newline a : tokenize rest a
-tokenize s@(c:_) a | isWhitespace c = Whitespace ws a : tokenize rest a
+tokenize s@(c:_) a | isWs c = Whitespace ws a : tokenize rest a
     where
-      (ws, rest) = break (not . isWhitespace) s
+      (ws, rest) = break (not . isWs) s
 tokenize s a = Token t a : tokenize rest a
     where
-      (t, rest) = break (\c -> isWhitespace c || c == '\n') s
+      (t, rest) = break (\c -> isWs c || c == '\n') s
 
 serialize :: [Token a] -> String
 serialize [] = []
@@ -60,6 +61,10 @@ withAnnotation (Token s _) b = Token s b
 isNewline :: Token a -> Bool
 isNewline (Newline _) = True
 isNewline _ = False
+
+isWhitespace :: Token a -> Bool
+isWhitespace (Whitespace _ _) = True
+isWhitespace _ = False
 
 splitLines :: (Eq a) => [Token a] -> [[Token a]]
 splitLines ts = splitWith ts isNewline
@@ -99,4 +104,5 @@ wrapLine def width ts =
       cases = reverse $ inits lengths
       passing = dropWhile (\c -> sum c > width) cases
       numTokens = length $ head passing
-      (these, those) = splitAt numTokens ts
+      (these, those') = splitAt numTokens ts
+      those = dropWhile isWhitespace those'
