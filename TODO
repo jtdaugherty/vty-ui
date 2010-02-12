@@ -1,19 +1,4 @@
 
-- Bugs:
-
-  - textWidget and wrapWidget both use def_attr as their
-    primaryAttribute value, but that presents a problem e.g. when you
-    use bottom/topPadded with one of these widgets.  The "default"
-    attribute for a text widget should probably be tracked in some
-    other way (e.g. as part of the formatted token list).  In other
-    words,
-
-      primaryAttribute $ textWidget $ prepareText a _ == a
-
-    instead of
-
-      primaryAttribute $ textWidget $ prepareText a _ == def_attr
-
 - Widgets:
 
   - Scrollable area (a generalization of the List) which can wrap a

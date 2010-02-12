@@ -33,38 +33,50 @@ import Text.Trans.Tokenize
     , wrapLine
     )
 
-type Formatter = [Token Attr] -> [Token Attr]
+type Formatter = Text -> Text
+data Text = Text { defaultAttr :: Attr
+                 , tokens :: [Token Attr]
+                 }
 
-prepareText :: Attr -> String -> [Token Attr]
-prepareText = flip tokenize
+prepareText :: Attr -> String -> Text
+prepareText att s = Text { defaultAttr = att
+                         , tokens = tokenize s att
+                         }
 
 simpleText :: Attr -> String -> Widget
 simpleText a s = textWidget $ prepareText a s
 
-textWidget :: [Token Attr] -> Widget
-textWidget ts = Widget {
-                  growHorizontal = False
-                , growVertical = False
-                , primaryAttribute = def_attr
-                , withAttribute = \a -> textWidget $ map (\c -> withAnnotation c a) ts
-                , render = renderText ts
-                }
+textWidget :: Text -> Widget
+textWidget t = Widget {
+                 growHorizontal = False
+               , growVertical = False
+               , primaryAttribute = defaultAttr t
+               , withAttribute = textWidget . newText
+               , render = renderText t
+               }
+    where
+      newText att = t { tokens = map (\c -> withAnnotation c att) $ tokens t }
 
 wrap :: Int -> Formatter
-wrap width ts = concatMap (wrapLine def_attr width) (splitLines ts)
+wrap width t = t { tokens = newTokens }
+    where
+      newTokens = concatMap (wrapLine (defaultAttr t) width)
+                  (splitLines $ tokens t)
 
-wrapWidget :: [Token Attr] -> Widget
-wrapWidget ts = Widget {
-                  growHorizontal = False
-                , growVertical = False
-                , primaryAttribute = def_attr
-                , withAttribute = \a -> wrapWidget $ map (`withAnnotation` a) ts
-                , render = \sz -> renderText (wrap (fromEnum $ region_width sz) ts) sz
-                }
+wrapWidget :: Text -> Widget
+wrapWidget t = Widget {
+                 growHorizontal = False
+               , growVertical = False
+               , primaryAttribute = defaultAttr t
+               , withAttribute = wrapWidget . newText
+               , render = \sz -> renderText (wrap (fromEnum $ region_width sz) t) sz
+               }
+    where
+      newText att = t { tokens = map (`withAnnotation` att) $ tokens t }
 
 -- XXX Still has a bug for completely blank lines (they get collapsed)
-renderText :: [Token Attr] -> DisplayRegion -> Render
-renderText content sz =
+renderText :: Text -> DisplayRegion -> Render
+renderText t sz =
     if null ls
     then renderImg nullImg
     else if region_height sz == 0
@@ -73,7 +85,7 @@ renderText content sz =
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
-      ls = splitLines (trunc def_attr content (fromEnum $ region_width sz))
+      ls = splitLines (trunc (defaultAttr t) (tokens t) (fromEnum $ region_width sz))
       lineImgs = map (renderImg . mkLineImg) ls
       mkLineImg line = if null line
                        then string def_attr ""
