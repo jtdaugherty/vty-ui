@@ -13,6 +13,8 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Rendering
 
+import Text.Trans.Tokenize
+
 instance (Arbitrary a, Eq a) => Arbitrary (MaybeDefault a) where
     arbitrary = oneof [ pure Default
                       , pure KeepCurrent
@@ -34,6 +36,15 @@ instance Arbitrary DisplayRegion where
     arbitrary = DisplayRegion <$> coord <*> coord
         where
           coord = sized $ \n -> fromIntegral <$> choose (0, n)
+
+instance (Arbitrary a) =>  Arbitrary (Token a) where
+    arbitrary = oneof [ Whitespace <$> ws <*> arbitrary
+                      , Token <$> s <*> arbitrary
+                      , Newline <$> arbitrary
+                      ]
+        where
+          ws = oneof [ pure " ", pure "\t" ]
+          s = replicate <$> choose (1, 10) <*> pure 'a'
 
 toImage :: DisplayRegion -> Widget -> Image
 toImage sz w = fst $ mkImageSize upperLeft sz w
@@ -57,9 +68,17 @@ imageSize w sz =
 textString :: Gen String
 textString = listOf (arbitrary `suchThat` (\c -> isPrint c && c /= '\n'))
 
+tokenGen :: Gen [Token ()]
+tokenGen = listOf arbitrary
+
 tests :: [Property]
 tests = [ textSize
-        , property $ forAll textString $ \str attr -> imageSize (simpleText attr str)
+        , property $ forAll textString $
+                       \str attr -> imageSize (simpleText attr str)
+        -- Round-trip property for token serialization and string
+        -- tokenization.
+        , property $ forAll tokenGen $
+                       \t -> serialize t == (serialize $ tokenize (serialize t) ())
         ]
 
 main :: IO ()
