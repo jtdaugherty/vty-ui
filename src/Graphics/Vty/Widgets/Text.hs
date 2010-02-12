@@ -1,5 +1,6 @@
 module Graphics.Vty.Widgets.Text
     ( Formatter
+    , Text(defaultAttr, tokens)
     , wrap
     , simpleText
     , prepareText
