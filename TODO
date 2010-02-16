@@ -20,7 +20,7 @@
     Size = Absolute Int Int
          | Percent Int
          | Auto
-    (Widget a, Widget b) => HBox Size a b
+    sizedHBox :: Widget -> Widget -> Size -> Widget
 
     Sizing policy (Size) determines how a box reserves space for each
     of its two children.  Percent a implies (100-a) percent space
@@ -40,17 +40,3 @@
     highlighting it would be great if we could use a parsec parser to
     locate and highlight all matches.  Then you could write
     non-trivial parsers to determine what to highlight.
-
-- Vty support for concurrently injecting user-defined event types into
-  the next_event (Event) process.  It looks like Vty already uses
-  multiple threads to collect and inject events anyway, so we could
-  patch Vty to wait on concurrently-injected user-defined events; this
-  will involve changing Event to be Event a for some user-defined
-  event type a.
-
-  See Graphics.Vty.Terminal.LLInput
-
-  (patch submitted to vty author; awaiting review)
-
-- Maybe use RenderState data and mouse events to detect which
-  addressable widget was clicked?
