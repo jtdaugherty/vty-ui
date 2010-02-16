@@ -5,11 +5,15 @@ module Graphics.Vty.Widgets.Text
     , simpleText
     , prepareText
     , textWidget
+    , highlight
     )
 where
 
 import Data.List
     ( intersperse
+    )
+import Data.Maybe
+    ( isJust
     )
 import Graphics.Vty
     ( Attr
@@ -35,6 +39,11 @@ import Text.Trans.Tokenize
     , splitLines
     , wrapLine
     )
+import Text.Regex.PCRE.Light.Char8
+    ( Regex
+    , match
+    , exec_anchored
+    )
 
 type Formatter = DisplayRegion -> Text -> Text
 data Text = Text { defaultAttr :: Attr
@@ -57,6 +66,20 @@ wrap sz t = t { tokens = newTokens }
                        intersperse [Newline $ defaultAttr t] .
                        wrapLine (defaultAttr t) (fromEnum $ region_width sz))
                   (splitLines $ tokens t)
+
+-- |A highlight formatter takes a regular expression used to scan the
+-- text and an attribute to assign to matches.  Highlighters only scan
+-- non-whitespace tokens in the text stream.
+highlight :: Regex -> Attr -> Formatter
+highlight regex attr =
+    \_ t -> t { tokens = map (annotate (matchesRegex regex) attr) $ tokens t }
+
+annotate :: (Token a -> Bool) -> a -> Token a -> Token a
+annotate f ann t = if f t then t `withAnnotation` ann else t
+
+matchesRegex :: Regex -> Token a -> Bool
+matchesRegex r (Token s _) = isJust $ match r s [exec_anchored]
+matchesRegex _ _ = False
 
 textWidget :: [Formatter] -> Text -> Widget
 textWidget formatters t = Widget {

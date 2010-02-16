@@ -8,6 +8,7 @@ import Control.Monad.State ( StateT, get, modify, evalStateT )
 
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
+import Text.Regex.PCRE.Light.Char8 ( Regex, compile )
 
 titleAttr :: Attr
 titleAttr = def_attr
@@ -29,6 +30,14 @@ selAttr = def_attr
            `with_back_color` yellow
            `with_fore_color` black
 
+urlRegex :: Regex
+urlRegex = compile "https?:\\/\\/([^\\.]+)(\\.[^\\.]+)+(\\:\\d+)?(\\/[\\-\\/#\\?\\&\\;a-zA-Z\\%0-9_]*)?$" []
+
+urlAttr :: Attr
+urlAttr = def_attr
+           `with_back_color` yellow
+           `with_fore_color` red
+
 buildUi :: AppState -> Widget
 buildUi appst =
   let body = fromJust $ lookup (fst $ getSelected list) msgs
@@ -39,7 +48,7 @@ buildUi appst =
       list = theList appst
   in bordered boxAttr $ listWidget list
       <--> hBorder titleAttr
-      <--> (bottomPadded $ textWidget [wrap] $ prepareText bodyAttr body)
+      <--> (bottomPadded $ textWidget [wrap, highlight urlRegex urlAttr] $ prepareText bodyAttr body)
       <--> footer
 
 -- Construct the user interface based on the contents of the
@@ -122,7 +131,7 @@ main = do
   -- The data that we'll present in the interface.
   let messages = [ ("First", "This text is long enough that it will get wrapped \
                              \if you resize your terminal to something small. \
-                             \It also contains enough text to get truncated at \
+                             \It also contains enough text to get truncated (a url looks like http://www.google.com/) at \
                              \the bottom if the display area is too small.\n\n\n" )
                  , ("Second", "the second message")
                  , ("Third", "the third message")
