@@ -145,9 +145,9 @@ handleEvent _ = continue
 -- Construct the application state using the message map.
 mkAppState :: [(String, String)] -> AppState
 mkAppState messages =
-    let list = mkList bodyAttr selAttr 3 borederedLabels
-        borederedLabels = zip labels $ map mkWidget labels
-        mkWidget = bordered boxAttr . simpleText bodyAttr
+    let list = mkList bodyAttr selAttr 5 labelWidgets
+        labelWidgets = zip labels $ map mkWidget labels
+        mkWidget = simpleText bodyAttr
         labels = map fst messages
     in AppState { theList = list
                 , theMessages = messages
