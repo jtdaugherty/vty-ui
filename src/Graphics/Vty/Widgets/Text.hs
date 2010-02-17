@@ -71,7 +71,7 @@ data Text = Text { defaultAttr :: Attr
                  -- ^The tokens of the underlying text stream.
                  }
 
--- |Given a default attribute, turn a String into Text.
+-- |Tokenize a string and prepare it for rendering.
 prepareText :: Attr -> String -> Text
 prepareText att s = Text { defaultAttr = att
                          , tokens = tokenize s att
