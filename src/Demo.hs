@@ -5,10 +5,39 @@ import Control.Applicative ( (<$>) )
 import Control.Monad ( when )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.State ( StateT, get, modify, evalStateT )
+import Text.Regex.PCRE.Light.Char8 ( Regex, compile )
 
 import Graphics.Vty
-import Graphics.Vty.Widgets.All
-import Text.Regex.PCRE.Light.Char8 ( Regex, compile )
+    ( Event(..), Key(..), Vty, Attr
+    , mkVty, shutdown, terminal, next_event, reserve_display
+    , pic_for_image, update, with_fore_color, with_back_color
+    , def_attr, blue, bright_white, bright_yellow, bright_green
+    , black, yellow, red
+    )
+import Graphics.Vty.Widgets.Base
+    ( (<-->)
+    , (<++>)
+    , hFill
+    )
+import Graphics.Vty.Widgets.Rendering
+    ( Widget(..)
+    , mkImage
+    )
+import Graphics.Vty.Widgets.Text
+    ( simpleText, wrap, highlight
+    , prepareText, textWidget
+    )
+import Graphics.Vty.Widgets.Borders
+    ( bordered, hBorder
+    )
+import Graphics.Vty.Widgets.Composed
+    ( bottomPadded
+    )
+import Graphics.Vty.Widgets.List
+    ( List, mkList, pageUp, pageDown, resize
+    , scrollUp, scrollDown, listWidget, getSelected
+    , selectedIndex
+    )
 
 titleAttr :: Attr
 titleAttr = def_attr
