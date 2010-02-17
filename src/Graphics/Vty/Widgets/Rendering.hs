@@ -1,8 +1,6 @@
 {-# LANGUAGE CPP #-}
 -- |This module provides a basic infrastructure for modelling a user
--- interface widget and rendering it to Vty's 'Image' type.  Widget
--- implementors must provide an instance of 'Widget' for a concrete
--- type.
+-- interface widget and rendering it to Vty's 'Image' type.
 module Graphics.Vty.Widgets.Rendering
     ( Widget(..)
     , mkImage
@@ -80,8 +78,8 @@ import Graphics.Vty
 data Orientation = Horizontal | Vertical
                    deriving (Eq, Show)
 
--- |The class of user interface widget types.  A 'Widget' provides
--- several properties:
+-- |The type of user interface widgets.  A 'Widget' provides several
+-- properties:
 --
 -- * /Growth properties/ which provide information about how to
 --   allocate space to widgets depending on their propensity to
@@ -110,7 +108,7 @@ data Orientation = Horizontal | Vertical
 -- is subdivided may depend on the growth properties of the children
 -- or it may be a matter of policy.  In any case, rendered child
 -- widgets should be constrained to the appropriate size; see other
--- 'Widget' instances for examples of this.
+-- 'Widget' implementations for examples of this.
 data Widget = Widget {
     -- |Given a widget, render it with the given dimensions.  The
     -- result should not be larger than the specified dimensions, but
