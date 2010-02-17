@@ -3,8 +3,8 @@ Version:             0.2
 Synopsis:            A user interface composition library for Vty
 Description:         An extensible library of user interface widgets
                      for composing and laying out Vty user interfaces.
-                     This library provides a collection of widgets and
-                     a type class for rendering widgets to Vty Images.
+                     This library provides a collection of primitives
+                     for building widgets and creating Vty Images.
                      This library is intended to make non-trivial user
                      interfaces trivial to express and modify without
                      having to worry about terminal size.
