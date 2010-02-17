@@ -168,11 +168,8 @@ addressable :: String
             -- ^The widget whose rendering address ('Address') should
             -- be stored.
             -> Widget
-addressable ident w = Widget {
-                        growHorizontal = growHorizontal w
-                      , growVertical = growVertical w
-                      , primaryAttribute = primaryAttribute w
-                      , withAttribute = addressable ident . withAttribute w
+addressable ident w = w {
+                        withAttribute = addressable ident . withAttribute w
                       , render = renderAddr ident . render w
                       }
 
