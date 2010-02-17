@@ -1,4 +1,3 @@
-{-# LANGUAGE ExistentialQuantification #-}
 -- |This module provides a 'List' widget for rendering a list of
 -- arbitrary widgets.  A 'List' has the following features:
 --

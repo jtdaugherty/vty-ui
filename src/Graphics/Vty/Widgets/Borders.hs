@@ -1,4 +1,3 @@
-{-# LANGUAGE ExistentialQuantification #-}
 -- |This module provides visual borders to be placed between and
 -- around widgets.
 module Graphics.Vty.Widgets.Borders

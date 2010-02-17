@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification, CPP #-}
+{-# LANGUAGE CPP #-}
 -- |This module provides a basic infrastructure for modelling a user
 -- interface widget and rendering it to Vty's 'Image' type.  Widget
 -- implementors must provide an instance of 'Widget' for a concrete

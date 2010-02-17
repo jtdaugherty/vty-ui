@@ -1,4 +1,3 @@
-{-# LANGUAGE ExistentialQuantification #-}
 -- |A collection of primitive user interface widgets for composing and
 -- laying out 'Graphics.Vty' user interfaces.  This module provides
 -- basic static and box layout widgets.
