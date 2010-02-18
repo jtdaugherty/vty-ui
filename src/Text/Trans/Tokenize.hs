@@ -23,7 +23,7 @@ where
 
 import Data.List
     ( inits
-    , intersperse
+    , intercalate
     , splitAt
     )
 
@@ -97,9 +97,9 @@ splitLines ts = splitWith ts isNewline
 
 -- |Truncate a token stream at a given column width.
 trunc :: (Eq a) => a -> [Token a] -> Int -> [Token a]
-trunc def ts width = concat $ intersperse [Newline def] newLines
+trunc def ts width = intercalate [Newline def] newLines
     where
-      newLines = map (\l -> truncLine width l) $ splitLines ts
+      newLines = map (truncLine width) $ splitLines ts
 
 -- |Given a list of tokens, truncate the list so that its underlying
 -- string representation does not exceed the specified column width.
@@ -110,7 +110,7 @@ truncLine width ts = take (length $ head passing) ts
     where
       lengths = map len ts
       cases = reverse $ inits lengths
-      passing = dropWhile (\c -> sum c > width) cases
+      passing = dropWhile ((> width) . sum) cases
 
 len :: Token a -> Int
 len (Newline _) = 0
