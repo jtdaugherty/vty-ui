@@ -46,7 +46,7 @@ import Text.Trans.Tokenize
     ( Token(..)
     , tokenize
     , withAnnotation
-    , trunc
+    , truncLine
     , splitLines
     , wrapLine
     )
@@ -143,16 +143,16 @@ renderText :: Text -> Formatter -> DisplayRegion -> Render
 renderText t formatter sz =
     if region_height sz == 0
     then renderImg nullImg
-         else if null ls
+         else if null ls || all null ls
               then renderImg nullImg
               else renderMany Vertical $ take (fromEnum $ region_height sz) lineImgs
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
-      newText = formatter sz t
-      ls = splitLines (trunc (defaultAttr newText) (tokens newText)
-                       (fromEnum $ region_width sz))
       lineImgs = map (renderImg . mkLineImg) ls
+      ls = map truncateLine $ splitLines $ tokens newText
+      truncateLine = truncLine (fromEnum $ region_width sz)
+      newText = formatter sz t
       mkLineImg line = if null line
                        then string (defaultAttr newText) " "
                        else horiz_cat $ map mkTokenImg line

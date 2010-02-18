@@ -13,6 +13,7 @@ module Text.Trans.Tokenize
     , serialize
     , withAnnotation
     , trunc
+    , truncLine
     , splitWith
     , isNewline
     , isWhitespace
