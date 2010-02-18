@@ -12,7 +12,9 @@ module Graphics.Vty.Widgets.Text
     , simpleText
     , textWidget
     -- *Formatting
+    , (&.&)
     , Formatter
+    , nullFormatter
     , highlight
     , wrap
     )
@@ -62,6 +64,14 @@ import Text.Regex.PCRE.Light.Char8
 -- Thus, a formatter takes a 'DisplayRegion' and runs at render time.
 type Formatter = DisplayRegion -> Text -> Text
 
+-- |Formatter composition: @a &.& b@ applies @a@ followed by @b@.
+(&.&) :: Formatter -> Formatter -> Formatter
+f1 &.& f2 = \sz -> f2 sz . f1 sz
+
+-- |No-op formatter.
+nullFormatter :: Formatter
+nullFormatter = const id
+
 -- |Text represents a String that can be manipulated with 'Formatter's
 -- at rendering time.
 data Text = Text { defaultAttr :: Attr
@@ -81,7 +91,7 @@ prepareText att s = Text { defaultAttr = att
 -- is recommended if you don't have any special formatting
 -- requirements.
 simpleText :: Attr -> String -> Widget
-simpleText a s = textWidget [] $ prepareText a s
+simpleText a s = textWidget nullFormatter $ prepareText a s
 
 -- |A formatter for wrapping text into the available space (known at
 -- rendering time).  This formatter will insert line breaks where
@@ -116,27 +126,21 @@ matchesRegex _ _ = False
 -- |Construct a text widget formatted with the specified formatters.
 -- the formatters will be applied in the order given here, so be aware
 -- of how the formatters will modify the text (and affect each other).
-textWidget :: [Formatter] -> Text -> Widget
-textWidget formatters t = Widget {
-                            growHorizontal = False
-                          , growVertical = False
-                          , primaryAttribute = defaultAttr t
-                          , withAttribute =
-                              \att -> textWidget formatters $ newText att
-                          , render = renderText t formatters
-                          }
+textWidget :: Formatter -> Text -> Widget
+textWidget formatter t = Widget {
+                           growHorizontal = False
+                         , growVertical = False
+                         , primaryAttribute = defaultAttr t
+                         , withAttribute =
+                             \att -> textWidget formatter $ newText att
+                         , render = renderText t formatter
+                         }
     where
       newText att = t { tokens = map (\c -> withAnnotation c att) $ tokens t }
 
--- |Given formatters, apply the formatters to the specified text
--- stream using the given rendering region.
-applyFormatters :: [Formatter] -> DisplayRegion -> Text -> Text
-applyFormatters [] _ t = t
-applyFormatters (f:fs) sz t = applyFormatters fs sz $ f sz t
-
 -- |Low-level text-rendering routine.
-renderText :: Text -> [Formatter] -> DisplayRegion -> Render
-renderText t formatters sz =
+renderText :: Text -> Formatter -> DisplayRegion -> Render
+renderText t formatter sz =
     if region_height sz == 0
     then renderImg nullImg
          else if null ls
@@ -145,7 +149,7 @@ renderText t formatters sz =
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
-      newText = applyFormatters formatters sz t
+      newText = formatter sz t
       ls = splitLines (trunc (defaultAttr newText) (tokens newText)
                        (fromEnum $ region_width sz))
       lineImgs = map (renderImg . mkLineImg) ls

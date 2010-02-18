@@ -25,7 +25,7 @@ import Graphics.Vty.Widgets.Rendering
     )
 import Graphics.Vty.Widgets.Text
     ( simpleText, wrap, highlight
-    , prepareText, textWidget
+    , prepareText, textWidget, (&.&)
     )
 import Graphics.Vty.Widgets.Borders
     ( bordered, hBorder
@@ -77,7 +77,7 @@ buildUi appst =
       list = theList appst
   in bordered boxAttr $ listWidget list
       <--> hBorder titleAttr
-      <--> (bottomPadded $ textWidget [wrap, highlight urlRegex urlAttr] $ prepareText bodyAttr body)
+      <--> (bottomPadded $ textWidget (wrap &.& highlight urlRegex urlAttr) $ prepareText bodyAttr body)
       <--> footer
 
 -- Construct the user interface based on the contents of the
