@@ -136,7 +136,7 @@ textWidget formatter t = Widget {
                          , render = renderText t formatter
                          }
     where
-      newText att = t { tokens = map (\c -> withAnnotation c att) $ tokens t }
+      newText att = t { tokens = map (`withAnnotation` att) $ tokens t }
 
 -- |Low-level text-rendering routine.
 renderText :: Text -> Formatter -> DisplayRegion -> Render
