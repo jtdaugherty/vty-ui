@@ -12,12 +12,8 @@ module Text.Trans.Tokenize
     , tokenize
     , serialize
     , withAnnotation
-    , trunc
     , truncLine
-    , splitWith
-    , isNewline
     , isWhitespace
-    , splitLines
     , wrapLine
     )
 where
@@ -31,9 +27,7 @@ import Data.List
 -- |The type of textual tokens.  Tokens have an "annotation" type,
 -- which is the type of values that can be used to annotate tokens
 -- (e.g., position in a file, visual attributes, etc.).
-data Token a = Newline a
-             -- ^A line break.
-             | Whitespace String a
+data Token a = Whitespace String a
              -- ^A sequence of whitespace characters.
              | Token String a
              -- ^A non-whitespace token.
@@ -46,7 +40,9 @@ splitWith :: (Eq a) => [a] -> (a -> Bool) -> [[a]]
 splitWith [] _ = []
 splitWith es f = if null rest
                  then [first]
-                 else first : splitWith (tail rest) f
+                 else if length rest == 1 && (f $ head rest)
+                      then first : [[]]
+                      else first : splitWith (tail rest) f
     where
       (first, rest) = break f es
 
@@ -56,51 +52,37 @@ wsChars = [' ', '\t']
 isWs :: Char -> Bool
 isWs = (`elem` wsChars)
 
+getS :: Token a -> String
+getS (Whitespace s _) = s
+getS (Token s _) = s
+
 -- |Tokenize a string using a default annotation value.
-tokenize :: String -> a -> [Token a]
-tokenize [] _ = []
-tokenize ('\n':rest) a = Newline a : tokenize rest a
-tokenize s@(c:_) a | isWs c = Whitespace ws a : tokenize rest a
+tokenize :: String -> a -> [[Token a]]
+tokenize s def = map (tokenize' def) $ splitWith s (== '\n')
+
+tokenize' :: a -> String -> [Token a]
+tokenize' _ [] = []
+tokenize' a s@(c:_) | isWs c = Whitespace ws a : tokenize' a rest
     where
       (ws, rest) = break (not . isWs) s
-tokenize s a = Token t a : tokenize rest a
+tokenize' a s = Token t a : tokenize' a rest
     where
       (t, rest) = break (\c -> isWs c || c == '\n') s
 
 -- |Serialize tokens to an underlying string representation,
 -- discarding annotations.
-serialize :: [Token a] -> String
-serialize [] = []
-serialize (Newline _:rest) = "\n" ++ serialize rest
-serialize (Whitespace s _:rest) = s ++ serialize rest
-serialize (Token s _:rest) = s ++ serialize rest
+serialize :: [[Token a]] -> String
+serialize ls = intercalate "\n" $ map (concatMap getS) ls
 
 -- |Replace a token's annotation.
 withAnnotation :: Token a -> a -> Token a
-withAnnotation (Newline _) b = Newline b
 withAnnotation (Whitespace s _) b = Whitespace s b
 withAnnotation (Token s _) b = Token s b
-
--- |Is the token a line break?
-isNewline :: Token a -> Bool
-isNewline (Newline _) = True
-isNewline _ = False
 
 -- |Is the token whitespace?
 isWhitespace :: Token a -> Bool
 isWhitespace (Whitespace _ _) = True
 isWhitespace _ = False
-
--- |Split a list of tokens at Newlines, such that the returned token
--- lists do not contain Newlines.
-splitLines :: (Eq a) => [Token a] -> [[Token a]]
-splitLines ts = splitWith ts isNewline
-
--- |Truncate a token stream at a given column width.
-trunc :: (Eq a) => a -> [Token a] -> Int -> [Token a]
-trunc def ts width = intercalate [Newline def] newLines
-    where
-      newLines = map (truncLine width) $ splitLines ts
 
 -- |Given a list of tokens, truncate the list so that its underlying
 -- string representation does not exceed the specified column width.
@@ -109,17 +91,10 @@ trunc def ts width = intercalate [Newline def] newLines
 truncLine :: Int -> [Token a] -> [Token a]
 truncLine width ts = take (length $ head passing) ts
     where
-      lengths = map len ts
+      lengths = map (length . getS) ts
       cases = reverse $ inits lengths
       passing = dropWhile ((> width) . sum) cases
 
-len :: Token a -> Int
-len (Newline _) = 0
-len (Whitespace s _) = length s
-len (Token s _) = length s
-
--- XXX This assumes that the input token list will not contain
--- newlines (i.e., that splitLines has already been called).
 -- |Given a list of tokens without Newlines, (potentially) wrap the
 -- list to the specified column width, using the specified default
 -- annotation.
@@ -134,7 +109,7 @@ wrapLine def width ts =
     then [ts]
     else these : wrapLine def width those
     where
-      lengths = map len ts
+      lengths = map (length . getS) ts
       cases = reverse $ inits lengths
       passing = dropWhile (\c -> sum c > width) cases
       numTokens = length $ head passing

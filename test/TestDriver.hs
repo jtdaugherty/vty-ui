@@ -40,7 +40,6 @@ instance Arbitrary DisplayRegion where
 instance (Arbitrary a) =>  Arbitrary (Token a) where
     arbitrary = oneof [ Whitespace <$> ws <*> arbitrary
                       , Token <$> s <*> arbitrary
-                      , Newline <$> arbitrary
                       ]
         where
           ws = oneof [ pure " ", pure "\t" ]
@@ -68,8 +67,8 @@ imageSize w sz =
 textString :: Gen String
 textString = listOf (arbitrary `suchThat` (\c -> isPrint c && c /= '\n'))
 
-tokenGen :: Gen [Token ()]
-tokenGen = listOf arbitrary
+tokenGen :: Gen [[Token ()]]
+tokenGen = listOf $ listOf arbitrary
 
 tests :: [Property]
 tests = [ textSize

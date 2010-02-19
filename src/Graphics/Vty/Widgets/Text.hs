@@ -20,9 +20,6 @@ module Graphics.Vty.Widgets.Text
     )
 where
 
-import Data.List
-    ( intersperse
-    )
 import Data.Maybe
     ( isJust
     )
@@ -47,7 +44,6 @@ import Text.Trans.Tokenize
     , tokenize
     , withAnnotation
     , truncLine
-    , splitLines
     , wrapLine
     )
 import Text.Regex.PCRE.Light.Char8
@@ -77,7 +73,7 @@ nullFormatter = const id
 data Text = Text { defaultAttr :: Attr
                  -- ^The default attribute for all tokens in this text
                  -- object.
-                 , tokens :: [Token Attr]
+                 , tokens :: [[Token Attr]]
                  -- ^The tokens of the underlying text stream.
                  }
 
@@ -100,18 +96,16 @@ simpleText a s = textWidget nullFormatter $ prepareText a s
 wrap :: Formatter
 wrap sz t = t { tokens = newTokens }
     where
-      newTokens = concat $ intersperse [Newline $ defaultAttr t] $
-                  map (concat .
-                       intersperse [Newline $ defaultAttr t] .
-                       wrapLine (defaultAttr t) (fromEnum $ region_width sz))
-                  (splitLines $ tokens t)
+      newTokens = concatMap (wrapLine attr width) $ tokens t
+      attr = defaultAttr t
+      width = fromEnum $ region_width sz
 
 -- |A highlight formatter takes a regular expression used to scan the
 -- text and an attribute to assign to matches.  Highlighters only scan
 -- non-whitespace tokens in the text stream.
 highlight :: Regex -> Attr -> Formatter
 highlight regex attr =
-    \_ t -> t { tokens = map (annotate (matchesRegex regex) attr) $ tokens t }
+    \_ t -> t { tokens = map (map (annotate (matchesRegex regex) attr)) $ tokens t }
 
 -- |Possibly annotate a token with the specified annotation value if
 -- the predicate matches; otherwise, return the input token unchanged.
@@ -136,7 +130,7 @@ textWidget formatter t = Widget {
                          , render = renderText t formatter
                          }
     where
-      newText att = t { tokens = map (`withAnnotation` att) $ tokens t }
+      newText att = t { tokens = map (map (`withAnnotation` att)) $ tokens t }
 
 -- |Low-level text-rendering routine.
 renderText :: Text -> Formatter -> DisplayRegion -> Render
@@ -150,7 +144,7 @@ renderText t formatter sz =
       -- Truncate the tokens at the specified column and split them up
       -- into lines
       lineImgs = map (renderImg . mkLineImg) ls
-      ls = map truncateLine $ splitLines $ tokens newText
+      ls = map truncateLine $ tokens newText
       truncateLine = truncLine (fromEnum $ region_width sz)
       newText = formatter sz t
       mkLineImg line = if null line
@@ -158,6 +152,5 @@ renderText t formatter sz =
                        else horiz_cat $ map mkTokenImg line
       nullImg = string def_attr ""
 
-      mkTokenImg (Newline _) = error "mkTokenImg should never be called on a Newline"
       mkTokenImg (Token s a) = string a s
       mkTokenImg (Whitespace s a) = string a s
