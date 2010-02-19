@@ -1,13 +1,14 @@
 Name:                vty-ui
-Version:             0.2
+Version:             0.3
 Synopsis:            A user interface composition library for Vty
 Description:         An extensible library of user interface widgets
                      for composing and laying out Vty user interfaces.
                      This library provides a collection of primitives
-                     for building widgets and creating Vty Images.
-                     This library is intended to make non-trivial user
-                     interfaces trivial to express and modify without
-                     having to worry about terminal size.
+                     for building and composing widgets and creating
+                     Vty Images.  This library is intended to make
+                     non-trivial user interfaces trivial to express
+                     and modify without having to worry about terminal
+                     size.
 Category:            User Interfaces
 Author:              Jonathan Daugherty <drcygnus@gmail.com>
 Maintainer:          Jonathan Daugherty <drcygnus@gmail.com>
@@ -15,7 +16,7 @@ Build-Type:          Simple
 License:             BSD3
 License-File:        LICENSE
 Cabal-Version:       >= 1.2
-Homepage:            http://repos.codevine.org/vty-ui/
+Homepage:            http://codevine.org/vty-ui/
 
 Flag testing
     Description:     Build for testing
