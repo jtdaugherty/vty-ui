@@ -6,6 +6,7 @@
 -- 'textWidget'.
 module Graphics.Vty.Widgets.Text
     ( Text(defaultAttr, tokens)
+    , Formatter
     -- *Text Preparation
     , prepareText
     -- *Constructing Widgets
@@ -13,7 +14,6 @@ module Graphics.Vty.Widgets.Text
     , textWidget
     -- *Formatting
     , (&.&)
-    , Formatter
     , highlight
     , wrap
     )
