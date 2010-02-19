@@ -66,8 +66,8 @@ f1 &.& f2 = \sz -> f2 sz . f1 sz
 nullFormatter :: Formatter
 nullFormatter = const id
 
--- |Text represents a String that can be manipulated with 'Formatter's
--- at rendering time.
+-- |'Text' represents a 'String' that can be manipulated with
+-- 'Formatter's at rendering time.
 data Text = Text { defaultAttr :: Attr
                  -- ^The default attribute for all tokens in this text
                  -- object.
@@ -75,22 +75,22 @@ data Text = Text { defaultAttr :: Attr
                  -- ^The tokens of the underlying text stream.
                  }
 
--- |Tokenize a string and prepare it for rendering.
+-- |Prepare a string for rendering and assign it the specified default
+-- attribute.
 prepareText :: Attr -> String -> Text
 prepareText att s = Text { defaultAttr = att
                          , tokens = tokenize s att
                          }
 
 -- |Construct a Widget directly from an attribute and a String.  This
--- is recommended if you don't have any special formatting
--- requirements.
+-- is recommended if you don't need to use a 'Formatter'.
 simpleText :: Attr -> String -> Widget
 simpleText a s = textWidget nullFormatter $ prepareText a s
 
--- |A formatter for wrapping text into the available space (known at
--- rendering time).  This formatter will insert line breaks where
--- appropriate, so if you want to use other structure-sensitive
--- formatters, run this formatter last.
+-- |A formatter for wrapping text into the available space.  This
+-- formatter will insert line breaks where appropriate so if you want
+-- to use other structure-sensitive formatters, run this formatter
+-- last.
 wrap :: Formatter
 wrap sz t = t { tokens = newTokens }
     where

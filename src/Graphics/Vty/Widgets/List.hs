@@ -51,7 +51,7 @@ import Graphics.Vty.Widgets.Text
     )
 
 -- |A list item. Each item contains an arbitrary internal identifier
--- @a@ and a widget @b@ representing it.
+-- @a@ and a 'Widget' representing it.
 type ListItem a = (a, Widget)
 
 -- |The list widget type.  Lists are parameterized over the /internal/

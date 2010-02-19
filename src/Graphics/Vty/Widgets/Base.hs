@@ -32,6 +32,8 @@ import Graphics.Vty
     , region_height
     )
 
+-- |A vertical fill widget.  Fills all available space with the
+-- specified character and attribute.
 vFill :: Attr -> Char -> Widget
 vFill att c = Widget {
                 growHorizontal = False
@@ -42,6 +44,8 @@ vFill att c = Widget {
                          (region_height s)
               }
 
+-- |A horizontal fill widget.  Fills the available horizontal space,
+-- one row high, using the specified character and attribute.
 hFill :: Attr -> Char -> Int -> Widget
 hFill att c h = Widget {
                   growHorizontal = True

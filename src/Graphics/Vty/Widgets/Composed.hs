@@ -1,5 +1,4 @@
--- |This module provides high-level "combined" widgets which compose
--- the basic widget types to provide more interesting widgets.
+-- |This module provides high-level composed widgets.
 module Graphics.Vty.Widgets.Composed
     ( bottomPadded
     , topPadded

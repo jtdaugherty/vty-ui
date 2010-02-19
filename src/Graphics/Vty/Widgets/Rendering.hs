@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP #-}
 -- |This module provides a basic infrastructure for modelling a user
--- interface widget and rendering it to Vty's 'Image' type.
+-- interface widget and converting it to Vty's 'Image' type.
 module Graphics.Vty.Widgets.Rendering
     ( Widget(..)
     , mkImage
@@ -95,24 +95,25 @@ data Orientation = Horizontal | Vertical
 --   into a 'Render' value.
 --
 -- Of primary concern is the rendering routine, 'render'.  The
--- rendering routine takes two parameters: the size of the space in
--- which the widget should be rendered, and the widget itself.  The
--- space is important because it provides a maximum size for the
--- widget.  For widgets that consume all available space, the size of
--- the resulting 'Render' will be equal to the supplied size.  For
--- smaller widgets (e.g., a simple string of text), the size of the
--- 'Render' will likely be much smaller than the supplied size.
+-- rendering routine takes one parameter: the size of the space in
+-- which the widget should be rendered.  The space is important
+-- because it provides a maximum size for the widget.  For widgets
+-- that consume all available space, the size of the resulting
+-- 'Render' will be equal to the supplied size.  For smaller widgets
+-- (e.g., a simple string of text), the size of the 'Render' will
+-- likely be much smaller than the supplied size.  In any case, any
+-- 'Widget' implementation /must/ obey the rule that the resulting
+-- 'Render' must not exceed the supplied 'DisplayRegion' in size.  If
+-- it does, there's a good chance your interface will be garbled.
 --
 -- If the widget has child widgets, the supplied size should be
 -- subdivided to fit the child widgets as appropriate.  How the space
 -- is subdivided may depend on the growth properties of the children
--- or it may be a matter of policy.  In any case, rendered child
--- widgets should be constrained to the appropriate size; see other
--- 'Widget' implementations for examples of this.
+-- or it may be a matter of policy.
 data Widget = Widget {
-    -- |Given a widget, render it with the given dimensions.  The
-    -- result should not be larger than the specified dimensions, but
-    -- may be smaller.
+    -- |Render the widget with the given dimensions.  The result
+    -- /must/ not be larger than the specified dimensions, but may be
+    -- smaller.
     render :: DisplayRegion -> Render
 
     -- |Will this widget expand to take advantage of available
