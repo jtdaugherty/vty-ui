@@ -59,13 +59,21 @@ selAttr = def_attr
            `with_back_color` yellow
            `with_fore_color` black
 
-urlRegex :: Regex
-urlRegex = compile "https?:\\/\\/([^\\.]+)(\\.[^\\.]+)+(\\:\\d+)?(\\/[\\-\\/#\\?\\&\\;a-zA-Z\\%0-9_]*)?$" []
+regex1 :: Regex
+regex1 = compile "(to|an|or|too)" []
 
-urlAttr :: Attr
-urlAttr = def_attr
-           `with_back_color` yellow
+hlAttr1 :: Attr
+hlAttr1 = def_attr
+           `with_back_color` black
            `with_fore_color` red
+
+regex2 :: Regex
+regex2 = compile "(text|if|you)" []
+
+hlAttr2 :: Attr
+hlAttr2 = def_attr
+           `with_back_color` black
+           `with_fore_color` yellow
 
 buildUi :: AppState -> Widget
 buildUi appst =
@@ -75,9 +83,12 @@ buildUi appst =
                <++> hFill titleAttr '-' 1
       msgs = theMessages appst
       list = theList appst
+      formatter = wrap &.&
+                  highlight regex1 hlAttr1 &.&
+                  highlight regex2 hlAttr2
   in bordered boxAttr $ listWidget list
       <--> hBorder titleAttr
-      <--> (bottomPadded $ textWidget (wrap &.& highlight urlRegex urlAttr) $ prepareText bodyAttr body)
+      <--> (bottomPadded $ textWidget formatter $ prepareText bodyAttr body)
       <--> footer
 
 -- Construct the user interface based on the contents of the
@@ -160,7 +171,7 @@ main = do
   -- The data that we'll present in the interface.
   let messages = [ ("First", "This text is long enough that it will get wrapped \
                              \if you resize your terminal to something small. \
-                             \It also contains enough text to get truncated (a url looks like http://www.google.com/) at \
+                             \It also contains enough text to get truncated at \
                              \the bottom if the display area is too small.\n\n\n" )
                  , ("Second", "the second message")
                  , ("Third", "the third message")
