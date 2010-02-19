@@ -114,8 +114,7 @@ annotate f ann t = if f t then t `withAnnotation` ann else t
 
 -- |Does the specified regex match the token's string value?
 matchesRegex :: Regex -> Token a -> Bool
-matchesRegex r (Token s _) = isJust $ match r s [exec_anchored]
-matchesRegex _ _ = False
+matchesRegex r t = isJust $ match r (tokenString t) [exec_anchored]
 
 -- |Construct a text widget formatted with the specified formatters.
 -- the formatters will be applied in the order given here, so be aware
@@ -151,6 +150,4 @@ renderText t formatter sz =
                        then string (defaultAttr newText) " "
                        else horiz_cat $ map mkTokenImg line
       nullImg = string def_attr ""
-
-      mkTokenImg (Token s a) = string a s
-      mkTokenImg (Whitespace s a) = string a s
+      mkTokenImg tok = string (tokenAnnotation tok) (tokenString tok)

@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 -- |This module provides a tokenization API for text strings.  The
 -- idea is that if you want to make structural or representational
 -- changes to a text stream, it needs to be split up into reasonable
@@ -8,13 +9,19 @@
 -- changes.  To serialize a token list to its underlying string form,
 -- use 'serialize'.
 module Text.Trans.Tokenize
-    ( Token(..)
-    , tokenize
+    ( tokenize
     , serialize
     , withAnnotation
     , truncLine
     , isWhitespace
     , wrapLine
+#ifdef TESTING
+    , Token(..)
+#else
+    , Token
+    , tokenString
+    , tokenAnnotation
+#endif
     )
 where
 
@@ -27,10 +34,12 @@ import Data.List
 -- |The type of textual tokens.  Tokens have an "annotation" type,
 -- which is the type of values that can be used to annotate tokens
 -- (e.g., position in a file, visual attributes, etc.).
-data Token a = Whitespace String a
-             -- ^A sequence of whitespace characters.
-             | Token String a
-             -- ^A non-whitespace token.
+data Token a = Whitespace { tokenString :: String
+                          , tokenAnnotation :: a
+                          }
+             | Token { tokenString :: String
+                     , tokenAnnotation :: a
+                     }
                deriving (Show, Eq)
 
 -- |General splitter function; given a list and a predicate, split the
@@ -52,10 +61,6 @@ wsChars = [' ', '\t']
 isWs :: Char -> Bool
 isWs = (`elem` wsChars)
 
-getS :: Token a -> String
-getS (Whitespace s _) = s
-getS (Token s _) = s
-
 -- |Tokenize a string using a default annotation value.
 tokenize :: String -> a -> [[Token a]]
 tokenize s def = map (tokenize' def) $ splitWith s (== '\n')
@@ -72,7 +77,7 @@ tokenize' a s = Token t a : tokenize' a rest
 -- |Serialize tokens to an underlying string representation,
 -- discarding annotations.
 serialize :: [[Token a]] -> String
-serialize ls = intercalate "\n" $ map (concatMap getS) ls
+serialize ls = intercalate "\n" $ map (concatMap tokenString) ls
 
 -- |Replace a token's annotation.
 withAnnotation :: Token a -> a -> Token a
@@ -91,7 +96,7 @@ isWhitespace _ = False
 truncLine :: Int -> [Token a] -> [Token a]
 truncLine width ts = take (length $ head passing) ts
     where
-      lengths = map (length . getS) ts
+      lengths = map (length . tokenString) ts
       cases = reverse $ inits lengths
       passing = dropWhile ((> width) . sum) cases
 
@@ -109,7 +114,7 @@ wrapLine def width ts =
     then [ts]
     else these : wrapLine def width those
     where
-      lengths = map (length . getS) ts
+      lengths = map (length . tokenString) ts
       cases = reverse $ inits lengths
       passing = dropWhile (\c -> sum c > width) cases
       numTokens = length $ head passing
