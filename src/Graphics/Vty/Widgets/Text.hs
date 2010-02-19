@@ -14,7 +14,6 @@ module Graphics.Vty.Widgets.Text
     -- *Formatting
     , (&.&)
     , Formatter
-    , nullFormatter
     , highlight
     , wrap
     )
@@ -64,7 +63,6 @@ type Formatter = DisplayRegion -> Text -> Text
 (&.&) :: Formatter -> Formatter -> Formatter
 f1 &.& f2 = \sz -> f2 sz . f1 sz
 
--- |No-op formatter.
 nullFormatter :: Formatter
 nullFormatter = const id
 
