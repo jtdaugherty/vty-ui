@@ -18,6 +18,6 @@ tokenGen :: Gen [[Token ()]]
 tokenGen = listOf $ listOf arbitrary
 
 tests :: [Property]
-tests = [ label "tokenizeRoundTrip" $ property $ forAll tokenGen $
+tests = [ label "tokenizeConsistency" $ property $ forAll tokenGen $
                     \ts -> serialize ts == (serialize $ tokenize (serialize ts) ())
         ]
