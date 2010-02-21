@@ -94,8 +94,7 @@ simpleText a s = textWidget nullFormatter $ prepareText a s
 wrap :: Formatter
 wrap sz t = t { tokens = newTokens }
     where
-      newTokens = concatMap (wrapLine attr width) $ tokens t
-      attr = defaultAttr t
+      newTokens = concatMap (wrapLine width) $ tokens t
       width = fromEnum $ region_width sz
 
 -- |A highlight formatter takes a regular expression used to scan the

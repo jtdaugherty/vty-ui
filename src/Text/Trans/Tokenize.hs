@@ -101,18 +101,17 @@ truncLine width ts = take (length $ head passing) ts
       passing = dropWhile ((> width) . sum) cases
 
 -- |Given a list of tokens without Newlines, (potentially) wrap the
--- list to the specified column width, using the specified default
--- annotation.
-wrapLine :: (Eq a) => a -> Int -> [Token a] -> [[Token a]]
-wrapLine _ _ [] = []
-wrapLine def width ts =
+-- list to the specified column width.
+wrapLine :: Int -> [Token a] -> [[Token a]]
+wrapLine _ [] = []
+wrapLine width ts =
     -- If there were no passing cases, that means the line can't be
     -- wrapped so just return it as-is (e.g., one long unbroken
     -- string).  Otherwise, package up the acceptable tokens and
     -- continue wrapping.
     if null passing
     then [ts]
-    else these : wrapLine def width those
+    else these : wrapLine width those
     where
       lengths = map (length . tokenString) ts
       cases = reverse $ inits lengths
