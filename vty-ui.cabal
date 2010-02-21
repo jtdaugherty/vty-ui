@@ -51,8 +51,13 @@ Executable vty-ui-tests
   if !flag(testing)
     Buildable:     False
   end
-  Hs-Source-Dirs:  src,test
+  Hs-Source-Dirs:  src,test,test/src
   Main-is:         TestDriver.hs
+
+  Other-Modules:
+        Tests.Instances
+        Tests.Util
+        Tests.Text
 
 Executable vty-ui-demo
   Hs-Source-Dirs:  src
