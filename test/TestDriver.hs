@@ -71,13 +71,13 @@ tokenGen :: Gen [[Token ()]]
 tokenGen = listOf $ listOf arbitrary
 
 tests :: [Property]
-tests = [ textSize
-        , property $ forAll textString $
-                       \str attr -> imageSize (simpleText attr str)
+tests = [ label "textSize" textSize
+        , label "imageSize" $ property $ forAll textString $
+                    \str attr -> imageSize (simpleText attr str)
         -- Round-trip property for token serialization and string
         -- tokenization.
-        , property $ forAll tokenGen $
-                       \ts -> serialize ts == (serialize $ tokenize (serialize ts) ())
+        , label "tokenizeRoundTrip" $ property $ forAll tokenGen $
+                    \ts -> serialize ts == (serialize $ tokenize (serialize ts) ())
         ]
 
 main :: IO ()
