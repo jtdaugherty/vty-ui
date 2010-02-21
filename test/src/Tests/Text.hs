@@ -1,24 +1,13 @@
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 module Tests.Text where
 
-import Control.Applicative ( (<$>), (<*>), pure )
 import Test.QuickCheck
 import Data.Char ( isPrint )
 
 import Graphics.Vty
 import Graphics.Vty.Widgets.Text
-import Text.Trans.Tokenize
 
 import Tests.Util
 import Tests.Instances ()
-
-instance (Arbitrary a) => Arbitrary (Token a) where
-    arbitrary = oneof [ Whitespace <$> ws <*> arbitrary
-                      , Token <$> s <*> arbitrary
-                      ]
-        where
-          ws = oneof [ pure " ", pure "\t" ]
-          s = replicate <$> choose (1, 10) <*> pure 'a'
 
 textSize :: Property
 textSize =
@@ -32,15 +21,8 @@ textSize =
 textString :: Gen String
 textString = listOf (arbitrary `suchThat` (\c -> isPrint c && c /= '\n'))
 
-tokenGen :: Gen [[Token ()]]
-tokenGen = listOf $ listOf arbitrary
-
 tests :: [Property]
 tests = [ label "textSize" textSize
         , label "imageSize" $ property $ forAll textString $
                     \str attr -> imageSize (simpleText attr str)
-        -- Round-trip property for token serialization and string
-        -- tokenization.
-        , label "tokenizeRoundTrip" $ property $ forAll tokenGen $
-                    \ts -> serialize ts == (serialize $ tokenize (serialize ts) ())
         ]

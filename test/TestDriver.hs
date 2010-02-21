@@ -6,9 +6,12 @@ import Test.QuickCheck
 import Test.QuickCheck.Test
 
 import qualified Tests.Text as Text
+import qualified Tests.Tokenize as Tokenize
 
 tests :: [Property]
-tests = Text.tests
+tests = concat [ Text.tests
+               , Tokenize.tests
+               ]
 
 main :: IO ()
 main = do

@@ -58,6 +58,7 @@ Executable vty-ui-tests
         Tests.Instances
         Tests.Util
         Tests.Text
+        Tests.Tokenize
 
 Executable vty-ui-demo
   Hs-Source-Dirs:  src
