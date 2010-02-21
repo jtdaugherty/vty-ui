@@ -63,6 +63,7 @@ isWs = (`elem` wsChars)
 
 -- |Tokenize a string using a default annotation value.
 tokenize :: String -> a -> [[Token a]]
+tokenize [] _ = [[]]
 tokenize s def = map (tokenize' def) $ splitWith s (== '\n')
 
 tokenize' :: a -> String -> [Token a]
@@ -111,7 +112,11 @@ wrapLine width ts =
     -- continue wrapping.
     if null passing
     then [ts]
-    else these : wrapLine width those
+    else if null these
+         then if length those' == 1
+              then [those']
+              else [head those'] : (wrapLine width $ tail those')
+         else these : wrapLine width those
     where
       lengths = map (length . tokenString) ts
       cases = reverse $ inits lengths
