@@ -8,6 +8,8 @@ module Graphics.Vty.Widgets.Base
     , vBox
     , hFill
     , vFill
+    , hLimit
+    , vLimit
     )
 where
 
@@ -144,3 +146,25 @@ vBox = box Vertical
 -- |An alias for 'vBox' intended as sugar to chain widgets vertically.
 (<-->) :: Widget -> Widget -> Widget
 (<-->) = vBox
+
+-- |Impose a maximum horizontal size, in columns, on a 'Widget'.
+hLimit :: Int -> Widget -> Widget
+hLimit maxWidth w = w { growHorizontal = False
+                      , render = restrictedRender
+                      }
+    where
+      restrictedRender sz =
+          if region_width sz < fromIntegral maxWidth
+          then render w sz
+          else render w $ sz `withWidth` fromIntegral maxWidth
+
+-- |Impose a maximum vertical size, in rows, on a 'Widget'.
+vLimit :: Int -> Widget -> Widget
+vLimit maxHeight w = w { growVertical = False
+                       , render = restrictedRender
+                       }
+    where
+      restrictedRender sz =
+          if region_height sz < fromIntegral maxHeight
+          then render w sz
+          else render w $ sz `withHeight` fromIntegral maxHeight
