@@ -3,6 +3,8 @@
 module Graphics.Vty.Widgets.Borders
     ( vBorder
     , hBorder
+    , vBorderWith
+    , hBorderWith
     , bordered
     )
 where
@@ -32,23 +34,33 @@ import Graphics.Vty.Widgets.Text
 
 -- |Create a single-row horizontal border.
 hBorder :: Attr -> Widget
-hBorder att = Widget {
-                growVertical = False
-              , growHorizontal = True
-              , primaryAttribute = att
-              , withAttribute = hBorder
-              , render = \s -> renderImg $ char_fill att '-' (region_width s) 1
-              }
+hBorder = hBorderWith '-'
+
+-- |Create a single-row horizontal border using the specified
+-- attribute and character.
+hBorderWith :: Char -> Attr -> Widget
+hBorderWith ch att =
+    Widget { growVertical = False
+           , growHorizontal = True
+           , primaryAttribute = att
+           , withAttribute = hBorder
+           , render = \s -> renderImg $ char_fill att ch (region_width s) 1
+           }
 
 -- |Create a single-column vertical border.
 vBorder :: Attr -> Widget
-vBorder att = Widget {
-                growHorizontal = False
-              , growVertical = True
-              , primaryAttribute = att
-              , render = \s -> renderImg $ char_fill att '|' 1 (region_height s)
-              , withAttribute = vBorder
-              }
+vBorder = vBorderWith '|'
+
+-- |Create a single-column vertical border using the specified
+-- attribute and character.
+vBorderWith :: Char -> Attr -> Widget
+vBorderWith ch att =
+    Widget { growHorizontal = False
+           , growVertical = True
+           , primaryAttribute = att
+           , render = \s -> renderImg $ char_fill att ch 1 (region_height s)
+           , withAttribute = vBorder
+           }
 
 -- |Wrap a widget in a bordering box using the specified attribute.
 bordered :: Attr -> Widget -> Widget
