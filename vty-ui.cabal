@@ -25,8 +25,8 @@ Flag testing
 Library
   Build-Depends:
     base >= 4 && < 5,
-    vty >= 4.0 && < 4.1,
-    containers >= 0.2 && < 0.3,
+    vty >= 4.0 && < 4.3,
+    containers >= 0.2 && < 0.4,
     pcre-light >= 0.3 && < 0.4
 
   GHC-Options:       -Wall -Werror

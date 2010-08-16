@@ -28,7 +28,6 @@ where
 import Data.List
     ( inits
     , intercalate
-    , splitAt
     )
 
 -- |The type of textual tokens.  Tokens have an "annotation" type,
