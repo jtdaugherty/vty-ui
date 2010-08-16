@@ -148,7 +148,7 @@ handleEvent (EvKey KPageUp []) = modify pageListUp >> continue
 handleEvent (EvKey KPageDown []) = modify pageListDown >> continue
 handleEvent (EvKey (KASCII 'q') []) = stop
 handleEvent (EvResize _ h) = do
-  let newSize = ceiling (0.05 * fromIntegral h)
+  let newSize = ceiling ((0.05 :: Double) * fromIntegral h)
   when (newSize > 0) $ modify (resizeList newSize)
   continue
 handleEvent _ = continue
