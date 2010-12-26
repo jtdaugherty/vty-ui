@@ -25,7 +25,7 @@ Flag testing
 Library
   Build-Depends:
     base >= 4 && < 5,
-    vty >= 4.0 && < 4.5,
+    vty >= 4.6 && < 4.7,
     containers >= 0.2 && < 0.4,
     pcre-light >= 0.3 && < 0.4
 
@@ -44,7 +44,7 @@ Library
 
 Executable vty-ui-tests
   Build-Depends:
-    QuickCheck >= 2.1 && < 2.2
+    QuickCheck >= 2.4 && < 2.5
 
   CPP-Options: -DTESTING
   GHC-Options: -Wall -Werror
@@ -66,4 +66,4 @@ Executable vty-ui-demo
   GHC-Options:     -Wall -Werror
   Main-is:         Demo.hs
   Build-Depends:
-    mtl >= 1.1 && < 1.2
+    mtl >= 2.0 && < 2.1

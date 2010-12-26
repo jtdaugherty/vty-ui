@@ -3,7 +3,6 @@ module Tests.Instances where
 
 import Test.QuickCheck
 import Control.Applicative ( (<*>), (<$>), pure )
-import Data.Word ( Word8 )
 
 import Graphics.Vty
 
@@ -12,9 +11,6 @@ instance (Arbitrary a, Eq a) => Arbitrary (MaybeDefault a) where
                       , pure KeepCurrent
                       , SetTo <$> arbitrary
                       ]
-
-instance Arbitrary Word8 where
-    arbitrary = toEnum <$> choose (0, 255)
 
 instance Arbitrary Color where
     arbitrary = oneof [ ISOColor <$> arbitrary
