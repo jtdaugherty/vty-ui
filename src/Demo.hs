@@ -127,7 +127,7 @@ eventloop :: Vty
 eventloop vty uiBuilder handle = do
   w <- uiBuilder
   evt <- liftIO $ do
-           (img, _) <- mkImage vty w
+           img <- mkImage vty w
            update vty $ pic_for_image img
            next_event vty
   next <- handle evt

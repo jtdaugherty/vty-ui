@@ -34,14 +34,14 @@ module Graphics.Vty.Widgets.List
     )
 where
 
-import Graphics.Vty ( Attr, DisplayRegion )
-import Graphics.Vty.Widgets.Rendering
-    ( Widget(..)
-    , Orientation(..)
-    , Render
+import Graphics.Vty
+    ( Attr
+    , DisplayRegion
+    , Image
+    , vert_cat
     )
 import Graphics.Vty.Widgets.Rendering
-    ( renderMany
+    ( Widget(..)
     )
 import Graphics.Vty.Widgets.Base
     ( hFill
@@ -94,9 +94,9 @@ listWidget list = Widget {
                   , render = renderListWidget list
                   }
 
-renderListWidget :: List a -> DisplayRegion -> Render
+renderListWidget :: List a -> DisplayRegion -> Image
 renderListWidget list s =
-    renderMany Vertical ws
+    vert_cat ws
         where
           ws = map (\w -> render w s) (visible ++ filler)
           visible = map highlight items

@@ -17,11 +17,6 @@ import GHC.Word ( Word )
 
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
-    , Render
-    , renderImg
-    , renderMany
-    , renderWidth
-    , renderHeight
     , Orientation(..)
     , withHeight
     , withWidth
@@ -29,9 +24,14 @@ import Graphics.Vty.Widgets.Rendering
 import Graphics.Vty
     ( DisplayRegion
     , Attr
+    , Image
     , char_fill
     , region_width
     , region_height
+    , image_width
+    , image_height
+    , vert_cat
+    , horiz_cat
     )
 
 -- |A vertical fill widget.  Fills all available space with the
@@ -42,8 +42,7 @@ vFill att c = Widget {
               , growVertical = True
               , primaryAttribute = att
               , withAttribute = flip vFill c
-              , render = \s -> renderImg $ char_fill att c (region_width s)
-                         (region_height s)
+              , render = \s -> char_fill att c (region_width s) (region_height s)
               }
 
 -- |A horizontal fill widget.  Fills the available horizontal space,
@@ -54,8 +53,7 @@ hFill att c h = Widget {
                 , growVertical = False
                 , primaryAttribute = att
                 , withAttribute = \att' -> hFill att' c h
-                , render = \s -> renderImg $ char_fill att c (region_width s)
-                           (toEnum h)
+                , render = \s -> char_fill att c (region_width s) (toEnum h)
                 }
 
 -- |A box layout widget capable of containing two 'Widget's
@@ -85,10 +83,10 @@ box o a b = Widget {
                 \s -> case o of
                         Vertical ->
                             renderBox s (a, b) o growVertical region_height
-                                      renderHeight withHeight
+                                      image_height withHeight
                         Horizontal ->
                             renderBox s (a, b) o growHorizontal region_width
-                                      renderWidth withWidth
+                                      image_width withWidth
             }
 
 -- Box layout rendering implementation. This is generalized over the
@@ -101,12 +99,15 @@ renderBox :: DisplayRegion
           -> Orientation
           -> (Widget -> Bool) -- growth comparison function
           -> (DisplayRegion -> Word) -- region dimension fetch function
-          -> (Render -> Word) -- image dimension fetch function
+          -> (Image -> Word) -- image dimension fetch function
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
-          -> Render
+          -> Image
 renderBox s (first, second) orientation grow regDimension renderDimension withDim =
-    renderMany orientation ws
+    cat ws
         where
+          cat = case orientation of
+                  Vertical -> vert_cat
+                  Horizontal -> horiz_cat
           ws = case (grow first, grow second) of
                  (True, True) -> renderHalves
                  (False, _) -> renderOrdered first second

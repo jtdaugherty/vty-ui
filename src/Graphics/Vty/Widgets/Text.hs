@@ -25,18 +25,16 @@ import Data.Maybe
 import Graphics.Vty
     ( Attr
     , DisplayRegion
+    , Image
     , string
     , def_attr
     , horiz_cat
+    , vert_cat
     , region_width
     , region_height
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
-    , Render
-    , Orientation(Vertical)
-    , renderMany
-    , renderImg
     )
 import Text.Trans.Tokenize
     ( Token(..)
@@ -129,17 +127,17 @@ textWidget formatter t = Widget {
       newText att = t { tokens = map (map (`withAnnotation` att)) $ tokens t }
 
 -- |Low-level text-rendering routine.
-renderText :: Text -> Formatter -> DisplayRegion -> Render
+renderText :: Text -> Formatter -> DisplayRegion -> Image
 renderText t formatter sz =
     if region_height sz == 0
-    then renderImg nullImg
+    then nullImg
          else if null ls || all null ls
-              then renderImg nullImg
-              else renderMany Vertical $ take (fromEnum $ region_height sz) lineImgs
+              then nullImg
+              else vert_cat $ take (fromEnum $ region_height sz) lineImgs
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
-      lineImgs = map (renderImg . mkLineImg) ls
+      lineImgs = map mkLineImg ls
       ls = map truncateLine $ tokens newText
       truncateLine = truncLine (fromEnum $ region_width sz)
       newText = formatter sz t

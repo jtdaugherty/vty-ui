@@ -5,58 +5,14 @@ module Graphics.Vty.Widgets.Rendering
     ( Widget(..)
     , mkImage
 
-    -- ** Rendering process
-    -- |'Widget's are ultimately converted to Vty 'Image's, but this
-    -- library uses an intermediate type, 'Render', to represent the
-    -- physical layout of the images.  A 'Render' represents the
-    -- various primitive rendering constructs which support vertical
-    -- and horizontal concatenation and 'Image' addressing.  Once a
-    -- 'Widget' has been rendered (see 'render'), the resulting
-    -- 'Render' is then put through a /positioning pass/ in which the
-    -- sizes and positions of any addressable image regions are stored
-    -- (see 'RenderState').  The result is a single 'Image' suitable
-    -- for use with Vty's 'Graphics.Vty.pic_for_image' function.
-    , RenderState
-#ifdef TESTING
-    , Render(..)
-#else
-    , Render
-#endif
-    , renderImg
-    , renderAddr
-    , renderMany
-    , renderWidth
-    , renderHeight
-
-    -- ** Widget addressing
-    -- |Some widgets, such as editable widgets, require that their
-    -- on-screen representations be known after rendering; this
-    -- library supports a notion of /widget addressing/ in which a
-    -- 'Widget' is marked as /addressable/ (see 'addressable').
-    -- Addressable widgets' position and size information ('Address')
-    -- will be recorded in the 'RenderState' during rendering in
-    -- 'mkImage'.
-    , Address
-    , address
-    , addressable
-    , addrSize
-    , addrPosition
-    , addAddress
-
     -- ** Miscellaneous
     , Orientation(..)
     , withWidth
     , withHeight
-
-#ifdef TESTING
-    , mkImageSize
-#endif
     )
 where
 
 import GHC.Word ( Word )
-import qualified Data.Map as Map
-import Control.Monad.State ( State, modify, runState )
 
 import Graphics.Vty
     ( DisplayRegion(DisplayRegion)
@@ -64,14 +20,6 @@ import Graphics.Vty
     , Image
     , Vty(terminal)
     , display_bounds
-    , (<|>)
-    , (<->)
-    , image_width
-    , image_height
-    , region_width
-    , region_height
-    , vert_cat
-    , horiz_cat
     )
 
 -- |A simple orientation type.
@@ -114,7 +62,7 @@ data Widget = Widget {
     -- |Render the widget with the given dimensions.  The result
     -- /must/ not be larger than the specified dimensions, but may be
     -- smaller.
-    render :: DisplayRegion -> Render
+    render :: DisplayRegion -> Image
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
@@ -134,146 +82,14 @@ data Widget = Widget {
     , withAttribute :: Attr -> Widget
     }
 
--- |Information about the rendered state of a widget.
-data Address = Address { addrPosition :: DisplayRegion
-                       -- ^The rendered position of a widget.
-                       , addrSize :: DisplayRegion
-                       -- ^The rendered size of a widget.
-                       }
-               deriving (Eq, Show)
-
--- |The collection of widget names (see 'addressable') and their
--- rendering addresses as a result of 'render'.
-type RenderState = Map.Map String Address
-
--- |An intermediate type used in the rendering process.  Widgets are
--- converted into collections of 'Image's and represented with this
--- type, using a few primitive rendering instructions to determine how
--- the rendered images are combined to form a complete terminal window
--- image.  See 'render'.
-data Render = Img Image
-            | Addressed String Render
-            | Many Orientation [Render]
-
--- |Annotate a widget with a rendering identifier so that its
--- rendering address will be stored by the rendering process.  Once
--- the widget has been rendered, its address will be found in the
--- resulting 'RenderState'.  To retrieve the address of such an
--- identifier, use 'address'.
-addressable :: String
-            -- ^The identifier of the widget to be used in the
-            -- 'RenderState'.
-            -> Widget
-            -- ^The widget whose rendering address ('Address') should
-            -- be stored.
-            -> Widget
-addressable ident w = w {
-                        withAttribute = addressable ident . withAttribute w
-                      , render = renderAddr ident . render w
-                      }
-
--- |Create a 'Render' containing a single 'Image'.
-renderImg :: Image -> Render
-renderImg = Img
-
--- |Create a 'Render' representing a render together with an
--- identifier.  This type of 'Render' is used with 'addressable' to
--- locate a widget's position and dimensions in the final 'Image'.
-renderAddr :: String -- ^The identifier of the widget that this
-                     -- 'Render' represents. Should be the same
-                     -- identifier that was passed to 'addressable'.
-           -> Render -- ^The 'Render' to identify.
-           -> Render
-renderAddr = Addressed
-
--- |Create a 'Render' representing a collection of renders which
--- should be combined in the specified 'Orientation'.
-renderMany :: Orientation -> [Render] -> Render
-renderMany = Many
-
--- |Compute the width, in columns, of a 'Render'.
-renderWidth :: Render -> Word
-renderWidth (Img img) = image_width img
-renderWidth (Addressed _ w) = renderWidth w
-renderWidth (Many Vertical ws) = maximum $ map renderWidth ws
-renderWidth (Many Horizontal ws) = sum $ map renderWidth ws
-
--- |Compute the height, in rows, of a 'Render'.
-renderHeight :: Render -> Word
-renderHeight (Img img) = image_height img
-renderHeight (Addressed _ w) = renderHeight w
-renderHeight (Many Vertical ws) = sum $ map renderHeight ws
-renderHeight (Many Horizontal ws) = maximum $ map renderHeight ws
-
--- |Given a starting position (usually @'DisplayRegion' 0 0@) and a
--- 'Render', combine the 'Render''s contents into a single 'Image' and
--- track the positions and sizes of any 'Render's with positioning
--- addresses.  Returns the resulting image and a 'RenderState'
--- containing the 'Address' values of all addressable widgets.
-doPositioning :: DisplayRegion -> Render -> State RenderState Image
-doPositioning _ (Img img) = return img
-doPositioning _ (Many Vertical []) = error "got empty rendered list"
-doPositioning _ (Many Horizontal []) = error "got empty rendered list"
-
-doPositioning pos (Many Vertical widgets) = do
-  let positionNext _ [] = return $ vert_cat []
-      positionNext p (w:ws) = do
-        img <- doPositioning p w
-        let newPos = p `withHeight` (region_height p + image_height img)
-        n <- positionNext newPos ws
-        return (img <-> n)
-
-  positionNext pos widgets
-
-doPositioning pos (Many Horizontal widgets) = do
-  let positionNext _ [] = return $ horiz_cat []
-      positionNext p (w:ws) = do
-        img <- doPositioning p w
-        let newPos = p `withWidth` (region_width p + image_width img)
-        n <- positionNext newPos ws
-        return (img <|> n)
-
-  positionNext pos widgets
-
-doPositioning pos (Addressed s w) = do
-  img <- doPositioning pos w
-  addAddress s pos img
-  return img
-
--- |Retrieve the rendering address for a given widget.  To annotate a
--- widget to induce storage of its address, use 'addressable'.
-address :: String -> RenderState -> Maybe Address
-address = Map.lookup
-
--- |Add an address for the specified identifier, position, and 'Image'
--- to the 'RenderState'.
-addAddress :: String        -- ^The 'Address' identifier.
-           -> DisplayRegion -- ^The position of the image.
-           -> Image         -- ^The image whose size should be stored.
-           -> State RenderState ()
-addAddress ident pos img = do
-  let rinfo = Address pos (imageSize img)
-  modify (Map.insert ident rinfo)
-
--- |Compute the size of an 'Image' as a 'DisplayRegion'.
-imageSize :: Image -> DisplayRegion
-imageSize img = DisplayRegion (image_width img) (image_height img)
-
 -- |Given a 'Widget' and a 'Vty' object, render the widget using the
 -- current size of the terminal controlled by Vty. Returns the
 -- rendered 'Widget' as an 'Image' along with the 'RenderState'
 -- containing the 'Address'es of 'addressable' widgets.
-mkImage :: Vty -> Widget -> IO (Image, RenderState)
+mkImage :: Vty -> Widget -> IO Image
 mkImage vty w = do
   size <- display_bounds $ terminal vty
-  let upperLeft = DisplayRegion 0 0
-  return $ mkImageSize upperLeft size w
-
-mkImageSize :: DisplayRegion -> DisplayRegion -> Widget
-            -> (Image, RenderState)
-mkImageSize position size w =
-    let rendered = render w size
-    in runState (doPositioning position rendered) (Map.fromList [])
+  return $ render w size
 
 -- |Modify the width component of a 'DisplayRegion'.
 withWidth :: DisplayRegion -> Word -> DisplayRegion

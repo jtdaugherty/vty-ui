@@ -12,18 +12,17 @@ where
 import Graphics.Vty
     ( Attr
     , DisplayRegion(DisplayRegion)
+    , Image
     , char_fill
     , region_height
     , region_width
+    , image_width
+    , image_height
+    , vert_cat
+    , horiz_cat
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
-    , Render
-    , Orientation(..)
-    , renderImg
-    , renderMany
-    , renderWidth
-    , renderHeight
     )
 import Graphics.Vty.Widgets.Base
     ( (<++>)
@@ -44,7 +43,7 @@ hBorderWith ch att =
            , growHorizontal = True
            , primaryAttribute = att
            , withAttribute = hBorder
-           , render = \s -> renderImg $ char_fill att ch (region_width s) 1
+           , render = \s -> char_fill att ch (region_width s) 1
            }
 
 -- |Create a single-column vertical border.
@@ -58,7 +57,7 @@ vBorderWith ch att =
     Widget { growHorizontal = False
            , growVertical = True
            , primaryAttribute = att
-           , render = \s -> renderImg $ char_fill att ch 1 (region_height s)
+           , render = \s -> char_fill att ch 1 (region_height s)
            , withAttribute = vBorder
            }
 
@@ -72,19 +71,19 @@ bordered att w = Widget {
                  , render = renderBordered att w
                  }
 
-renderBordered :: Attr -> Widget -> DisplayRegion -> Render
+renderBordered :: Attr -> Widget -> DisplayRegion -> Image
 renderBordered att w s =
     -- Render the contained widget with enough room to draw borders.
     -- Then, use the size of the rendered widget to constrain the
     -- space used by the (expanding) borders.
-    renderMany Vertical [topBottom, middle, topBottom]
+    vert_cat [topBottom, middle, topBottom]
         where
           constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
           renderedChild = render w constrained
           adjusted = DisplayRegion
-                     (renderWidth renderedChild + 2)
-                     (renderHeight renderedChild)
+                     (image_width renderedChild + 2)
+                     (image_height renderedChild)
           corner = simpleText att "+"
           topBottom = render (corner <++> hBorder att <++> corner) adjusted
           leftRight = render (vBorder att) adjusted
-          middle = renderMany Horizontal [leftRight, renderedChild, leftRight]
+          middle = horiz_cat [leftRight, renderedChild, leftRight]
