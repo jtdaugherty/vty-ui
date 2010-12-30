@@ -123,12 +123,14 @@ textWidget formatter t = Widget {
                          , getGrowHorizontal = return False
                          , getGrowVertical = return False
                          , getPrimaryAttribute = return . defaultAttr =<< ask
-                         , withAttribute =
-                             \att -> textWidget formatter $ newText att
+                         , newWithAttribute =
+                             \attr -> do
+                               Text _ ts <- ask
+                               return $ textWidget formatter $ newText $ Text attr ts
                          , draw = return . renderText t formatter
                          }
     where
-      newText att = t { tokens = map (map (`withAnnotation` att)) $ tokens t }
+      newText txt = txt { tokens = map (map (`withAnnotation` (defaultAttr txt))) $ tokens txt }
 
 -- |Low-level text-rendering routine.
 renderText :: Text -> Formatter -> DisplayRegion -> Image

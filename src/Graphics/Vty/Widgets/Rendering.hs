@@ -13,6 +13,7 @@ module Graphics.Vty.Widgets.Rendering
     , growVertical
     , growHorizontal
     , primaryAttribute
+    , withAttribute
     )
 where
 
@@ -90,8 +91,9 @@ data Widget a = Widget {
     -- attributes to be identical to those of /A/.
     , getPrimaryAttribute :: Reader a Attr
 
-    -- |Apply the specified attribute to this widget.
-    , withAttribute :: Attr -> Widget a
+    -- |Apply the specified attribute to this widget, yielding a new
+    -- Widget of the same type.
+    , newWithAttribute :: Attr -> Reader a (Widget a)
     }
 
 growHorizontal :: Widget a -> Bool
@@ -102,6 +104,9 @@ growVertical w = runReader (getGrowVertical w) (state w)
 
 primaryAttribute :: Widget a -> Attr
 primaryAttribute w = runReader (getPrimaryAttribute w) (state w)
+
+withAttribute :: Widget a -> Attr -> Widget a
+withAttribute w attr = runReader (newWithAttribute w attr) (state w)
 
 render :: Widget a -> DisplayRegion -> (Image, Widget a)
 render w size = (img, w { state = s' })

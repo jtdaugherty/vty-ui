@@ -34,6 +34,7 @@ import Graphics.Vty
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
+    , withAttribute
     , growVertical
     , growHorizontal
     , render
@@ -63,9 +64,11 @@ hBorderWith ch att =
                HBorder attr _ <- ask
                return attr
 
-           -- XXX this is wrong, since it throws away whatever char
-           -- was passed to hBorderWith.
-           , withAttribute = hBorder
+           , newWithAttribute =
+               \attr -> do
+                 HBorder _ char <- ask
+                 return $ hBorderWith char attr
+
            , draw = \s -> return $ char_fill att ch (region_width s) 1
            }
 
@@ -88,8 +91,10 @@ vBorderWith ch att =
                return attr
 
            , draw = \s -> return $ char_fill att ch 1 (region_height s)
-           -- XXX wrong; see above.
-           , withAttribute = vBorder
+           , newWithAttribute =
+               \attr -> do
+                 VBorder _ char <- ask
+                 return $ vBorderWith char attr
            }
 
 data Bordered a = Bordered Attr (Widget a)
@@ -111,7 +116,11 @@ bordered att w = Widget {
                      Bordered attr _ <- ask
                      return attr
 
-                 , withAttribute = \att' -> bordered att' (withAttribute w att')
+                 , newWithAttribute =
+                     \attr -> do
+                       Bordered _ child <- ask
+                       return $ bordered attr (withAttribute child attr)
+
                  , draw = drawBordered
                  }
 

@@ -48,6 +48,7 @@ import Graphics.Vty
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
+    , withAttribute
     , render
     )
 import Graphics.Vty.Widgets.Base
@@ -98,7 +99,10 @@ listWidget list = Widget {
                     state = list
                   , getGrowHorizontal = return False
                   , getGrowVertical = return False
-                  , withAttribute = \att -> listWidget list { normalAttr = att }
+                  , newWithAttribute =
+                      \attr -> do
+                        lst <- ask
+                        return $ listWidget $ lst { normalAttr = attr }
                   , getPrimaryAttribute = return . normalAttr =<< ask
                   , draw = renderListWidget list
                   }
