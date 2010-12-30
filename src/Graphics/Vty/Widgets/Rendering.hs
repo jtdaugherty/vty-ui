@@ -84,8 +84,7 @@ data Widget = Widget {
 
 -- |Given a 'Widget' and a 'Vty' object, render the widget using the
 -- current size of the terminal controlled by Vty. Returns the
--- rendered 'Widget' as an 'Image' along with the 'RenderState'
--- containing the 'Address'es of 'addressable' widgets.
+-- rendered 'Widget' as an 'Image'.
 mkImage :: Vty -> Widget -> IO Image
 mkImage vty w = do
   size <- display_bounds $ terminal vty
