@@ -25,8 +25,8 @@ import Graphics.Vty.Widgets.Rendering
     , render
     )
 import Graphics.Vty.Widgets.Text
-    ( Text, simpleText, wrap, highlight
-    , prepareText, textWidget, (&.&)
+    ( FormattedText, prepareText, simpleText, wrap, highlight
+    , textWidget, (&.&)
     )
 import Graphics.Vty.Widgets.Borders
     ( bordered, hBorder
@@ -99,7 +99,7 @@ uiFromState = buildUi <$> get
 -- user input and what is used to construct the interface.  This is a
 -- place for widgets whose state need to be stored so they can be
 -- modified and used to reconstruct the interface as input is handled
-data AppState = AppState { theList :: List String Text
+data AppState = AppState { theList :: List String FormattedText
                          , theMessages :: [(String, String)]
                          }
 

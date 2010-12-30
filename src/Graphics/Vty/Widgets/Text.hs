@@ -6,9 +6,11 @@
 -- 'textWidget'.
 module Graphics.Vty.Widgets.Text
     ( Text(defaultAttr, tokens)
+    , FormattedText
     , Formatter
     -- *Text Preparation
     , prepareText
+    , resetText
     -- *Constructing Widgets
     , simpleText
     , textWidget
@@ -21,6 +23,9 @@ where
 
 import Control.Monad.Reader
     ( ask
+    )
+import Control.Monad.State
+    ( get
     )
 import Data.Maybe
     ( isJust
@@ -76,6 +81,15 @@ data Text = Text { defaultAttr :: Attr
                  -- ^The tokens of the underlying text stream.
                  }
 
+data FormattedText =
+    FormattedText { text :: Text
+                  , formatter :: Formatter
+                  }
+
+resetText :: Text -> Text
+resetText t =
+    t { tokens = map (map (`withAnnotation` (defaultAttr t))) $ tokens t }
+
 -- |Prepare a string for rendering and assign it the specified default
 -- attribute.
 prepareText :: Attr -> String -> Text
@@ -85,7 +99,7 @@ prepareText att s = Text { defaultAttr = att
 
 -- |Construct a Widget directly from an attribute and a String.  This
 -- is recommended if you don't need to use a 'Formatter'.
-simpleText :: Attr -> String -> Widget Text
+simpleText :: Attr -> String -> Widget FormattedText
 simpleText a s = textWidget nullFormatter $ prepareText a s
 
 -- |A formatter for wrapping text into the available space.  This
@@ -117,24 +131,27 @@ matchesRegex r t = isJust $ match r (tokenString t) [exec_anchored]
 -- |Construct a text widget formatted with the specified formatters.
 -- the formatters will be applied in the order given here, so be aware
 -- of how the formatters will modify the text (and affect each other).
-textWidget :: Formatter -> Text -> Widget Text
-textWidget formatter t = Widget {
-                           state = t
-                         , getGrowHorizontal = return False
-                         , getGrowVertical = return False
-                         , getPrimaryAttribute = return . defaultAttr =<< ask
-                         , newWithAttribute =
-                             \attr -> do
-                               Text _ ts <- ask
-                               return $ textWidget formatter $ newText $ Text attr ts
-                         , draw = return . renderText t formatter
-                         }
-    where
-      newText txt = txt { tokens = map (map (`withAnnotation` (defaultAttr txt))) $ tokens txt }
+textWidget :: Formatter -> Text -> Widget FormattedText
+textWidget format t = Widget {
+                       state = FormattedText { text = t
+                                             , formatter = format
+                                             }
+                      , getGrowHorizontal = return False
+                      , getGrowVertical = return False
+                      , getPrimaryAttribute = return . defaultAttr . text =<< ask
+                      , newWithAttribute =
+                          \attr -> do
+                            ft <- ask
+                            return $ textWidget nullFormatter $ resetText $ (text ft) { defaultAttr = attr }
+                      , draw =
+                          \size -> do
+                            ft <- get
+                            return $ renderText (text ft) (formatter ft) size
+                      }
 
 -- |Low-level text-rendering routine.
 renderText :: Text -> Formatter -> DisplayRegion -> Image
-renderText t formatter sz =
+renderText t format sz =
     if region_height sz == 0
     then nullImg
          else if null ls || all null ls
@@ -146,7 +163,7 @@ renderText t formatter sz =
       lineImgs = map mkLineImg ls
       ls = map truncateLine $ tokens newText
       truncateLine = truncLine (fromEnum $ region_width sz)
-      newText = formatter sz t
+      newText = format sz t
       mkLineImg line = if null line
                        then string (defaultAttr newText) " "
                        else horiz_cat $ map mkTokenImg line

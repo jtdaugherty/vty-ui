@@ -55,7 +55,7 @@ import Graphics.Vty.Widgets.Base
     ( hFill
     )
 import Graphics.Vty.Widgets.Text
-    ( Text
+    ( FormattedText
     , simpleText
     )
 
@@ -133,7 +133,7 @@ mkSimpleList :: Attr -- ^The attribute of normal, non-selected items
                     -- items which should be visible to the user at
                     -- any given time
              -> [String] -- ^The list items
-             -> List String Text
+             -> List String FormattedText
 mkSimpleList normAttr selAttr swSize labels =
     mkList normAttr selAttr swSize widgets
     where
