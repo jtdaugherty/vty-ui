@@ -1,5 +1,5 @@
 Name:                vty-ui
-Version:             0.4
+Version:             0.5
 Synopsis:            A user interface composition library for Vty
 Description:         An extensible library of user interface widgets
                      for composing and laying out Vty user interfaces.
