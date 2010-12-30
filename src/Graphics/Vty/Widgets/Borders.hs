@@ -12,6 +12,9 @@ module Graphics.Vty.Widgets.Borders
     )
 where
 
+import Control.Monad.Reader
+    ( ask
+    )
 import Control.Monad.State
     ( State
     , get
@@ -31,6 +34,8 @@ import Graphics.Vty
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
+    , growVertical
+    , growHorizontal
     , render
     )
 import Graphics.Vty.Widgets.Base
@@ -51,9 +56,13 @@ hBorder = hBorderWith '-'
 hBorderWith :: Char -> Attr -> Widget HBorder
 hBorderWith ch att =
     Widget { state = HBorder att ch
-           , growVertical = False
-           , growHorizontal = True
-           , primaryAttribute = att
+           , getGrowVertical = return False
+           , getGrowHorizontal = return True
+
+           , getPrimaryAttribute = do
+               HBorder attr _ <- ask
+               return attr
+
            -- XXX this is wrong, since it throws away whatever char
            -- was passed to hBorderWith.
            , withAttribute = hBorder
@@ -71,9 +80,13 @@ vBorder = vBorderWith '|'
 vBorderWith :: Char -> Attr -> Widget VBorder
 vBorderWith ch att =
     Widget { state = VBorder att ch
-           , growHorizontal = False
-           , growVertical = True
-           , primaryAttribute = att
+           , getGrowHorizontal = return False
+           , getGrowVertical = return True
+
+           , getPrimaryAttribute = do
+               VBorder attr _ <- ask
+               return attr
+
            , draw = \s -> return $ char_fill att ch 1 (region_height s)
            -- XXX wrong; see above.
            , withAttribute = vBorder
@@ -85,9 +98,19 @@ data Bordered a = Bordered Attr (Widget a)
 bordered :: Attr -> Widget a -> Widget (Bordered a)
 bordered att w = Widget {
                    state = Bordered att w
-                 , growVertical = growVertical w
-                 , growHorizontal = growHorizontal w
-                 , primaryAttribute = att
+
+                 , getGrowVertical = do
+                     Bordered _ child <- ask
+                     return $ growVertical child
+
+                 , getGrowHorizontal = do
+                     Bordered _ child <- ask
+                     return $ growHorizontal child
+
+                 , getPrimaryAttribute = do
+                     Bordered attr _ <- ask
+                     return attr
+
                  , withAttribute = \att' -> bordered att' (withAttribute w att')
                  , draw = drawBordered
                  }

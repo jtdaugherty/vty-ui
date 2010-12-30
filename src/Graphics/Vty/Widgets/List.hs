@@ -34,6 +34,9 @@ module Graphics.Vty.Widgets.List
     )
 where
 
+import Control.Monad.Reader
+    ( ask
+    )
 import Control.Monad.State
     ( State
     )
@@ -93,10 +96,10 @@ mkList normAttr selAttr swSize contents
 listWidget :: List a b -> Widget (List a b)
 listWidget list = Widget {
                     state = list
-                  , growHorizontal = False
-                  , growVertical = False
+                  , getGrowHorizontal = return False
+                  , getGrowVertical = return False
                   , withAttribute = \att -> listWidget list { normalAttr = att }
-                  , primaryAttribute = normalAttr list
+                  , getPrimaryAttribute = return . normalAttr =<< ask
                   , draw = renderListWidget list
                   }
 

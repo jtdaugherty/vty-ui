@@ -19,6 +19,9 @@ module Graphics.Vty.Widgets.Text
     )
 where
 
+import Control.Monad.Reader
+    ( ask
+    )
 import Data.Maybe
     ( isJust
     )
@@ -117,9 +120,9 @@ matchesRegex r t = isJust $ match r (tokenString t) [exec_anchored]
 textWidget :: Formatter -> Text -> Widget Text
 textWidget formatter t = Widget {
                            state = t
-                         , growHorizontal = False
-                         , growVertical = False
-                         , primaryAttribute = defaultAttr t
+                         , getGrowHorizontal = return False
+                         , getGrowVertical = return False
+                         , getPrimaryAttribute = return . defaultAttr =<< ask
                          , withAttribute =
                              \att -> textWidget formatter $ newText att
                          , draw = return . renderText t formatter

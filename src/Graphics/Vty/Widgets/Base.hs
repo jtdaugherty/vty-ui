@@ -21,6 +21,9 @@ module Graphics.Vty.Widgets.Base
 where
 
 import GHC.Word ( Word )
+import Control.Monad.Reader
+    ( ask
+    )
 import Control.Monad.State
     ( State
     , get
@@ -32,6 +35,9 @@ import Graphics.Vty.Widgets.Rendering
     , render
     , withHeight
     , withWidth
+    , primaryAttribute
+    , growHorizontal
+    , growVertical
     )
 import Graphics.Vty
     ( DisplayRegion
@@ -53,9 +59,13 @@ data VFill = VFill Attr Char
 vFill :: Attr -> Char -> Widget VFill
 vFill att c = Widget {
                 state = VFill att c
-              , growHorizontal = False
-              , growVertical = True
-              , primaryAttribute = att
+              , getGrowHorizontal = return False
+              , getGrowVertical = return True
+
+              , getPrimaryAttribute = do
+                  VFill attr _ <- ask
+                  return attr
+
               , withAttribute = flip vFill c
               , draw = \s -> do
                          VFill attr ch <- get
@@ -69,9 +79,13 @@ data HFill = HFill Attr Char Int
 hFill :: Attr -> Char -> Int -> Widget HFill
 hFill att c h = Widget {
                   state = HFill att c h
-                , growHorizontal = True
-                , growVertical = False
-                , primaryAttribute = att
+                , getGrowHorizontal = return True
+                , getGrowVertical = return False
+
+                , getPrimaryAttribute = do
+                    HFill attr _ _ <- ask
+                    return attr
+
                 , withAttribute = \att' -> hFill att' c h
                 , draw = \s -> do
                            HFill attr ch height <- get
@@ -98,12 +112,22 @@ data Box a b = Box Orientation (Widget a) (Widget b)
 box :: Orientation -> Widget a -> Widget b -> Widget (Box a b)
 box o a b = Widget {
               state = Box o a b
-            , growHorizontal = growHorizontal a || growHorizontal b
-            , growVertical = growVertical a || growVertical b
+            , getGrowHorizontal = do
+                Box _ ch1 ch2 <- ask
+                return $ growHorizontal ch1 || growHorizontal ch2
+
+            , getGrowVertical = do
+                Box _ ch1 ch2 <- ask
+                return $ growVertical ch1 || growVertical ch2
+
             , withAttribute =
                 \att ->
                     box o (withAttribute a att) (withAttribute b att)
-            , primaryAttribute = primaryAttribute a
+
+            , getPrimaryAttribute = do
+                Box _ ch1 _ <- ask
+                return $ primaryAttribute ch1
+
             , draw = \s -> do
                        Box orientation _ _ <- get
                        case orientation of
@@ -183,10 +207,16 @@ data HLimit a = HLimit Int (Widget a)
 hLimit :: Int -> Widget a -> Widget (HLimit a)
 hLimit maxWidth w =
     Widget { state = HLimit maxWidth w
-           , growHorizontal = False
+           , getGrowHorizontal = return False
            -- XXX! should depend on state, not closure
-           , growVertical = growVertical w
-           , primaryAttribute = primaryAttribute w
+           , getGrowVertical = do
+               HLimit _ child <- ask
+               return $ growVertical child
+
+           , getPrimaryAttribute = do
+               HLimit _ child <- ask
+               return $ primaryAttribute child
+
            , withAttribute = \att -> hLimit maxWidth $ withAttribute w att
            , draw = \s -> do
                       HLimit width child <- get
@@ -203,10 +233,16 @@ data VLimit a = VLimit Int (Widget a)
 vLimit :: Int -> Widget a -> Widget (VLimit a)
 vLimit maxHeight w =
     Widget { state = VLimit maxHeight w
-           , growVertical = False
+           , getGrowVertical = return False
            -- XXX! should depend on state, not closure
-           , growHorizontal = growHorizontal w
-           , primaryAttribute = primaryAttribute w
+           , getGrowHorizontal = do
+               VLimit _ child <- ask
+               return $ growHorizontal child
+
+           , getPrimaryAttribute = do
+               VLimit _ child <- ask
+               return $ primaryAttribute child
+
            , withAttribute = \att -> vLimit maxHeight $ withAttribute w att
            , draw = \s -> do
                       VLimit height child <- get

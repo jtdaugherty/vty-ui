@@ -9,10 +9,18 @@ module Graphics.Vty.Widgets.Rendering
     , Orientation(..)
     , withWidth
     , withHeight
+
+    , growVertical
+    , growHorizontal
+    , primaryAttribute
     )
 where
 
 import GHC.Word ( Word )
+import Control.Monad.Reader
+    ( Reader
+    , runReader
+    )
 import Control.Monad.State
     ( State
     , runState
@@ -70,21 +78,30 @@ data Widget a = Widget {
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
-    , growHorizontal :: Bool
+    , getGrowHorizontal :: Reader a Bool
 
     -- |Will this widget expand to take advantage of available
     -- vertical space?
-    , growVertical :: Bool
+    , getGrowVertical :: Reader a Bool
 
     -- |The primary attribute of this widget, used when composing
     -- widgets.  For example, if you want to compose a widget /A/ with
     -- a space-filling widget /B/, you probably want /B/'s text
     -- attributes to be identical to those of /A/.
-    , primaryAttribute :: Attr
+    , getPrimaryAttribute :: Reader a Attr
 
     -- |Apply the specified attribute to this widget.
     , withAttribute :: Attr -> Widget a
     }
+
+growHorizontal :: Widget a -> Bool
+growHorizontal w = runReader (getGrowHorizontal w) (state w)
+
+growVertical :: Widget a -> Bool
+growVertical w = runReader (getGrowVertical w) (state w)
+
+primaryAttribute :: Widget a -> Attr
+primaryAttribute w = runReader (getPrimaryAttribute w) (state w)
 
 render :: Widget a -> DisplayRegion -> (Image, Widget a)
 render w size = (img, w { state = s' })

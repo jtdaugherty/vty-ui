@@ -7,7 +7,8 @@ module Graphics.Vty.Widgets.Composed
 where
 
 import Graphics.Vty.Widgets.Rendering
-    ( Widget(primaryAttribute)
+    ( Widget
+    , primaryAttribute
     )
 import Graphics.Vty.Widgets.Base
     ( Box
@@ -19,6 +20,12 @@ import Graphics.Vty.Widgets.Base
     , vLimit
     , hLimit
     )
+
+-- NOTE: these widgets are no longer correctly implemented, since now
+-- the primary attribute of a child widget could change and these
+-- widgets would never pick up on the state change because the vFill
+-- primary attributes are chosen at widget construction time, not
+-- dynamically based on the child widget state.
 
 -- |Add expanding bottom padding to a widget.
 bottomPadded :: Widget a -> Widget (Box a VFill)
