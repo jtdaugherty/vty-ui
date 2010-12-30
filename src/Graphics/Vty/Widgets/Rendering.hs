@@ -3,7 +3,7 @@
 -- interface widget and converting it to Vty's 'Image' type.
 module Graphics.Vty.Widgets.Rendering
     ( Widget(..)
-    , mkImage
+    , render
 
     -- ** Miscellaneous
     , Orientation(..)
@@ -13,13 +13,14 @@ module Graphics.Vty.Widgets.Rendering
 where
 
 import GHC.Word ( Word )
-
+import Control.Monad.State
+    ( State
+    , runState
+    )
 import Graphics.Vty
     ( DisplayRegion(DisplayRegion)
     , Attr
     , Image
-    , Vty(terminal)
-    , display_bounds
     )
 
 -- |A simple orientation type.
@@ -58,11 +59,14 @@ data Orientation = Horizontal | Vertical
 -- subdivided to fit the child widgets as appropriate.  How the space
 -- is subdivided may depend on the growth properties of the children
 -- or it may be a matter of policy.
-data Widget = Widget {
+data Widget a = Widget {
+    -- |User-defined state type.
+      state :: a
+
     -- |Render the widget with the given dimensions.  The result
     -- /must/ not be larger than the specified dimensions, but may be
     -- smaller.
-    render :: DisplayRegion -> Image
+    , draw :: DisplayRegion -> State a Image
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
@@ -79,16 +83,12 @@ data Widget = Widget {
     , primaryAttribute :: Attr
 
     -- |Apply the specified attribute to this widget.
-    , withAttribute :: Attr -> Widget
+    , withAttribute :: Attr -> Widget a
     }
 
--- |Given a 'Widget' and a 'Vty' object, render the widget using the
--- current size of the terminal controlled by Vty. Returns the
--- rendered 'Widget' as an 'Image'.
-mkImage :: Vty -> Widget -> IO Image
-mkImage vty w = do
-  size <- display_bounds $ terminal vty
-  return $ render w size
+render :: Widget a -> DisplayRegion -> (Image, Widget a)
+render w size = (img, w { state = s' })
+    where (img, s') = runState (draw w size) (state w)
 
 -- |Modify the width component of a 'DisplayRegion'.
 withWidth :: DisplayRegion -> Word -> DisplayRegion

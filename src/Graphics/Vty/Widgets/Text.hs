@@ -82,7 +82,7 @@ prepareText att s = Text { defaultAttr = att
 
 -- |Construct a Widget directly from an attribute and a String.  This
 -- is recommended if you don't need to use a 'Formatter'.
-simpleText :: Attr -> String -> Widget
+simpleText :: Attr -> String -> Widget Text
 simpleText a s = textWidget nullFormatter $ prepareText a s
 
 -- |A formatter for wrapping text into the available space.  This
@@ -114,14 +114,15 @@ matchesRegex r t = isJust $ match r (tokenString t) [exec_anchored]
 -- |Construct a text widget formatted with the specified formatters.
 -- the formatters will be applied in the order given here, so be aware
 -- of how the formatters will modify the text (and affect each other).
-textWidget :: Formatter -> Text -> Widget
+textWidget :: Formatter -> Text -> Widget Text
 textWidget formatter t = Widget {
-                           growHorizontal = False
+                           state = t
+                         , growHorizontal = False
                          , growVertical = False
                          , primaryAttribute = defaultAttr t
                          , withAttribute =
                              \att -> textWidget formatter $ newText att
-                         , render = renderText t formatter
+                         , draw = return . renderText t formatter
                          }
     where
       newText att = t { tokens = map (map (`withAnnotation` att)) $ tokens t }

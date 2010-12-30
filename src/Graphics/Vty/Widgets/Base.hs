@@ -2,22 +2,34 @@
 -- laying out 'Graphics.Vty' user interfaces.  This module provides
 -- basic static and box layout widgets.
 module Graphics.Vty.Widgets.Base
-    ( (<++>)
+    ( Box
+    , (<++>)
     , (<-->)
     , hBox
     , vBox
+
+    , VFill
+    , HFill
     , hFill
     , vFill
+
+    , VLimit
+    , HLimit
     , hLimit
     , vLimit
     )
 where
 
 import GHC.Word ( Word )
-
+import Control.Monad.State
+    ( State
+    , get
+    , put
+    )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
     , Orientation(..)
+    , render
     , withHeight
     , withWidth
     )
@@ -34,27 +46,39 @@ import Graphics.Vty
     , horiz_cat
     )
 
+data VFill = VFill Attr Char
+
 -- |A vertical fill widget.  Fills all available space with the
 -- specified character and attribute.
-vFill :: Attr -> Char -> Widget
+vFill :: Attr -> Char -> Widget VFill
 vFill att c = Widget {
-                growHorizontal = False
+                state = VFill att c
+              , growHorizontal = False
               , growVertical = True
               , primaryAttribute = att
               , withAttribute = flip vFill c
-              , render = \s -> char_fill att c (region_width s) (region_height s)
+              , draw = \s -> do
+                         VFill attr ch <- get
+                         return $ char_fill attr ch (region_width s) (region_height s)
               }
+
+data HFill = HFill Attr Char Int
 
 -- |A horizontal fill widget.  Fills the available horizontal space,
 -- one row high, using the specified character and attribute.
-hFill :: Attr -> Char -> Int -> Widget
+hFill :: Attr -> Char -> Int -> Widget HFill
 hFill att c h = Widget {
-                  growHorizontal = True
+                  state = HFill att c h
+                , growHorizontal = True
                 , growVertical = False
                 , primaryAttribute = att
                 , withAttribute = \att' -> hFill att' c h
-                , render = \s -> char_fill att c (region_width s) (toEnum h)
+                , draw = \s -> do
+                           HFill attr ch height <- get
+                           return $ char_fill attr ch (region_width s) (toEnum height)
                 }
+
+data Box a b = Box Orientation (Widget a) (Widget b)
 
 -- |A box layout widget capable of containing two 'Widget's
 -- horizontally or vertically.  See 'hBox' and 'vBox'.  Boxes lay out
@@ -71,22 +95,24 @@ hFill att c h = Widget {
 -- * Otherwise, both children are rendered in top-to-bottom or
 --   left-to-right order and the resulting container uses only as much
 --   space as its children combined
-box :: Orientation -> Widget -> Widget -> Widget
+box :: Orientation -> Widget a -> Widget b -> Widget (Box a b)
 box o a b = Widget {
-              growHorizontal = growHorizontal a || growHorizontal b
+              state = Box o a b
+            , growHorizontal = growHorizontal a || growHorizontal b
             , growVertical = growVertical a || growVertical b
             , withAttribute =
                 \att ->
                     box o (withAttribute a att) (withAttribute b att)
             , primaryAttribute = primaryAttribute a
-            , render =
-                \s -> case o of
-                        Vertical ->
-                            renderBox s (a, b) o growVertical region_height
-                                      image_height withHeight
-                        Horizontal ->
-                            renderBox s (a, b) o growHorizontal region_width
-                                      image_width withWidth
+            , draw = \s -> do
+                       Box orientation _ _ <- get
+                       case orientation of
+                         Vertical ->
+                             renderBox s growVertical growVertical region_height
+                                       image_height withHeight
+                         Horizontal ->
+                             renderBox s growHorizontal growHorizontal region_width
+                                       image_width withWidth
             }
 
 -- Box layout rendering implementation. This is generalized over the
@@ -95,77 +121,98 @@ box o a b = Widget {
 -- dimensions on regions and images as they are manipulated by the
 -- layout algorithm.
 renderBox :: DisplayRegion
-          -> (Widget, Widget)
-          -> Orientation
-          -> (Widget -> Bool) -- growth comparison function
+          -> (Widget a -> Bool) -- growth comparison function
+          -> (Widget b -> Bool) -- growth comparison function
           -> (DisplayRegion -> Word) -- region dimension fetch function
           -> (Image -> Word) -- image dimension fetch function
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
-          -> Image
-renderBox s (first, second) orientation grow regDimension renderDimension withDim =
-    cat ws
-        where
-          cat = case orientation of
-                  Vertical -> vert_cat
-                  Horizontal -> horiz_cat
-          ws = case (grow first, grow second) of
-                 (True, True) -> renderHalves
-                 (False, _) -> renderOrdered first second
-                 (_, False) -> let [a, b] = renderOrdered second first
-                               in [b, a]
-          renderHalves = let half = s `withDim` div (regDimension s) 2
-                             half' = if regDimension s `mod` 2 == 0
-                                     then half
-                                     else half `withDim` (regDimension half + 1)
-                         in [ render first half
-                            , render second half' ]
-          renderOrdered a b = let renderedA = render a s
-                                  renderedB = render b s'
-                                  remaining = regDimension s - renderDimension renderedA
-                                  s' = s `withDim` remaining
-                              in if renderDimension renderedA >= regDimension s
-                                 then [renderedA]
-                                 else [renderedA, renderedB]
+          -> State (Box a b) Image
+renderBox s growFirst growSecond regDimension renderDimension withDim = do
+  Box orientation first second <- get
+
+  let renderOrdered a b = let (a_img, a') = render a s
+                              (b_img, b') = render b s'
+                              remaining = regDimension s - renderDimension a_img
+                              s' = s `withDim` remaining
+                          in if renderDimension a_img >= regDimension s
+                             then ([a_img], (a', b))
+                             else ([a_img, b_img], (a', b'))
+      renderHalves = let half = s `withDim` div (regDimension s) 2
+                         half' = if regDimension s `mod` 2 == 0
+                                 then half
+                                 else half `withDim` (regDimension half + 1)
+                         (first_img, first_half) = render first half
+                         (second_img, second_half) = render second half'
+                     in ([first_img, second_img], (first_half, second_half))
+      cat = case orientation of
+              Vertical -> vert_cat
+              Horizontal -> horiz_cat
+      (imgs, (first', second')) = case (growFirst first, growSecond second) of
+                     (True, True) -> renderHalves
+                     (False, _) -> renderOrdered first second
+                     (_, False) -> let (images, (b', a')) = renderOrdered second first
+                                   in (reverse images, (a', b'))
+
+  put $ Box orientation first' second'
+  return $ cat imgs
 
 -- |Create a horizontal box layout widget containing two widgets side
 -- by side.  Space consumed by the box will depend on its contents and
 -- the available space.
-hBox :: Widget -> Widget -> Widget
+hBox :: Widget a -> Widget b -> Widget (Box a b)
 hBox = box Horizontal
 
 -- |An alias for 'hBox' intended as sugar to chain widgets
 -- horizontally.
-(<++>) :: Widget -> Widget -> Widget
+(<++>) :: Widget a -> Widget b -> Widget (Box a b)
 (<++>) = hBox
 
 -- |Create a vertical box layout widget containing two widgets.  Space
 -- consumed by the box will depend on its contents and the available
 -- space.
-vBox :: Widget -> Widget -> Widget
+vBox :: Widget a -> Widget b -> Widget (Box a b)
 vBox = box Vertical
 
 -- |An alias for 'vBox' intended as sugar to chain widgets vertically.
-(<-->) :: Widget -> Widget -> Widget
+(<-->) :: Widget a -> Widget b -> Widget (Box a b)
 (<-->) = vBox
 
--- |Impose a maximum horizontal size, in columns, on a 'Widget'.
-hLimit :: Int -> Widget -> Widget
-hLimit maxWidth w = w { growHorizontal = False
-                      , render = restrictedRender
-                      }
-    where
-      restrictedRender sz =
-          if region_width sz < fromIntegral maxWidth
-          then render w sz
-          else render w $ sz `withWidth` fromIntegral maxWidth
+data HLimit a = HLimit Int (Widget a)
 
--- |Impose a maximum vertical size, in rows, on a 'Widget'.
-vLimit :: Int -> Widget -> Widget
-vLimit maxHeight w = w { growVertical = False
-                       , render = restrictedRender
-                       }
-    where
-      restrictedRender sz =
-          if region_height sz < fromIntegral maxHeight
-          then render w sz
-          else render w $ sz `withHeight` fromIntegral maxHeight
+-- |Impose a maximum horizontal size, in columns, on a 'Widget'.
+hLimit :: Int -> Widget a -> Widget (HLimit a)
+hLimit maxWidth w =
+    Widget { state = HLimit maxWidth w
+           , growHorizontal = False
+           -- XXX! should depend on state, not closure
+           , growVertical = growVertical w
+           , primaryAttribute = primaryAttribute w
+           , withAttribute = \att -> hLimit maxWidth $ withAttribute w att
+           , draw = \s -> do
+                      HLimit width child <- get
+                      let (img, child') = if region_width s < fromIntegral width
+                                          then render child s
+                                          else render child $ s `withWidth` fromIntegral width
+                      put $ HLimit width child'
+                      return img
+           }
+
+data VLimit a = VLimit Int (Widget a)
+
+-- |Impose a maximum horizontal size, in columns, on a 'Widget'.
+vLimit :: Int -> Widget a -> Widget (VLimit a)
+vLimit maxHeight w =
+    Widget { state = VLimit maxHeight w
+           , growVertical = False
+           -- XXX! should depend on state, not closure
+           , growHorizontal = growHorizontal w
+           , primaryAttribute = primaryAttribute w
+           , withAttribute = \att -> vLimit maxHeight $ withAttribute w att
+           , draw = \s -> do
+                      VLimit height child <- get
+                      let (img, child') = if region_height s < fromIntegral height
+                                          then render child s
+                                          else render child $ s `withHeight` fromIntegral height
+                      put $ VLimit height child'
+                      return img
+           }

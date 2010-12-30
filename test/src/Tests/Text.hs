@@ -5,6 +5,7 @@ import Data.Char ( isPrint )
 
 import Graphics.Vty
 import Graphics.Vty.Widgets.Text
+import Graphics.Vty.Widgets.Rendering ( render )
 
 import Tests.Util
 import Tests.Instances ()
@@ -12,7 +13,7 @@ import Tests.Instances ()
 textSize :: Property
 textSize =
     property $ forAll textString $ \str attr sz ->
-        let img = toImage sz $ simpleText attr str
+        let img = fst $ render (simpleText attr str) sz
         in
           if null str || region_height sz == 0 || region_width sz == 0
           then image_height img == 0 && image_width img == 0

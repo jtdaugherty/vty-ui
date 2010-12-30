@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module Main where
 
 import Data.Maybe ( fromJust )
@@ -12,7 +13,7 @@ import Graphics.Vty
     , mkVty, shutdown, terminal, next_event, reserve_display
     , pic_for_image, update, with_fore_color, with_back_color
     , def_attr, blue, bright_white, bright_yellow, bright_green
-    , black, yellow, red
+    , black, yellow, red, terminal, display_bounds
     )
 import Graphics.Vty.Widgets.Base
     ( (<-->)
@@ -21,10 +22,10 @@ import Graphics.Vty.Widgets.Base
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
-    , mkImage
+    , render
     )
 import Graphics.Vty.Widgets.Text
-    ( simpleText, wrap, highlight
+    ( Text, simpleText, wrap, highlight
     , prepareText, textWidget, (&.&)
     )
 import Graphics.Vty.Widgets.Borders
@@ -75,7 +76,6 @@ hlAttr2 = def_attr
            `with_back_color` black
            `with_fore_color` yellow
 
-buildUi :: AppState -> Widget
 buildUi appst =
   let body = fromJust $ lookup (fst $ getSelected list) msgs
       currentItem = selectedIndex list + 1
@@ -93,14 +93,13 @@ buildUi appst =
 
 -- Construct the user interface based on the contents of the
 -- application state.
-uiFromState :: StateT AppState IO Widget
 uiFromState = buildUi <$> get
 
 -- The application state; this encapsulates what can vary based on
 -- user input and what is used to construct the interface.  This is a
 -- place for widgets whose state need to be stored so they can be
 -- modified and used to reconstruct the interface as input is handled
-data AppState = AppState { theList :: List String
+data AppState = AppState { theList :: List String Text
                          , theMessages :: [(String, String)]
                          }
 
@@ -121,13 +120,15 @@ resizeList s appst = appst { theList = resize s $ theList appst }
 
 -- Process events from VTY, possibly modifying the application state.
 eventloop :: Vty
-          -> StateT AppState IO Widget
+          -> StateT AppState IO (Widget a)
           -> (Event -> StateT AppState IO Bool)
           -> StateT AppState IO ()
 eventloop vty uiBuilder handle = do
   w <- uiBuilder
   evt <- liftIO $ do
-           img <- mkImage vty w
+           sz <- display_bounds $ terminal vty
+           -- XXX discarding new widget
+           let img = fst $ render w sz
            update vty $ pic_for_image img
            next_event vty
   next <- handle evt

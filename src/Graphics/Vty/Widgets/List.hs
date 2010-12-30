@@ -34,6 +34,9 @@ module Graphics.Vty.Widgets.List
     )
 where
 
+import Control.Monad.State
+    ( State
+    )
 import Graphics.Vty
     ( Attr
     , DisplayRegion
@@ -42,35 +45,37 @@ import Graphics.Vty
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
+    , render
     )
 import Graphics.Vty.Widgets.Base
     ( hFill
     )
 import Graphics.Vty.Widgets.Text
-    ( simpleText
+    ( Text
+    , simpleText
     )
 
 -- |A list item. Each item contains an arbitrary internal identifier
 -- @a@ and a 'Widget' representing it.
-type ListItem a = (a, Widget)
+type ListItem a b = (a, Widget b)
 
 -- |The list widget type.  Lists are parameterized over the /internal/
 -- /identifier type/ @a@, the type of internal identifiers used to
 -- refer to the visible representations of the list contents, and the
 -- /widget type/ @b@, the type of widgets used to represent the list
 -- visually.
-data List a = List { normalAttr :: Attr
-                   , selectedAttr :: Attr
-                   , selectedIndex :: Int
-                   -- ^The currently selected list index.
-                   , scrollTopIndex :: Int
-                   -- ^The start index of the window of visible list
-                   -- items.
-                   , scrollWindowSize :: Int
-                   -- ^The size of the window of visible list items.
-                   , listItems :: [ListItem a]
-                   -- ^The items in the list.
-                   }
+data List a b = List { normalAttr :: Attr
+                     , selectedAttr :: Attr
+                     , selectedIndex :: Int
+                     -- ^The currently selected list index.
+                     , scrollTopIndex :: Int
+                     -- ^The start index of the window of visible list
+                     -- items.
+                     , scrollWindowSize :: Int
+                     -- ^The size of the window of visible list items.
+                     , listItems :: [ListItem a b]
+                     -- ^The items in the list.
+                     }
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
@@ -78,31 +83,36 @@ mkList :: Attr -- ^The attribute of normal, non-selected items
        -> Attr -- ^The attribute of the selected item
        -> Int -- ^The scrolling window size, i.e., the number of items
               -- which should be visible to the user at any given time
-       -> [ListItem a] -- ^The list items
-       -> List a
+       -> [ListItem a b] -- ^The list items
+       -> List a b
 mkList _ _ _ [] = error "Lists cannot be empty"
 mkList normAttr selAttr swSize contents
     | swSize <= 0 = error "Scrolling window size must be > 0"
     | otherwise = List normAttr selAttr 0 0 swSize contents
 
-listWidget :: List a -> Widget
+listWidget :: List a b -> Widget (List a b)
 listWidget list = Widget {
-                    growHorizontal = False
+                    state = list
+                  , growHorizontal = False
                   , growVertical = False
                   , withAttribute = \att -> listWidget list { normalAttr = att }
                   , primaryAttribute = normalAttr list
-                  , render = renderListWidget list
+                  , draw = renderListWidget list
                   }
 
-renderListWidget :: List a -> DisplayRegion -> Image
+renderListWidget :: List a b -> DisplayRegion -> State (List a b) Image
 renderListWidget list s =
-    vert_cat ws
+    -- XXX! for now, just render the item widgets and throw away
+    -- changes.  Later, move the widgets themselves into the list
+    -- state.
+    return $ vert_cat (visible_imgs ++ filler_imgs)
         where
-          ws = map (\w -> render w s) (visible ++ filler)
+          filler_imgs = map (\w -> fst $ render w s) filler_ws
+          visible_imgs = map (\w -> fst $ render w s) visible
           visible = map highlight items
           items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems list
-          filler = replicate (scrollWindowSize list - length visible)
-                   (hFill (normalAttr list) ' ' 1)
+          filler_ws = replicate (scrollWindowSize list - length visible)
+                      (hFill (normalAttr list) ' ' 1)
           highlight (w, selected) = let att = if selected
                                               then selectedAttr
                                               else normalAttr
@@ -116,7 +126,7 @@ mkSimpleList :: Attr -- ^The attribute of normal, non-selected items
                     -- items which should be visible to the user at
                     -- any given time
              -> [String] -- ^The list items
-             -> List String
+             -> List String Text
 mkSimpleList normAttr selAttr swSize labels =
     mkList normAttr selAttr swSize widgets
     where
@@ -125,12 +135,12 @@ mkSimpleList normAttr selAttr swSize labels =
 -- note that !! here will always succeed because selectedIndex will
 -- never be out of bounds and the list will always be non-empty.
 -- |Get the currently selected list item.
-getSelected :: List a -> ListItem a
+getSelected :: List a b -> ListItem a b
 getSelected list = (listItems list) !! (selectedIndex list)
 
 -- |Set the window size of the list.  This automatically adjusts the
 -- window position to keep the selected item visible.
-resize :: Int -> List a -> List a
+resize :: Int -> List a b -> List a b
 resize newSize list
     | newSize == 0 = error "Cannot resize list window to zero"
     -- Do nothing if the window size isn't changing.
@@ -160,7 +170,7 @@ resize newSize list
 --
 -- * Moves the scrolling window position if necessary (i.e., if the
 --   cursor moves to an item not currently in view)
-scrollBy :: Int -> List a -> List a
+scrollBy :: Int -> List a b -> List a b
 scrollBy amount list =
     list { scrollTopIndex = adjustedTop
          , selectedIndex = newSelected }
@@ -187,25 +197,25 @@ scrollBy amount list =
                              else newSelected
 
 -- |Scroll a list down by one position.
-scrollDown :: List a -> List a
+scrollDown :: List a b -> List a b
 scrollDown = scrollBy 1
 
 -- |Scroll a list up by one position.
-scrollUp :: List a -> List a
+scrollUp :: List a b -> List a b
 scrollUp = scrollBy (-1)
 
 -- |Scroll a list down by one page from the current cursor position.
-pageDown :: List a -> List a
+pageDown :: List a b -> List a b
 pageDown list = scrollBy (scrollWindowSize list) list
 
 -- |Scroll a list up by one page from the current cursor position.
-pageUp :: List a -> List a
+pageUp :: List a b -> List a b
 pageUp list = scrollBy (-1 * scrollWindowSize list) list
 
 -- |Given a 'List', return the items that are currently visible
 -- according to the state of the list.  Returns the visible items and
 -- flags indicating whether each is selected.
-getVisibleItems :: List a -> [(ListItem a, Bool)]
+getVisibleItems :: List a b -> [(ListItem a b, Bool)]
 getVisibleItems list =
     let start = scrollTopIndex list
         stop = scrollTopIndex list + scrollWindowSize list
