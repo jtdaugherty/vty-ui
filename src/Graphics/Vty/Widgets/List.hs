@@ -27,7 +27,6 @@ module Graphics.Vty.Widgets.List
     -- ** List inspection
     , listItems
     , getSelected
-    , selectedIndex
     , scrollTopIndex
     , scrollWindowSize
     , getVisibleItems
@@ -36,12 +35,14 @@ where
 
 import Control.Monad
     ( forM
+    , when
     )
 import Control.Monad.Trans
     ( MonadIO
     )
 import Control.Monad.State
     ( StateT
+    , get
     )
 import Control.Monad
     ( replicateM
@@ -55,9 +56,11 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Rendering
     ( WidgetImpl(..)
     , Widget
+    , (<~)
     , render
     , newWidget
     , updateWidget
+    , updateWidgetState_
     )
 import Graphics.Vty.Widgets.Base
     ( hFill
@@ -109,12 +112,14 @@ listWidget list = do
       w { state = list
         , getGrowHorizontal = return False
         , getGrowVertical = return False
-        , draw = renderListWidget list
+        , draw = \sz -> do
+            listData <- get
+            renderListWidget listData sz
         }
 
 renderListWidget :: List a b -> DisplayRegion -> StateT (List a b) IO Image
 renderListWidget list s = do
-  let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems list
+  let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
       highlight (w, _) = w
       visible = map highlight items
 
@@ -154,29 +159,34 @@ mkSimpleList normAttr selAttr swSize labels = do
 -- note that !! here will always succeed because selectedIndex will
 -- never be out of bounds and the list will always be non-empty.
 -- |Get the currently selected list item.
-getSelected :: List a b -> ListItem a b
-getSelected list = (listItems list) !! (selectedIndex list)
+getSelected :: (MonadIO m) => Widget (List a b) -> m (Int, ListItem a b)
+getSelected wRef = do
+  list <- state <~ wRef
+  return $ (selectedIndex list, (listItems list) !! (selectedIndex list))
 
 -- |Set the window size of the list.  This automatically adjusts the
 -- window position to keep the selected item visible.
-resize :: Int -> List a b -> List a b
-resize newSize list
-    | newSize == 0 = error "Cannot resize list window to zero"
-    -- Do nothing if the window size isn't changing.
-    | newSize == scrollWindowSize list = list
-    -- If the new window size is larger, just set it.
-    | newSize > scrollWindowSize list = list { scrollWindowSize = newSize }
+resize :: (MonadIO m) => Int -> Widget (List a b) -> m ()
+resize newSize wRef = do
+  when (newSize == 0) $ error "Cannot resize list window to zero"
+
+  size <- (scrollWindowSize . state) <~ wRef
+
+  case compare newSize size of
+    EQ -> return () -- Do nothing if the window size isn't changing.
+    GT -> updateWidgetState_ wRef $ \list -> list { scrollWindowSize = newSize }
     -- Otherwise it's smaller, so we need to look at which item is
     -- selected and decide whether to change the scrollTopIndex.
-    | otherwise = list { scrollWindowSize = newSize
-                       , selectedIndex = newSelected
-                       }
-    where
-      newBottomPosition = scrollTopIndex list + newSize - 1
-      current = selectedIndex list
-      newSelected = if current > newBottomPosition
-                    then newBottomPosition
-                    else current
+    LT -> do
+      list <- state <~ wRef
+      let newBottomPosition = scrollTopIndex list + newSize - 1
+          current = selectedIndex list
+          newSelected = if current > newBottomPosition
+                        then newBottomPosition
+                        else current
+      updateWidgetState_ wRef $ const $ list { scrollWindowSize = newSize
+                                             , selectedIndex = newSelected
+                                             }
 
 -- |Scroll a list up or down by the specified number of positions and
 -- return the new scrolled list.  Scrolling by a positive amount
@@ -189,53 +199,64 @@ resize newSize list
 --
 -- * Moves the scrolling window position if necessary (i.e., if the
 --   cursor moves to an item not currently in view)
-scrollBy :: Int -> List a b -> List a b
-scrollBy amount list =
-    list { scrollTopIndex = adjustedTop
-         , selectedIndex = newSelected }
-        where
-          sel = selectedIndex list
-          lastPos = (length $ listItems list) - 1
-          validPositions = [0..lastPos]
-          newPosition = sel + amount
+scrollBy :: (MonadIO m) => Int -> Widget (List a b) -> m ()
+scrollBy amount wRef = do
+  list <- state <~ wRef
 
-          newSelected = if newPosition `elem` validPositions
-                        then newPosition
-                        else if newPosition > lastPos
-                             then lastPos
-                             else 0
+  let sel = selectedIndex list
+      lastPos = (length $ listItems list) - 1
+      validPositions = [0..lastPos]
+      newPosition = sel + amount
 
-          bottomPosition = scrollTopIndex list + scrollWindowSize list - 1
-          topPosition = scrollTopIndex list
-          windowPositions = [topPosition..bottomPosition]
+      newSelected = if newPosition `elem` validPositions
+                    then newPosition
+                    else if newPosition > lastPos
+                         then lastPos
+                         else 0
 
-          adjustedTop = if newPosition `elem` windowPositions
-                        then topPosition
-                        else if newSelected >= bottomPosition
-                             then newSelected - scrollWindowSize list + 1
-                             else newSelected
+      bottomPosition = scrollTopIndex list + scrollWindowSize list - 1
+      topPosition = scrollTopIndex list
+      windowPositions = [topPosition..bottomPosition]
+
+      adjustedTop = if newPosition `elem` windowPositions
+                    then topPosition
+                    else if newSelected >= bottomPosition
+                         then newSelected - scrollWindowSize list + 1
+                         else newSelected
+
+  updateWidgetState_ wRef $ const $ list { scrollTopIndex = adjustedTop
+                                         , selectedIndex = newSelected }
 
 -- |Scroll a list down by one position.
-scrollDown :: List a b -> List a b
+scrollDown :: (MonadIO m) => Widget (List a b) -> m ()
 scrollDown = scrollBy 1
 
 -- |Scroll a list up by one position.
-scrollUp :: List a b -> List a b
+scrollUp :: (MonadIO m) => Widget (List a b) -> m ()
 scrollUp = scrollBy (-1)
 
 -- |Scroll a list down by one page from the current cursor position.
-pageDown :: List a b -> List a b
-pageDown list = scrollBy (scrollWindowSize list) list
+pageDown :: (MonadIO m) => Widget (List a b) -> m ()
+pageDown wRef = do
+  amt <- (scrollWindowSize . state) <~ wRef
+  scrollBy amt wRef
 
 -- |Scroll a list up by one page from the current cursor position.
-pageUp :: List a b -> List a b
-pageUp list = scrollBy (-1 * scrollWindowSize list) list
+pageUp :: (MonadIO m) => Widget (List a b) -> m ()
+pageUp wRef = do
+  amt <- (scrollWindowSize . state) <~ wRef
+  scrollBy (-1 * amt) wRef
 
 -- |Given a 'List', return the items that are currently visible
 -- according to the state of the list.  Returns the visible items and
 -- flags indicating whether each is selected.
-getVisibleItems :: List a b -> [(ListItem a b, Bool)]
-getVisibleItems list =
+getVisibleItems :: (MonadIO m) => Widget (List a b) -> m [(ListItem a b, Bool)]
+getVisibleItems wRef = do
+  list <- state <~ wRef
+  return $ getVisibleItems_ list
+
+getVisibleItems_ :: List a b -> [(ListItem a b, Bool)]
+getVisibleItems_ list =
     let start = scrollTopIndex list
         stop = scrollTopIndex list + scrollWindowSize list
         adjustedStop = (min stop $ length $ listItems list) - 1

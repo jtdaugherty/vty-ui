@@ -8,6 +8,7 @@ module Graphics.Vty.Widgets.Text
     ( Text(defaultAttr, tokens)
     , FormattedText
     , Formatter
+    , setText
     -- *Text Preparation
     , prepareText
     , resetText
@@ -46,6 +47,7 @@ import Graphics.Vty.Widgets.Rendering
     , Widget
     , newWidget
     , updateWidget
+    , updateWidgetState_
     )
 import Text.Trans.Tokenize
     ( Token(..)
@@ -148,6 +150,10 @@ textWidget format t = do
               ft <- get
               return $ renderText (text ft) (formatter ft) size
         }
+
+setText :: (MonadIO m) => Widget FormattedText -> String -> Attr -> m ()
+setText wRef s attr =
+    updateWidgetState_ wRef $ \st -> st { text = prepareText attr s }
 
 -- |Low-level text-rendering routine.
 renderText :: Text -> Formatter -> DisplayRegion -> Image

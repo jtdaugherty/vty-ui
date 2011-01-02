@@ -1,10 +1,9 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module Main where
 
-import Data.Maybe ( fromJust )
 import Control.Monad ( when )
 import Control.Monad.Trans ( liftIO )
-import Control.Monad.State ( StateT, get, modify, evalStateT )
+import Control.Monad.State ( StateT, get, evalStateT, gets )
 import Text.Regex.PCRE.Light.Char8 ( Regex, compile )
 
 import Graphics.Vty
@@ -25,7 +24,7 @@ import Graphics.Vty.Widgets.Rendering
     )
 import Graphics.Vty.Widgets.Text
     ( FormattedText, prepareText, simpleText, wrap, highlight
-    , textWidget, (&.&)
+    , textWidget, (&.&), setText
     )
 import Graphics.Vty.Widgets.Borders
     ( bordered, hBorder
@@ -36,7 +35,6 @@ import Graphics.Vty.Widgets.Composed
 import Graphics.Vty.Widgets.List
     ( List, mkList, pageUp, pageDown, resize
     , scrollUp, scrollDown, listWidget, getSelected
-    , selectedIndex
     )
 
 titleAttr :: Attr
@@ -76,59 +74,46 @@ hlAttr2 = def_attr
            `with_fore_color` yellow
 
 buildUi appst = do
-  let body = fromJust $ lookup (fst $ getSelected list) msgs
-      currentItem = selectedIndex list + 1
-      msgs = theMessages appst
-      list = theList appst
-      formatter = wrap &.&
-                  highlight regex1 hlAttr1 &.&
-                  highlight regex2 hlAttr2
+  let list = theList appst
 
-  footer <- (simpleText titleAttr $ " " ++ (show currentItem) ++ "/" ++ (show $ length msgs) ++ " ")
-            <++> hFill titleAttr '-' 1
+  footer <- (return $ theFooter appst) <++> hFill titleAttr '-' 1
 
-  bodyText <- textWidget formatter $ prepareText bodyAttr body
-  lw <- listWidget list
-
-  bordered boxAttr =<< (return lw)
+  bordered boxAttr =<< (return list)
       <--> (hBorder titleAttr)
-      <--> (bottomPadded bodyText bodyAttr)
+      <--> (bottomPadded (theBody appst) bodyAttr)
       <--> (return footer)
-
--- Construct the user interface based on the contents of the
--- application state.
-uiFromState = (liftIO . buildUi) =<< get
 
 -- The application state; this encapsulates what can vary based on
 -- user input and what is used to construct the interface.  This is a
 -- place for widgets whose state need to be stored so they can be
 -- modified and used to reconstruct the interface as input is handled
-data AppState = AppState { theList :: List String FormattedText
+data AppState = AppState { theList :: Widget (List String FormattedText)
                          , theMessages :: [(String, String)]
+                         , theBody :: Widget FormattedText
+                         , theFooter :: Widget FormattedText
                          }
 
-scrollListUp :: AppState -> AppState
-scrollListUp appst = appst { theList = scrollUp $ theList appst }
+scrollListUp :: StateT AppState IO ()
+scrollListUp = gets theList >>= scrollUp
 
-scrollListDown :: AppState -> AppState
-scrollListDown appst = appst { theList = scrollDown $ theList appst }
+scrollListDown :: StateT AppState IO ()
+scrollListDown = gets theList >>= scrollDown
 
-pageListUp :: AppState -> AppState
-pageListUp appst = appst { theList = pageUp $ theList appst }
+pageListUp :: StateT AppState IO ()
+pageListUp = gets theList >>= pageUp
 
-pageListDown :: AppState -> AppState
-pageListDown appst = appst { theList = pageDown $ theList appst }
+pageListDown :: StateT AppState IO ()
+pageListDown = gets theList >>= pageDown
 
-resizeList :: Int -> AppState -> AppState
-resizeList s appst = appst { theList = resize s $ theList appst }
+resizeList :: Int -> StateT AppState IO ()
+resizeList s = gets theList >>= (resize s)
 
 -- Process events from VTY, possibly modifying the application state.
 eventloop :: Vty
-          -> StateT AppState IO (Widget a)
+          -> Widget a
           -> (Event -> StateT AppState IO Bool)
           -> StateT AppState IO ()
-eventloop vty uiBuilder handle = do
-  w <- uiBuilder
+eventloop vty w handle = do
   evt <- liftIO $ do
            sz <- display_bounds $ terminal vty
            img <- render w sz
@@ -136,7 +121,7 @@ eventloop vty uiBuilder handle = do
            next_event vty
   next <- handle evt
   if next then
-      eventloop vty uiBuilder handle else
+      eventloop vty w handle else
       return ()
 
 continue :: StateT AppState IO Bool
@@ -146,24 +131,49 @@ stop :: StateT AppState IO Bool
 stop = return False
 
 handleEvent :: Event -> StateT AppState IO Bool
-handleEvent (EvKey KUp []) = modify scrollListUp >> continue
-handleEvent (EvKey KDown []) = modify scrollListDown >> continue
-handleEvent (EvKey KPageUp []) = modify pageListUp >> continue
-handleEvent (EvKey KPageDown []) = modify pageListDown >> continue
+handleEvent (EvKey KUp []) = scrollListUp >> updateBody >> continue
+handleEvent (EvKey KDown []) = scrollListDown >> updateBody >> continue
+handleEvent (EvKey KPageUp []) = pageListUp >> updateBody >> continue
+handleEvent (EvKey KPageDown []) = pageListDown >> updateBody >> continue
 handleEvent (EvKey (KASCII 'q') []) = stop
 handleEvent (EvResize _ h) = do
   let newSize = ceiling ((0.05 :: Double) * fromIntegral h)
-  when (newSize > 0) $ modify (resizeList newSize)
+  when (newSize > 0) $ resizeList newSize
   continue
 handleEvent _ = continue
+
+updateBody :: StateT AppState IO ()
+updateBody = do
+  appst <- get
+  (i, _) <- getSelected $ theList appst
+  setText (theBody appst) (snd $ theMessages appst !! i) bodyAttr
+  updateFooter
+
+updateFooter :: StateT AppState IO ()
+updateFooter = do
+  appst <- get
+  (i, _) <- getSelected $ theList appst
+  let msg = " " ++ (show $ i + 1) ++ "/" ++ (show $ length $ theMessages appst) ++ " "
+  setText (theFooter appst) msg titleAttr
 
 -- Construct the application state using the message map.
 mkAppState :: [(String, String)] -> IO AppState
 mkAppState messages = do
   let labels = map fst messages
   ws <- mapM (simpleText bodyAttr) labels
-  return $ AppState { theList = mkList bodyAttr selAttr 5 $ zip labels ws
+  lw <- listWidget $ mkList bodyAttr selAttr 5 $ zip labels ws
+
+  let formatter = wrap &.&
+                  highlight regex1 hlAttr1 &.&
+                  highlight regex2 hlAttr2
+
+  b <- textWidget formatter $ prepareText bodyAttr "<loading>"
+  f <- simpleText titleAttr $ " -/- "
+
+  return $ AppState { theList = lw
                     , theMessages = messages
+                    , theBody = b
+                    , theFooter = f
                     }
 
 main :: IO ()
@@ -184,7 +194,9 @@ main = do
                  ]
 
   st <- mkAppState messages
-  evalStateT (eventloop vty uiFromState handleEvent) st
+  w <- buildUi st
+  evalStateT (updateBody >> updateFooter >> eventloop vty w handleEvent) st
+
   -- Clear the screen.
   reserve_display $ terminal vty
   shutdown vty

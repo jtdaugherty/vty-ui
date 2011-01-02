@@ -7,6 +7,8 @@ module Graphics.Vty.Widgets.Rendering
     , render
     , updateWidget
     , updateWidget_
+    , updateWidgetState
+    , updateWidgetState_
     , newWidget
     , (<~)
 
@@ -26,6 +28,7 @@ import Data.IORef
     , newIORef
     , readIORef
     , modifyIORef
+    , writeIORef
     )
 import Control.Monad.Reader
     ( ReaderT
@@ -130,6 +133,16 @@ updateWidget wRef f = (liftIO $ modifyIORef wRef f) >> return wRef
 
 updateWidget_ :: (MonadIO m) => Widget a -> (WidgetImpl a -> WidgetImpl a) -> m ()
 updateWidget_ wRef f = updateWidget wRef f >> return ()
+
+updateWidgetState :: (MonadIO m) => Widget a -> (a -> a) -> m (Widget a)
+updateWidgetState wRef f =
+    liftIO $ do
+      w <- readIORef wRef
+      writeIORef wRef $ w { state = f (state w) }
+      return wRef
+
+updateWidgetState_ :: (MonadIO m) => Widget a -> (a -> a) -> m ()
+updateWidgetState_ wRef f = updateWidgetState wRef f >> return ()
 
 -- |Modify the width component of a 'DisplayRegion'.
 withWidth :: DisplayRegion -> Word -> DisplayRegion
