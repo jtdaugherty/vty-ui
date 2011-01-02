@@ -88,7 +88,7 @@ buildUi appst =
                   highlight regex2 hlAttr2
   in bordered boxAttr $ listWidget list
       <--> hBorder titleAttr
-      <--> (bottomPadded $ textWidget formatter $ prepareText bodyAttr body)
+      <--> (bottomPadded (textWidget formatter $ prepareText bodyAttr body) bodyAttr)
       <--> footer
 
 -- Construct the user interface based on the contents of the

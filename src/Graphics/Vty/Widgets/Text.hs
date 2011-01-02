@@ -21,9 +21,6 @@ module Graphics.Vty.Widgets.Text
     )
 where
 
-import Control.Monad.Reader
-    ( ask
-    )
 import Control.Monad.State
     ( get
     )
@@ -138,11 +135,6 @@ textWidget format t = Widget {
                                              }
                       , getGrowHorizontal = return False
                       , getGrowVertical = return False
-                      , getPrimaryAttribute = return . defaultAttr . text =<< ask
-                      , newWithAttribute =
-                          \attr -> do
-                            ft <- ask
-                            return $ textWidget nullFormatter $ resetText $ (text ft) { defaultAttr = attr }
                       , draw =
                           \size -> do
                             ft <- get

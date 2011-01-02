@@ -6,9 +6,11 @@ module Graphics.Vty.Widgets.Composed
     )
 where
 
+import Graphics.Vty
+    ( Attr
+    )
 import Graphics.Vty.Widgets.Rendering
     ( Widget
-    , primaryAttribute
     )
 import Graphics.Vty.Widgets.Base
     ( Box
@@ -21,19 +23,13 @@ import Graphics.Vty.Widgets.Base
     , hLimit
     )
 
--- NOTE: these widgets are no longer correctly implemented, since now
--- the primary attribute of a child widget could change and these
--- widgets would never pick up on the state change because the vFill
--- primary attributes are chosen at widget construction time, not
--- dynamically based on the child widget state.
-
 -- |Add expanding bottom padding to a widget.
-bottomPadded :: Widget a -> Widget (Box a VFill)
-bottomPadded w = w <--> vFill (primaryAttribute w) ' '
+bottomPadded :: Widget a -> Attr -> Widget (Box a VFill)
+bottomPadded w attr = w <--> vFill attr ' '
 
 -- |Add expanding top padding to a widget.
-topPadded :: Widget a -> Widget (Box VFill a)
-topPadded w = vFill (primaryAttribute w) ' ' <--> w
+topPadded :: Widget a -> Attr -> Widget (Box VFill a)
+topPadded w attr = vFill attr ' ' <--> w
 
 -- |Impose a maximum size (width, height) on a widget.
 boxLimit :: Int -- ^Maximum width in columns

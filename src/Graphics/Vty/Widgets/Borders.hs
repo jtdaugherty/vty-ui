@@ -34,7 +34,6 @@ import Graphics.Vty
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
-    , withAttribute
     , growVertical
     , growHorizontal
     , render
@@ -59,16 +58,6 @@ hBorderWith ch att =
     Widget { state = HBorder att ch
            , getGrowVertical = return False
            , getGrowHorizontal = return True
-
-           , getPrimaryAttribute = do
-               HBorder attr _ <- ask
-               return attr
-
-           , newWithAttribute =
-               \attr -> do
-                 HBorder _ char <- ask
-                 return $ hBorderWith char attr
-
            , draw = \s -> return $ char_fill att ch (region_width s) 1
            }
 
@@ -85,16 +74,7 @@ vBorderWith ch att =
     Widget { state = VBorder att ch
            , getGrowHorizontal = return False
            , getGrowVertical = return True
-
-           , getPrimaryAttribute = do
-               VBorder attr _ <- ask
-               return attr
-
            , draw = \s -> return $ char_fill att ch 1 (region_height s)
-           , newWithAttribute =
-               \attr -> do
-                 VBorder _ char <- ask
-                 return $ vBorderWith char attr
            }
 
 data Bordered a = Bordered Attr (Widget a)
@@ -111,15 +91,6 @@ bordered att w = Widget {
                  , getGrowHorizontal = do
                      Bordered _ child <- ask
                      return $ growHorizontal child
-
-                 , getPrimaryAttribute = do
-                     Bordered attr _ <- ask
-                     return attr
-
-                 , newWithAttribute =
-                     \attr -> do
-                       Bordered _ child <- ask
-                       return $ bordered attr (withAttribute child attr)
 
                  , draw = drawBordered
                  }

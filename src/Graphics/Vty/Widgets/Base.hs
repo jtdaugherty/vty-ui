@@ -35,8 +35,6 @@ import Graphics.Vty.Widgets.Rendering
     , render
     , withHeight
     , withWidth
-    , primaryAttribute
-    , withAttribute
     , growHorizontal
     , growVertical
     )
@@ -62,15 +60,6 @@ vFill att c = Widget {
                 state = VFill att c
               , getGrowHorizontal = return False
               , getGrowVertical = return True
-
-              , getPrimaryAttribute = do
-                  VFill attr _ <- ask
-                  return attr
-
-              , newWithAttribute = \attr -> do
-                  VFill _ ch <- ask
-                  return $ vFill attr ch
-
               , draw = \s -> do
                          VFill attr ch <- get
                          return $ char_fill attr ch (region_width s) (region_height s)
@@ -85,15 +74,6 @@ hFill att c h = Widget {
                   state = HFill att c h
                 , getGrowHorizontal = return True
                 , getGrowVertical = return False
-
-                , getPrimaryAttribute = do
-                    HFill attr _ _ <- ask
-                    return attr
-
-                , newWithAttribute = \attr -> do
-                    HFill _ ch height <- ask
-                    return $ hFill attr ch height
-
                 , draw = \s -> do
                            HFill attr ch height <- get
                            return $ char_fill attr ch (region_width s) (toEnum height)
@@ -126,15 +106,6 @@ box o a b = Widget {
             , getGrowVertical = do
                 Box _ ch1 ch2 <- ask
                 return $ growVertical ch1 || growVertical ch2
-
-            , newWithAttribute =
-                \attr -> do
-                  Box orientation ch1 ch2 <- ask
-                  return $ box orientation (withAttribute ch1 attr) (withAttribute ch2 attr)
-
-            , getPrimaryAttribute = do
-                Box _ ch1 _ <- ask
-                return $ primaryAttribute ch1
 
             , draw = \s -> do
                        Box orientation _ _ <- get
@@ -221,15 +192,6 @@ hLimit maxWidth w =
                HLimit _ child <- ask
                return $ growVertical child
 
-           , getPrimaryAttribute = do
-               HLimit _ child <- ask
-               return $ primaryAttribute child
-
-           , newWithAttribute =
-               \attr -> do
-                 HLimit width child <- ask
-                 return $ hLimit width $ withAttribute child attr
-
            , draw = \s -> do
                       HLimit width child <- get
                       let (img, child') = if region_width s < fromIntegral width
@@ -250,15 +212,6 @@ vLimit maxHeight w =
            , getGrowHorizontal = do
                VLimit _ child <- ask
                return $ growHorizontal child
-
-           , getPrimaryAttribute = do
-               VLimit _ child <- ask
-               return $ primaryAttribute child
-
-           , newWithAttribute =
-               \attr -> do
-                 VLimit height child <- ask
-                 return $ vLimit height $ withAttribute child attr
 
            , draw = \s -> do
                       VLimit height child <- get

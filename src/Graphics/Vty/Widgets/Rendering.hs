@@ -12,8 +12,6 @@ module Graphics.Vty.Widgets.Rendering
 
     , growVertical
     , growHorizontal
-    , primaryAttribute
-    , withAttribute
     )
 where
 
@@ -28,7 +26,6 @@ import Control.Monad.State
     )
 import Graphics.Vty
     ( DisplayRegion(DisplayRegion)
-    , Attr
     , Image
     )
 
@@ -42,12 +39,6 @@ data Orientation = Horizontal | Vertical
 -- * /Growth properties/ which provide information about how to
 --   allocate space to widgets depending on their propensity to
 --   consume available space
---
--- * A /primary attribute/ which is the attribute most easily
---   identifiable with the widget's visual presentation
---
--- * An /attribute override/ which allows the widget and its children
---   to be rendered using a single attribute specified by the caller
 --
 -- * A /rendering routine/ which converts the widget's internal state
 --   into a 'Render' value.
@@ -84,16 +75,6 @@ data Widget a = Widget {
     -- |Will this widget expand to take advantage of available
     -- vertical space?
     , getGrowVertical :: Reader a Bool
-
-    -- |The primary attribute of this widget, used when composing
-    -- widgets.  For example, if you want to compose a widget /A/ with
-    -- a space-filling widget /B/, you probably want /B/'s text
-    -- attributes to be identical to those of /A/.
-    , getPrimaryAttribute :: Reader a Attr
-
-    -- |Apply the specified attribute to this widget, yielding a new
-    -- Widget of the same type.
-    , newWithAttribute :: Attr -> Reader a (Widget a)
     }
 
 growHorizontal :: Widget a -> Bool
@@ -101,12 +82,6 @@ growHorizontal w = runReader (getGrowHorizontal w) (state w)
 
 growVertical :: Widget a -> Bool
 growVertical w = runReader (getGrowVertical w) (state w)
-
-primaryAttribute :: Widget a -> Attr
-primaryAttribute w = runReader (getPrimaryAttribute w) (state w)
-
-withAttribute :: Widget a -> Attr -> Widget a
-withAttribute w attr = runReader (newWithAttribute w attr) (state w)
 
 render :: Widget a -> DisplayRegion -> (Image, Widget a)
 render w size = (img, w { state = s' })

@@ -34,9 +34,6 @@ module Graphics.Vty.Widgets.List
     )
 where
 
-import Control.Monad.Reader
-    ( ask
-    )
 import Control.Monad.State
     ( State
     )
@@ -48,7 +45,6 @@ import Graphics.Vty
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget(..)
-    , withAttribute
     , render
     )
 import Graphics.Vty.Widgets.Base
@@ -69,7 +65,7 @@ type ListItem a b = (a, Widget b)
 -- /widget type/ @b@, the type of widgets used to represent the list
 -- visually.
 data List a b = List { normalAttr :: Attr
-                     , selectedAttr :: Attr
+                     , _selectedAttr :: Attr
                      , selectedIndex :: Int
                      -- ^The currently selected list index.
                      , scrollTopIndex :: Int
@@ -99,11 +95,6 @@ listWidget list = Widget {
                     state = list
                   , getGrowHorizontal = return False
                   , getGrowVertical = return False
-                  , newWithAttribute =
-                      \attr -> do
-                        lst <- ask
-                        return $ listWidget $ lst { normalAttr = attr }
-                  , getPrimaryAttribute = return . normalAttr =<< ask
                   , draw = renderListWidget list
                   }
 
@@ -120,10 +111,12 @@ renderListWidget list s =
           items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems list
           filler_ws = replicate (scrollWindowSize list - length visible)
                       (hFill (normalAttr list) ' ' 1)
-          highlight (w, selected) = let att = if selected
-                                              then selectedAttr
-                                              else normalAttr
-                                    in withAttribute w (att list)
+          -- XXX need this functionality later
+          -- highlight (w, selected) = let att = if selected
+          --                                     then selectedAttr
+          --                                     else normalAttr
+          --                           in withAttribute w (att list)
+          highlight (w, _) = w
 
 -- |A convenience function to create a new list using 'String's as the
 -- internal identifiers and 'Text' widgets to represent those strings.
