@@ -3,10 +3,10 @@
 -- basic static and box layout widgets.
 module Graphics.Vty.Widgets.Base
     ( Box
-    , (<++>)
-    , (<-->)
     , hBox
     , vBox
+    , (<-->)
+    , (<++>)
 
     , VFill
     , HFill
@@ -21,17 +21,23 @@ module Graphics.Vty.Widgets.Base
 where
 
 import GHC.Word ( Word )
+import Control.Monad.Trans
+    ( MonadIO
+    , liftIO
+    )
 import Control.Monad.Reader
     ( ask
     )
 import Control.Monad.State
-    ( State
+    ( StateT
     , get
-    , put
     )
 import Graphics.Vty.Widgets.Rendering
-    ( Widget(..)
+    ( Widget
+    , WidgetImpl(..)
     , Orientation(..)
+    , newWidget
+    , updateWidget
     , render
     , withHeight
     , withWidth
@@ -55,29 +61,33 @@ data VFill = VFill Attr Char
 
 -- |A vertical fill widget.  Fills all available space with the
 -- specified character and attribute.
-vFill :: Attr -> Char -> Widget VFill
-vFill att c = Widget {
-                state = VFill att c
-              , getGrowHorizontal = return False
-              , getGrowVertical = return True
-              , draw = \s -> do
-                         VFill attr ch <- get
-                         return $ char_fill attr ch (region_width s) (region_height s)
-              }
+vFill :: (MonadIO m) => Attr -> Char -> m (Widget VFill)
+vFill att c = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = VFill att c
+        , getGrowHorizontal = return False
+        , getGrowVertical = return True
+        , draw = \s -> do
+                   VFill attr ch <- get
+                   return $ char_fill attr ch (region_width s) (region_height s)
+        }
 
 data HFill = HFill Attr Char Int
 
 -- |A horizontal fill widget.  Fills the available horizontal space,
 -- one row high, using the specified character and attribute.
-hFill :: Attr -> Char -> Int -> Widget HFill
-hFill att c h = Widget {
-                  state = HFill att c h
-                , getGrowHorizontal = return True
-                , getGrowVertical = return False
-                , draw = \s -> do
-                           HFill attr ch height <- get
-                           return $ char_fill attr ch (region_width s) (toEnum height)
-                }
+hFill :: (MonadIO m) => Attr -> Char -> Int -> m (Widget HFill)
+hFill att c h = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = HFill att c h
+        , getGrowHorizontal = return True
+        , getGrowVertical = return False
+        , draw = \s -> do
+                   HFill attr ch height <- get
+                   return $ char_fill attr ch (region_width s) (toEnum height)
+        }
 
 data Box a b = Box Orientation (Widget a) (Widget b)
 
@@ -96,27 +106,34 @@ data Box a b = Box Orientation (Widget a) (Widget b)
 -- * Otherwise, both children are rendered in top-to-bottom or
 --   left-to-right order and the resulting container uses only as much
 --   space as its children combined
-box :: Orientation -> Widget a -> Widget b -> Widget (Box a b)
-box o a b = Widget {
-              state = Box o a b
-            , getGrowHorizontal = do
-                Box _ ch1 ch2 <- ask
-                return $ growHorizontal ch1 || growHorizontal ch2
+box :: (MonadIO m) => Orientation -> Widget a -> Widget b -> m (Widget (Box a b))
+box o a b = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = Box o a b
+        , getGrowHorizontal = do
+            Box _ ch1 ch2 <- ask
+            h1 <- growHorizontal ch1
+            h2 <- growHorizontal ch2
+            return $ h1 || h2
 
-            , getGrowVertical = do
-                Box _ ch1 ch2 <- ask
-                return $ growVertical ch1 || growVertical ch2
+        , getGrowVertical = do
+            Box _ ch1 ch2 <- ask
+            v1 <- growVertical ch1
+            v2 <- growVertical ch2
+            return $ v1 || v2
 
-            , draw = \s -> do
-                       Box orientation _ _ <- get
-                       case orientation of
-                         Vertical ->
-                             renderBox s growVertical growVertical region_height
-                                       image_height withHeight
-                         Horizontal ->
-                             renderBox s growHorizontal growHorizontal region_width
-                                       image_width withWidth
-            }
+        , draw = \s -> do
+                   Box orientation _ _ <- get
+
+                   case orientation of
+                     Vertical ->
+                         renderBox s growVertical growVertical region_height
+                                   image_height withHeight
+                     Horizontal ->
+                         renderBox s growHorizontal growHorizontal region_width
+                                   image_width withWidth
+        }
 
 -- Box layout rendering implementation. This is generalized over the
 -- two dimensions in which box layout can be performed; it takes lot
@@ -124,100 +141,118 @@ box o a b = Widget {
 -- dimensions on regions and images as they are manipulated by the
 -- layout algorithm.
 renderBox :: DisplayRegion
-          -> (Widget a -> Bool) -- growth comparison function
-          -> (Widget b -> Bool) -- growth comparison function
+          -> (Widget a -> IO Bool) -- growth comparison function
+          -> (Widget b -> IO Bool) -- growth comparison function
           -> (DisplayRegion -> Word) -- region dimension fetch function
           -> (Image -> Word) -- image dimension fetch function
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
-          -> State (Box a b) Image
+          -> StateT (Box a b) IO Image
 renderBox s growFirst growSecond regDimension renderDimension withDim = do
   Box orientation first second <- get
 
-  let renderOrdered a b = let (a_img, a') = render a s
-                              (b_img, b') = render b s'
-                              remaining = regDimension s - renderDimension a_img
-                              s' = s `withDim` remaining
-                          in if renderDimension a_img >= regDimension s
-                             then ([a_img], (a', b))
-                             else ([a_img, b_img], (a', b'))
-      renderHalves = let half = s `withDim` div (regDimension s) 2
-                         half' = if regDimension s `mod` 2 == 0
-                                 then half
-                                 else half `withDim` (regDimension half + 1)
-                         (first_img, first_half) = render first half
-                         (second_img, second_half) = render second half'
-                     in ([first_img, second_img], (first_half, second_half))
+  let renderOrdered a b = do
+        a_img <- render a s
+
+        let remaining = regDimension s - renderDimension a_img
+            s' = s `withDim` remaining
+
+        b_img <- render b s'
+
+        return $ if renderDimension a_img >= regDimension s
+                 then [a_img]
+                 else [a_img, b_img]
+
+      renderHalves = do
+        let half = s `withDim` div (regDimension s) 2
+            half' = if regDimension s `mod` 2 == 0
+                    then half
+                    else half `withDim` (regDimension half + 1)
+        first_img <- render first half
+        second_img <- render second half'
+        return [first_img, second_img]
+
       cat = case orientation of
               Vertical -> vert_cat
               Horizontal -> horiz_cat
-      (imgs, (first', second')) = case (growFirst first, growSecond second) of
-                     (True, True) -> renderHalves
-                     (False, _) -> renderOrdered first second
-                     (_, False) -> let (images, (b', a')) = renderOrdered second first
-                                   in (reverse images, (a', b'))
 
-  put $ Box orientation first' second'
+  gf <- liftIO $ growFirst first
+  gs <- liftIO $ growSecond second
+
+  imgs <- case (gf, gs) of
+            (True, True) -> renderHalves
+            (False, _) -> renderOrdered first second
+            (_, False) -> do
+              images <- renderOrdered second first
+              return $ reverse images
+
   return $ cat imgs
 
 -- |Create a horizontal box layout widget containing two widgets side
 -- by side.  Space consumed by the box will depend on its contents and
 -- the available space.
-hBox :: Widget a -> Widget b -> Widget (Box a b)
+hBox :: (MonadIO m) => Widget a -> Widget b -> m (Widget (Box a b))
 hBox = box Horizontal
-
--- |An alias for 'hBox' intended as sugar to chain widgets
--- horizontally.
-(<++>) :: Widget a -> Widget b -> Widget (Box a b)
-(<++>) = hBox
 
 -- |Create a vertical box layout widget containing two widgets.  Space
 -- consumed by the box will depend on its contents and the available
 -- space.
-vBox :: Widget a -> Widget b -> Widget (Box a b)
+vBox :: (MonadIO m) => Widget a -> Widget b -> m (Widget (Box a b))
 vBox = box Vertical
-
--- |An alias for 'vBox' intended as sugar to chain widgets vertically.
-(<-->) :: Widget a -> Widget b -> Widget (Box a b)
-(<-->) = vBox
 
 data HLimit a = HLimit Int (Widget a)
 
 -- |Impose a maximum horizontal size, in columns, on a 'Widget'.
-hLimit :: Int -> Widget a -> Widget (HLimit a)
-hLimit maxWidth w =
-    Widget { state = HLimit maxWidth w
-           , getGrowHorizontal = return False
-           -- XXX! should depend on state, not closure
-           , getGrowVertical = do
-               HLimit _ child <- ask
-               return $ growVertical child
+hLimit :: (MonadIO m) => Int -> Widget a -> m (Widget (HLimit a))
+hLimit maxWidth child = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = HLimit maxWidth child
+        , getGrowHorizontal = return False
 
-           , draw = \s -> do
-                      HLimit width child <- get
-                      let (img, child') = if region_width s < fromIntegral width
-                                          then render child s
-                                          else render child $ s `withWidth` fromIntegral width
-                      put $ HLimit width child'
-                      return img
-           }
+        , getGrowVertical = do
+            HLimit _ ch <- ask
+            liftIO $ growVertical ch
+
+        , draw = \s -> do
+                   HLimit width ch <- get
+                   img <- if region_width s < fromIntegral width
+                          then render ch s
+                          else render ch $ s `withWidth` fromIntegral width
+                   return img
+        }
 
 data VLimit a = VLimit Int (Widget a)
 
 -- |Impose a maximum horizontal size, in columns, on a 'Widget'.
-vLimit :: Int -> Widget a -> Widget (VLimit a)
-vLimit maxHeight w =
-    Widget { state = VLimit maxHeight w
-           , getGrowVertical = return False
-           -- XXX! should depend on state, not closure
-           , getGrowHorizontal = do
-               VLimit _ child <- ask
-               return $ growHorizontal child
+vLimit :: (MonadIO m) => Int -> Widget a -> m (Widget (VLimit a))
+vLimit maxHeight child = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = VLimit maxHeight child
+        , getGrowVertical = return False
+        , getGrowHorizontal = do
+            VLimit _ ch <- ask
+            liftIO $ growHorizontal ch
 
-           , draw = \s -> do
-                      VLimit height child <- get
-                      let (img, child') = if region_height s < fromIntegral height
-                                          then render child s
-                                          else render child $ s `withHeight` fromIntegral height
-                      put $ VLimit height child'
-                      return img
-           }
+        , draw = \s -> do
+                   VLimit height ch <- get
+                   img <- if region_height s < fromIntegral height
+                          then render ch s
+                          else render ch $ s `withHeight` fromIntegral height
+                   return img
+        }
+
+(<-->) :: (MonadIO m) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
+(<-->) act1 act2 = do
+  ch1 <- act1
+  ch2 <- act2
+  vBox ch1 ch2
+
+(<++>) :: (MonadIO m) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
+(<++>) act1 act2 = do
+  ch1 <- act1
+  ch2 <- act2
+  hBox ch1 ch2
+
+infixl 2 <-->
+infixl 2 <++>

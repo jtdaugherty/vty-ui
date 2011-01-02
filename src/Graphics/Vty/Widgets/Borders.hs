@@ -12,13 +12,16 @@ module Graphics.Vty.Widgets.Borders
     )
 where
 
+import Control.Monad.Trans
+    ( MonadIO
+    , liftIO
+    )
 import Control.Monad.Reader
     ( ask
     )
 import Control.Monad.State
-    ( State
+    ( StateT
     , get
-    , put
     )
 import Graphics.Vty
     ( Attr
@@ -33,13 +36,16 @@ import Graphics.Vty
     , horiz_cat
     )
 import Graphics.Vty.Widgets.Rendering
-    ( Widget(..)
+    ( WidgetImpl(..)
+    , Widget
+    , newWidget
+    , updateWidget
     , growVertical
     , growHorizontal
     , render
     )
 import Graphics.Vty.Widgets.Base
-    ( (<++>)
+    ( hBox
     )
 import Graphics.Vty.Widgets.Text
     ( simpleText
@@ -48,54 +54,60 @@ import Graphics.Vty.Widgets.Text
 data HBorder = HBorder Attr Char
 
 -- |Create a single-row horizontal border.
-hBorder :: Attr -> Widget HBorder
+hBorder :: (MonadIO m) => Attr -> m (Widget HBorder)
 hBorder = hBorderWith '-'
 
 -- |Create a single-row horizontal border using the specified
 -- attribute and character.
-hBorderWith :: Char -> Attr -> Widget HBorder
-hBorderWith ch att =
-    Widget { state = HBorder att ch
-           , getGrowVertical = return False
-           , getGrowHorizontal = return True
-           , draw = \s -> return $ char_fill att ch (region_width s) 1
-           }
+hBorderWith :: (MonadIO m) => Char -> Attr -> m (Widget HBorder)
+hBorderWith ch att = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = HBorder att ch
+        , getGrowVertical = return False
+        , getGrowHorizontal = return True
+        , draw = \s -> return $ char_fill att ch (region_width s) 1
+        }
 
 data VBorder = VBorder Attr Char
 
 -- |Create a single-column vertical border.
-vBorder :: Attr -> Widget VBorder
+vBorder :: (MonadIO m) => Attr -> m (Widget VBorder)
 vBorder = vBorderWith '|'
 
 -- |Create a single-column vertical border using the specified
 -- attribute and character.
-vBorderWith :: Char -> Attr -> Widget VBorder
-vBorderWith ch att =
-    Widget { state = VBorder att ch
-           , getGrowHorizontal = return False
-           , getGrowVertical = return True
-           , draw = \s -> return $ char_fill att ch 1 (region_height s)
-           }
+vBorderWith :: (MonadIO m) => Char -> Attr -> m (Widget VBorder)
+vBorderWith ch att = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = VBorder att ch
+        , getGrowHorizontal = return False
+        , getGrowVertical = return True
+        , draw = \s -> return $ char_fill att ch 1 (region_height s)
+        }
 
 data Bordered a = Bordered Attr (Widget a)
 
 -- |Wrap a widget in a bordering box using the specified attribute.
-bordered :: Attr -> Widget a -> Widget (Bordered a)
-bordered att w = Widget {
-                   state = Bordered att w
+bordered :: (MonadIO m) => Attr -> Widget a -> m (Widget (Bordered a))
+bordered att child = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = Bordered att child
 
-                 , getGrowVertical = do
-                     Bordered _ child <- ask
-                     return $ growVertical child
+        , getGrowVertical = do
+            Bordered _ ch <- ask
+            liftIO $ growVertical ch
 
-                 , getGrowHorizontal = do
-                     Bordered _ child <- ask
-                     return $ growHorizontal child
+        , getGrowHorizontal = do
+            Bordered _ ch <- ask
+            liftIO $ growHorizontal ch
 
-                 , draw = drawBordered
-                 }
+        , draw = drawBordered
+        }
 
-drawBordered :: DisplayRegion -> State (Bordered a) Image
+drawBordered :: DisplayRegion -> StateT (Bordered a) IO Image
 drawBordered s = do
   Bordered attr child <- get
 
@@ -103,13 +115,20 @@ drawBordered s = do
   -- Then, use the size of the rendered widget to constrain the space
   -- used by the (expanding) borders.
   let constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
-      (childImage, child') = render child constrained
-      adjusted = DisplayRegion (image_width childImage + 2)
-                 (image_height childImage)
-      corner = simpleText attr "+"
-      topBottom = fst $ render (corner <++> hBorder attr <++> corner) adjusted
-      leftRight = fst $ render (vBorder attr) adjusted
-      middle = horiz_cat [leftRight, childImage, leftRight]
 
-  put $ Bordered attr child'
+  childImage <- render child constrained
+
+  let adjusted = DisplayRegion (image_width childImage + 2)
+                 (image_height childImage)
+  corner <- simpleText attr "+"
+
+  hb <- hBorder attr
+  topWidget <- hBox corner =<< hBox hb corner
+  topBottom <- render topWidget adjusted
+
+  vb <- vBorder attr
+  leftRight <- render vb adjusted
+
+  let middle = horiz_cat [leftRight, childImage, leftRight]
+
   return $ vert_cat [topBottom, middle, topBottom]

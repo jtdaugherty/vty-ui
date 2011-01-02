@@ -21,6 +21,9 @@ module Graphics.Vty.Widgets.Text
     )
 where
 
+import Control.Monad.Trans
+    ( MonadIO
+    )
 import Control.Monad.State
     ( get
     )
@@ -39,7 +42,10 @@ import Graphics.Vty
     , region_height
     )
 import Graphics.Vty.Widgets.Rendering
-    ( Widget(..)
+    ( WidgetImpl(..)
+    , Widget
+    , newWidget
+    , updateWidget
     )
 import Text.Trans.Tokenize
     ( Token(..)
@@ -96,7 +102,7 @@ prepareText att s = Text { defaultAttr = att
 
 -- |Construct a Widget directly from an attribute and a String.  This
 -- is recommended if you don't need to use a 'Formatter'.
-simpleText :: Attr -> String -> Widget FormattedText
+simpleText :: (MonadIO m) => Attr -> String -> m (Widget FormattedText)
 simpleText a s = textWidget nullFormatter $ prepareText a s
 
 -- |A formatter for wrapping text into the available space.  This
@@ -128,18 +134,20 @@ matchesRegex r t = isJust $ match r (tokenString t) [exec_anchored]
 -- |Construct a text widget formatted with the specified formatters.
 -- the formatters will be applied in the order given here, so be aware
 -- of how the formatters will modify the text (and affect each other).
-textWidget :: Formatter -> Text -> Widget FormattedText
-textWidget format t = Widget {
-                       state = FormattedText { text = t
-                                             , formatter = format
-                                             }
-                      , getGrowHorizontal = return False
-                      , getGrowVertical = return False
-                      , draw =
-                          \size -> do
-                            ft <- get
-                            return $ renderText (text ft) (formatter ft) size
-                      }
+textWidget :: (MonadIO m) => Formatter -> Text -> m (Widget FormattedText)
+textWidget format t = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = FormattedText { text = t
+                                , formatter = format
+                                }
+        , getGrowHorizontal = return False
+        , getGrowVertical = return False
+        , draw =
+            \size -> do
+              ft <- get
+              return $ renderText (text ft) (formatter ft) size
+        }
 
 -- |Low-level text-rendering routine.
 renderText :: Text -> Formatter -> DisplayRegion -> Image

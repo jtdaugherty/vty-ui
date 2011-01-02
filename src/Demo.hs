@@ -2,7 +2,6 @@
 module Main where
 
 import Data.Maybe ( fromJust )
-import Control.Applicative ( (<$>) )
 import Control.Monad ( when )
 import Control.Monad.Trans ( liftIO )
 import Control.Monad.State ( StateT, get, modify, evalStateT )
@@ -21,7 +20,7 @@ import Graphics.Vty.Widgets.Base
     , hFill
     )
 import Graphics.Vty.Widgets.Rendering
-    ( Widget(..)
+    ( Widget
     , render
     )
 import Graphics.Vty.Widgets.Text
@@ -76,24 +75,29 @@ hlAttr2 = def_attr
            `with_back_color` black
            `with_fore_color` yellow
 
-buildUi appst =
+buildUi appst = do
   let body = fromJust $ lookup (fst $ getSelected list) msgs
       currentItem = selectedIndex list + 1
-      footer = (simpleText titleAttr $ " " ++ (show currentItem) ++ "/" ++ (show $ length msgs) ++ " ")
-               <++> hFill titleAttr '-' 1
       msgs = theMessages appst
       list = theList appst
       formatter = wrap &.&
                   highlight regex1 hlAttr1 &.&
                   highlight regex2 hlAttr2
-  in bordered boxAttr $ listWidget list
-      <--> hBorder titleAttr
-      <--> (bottomPadded (textWidget formatter $ prepareText bodyAttr body) bodyAttr)
-      <--> footer
+
+  footer <- (simpleText titleAttr $ " " ++ (show currentItem) ++ "/" ++ (show $ length msgs) ++ " ")
+            <++> hFill titleAttr '-' 1
+
+  bodyText <- textWidget formatter $ prepareText bodyAttr body
+  lw <- listWidget list
+
+  bordered boxAttr =<< (return lw)
+      <--> (hBorder titleAttr)
+      <--> (bottomPadded bodyText bodyAttr)
+      <--> (return footer)
 
 -- Construct the user interface based on the contents of the
 -- application state.
-uiFromState = buildUi <$> get
+uiFromState = (liftIO . buildUi) =<< get
 
 -- The application state; this encapsulates what can vary based on
 -- user input and what is used to construct the interface.  This is a
@@ -127,8 +131,7 @@ eventloop vty uiBuilder handle = do
   w <- uiBuilder
   evt <- liftIO $ do
            sz <- display_bounds $ terminal vty
-           -- XXX discarding new widget
-           let img = fst $ render w sz
+           img <- render w sz
            update vty $ pic_for_image img
            next_event vty
   next <- handle evt
@@ -155,15 +158,13 @@ handleEvent (EvResize _ h) = do
 handleEvent _ = continue
 
 -- Construct the application state using the message map.
-mkAppState :: [(String, String)] -> AppState
-mkAppState messages =
-    let list = mkList bodyAttr selAttr 5 labelWidgets
-        labelWidgets = zip labels $ map mkWidget labels
-        mkWidget = simpleText bodyAttr
-        labels = map fst messages
-    in AppState { theList = list
-                , theMessages = messages
-                }
+mkAppState :: [(String, String)] -> IO AppState
+mkAppState messages = do
+  let labels = map fst messages
+  ws <- mapM (simpleText bodyAttr) labels
+  return $ AppState { theList = mkList bodyAttr selAttr 5 $ zip labels ws
+                    , theMessages = messages
+                    }
 
 main :: IO ()
 main = do
@@ -182,7 +183,8 @@ main = do
                  , ("Seventh", "the seventh message")
                  ]
 
-  evalStateT (eventloop vty uiFromState handleEvent) $ mkAppState messages
+  st <- mkAppState messages
+  evalStateT (eventloop vty uiFromState handleEvent) st
   -- Clear the screen.
   reserve_display $ terminal vty
   shutdown vty

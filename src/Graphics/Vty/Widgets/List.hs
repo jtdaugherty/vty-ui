@@ -34,8 +34,17 @@ module Graphics.Vty.Widgets.List
     )
 where
 
+import Control.Monad
+    ( forM
+    )
+import Control.Monad.Trans
+    ( MonadIO
+    )
 import Control.Monad.State
-    ( State
+    ( StateT
+    )
+import Control.Monad
+    ( replicateM
     )
 import Graphics.Vty
     ( Attr
@@ -44,8 +53,11 @@ import Graphics.Vty
     , vert_cat
     )
 import Graphics.Vty.Widgets.Rendering
-    ( Widget(..)
+    ( WidgetImpl(..)
+    , Widget
     , render
+    , newWidget
+    , updateWidget
     )
 import Graphics.Vty.Widgets.Base
     ( hFill
@@ -90,47 +102,54 @@ mkList normAttr selAttr swSize contents
     | swSize <= 0 = error "Scrolling window size must be > 0"
     | otherwise = List normAttr selAttr 0 0 swSize contents
 
-listWidget :: List a b -> Widget (List a b)
-listWidget list = Widget {
-                    state = list
-                  , getGrowHorizontal = return False
-                  , getGrowVertical = return False
-                  , draw = renderListWidget list
-                  }
+listWidget :: List a b -> IO (Widget (List a b))
+listWidget list = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = list
+        , getGrowHorizontal = return False
+        , getGrowVertical = return False
+        , draw = renderListWidget list
+        }
 
-renderListWidget :: List a b -> DisplayRegion -> State (List a b) Image
-renderListWidget list s =
-    -- XXX! for now, just render the item widgets and throw away
-    -- changes.  Later, move the widgets themselves into the list
-    -- state.
-    return $ vert_cat (visible_imgs ++ filler_imgs)
-        where
-          filler_imgs = map (\w -> fst $ render w s) filler_ws
-          visible_imgs = map (\w -> fst $ render w s) visible
-          visible = map highlight items
-          items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems list
-          filler_ws = replicate (scrollWindowSize list - length visible)
-                      (hFill (normalAttr list) ' ' 1)
-          -- XXX need this functionality later
-          -- highlight (w, selected) = let att = if selected
-          --                                     then selectedAttr
-          --                                     else normalAttr
-          --                           in withAttribute w (att list)
-          highlight (w, _) = w
+renderListWidget :: List a b -> DisplayRegion -> StateT (List a b) IO Image
+renderListWidget list s = do
+  let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems list
+      highlight (w, _) = w
+      visible = map highlight items
+
+  filler_ws <- replicateM (scrollWindowSize list - length visible)
+               (hFill (normalAttr list) ' ' 1)
+  filler_imgs <- mapM (\w -> render w s) filler_ws
+  visible_imgs <- mapM (\w -> render w s) visible
+
+  -- XXX need this functionality later
+  -- highlight (w, selected) = let att = if selected
+  --                                     then selectedAttr
+  --                                     else normalAttr
+  --                           in withAttribute w (att list)
+
+  -- XXX! for now, just render the item widgets and throw away
+  -- changes.  Later, move the widgets themselves into the list
+  -- state.
+
+  return $ vert_cat (visible_imgs ++ filler_imgs)
 
 -- |A convenience function to create a new list using 'String's as the
 -- internal identifiers and 'Text' widgets to represent those strings.
-mkSimpleList :: Attr -- ^The attribute of normal, non-selected items
+mkSimpleList :: (MonadIO m) =>
+                Attr -- ^The attribute of normal, non-selected items
              -> Attr -- ^The attribute of the selected item
              -> Int -- ^The scrolling window size, i.e., the number of
                     -- items which should be visible to the user at
                     -- any given time
              -> [String] -- ^The list items
-             -> List String FormattedText
-mkSimpleList normAttr selAttr swSize labels =
-    mkList normAttr selAttr swSize widgets
-    where
-      widgets = map (\l -> (l, simpleText normAttr l)) labels
+             -> m (List String FormattedText)
+mkSimpleList normAttr selAttr swSize labels = do
+  pairs <- forM labels $ \l -> do
+             w <- simpleText normAttr l
+             return (l, w)
+  return $ mkList normAttr selAttr swSize pairs
 
 -- note that !! here will always succeed because selectedIndex will
 -- never be out of bounds and the list will always be non-empty.

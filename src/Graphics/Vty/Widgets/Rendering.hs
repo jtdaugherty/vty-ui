@@ -2,8 +2,13 @@
 -- |This module provides a basic infrastructure for modelling a user
 -- interface widget and converting it to Vty's 'Image' type.
 module Graphics.Vty.Widgets.Rendering
-    ( Widget(..)
+    ( WidgetImpl(..)
+    , Widget
     , render
+    , updateWidget
+    , updateWidget_
+    , newWidget
+    , (<~)
 
     -- ** Miscellaneous
     , Orientation(..)
@@ -16,13 +21,23 @@ module Graphics.Vty.Widgets.Rendering
 where
 
 import GHC.Word ( Word )
+import Data.IORef
+    ( IORef
+    , newIORef
+    , readIORef
+    , modifyIORef
+    )
 import Control.Monad.Reader
-    ( Reader
-    , runReader
+    ( ReaderT
+    , runReaderT
     )
 import Control.Monad.State
-    ( State
-    , runState
+    ( StateT
+    , runStateT
+    )
+import Control.Monad.Trans
+    ( MonadIO
+    , liftIO
     )
 import Graphics.Vty
     ( DisplayRegion(DisplayRegion)
@@ -59,33 +74,62 @@ data Orientation = Horizontal | Vertical
 -- subdivided to fit the child widgets as appropriate.  How the space
 -- is subdivided may depend on the growth properties of the children
 -- or it may be a matter of policy.
-data Widget a = Widget {
+data WidgetImpl a = WidgetImpl {
     -- |User-defined state type.
       state :: a
 
     -- |Render the widget with the given dimensions.  The result
     -- /must/ not be larger than the specified dimensions, but may be
     -- smaller.
-    , draw :: DisplayRegion -> State a Image
+    , draw :: DisplayRegion -> StateT a IO Image
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
-    , getGrowHorizontal :: Reader a Bool
+    , getGrowHorizontal :: ReaderT a IO Bool
 
     -- |Will this widget expand to take advantage of available
     -- vertical space?
-    , getGrowVertical :: Reader a Bool
+    , getGrowVertical :: ReaderT a IO Bool
     }
 
-growHorizontal :: Widget a -> Bool
-growHorizontal w = runReader (getGrowHorizontal w) (state w)
+type Widget a = IORef (WidgetImpl a)
 
-growVertical :: Widget a -> Bool
-growVertical w = runReader (getGrowVertical w) (state w)
+growHorizontal :: (MonadIO m) => Widget a -> m Bool
+growHorizontal w = do
+  act <- getGrowHorizontal <~ w
+  st <- state <~ w
+  liftIO $ runReaderT act st
 
-render :: Widget a -> DisplayRegion -> (Image, Widget a)
-render w size = (img, w { state = s' })
-    where (img, s') = runState (draw w size) (state w)
+growVertical :: (MonadIO m) => Widget a -> m Bool
+growVertical w = do
+  act <- getGrowVertical <~ w
+  st <- state <~ w
+  liftIO $ runReaderT act st
+
+render :: (MonadIO m) => Widget a -> DisplayRegion -> m Image
+render wRef size =
+    liftIO $ do
+      impl <- readIORef wRef
+      (img, newState) <- runStateT (draw impl size) (state impl)
+      updateWidget_ wRef $ \w -> w { state = newState }
+      return img
+
+newWidget :: (MonadIO m) => m (Widget a)
+newWidget =
+    liftIO $ newIORef $ WidgetImpl { state = undefined
+                                   , draw = undefined
+                                   , getGrowVertical = undefined
+                                   , getGrowHorizontal = undefined
+                                   }
+
+(<~) :: (MonadIO m) => (WidgetImpl a -> b) -> Widget a -> m b
+(<~) f wRef = (return . f) =<< (liftIO $ readIORef wRef)
+
+updateWidget :: (MonadIO m) => Widget a -> (WidgetImpl a -> WidgetImpl a) -> m (Widget a)
+updateWidget wRef f = (liftIO $ modifyIORef wRef f) >> return wRef
+
+updateWidget_ :: (MonadIO m) => Widget a -> (WidgetImpl a -> WidgetImpl a) -> m ()
+updateWidget_ wRef f = updateWidget wRef f >> return ()
 
 -- |Modify the width component of a 'DisplayRegion'.
 withWidth :: DisplayRegion -> Word -> DisplayRegion
