@@ -7,7 +7,7 @@ import Control.Monad.State ( StateT, get, evalStateT, gets )
 import Text.Regex.PCRE.Light.Char8 ( Regex, compile )
 
 import Graphics.Vty
-    ( Event(..), Key(..), Vty, Attr
+    ( Event(..), Key(..), Vty, Attr, Color
     , mkVty, shutdown, terminal, next_event, reserve_display
     , pic_for_image, update, with_fore_color, with_back_color
     , def_attr, blue, bright_white, bright_yellow, bright_green
@@ -37,41 +37,45 @@ import Graphics.Vty.Widgets.List
     , scrollUp, scrollDown, listWidget, getSelected
     )
 
-titleAttr :: Attr
-titleAttr = def_attr
-            `with_back_color` blue
-            `with_fore_color` bright_white
+-- The application state; this contains references to widgets that
+-- need to be updated when events occur.
+data AppState =
+    AppState { theList :: Widget (List String FormattedText)
+             , theMessages :: [(String, String)]
+             , theBody :: Widget FormattedText
+             , theFooter :: Widget FormattedText
+             }
 
-boxAttr :: Attr
-boxAttr = def_attr
-            `with_back_color` black
-            `with_fore_color` bright_yellow
+on :: Color -> Color -> Attr
+on a b = def_attr `with_back_color` b `with_fore_color` a
 
-bodyAttr :: Attr
-bodyAttr = def_attr
-           `with_back_color` black
-           `with_fore_color` bright_green
-
-selAttr :: Attr
-selAttr = def_attr
-           `with_back_color` yellow
-           `with_fore_color` black
+-- Visual attributes.
+titleAttr = bright_white `on` blue
+boxAttr = bright_yellow `on` black
+bodyAttr = bright_green `on` black
+selAttr = black `on` yellow
+hlAttr1 = red `on` black
+hlAttr2 = yellow `on` black
 
 regex1 :: Regex
 regex1 = compile "(to|an|or|too)" []
 
-hlAttr1 :: Attr
-hlAttr1 = def_attr
-           `with_back_color` black
-           `with_fore_color` red
-
 regex2 :: Regex
 regex2 = compile "(text|if|you)" []
 
-hlAttr2 :: Attr
-hlAttr2 = def_attr
-           `with_back_color` black
-           `with_fore_color` yellow
+-- The data that we'll present in the interface.
+messages :: [(String, String)]
+messages = [ ("First", "This text is long enough that it will get wrapped \
+                       \if you resize your terminal to something small. \
+                       \It also contains enough text to get truncated at \
+                       \the bottom if the display area is too small.\n\n\n" )
+           , ("Second", "the second message")
+           , ("Third", "the third message")
+           , ("Fourth", "the fourth message")
+           , ("Fifth", "the fifth message")
+           , ("Sixth", "the sixth message")
+           , ("Seventh", "the seventh message")
+           ]
 
 buildUi appst = do
   let list = theList appst
@@ -82,16 +86,6 @@ buildUi appst = do
       <--> (hBorder titleAttr)
       <--> (bottomPadded (theBody appst) bodyAttr)
       <--> (return footer)
-
--- The application state; this encapsulates what can vary based on
--- user input and what is used to construct the interface.  This is a
--- place for widgets whose state need to be stored so they can be
--- modified and used to reconstruct the interface as input is handled
-data AppState = AppState { theList :: Widget (List String FormattedText)
-                         , theMessages :: [(String, String)]
-                         , theBody :: Widget FormattedText
-                         , theFooter :: Widget FormattedText
-                         }
 
 scrollListUp :: StateT AppState IO ()
 scrollListUp = gets theList >>= scrollUp
@@ -157,8 +151,8 @@ updateFooter = do
   setText (theFooter appst) msg titleAttr
 
 -- Construct the application state using the message map.
-mkAppState :: [(String, String)] -> IO AppState
-mkAppState messages = do
+mkAppState :: IO AppState
+mkAppState = do
   let labels = map fst messages
   lw <- listWidget =<< mkSimpleList bodyAttr selAttr 5 labels
 
@@ -166,8 +160,8 @@ mkAppState messages = do
                   highlight regex1 hlAttr1 &.&
                   highlight regex2 hlAttr2
 
-  b <- textWidget formatter $ prepareText bodyAttr "<loading>"
-  f <- simpleText titleAttr $ " -/- "
+  b <- textWidget formatter $ prepareText bodyAttr ""
+  f <- simpleText titleAttr ""
 
   return $ AppState { theList = lw
                     , theMessages = messages
@@ -179,20 +173,7 @@ main :: IO ()
 main = do
   vty <- mkVty
 
-  -- The data that we'll present in the interface.
-  let messages = [ ("First", "This text is long enough that it will get wrapped \
-                             \if you resize your terminal to something small. \
-                             \It also contains enough text to get truncated at \
-                             \the bottom if the display area is too small.\n\n\n" )
-                 , ("Second", "the second message")
-                 , ("Third", "the third message")
-                 , ("Fourth", "the fourth message")
-                 , ("Fifth", "the fifth message")
-                 , ("Sixth", "the sixth message")
-                 , ("Seventh", "the seventh message")
-                 ]
-
-  st <- mkAppState messages
+  st <- mkAppState
   w <- buildUi st
   evalStateT (updateBody >> updateFooter >> eventloop vty w handleEvent) st
 
