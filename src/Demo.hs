@@ -116,10 +116,10 @@ stop :: StateT AppState IO Bool
 stop = return False
 
 handleEvent :: Event -> StateT AppState IO Bool
-handleEvent (EvKey KUp []) = scrollListUp >> updateBody >> continue
-handleEvent (EvKey KDown []) = scrollListDown >> updateBody >> continue
-handleEvent (EvKey KPageUp []) = pageListUp >> updateBody >> continue
-handleEvent (EvKey KPageDown []) = pageListDown >> updateBody >> continue
+handleEvent (EvKey KUp []) = scrollListUp >> updateUiFromState >> continue
+handleEvent (EvKey KDown []) = scrollListDown >> updateUiFromState >> continue
+handleEvent (EvKey KPageUp []) = pageListUp >> updateUiFromState >> continue
+handleEvent (EvKey KPageDown []) = pageListDown >> updateUiFromState >> continue
 handleEvent (EvKey (KASCII 'q') []) = stop
 handleEvent (EvResize _ h) = do
   let newSize = ceiling ((0.05 :: Double) * fromIntegral h)
@@ -135,17 +135,12 @@ handleEvent (EvKey (KASCII '1') []) = do
   continue
 handleEvent _ = continue
 
-updateBody :: StateT AppState IO ()
-updateBody = do
+updateUiFromState :: StateT AppState IO ()
+updateUiFromState = do
   appst <- get
   (i, _) <- getSelected $ theList appst
   setText (theBody appst) (snd $ theMessages appst !! i) bodyAttr
-  updateFooter
 
-updateFooter :: StateT AppState IO ()
-updateFooter = do
-  appst <- get
-  (i, _) <- getSelected $ theList appst
   let msg = " " ++ (show $ i + 1) ++ "/" ++ (show $ length $ theMessages appst) ++ " "
   setText (theFooter appst) msg titleAttr
 
@@ -181,7 +176,7 @@ main = do
   addToCollection (uis st) =<< buildUi2 st
 
   -- Perform initial interface setup and enter the event loop.
-  evalStateT (updateBody >> updateFooter >> eventloop vty (uis st) handleEvent) st
+  evalStateT (updateUiFromState >> eventloop vty (uis st) handleEvent) st
 
   -- Clear the screen.
   reserve_display $ terminal vty
