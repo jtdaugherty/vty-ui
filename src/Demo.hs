@@ -22,7 +22,9 @@ import Graphics.Vty.Widgets.All
     , prepareText, simpleText, wrap, highlight
     , textWidget, setText, hBorder
     , bottomPadded, mkSimpleList, pageUp, pageDown, resize
-    , scrollUp, scrollDown, listWidget, getSelected
+    , scrollUp, scrollDown, listWidget, getSelected, bordered
+
+    , Collection, newCollection, addToCollection, setCurrent
     )
 
 -- The application state; this contains references to widgets that
@@ -32,6 +34,7 @@ data AppState =
              , theMessages :: [(String, String)]
              , theBody :: Widget FormattedText
              , theFooter :: Widget FormattedText
+             , uis :: Widget Collection
              }
 
 on :: Color -> Color -> Attr
@@ -65,14 +68,15 @@ messages = [ ("First", "This text is long enough that it will get wrapped \
            , ("Seventh", "the seventh message")
            ]
 
-buildUi appst = do
-  footer <- (return $ theFooter appst) <++> hBorder titleAttr
-
+buildUi1 appst = do
   (hBorder titleAttr)
       <--> (return $ theList appst)
       <--> (hBorder titleAttr)
       <--> (bottomPadded (theBody appst) bodyAttr)
-      <--> (return footer)
+      <--> ((return $ theFooter appst) <++> hBorder titleAttr)
+
+buildUi2 appst = do
+  bordered titleAttr =<< bottomPadded (theBody appst) bodyAttr
 
 scrollListUp :: StateT AppState IO ()
 scrollListUp = gets theList >>= scrollUp
@@ -121,6 +125,14 @@ handleEvent (EvResize _ h) = do
   let newSize = ceiling ((0.05 :: Double) * fromIntegral h)
   when (newSize > 0) $ resizeList newSize
   continue
+handleEvent (EvKey (KASCII '0') []) = do
+  st <- get
+  setCurrent (uis st) 0
+  continue
+handleEvent (EvKey (KASCII '1') []) = do
+  st <- get
+  setCurrent (uis st) 1
+  continue
 handleEvent _ = continue
 
 updateBody :: StateT AppState IO ()
@@ -150,10 +162,13 @@ mkAppState = do
   b <- textWidget formatter $ prepareText bodyAttr ""
   f <- simpleText titleAttr ""
 
+  c <- newCollection
+
   return $ AppState { theList = lw
                     , theMessages = messages
                     , theBody = b
                     , theFooter = f
+                    , uis = c
                     }
 
 main :: IO ()
@@ -161,10 +176,12 @@ main = do
   vty <- mkVty
 
   st <- mkAppState
-  w <- buildUi st
+
+  addToCollection (uis st) =<< buildUi1 st
+  addToCollection (uis st) =<< buildUi2 st
 
   -- Perform initial interface setup and enter the event loop.
-  evalStateT (updateBody >> updateFooter >> eventloop vty w handleEvent) st
+  evalStateT (updateBody >> updateFooter >> eventloop vty (uis st) handleEvent) st
 
   -- Clear the screen.
   reserve_display $ terminal vty
