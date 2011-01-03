@@ -66,7 +66,10 @@ hBorderWith ch att = do
       w { state = HBorder att ch
         , getGrowVertical = return False
         , getGrowHorizontal = return True
-        , draw = \s -> return $ char_fill att ch (region_width s) 1
+        , draw = \s mAttr -> do
+                   HBorder attr _ <- get
+                   let attr' = maybe attr id mAttr
+                   return $ char_fill attr' ch (region_width s) 1
         }
 
 data VBorder = VBorder Attr Char
@@ -84,7 +87,10 @@ vBorderWith ch att = do
       w { state = VBorder att ch
         , getGrowHorizontal = return False
         , getGrowVertical = return True
-        , draw = \s -> return $ char_fill att ch 1 (region_height s)
+        , draw = \s mAttr -> do
+                   VBorder attr _ <- get
+                   let attr' = maybe attr id mAttr
+                   return $ char_fill attr' ch 1 (region_height s)
         }
 
 data Bordered a = Bordered Attr (Widget a)
@@ -107,27 +113,28 @@ bordered att child = do
         , draw = drawBordered
         }
 
-drawBordered :: DisplayRegion -> StateT (Bordered a) IO Image
-drawBordered s = do
+drawBordered :: DisplayRegion -> Maybe Attr -> StateT (Bordered a) IO Image
+drawBordered s mAttr = do
   Bordered attr child <- get
+  let attr' = maybe attr id mAttr
 
   -- Render the contained widget with enough room to draw borders.
   -- Then, use the size of the rendered widget to constrain the space
   -- used by the (expanding) borders.
   let constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
 
-  childImage <- render child constrained
+  childImage <- render child constrained mAttr
 
   let adjusted = DisplayRegion (image_width childImage + 2)
                  (image_height childImage)
-  corner <- simpleText attr "+"
+  corner <- simpleText attr' "+"
 
-  hb <- hBorder attr
+  hb <- hBorder attr'
   topWidget <- hBox corner =<< hBox hb corner
-  topBottom <- render topWidget adjusted
+  topBottom <- render topWidget adjusted mAttr
 
-  vb <- vBorder attr
-  leftRight <- render vb adjusted
+  vb <- vBorder attr'
+  leftRight <- render vb adjusted mAttr
 
   let middle = horiz_cat [leftRight, childImage, leftRight]
 

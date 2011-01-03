@@ -146,9 +146,9 @@ textWidget format t = do
         , getGrowHorizontal = return False
         , getGrowVertical = return False
         , draw =
-            \size -> do
+            \size mAttr -> do
               ft <- get
-              return $ renderText (text ft) (formatter ft) size
+              return $ renderText (text ft) (formatter ft) size mAttr
         }
 
 setText :: (MonadIO m) => Widget FormattedText -> String -> Attr -> m ()
@@ -156,8 +156,8 @@ setText wRef s attr =
     updateWidgetState_ wRef $ \st -> st { text = prepareText attr s }
 
 -- |Low-level text-rendering routine.
-renderText :: Text -> Formatter -> DisplayRegion -> Image
-renderText t format sz =
+renderText :: Text -> Formatter -> DisplayRegion -> Maybe Attr -> Image
+renderText t format sz mAttr =
     if region_height sz == 0
     then nullImg
          else if null ls || all null ls
@@ -166,12 +166,15 @@ renderText t format sz =
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
+      attr' = maybe (defaultAttr newText) id mAttr
+      tokenAttr tok = maybe (tokenAnnotation tok) id mAttr
+
       lineImgs = map mkLineImg ls
       ls = map truncateLine $ tokens newText
       truncateLine = truncLine (fromEnum $ region_width sz)
       newText = format sz t
       mkLineImg line = if null line
-                       then string (defaultAttr newText) " "
+                       then string attr' " "
                        else horiz_cat $ map mkTokenImg line
       nullImg = string def_attr ""
-      mkTokenImg tok = string (tokenAnnotation tok) (tokenString tok)
+      mkTokenImg tok = string (tokenAttr tok) (tokenString tok)

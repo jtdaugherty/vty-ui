@@ -68,9 +68,10 @@ vFill att c = do
       w { state = VFill att c
         , getGrowHorizontal = return False
         , getGrowVertical = return True
-        , draw = \s -> do
+        , draw = \s mAttr -> do
                    VFill attr ch <- get
-                   return $ char_fill attr ch (region_width s) (region_height s)
+                   let attr' = maybe attr id mAttr
+                   return $ char_fill attr' ch (region_width s) (region_height s)
         }
 
 data HFill = HFill Attr Char Int
@@ -84,9 +85,10 @@ hFill att c h = do
       w { state = HFill att c h
         , getGrowHorizontal = return True
         , getGrowVertical = return False
-        , draw = \s -> do
+        , draw = \s mAttr -> do
                    HFill attr ch height <- get
-                   return $ char_fill attr ch (region_width s) (toEnum height)
+                   let attr' = maybe attr id mAttr
+                   return $ char_fill attr' ch (region_width s) (toEnum height)
         }
 
 data Box a b = Box Orientation (Widget a) (Widget b)
@@ -123,15 +125,15 @@ box o a b = do
             v2 <- growVertical ch2
             return $ v1 || v2
 
-        , draw = \s -> do
+        , draw = \s mAttr -> do
                    Box orientation _ _ <- get
 
                    case orientation of
                      Vertical ->
-                         renderBox s growVertical growVertical region_height
+                         renderBox s mAttr growVertical growVertical region_height
                                    image_height withHeight
                      Horizontal ->
-                         renderBox s growHorizontal growHorizontal region_width
+                         renderBox s mAttr growHorizontal growHorizontal region_width
                                    image_width withWidth
         }
 
@@ -141,22 +143,23 @@ box o a b = do
 -- dimensions on regions and images as they are manipulated by the
 -- layout algorithm.
 renderBox :: DisplayRegion
+          -> Maybe Attr
           -> (Widget a -> IO Bool) -- growth comparison function
           -> (Widget b -> IO Bool) -- growth comparison function
           -> (DisplayRegion -> Word) -- region dimension fetch function
           -> (Image -> Word) -- image dimension fetch function
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
           -> StateT (Box a b) IO Image
-renderBox s growFirst growSecond regDimension renderDimension withDim = do
+renderBox s mAttr growFirst growSecond regDimension renderDimension withDim = do
   Box orientation first second <- get
 
   let renderOrdered a b = do
-        a_img <- render a s
+        a_img <- render a s mAttr
 
         let remaining = regDimension s - renderDimension a_img
             s' = s `withDim` remaining
 
-        b_img <- render b s'
+        b_img <- render b s' mAttr
 
         return $ if renderDimension a_img >= regDimension s
                  then [a_img]
@@ -167,8 +170,8 @@ renderBox s growFirst growSecond regDimension renderDimension withDim = do
             half' = if regDimension s `mod` 2 == 0
                     then half
                     else half `withDim` (regDimension half + 1)
-        first_img <- render first half
-        second_img <- render second half'
+        first_img <- render first half mAttr
+        second_img <- render second half' mAttr
         return [first_img, second_img]
 
       cat = case orientation of
@@ -213,11 +216,11 @@ hLimit maxWidth child = do
             HLimit _ ch <- ask
             liftIO $ growVertical ch
 
-        , draw = \s -> do
+        , draw = \s mAttr -> do
                    HLimit width ch <- get
                    img <- if region_width s < fromIntegral width
-                          then render ch s
-                          else render ch $ s `withWidth` fromIntegral width
+                          then render ch s mAttr
+                          else render ch (s `withWidth` fromIntegral width) mAttr
                    return img
         }
 
@@ -234,11 +237,11 @@ vLimit maxHeight child = do
             VLimit _ ch <- ask
             liftIO $ growHorizontal ch
 
-        , draw = \s -> do
+        , draw = \s mAttr -> do
                    VLimit height ch <- get
                    img <- if region_height s < fromIntegral height
-                          then render ch s
-                          else render ch $ s `withHeight` fromIntegral height
+                          then render ch s mAttr
+                          else render ch (s `withHeight` fromIntegral height) mAttr
                    return img
         }
 

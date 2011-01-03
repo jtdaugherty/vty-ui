@@ -80,7 +80,7 @@ type ListItem a b = (a, Widget b)
 -- /widget type/ @b@, the type of widgets used to represent the list
 -- visually.
 data List a b = List { normalAttr :: Attr
-                     , _selectedAttr :: Attr
+                     , selectedAttr :: Attr
                      , selectedIndex :: Int
                      -- ^The currently selected list index.
                      , scrollTopIndex :: Int
@@ -112,31 +112,24 @@ listWidget list = do
       w { state = list
         , getGrowHorizontal = return False
         , getGrowVertical = return False
-        , draw = \sz -> do
+        , draw = \sz mAttr -> do
             listData <- get
-            renderListWidget listData sz
+            renderListWidget listData sz mAttr
         }
 
-renderListWidget :: List a b -> DisplayRegion -> StateT (List a b) IO Image
-renderListWidget list s = do
+renderListWidget :: List a b -> DisplayRegion -> Maybe Attr -> StateT (List a b) IO Image
+renderListWidget list s mAttr = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
-      highlight (w, _) = w
-      visible = map highlight items
+      visible_render (w, sel) = render w s att
+          where
+            att = if sel then (Just $ selectedAttr list) else mAttr
 
-  filler_ws <- replicateM (scrollWindowSize list - length visible)
+  filler_ws <- replicateM (scrollWindowSize list - length items)
                (hFill (normalAttr list) ' ' 1)
-  filler_imgs <- mapM (\w -> render w s) filler_ws
-  visible_imgs <- mapM (\w -> render w s) visible
+  filler_imgs <- mapM (\w -> render w s mAttr) filler_ws
+  visible_imgs <- mapM visible_render items
 
   -- XXX need this functionality later
-  -- highlight (w, selected) = let att = if selected
-  --                                     then selectedAttr
-  --                                     else normalAttr
-  --                           in withAttribute w (att list)
-
-  -- XXX! for now, just render the item widgets and throw away
-  -- changes.  Later, move the widgets themselves into the list
-  -- state.
 
   return $ vert_cat (visible_imgs ++ filler_imgs)
 

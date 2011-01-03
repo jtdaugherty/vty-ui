@@ -45,6 +45,7 @@ import Control.Monad.Trans
 import Graphics.Vty
     ( DisplayRegion(DisplayRegion)
     , Image
+    , Attr
     )
 
 -- |A simple orientation type.
@@ -84,7 +85,7 @@ data WidgetImpl a = WidgetImpl {
     -- |Render the widget with the given dimensions.  The result
     -- /must/ not be larger than the specified dimensions, but may be
     -- smaller.
-    , draw :: DisplayRegion -> StateT a IO Image
+    , draw :: DisplayRegion -> Maybe Attr -> StateT a IO Image
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
@@ -109,11 +110,11 @@ growVertical w = do
   st <- state <~ w
   liftIO $ runReaderT act st
 
-render :: (MonadIO m) => Widget a -> DisplayRegion -> m Image
-render wRef size =
+render :: (MonadIO m) => Widget a -> DisplayRegion -> Maybe Attr -> m Image
+render wRef size overrideAttr =
     liftIO $ do
       impl <- readIORef wRef
-      (img, newState) <- runStateT (draw impl size) (state impl)
+      (img, newState) <- runStateT (draw impl size overrideAttr) (state impl)
       updateWidget_ wRef $ \w -> w { state = newState }
       return img
 

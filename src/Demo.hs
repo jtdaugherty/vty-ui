@@ -97,7 +97,7 @@ eventloop :: Vty
 eventloop vty w handle = do
   evt <- liftIO $ do
            sz <- display_bounds $ terminal vty
-           img <- render w sz
+           img <- render w sz Nothing
            update vty $ pic_for_image img
            next_event vty
   next <- handle evt
