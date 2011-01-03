@@ -33,7 +33,7 @@ import Graphics.Vty.Widgets.Composed
     ( bottomPadded
     )
 import Graphics.Vty.Widgets.List
-    ( List, mkList, pageUp, pageDown, resize
+    ( List, mkSimpleList, pageUp, pageDown, resize
     , scrollUp, scrollDown, listWidget, getSelected
     )
 
@@ -160,8 +160,7 @@ updateFooter = do
 mkAppState :: [(String, String)] -> IO AppState
 mkAppState messages = do
   let labels = map fst messages
-  ws <- mapM (simpleText bodyAttr) labels
-  lw <- listWidget $ mkList bodyAttr selAttr 5 $ zip labels ws
+  lw <- listWidget =<< mkSimpleList bodyAttr selAttr 5 labels
 
   let formatter = wrap &.&
                   highlight regex1 hlAttr1 &.&
