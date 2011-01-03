@@ -13,26 +13,15 @@ import Graphics.Vty
     , def_attr, blue, bright_white, bright_yellow, bright_green
     , black, yellow, red, terminal, display_bounds
     )
-import Graphics.Vty.Widgets.Base
+import Graphics.Vty.Widgets.All
     ( (<-->)
     , (<++>)
-    )
-import Graphics.Vty.Widgets.Rendering
-    ( Widget
+    , (&.&)
+    , Widget, FormattedText, List
     , render
-    )
-import Graphics.Vty.Widgets.Text
-    ( FormattedText, prepareText, simpleText, wrap, highlight
-    , textWidget, (&.&), setText
-    )
-import Graphics.Vty.Widgets.Borders
-    ( hBorder
-    )
-import Graphics.Vty.Widgets.Composed
-    ( bottomPadded
-    )
-import Graphics.Vty.Widgets.List
-    ( List, mkSimpleList, pageUp, pageDown, resize
+    , prepareText, simpleText, wrap, highlight
+    , textWidget, setText, hBorder
+    , bottomPadded, mkSimpleList, pageUp, pageDown, resize
     , scrollUp, scrollDown, listWidget, getSelected
     )
 
