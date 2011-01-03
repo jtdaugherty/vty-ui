@@ -16,7 +16,6 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Base
     ( (<-->)
     , (<++>)
-    , hFill
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget
@@ -27,7 +26,7 @@ import Graphics.Vty.Widgets.Text
     , textWidget, (&.&), setText
     )
 import Graphics.Vty.Widgets.Borders
-    ( bordered, hBorder
+    ( hBorder
     )
 import Graphics.Vty.Widgets.Composed
     ( bottomPadded
@@ -78,11 +77,10 @@ messages = [ ("First", "This text is long enough that it will get wrapped \
            ]
 
 buildUi appst = do
-  let list = theList appst
+  footer <- (return $ theFooter appst) <++> hBorder titleAttr
 
-  footer <- (return $ theFooter appst) <++> hFill titleAttr '-' 1
-
-  bordered boxAttr =<< (return list)
+  (hBorder titleAttr)
+      <--> (return $ theList appst)
       <--> (hBorder titleAttr)
       <--> (bottomPadded (theBody appst) bodyAttr)
       <--> (return footer)
@@ -175,6 +173,8 @@ main = do
 
   st <- mkAppState
   w <- buildUi st
+
+  -- Perform initial interface setup and enter the event loop.
   evalStateT (updateBody >> updateFooter >> eventloop vty w handleEvent) st
 
   -- Clear the screen.
