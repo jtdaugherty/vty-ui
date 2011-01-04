@@ -79,11 +79,12 @@ newCollection = do
 
 addToCollection :: (MonadIO m) => Widget Collection -> Widget a -> m ()
 addToCollection cRef wRef =
-    updateWidgetState_ cRef $ \st -> st { entries = (entries st) ++ [Entry wRef]
-                                        , currentEntryNum = if currentEntryNum st == -1
-                                                            then 0
-                                                            else currentEntryNum st
-                                        }
+    updateWidgetState_ cRef $ \st ->
+        st { entries = (entries st) ++ [Entry wRef]
+           , currentEntryNum = if currentEntryNum st == -1
+                               then 0
+                               else currentEntryNum st
+           }
 
 setCurrent :: (MonadIO m) => Widget Collection -> Int -> m ()
 setCurrent cRef i = do
