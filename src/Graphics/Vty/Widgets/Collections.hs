@@ -10,9 +10,6 @@ where
 import Control.Monad.Trans
     ( MonadIO
     )
-import Control.Monad.State
-    ( get
-    )
 import Graphics.Vty
     ( DisplayRegion
     , Attr
@@ -68,8 +65,8 @@ newCollection = do
                        let e = entries st !! i
                        entryHandleKeyEvent e key
 
-        , draw = \size mAttr -> do
-                   st <- get
+        , draw = \this size mAttr -> do
+                   st <- getState this
                    case currentEntryNum st of
                      (-1) -> error "Tried to draw empty collection!"
                      i -> do

@@ -40,10 +40,6 @@ import Control.Monad
 import Control.Monad.Trans
     ( MonadIO
     )
-import Control.Monad.State
-    ( StateT
-    , get
-    )
 import Control.Monad
     ( replicateM
     )
@@ -63,6 +59,7 @@ import Graphics.Vty.Widgets.Rendering
     , newWidget
     , updateWidget
     , updateWidgetState_
+    , getState
     )
 import Graphics.Vty.Widgets.Base
     ( hFill
@@ -122,8 +119,8 @@ listWidget list = do
               v <- listKeyEvent this k
               return v
 
-        , draw = \sz mAttr -> do
-            listData <- get
+        , draw = \this sz mAttr -> do
+            listData <- getState this
             renderListWidget listData sz mAttr
         }
 
@@ -134,7 +131,7 @@ listKeyEvent w KPageUp = pageUp w >> return True
 listKeyEvent w KPageDown = pageDown w >> return True
 listKeyEvent _ _ = return False
 
-renderListWidget :: List a b -> DisplayRegion -> Maybe Attr -> StateT (List a b) IO Image
+renderListWidget :: List a b -> DisplayRegion -> Maybe Attr -> IO Image
 renderListWidget list s mAttr = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
       visible_render (w, sel) = render w s att

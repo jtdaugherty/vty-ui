@@ -25,9 +25,6 @@ where
 import Control.Monad.Trans
     ( MonadIO
     )
-import Control.Monad.State
-    ( get
-    )
 import Data.Maybe
     ( isJust
     )
@@ -48,6 +45,7 @@ import Graphics.Vty.Widgets.Rendering
     , newWidget
     , updateWidget
     , updateWidgetState_
+    , getState
     )
 import Text.Trans.Tokenize
     ( Token(..)
@@ -146,8 +144,8 @@ textWidget format t = do
         , getGrowHorizontal = return False
         , getGrowVertical = return False
         , draw =
-            \size mAttr -> do
-              ft <- get
+            \this size mAttr -> do
+              ft <- getState this
               return $ renderText (text ft) (formatter ft) size mAttr
         }
 

@@ -19,10 +19,6 @@ import Control.Monad.Trans
 import Control.Monad.Reader
     ( ask
     )
-import Control.Monad.State
-    ( StateT
-    , get
-    )
 import Graphics.Vty
     ( Attr
     , DisplayRegion(DisplayRegion)
@@ -68,8 +64,8 @@ hBorderWith ch att = do
       w { state = HBorder att ch
         , getGrowVertical = return False
         , getGrowHorizontal = return True
-        , draw = \s mAttr -> do
-                   HBorder attr _ <- get
+        , draw = \this s mAttr -> do
+                   HBorder attr _ <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) 1
         }
@@ -89,8 +85,8 @@ vBorderWith ch att = do
       w { state = VBorder att ch
         , getGrowHorizontal = return False
         , getGrowVertical = return True
-        , draw = \s mAttr -> do
-                   VBorder attr _ <- get
+        , draw = \this s mAttr -> do
+                   VBorder attr _ <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch 1 (region_height s)
         }
@@ -117,13 +113,16 @@ bordered att child = do
               Bordered _ ch <- getState this
               handleKeyEvent ch key
 
-        , draw = drawBordered
+        , draw =
+            \this s mAttr -> do
+              st <- getState this
+              drawBordered st s mAttr
         }
 
-drawBordered :: DisplayRegion -> Maybe Attr -> StateT (Bordered a) IO Image
-drawBordered s mAttr = do
-  Bordered attr child <- get
-  let attr' = maybe attr id mAttr
+drawBordered :: Bordered a -> DisplayRegion -> Maybe Attr -> IO Image
+drawBordered this s mAttr = do
+  let Bordered attr child = this
+      attr' = maybe attr id mAttr
 
   -- Render the contained widget with enough room to draw borders.
   -- Then, use the size of the rendered widget to constrain the space

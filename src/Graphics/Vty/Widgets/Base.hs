@@ -28,10 +28,6 @@ import Control.Monad.Trans
 import Control.Monad.Reader
     ( ask
     )
-import Control.Monad.State
-    ( StateT
-    , get
-    )
 import Graphics.Vty.Widgets.Rendering
     ( Widget
     , WidgetImpl(..)
@@ -70,8 +66,8 @@ vFill att c = do
       w { state = VFill att c
         , getGrowHorizontal = return False
         , getGrowVertical = return True
-        , draw = \s mAttr -> do
-                   VFill attr ch <- get
+        , draw = \this s mAttr -> do
+                   VFill attr ch <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) (region_height s)
         }
@@ -87,8 +83,8 @@ hFill att c h = do
       w { state = HFill att c h
         , getGrowHorizontal = return True
         , getGrowVertical = return False
-        , draw = \s mAttr -> do
-                   HFill attr ch height <- get
+        , draw = \this s mAttr -> do
+                   HFill attr ch height <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) (toEnum height)
         }
@@ -134,15 +130,15 @@ box o a b = do
               if handled then return True else
                   handleKeyEvent ch2 key
 
-        , draw = \s mAttr -> do
-                   Box orientation _ _ <- get
+        , draw = \this s mAttr -> do
+                   st@(Box orientation _ _) <- getState this
 
                    case orientation of
                      Vertical ->
-                         renderBox s mAttr growVertical growVertical region_height
+                         renderBox s mAttr st growVertical growVertical region_height
                                    image_height withHeight
                      Horizontal ->
-                         renderBox s mAttr growHorizontal growHorizontal region_width
+                         renderBox s mAttr st growHorizontal growHorizontal region_width
                                    image_width withWidth
         }
 
@@ -153,14 +149,15 @@ box o a b = do
 -- layout algorithm.
 renderBox :: DisplayRegion
           -> Maybe Attr
+          -> Box a b
           -> (Widget a -> IO Bool) -- growth comparison function
           -> (Widget b -> IO Bool) -- growth comparison function
           -> (DisplayRegion -> Word) -- region dimension fetch function
           -> (Image -> Word) -- image dimension fetch function
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
-          -> StateT (Box a b) IO Image
-renderBox s mAttr growFirst growSecond regDimension renderDimension withDim = do
-  Box orientation first second <- get
+          -> IO Image
+renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim = do
+  let Box orientation first second = this
 
   let renderOrdered a b = do
         a_img <- render a s mAttr
@@ -230,8 +227,8 @@ hLimit maxWidth child = do
               HLimit _ ch <- getState this
               handleKeyEvent ch key
 
-        , draw = \s mAttr -> do
-                   HLimit width ch <- get
+        , draw = \this s mAttr -> do
+                   HLimit width ch <- getState this
                    img <- if region_width s < fromIntegral width
                           then render ch s mAttr
                           else render ch (s `withWidth` fromIntegral width) mAttr
@@ -256,8 +253,8 @@ vLimit maxHeight child = do
               VLimit _ ch <- getState this
               handleKeyEvent ch key
 
-        , draw = \s mAttr -> do
-                   VLimit height ch <- get
+        , draw = \this s mAttr -> do
+                   VLimit height ch <- getState this
                    img <- if region_height s < fromIntegral height
                           then render ch s mAttr
                           else render ch (s `withHeight` fromIntegral height) mAttr

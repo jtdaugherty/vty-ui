@@ -1,8 +1,6 @@
 
 - Rewriting tasks:
 
-  - Take draw out of StateT!
-
   - Size and position information saved in Widget by rendering process
 
   - Lists: support for taking up all available space instead of
