@@ -51,12 +51,14 @@ import Graphics.Vty
     ( Attr
     , DisplayRegion
     , Image
+    , Key(..)
     , vert_cat
     )
 import Graphics.Vty.Widgets.Rendering
     ( WidgetImpl(..)
     , Widget
     , (<~)
+    , (<~~)
     , render
     , newWidget
     , updateWidget
@@ -112,10 +114,25 @@ listWidget list = do
       w { state = list
         , getGrowHorizontal = return False
         , getGrowVertical = return False
+
+        -- XXX it might be crazy, but we could even pass events we
+        -- don't handle onto the currently selected widget!
+        , keyEventHandler =
+            \this k -> do
+              v <- listKeyEvent this k
+              return v
+
         , draw = \sz mAttr -> do
             listData <- get
             renderListWidget listData sz mAttr
         }
+
+listKeyEvent :: Widget (List a b) -> Key -> IO Bool
+listKeyEvent w KUp = scrollUp w >> return True
+listKeyEvent w KDown = scrollDown w >> return True
+listKeyEvent w KPageUp = pageUp w >> return True
+listKeyEvent w KPageDown = pageDown w >> return True
+listKeyEvent _ _ = return False
 
 renderListWidget :: List a b -> DisplayRegion -> Maybe Attr -> StateT (List a b) IO Image
 renderListWidget list s mAttr = do
@@ -128,8 +145,6 @@ renderListWidget list s mAttr = do
                (hFill (normalAttr list) ' ' 1)
   filler_imgs <- mapM (\w -> render w s mAttr) filler_ws
   visible_imgs <- mapM visible_render items
-
-  -- XXX need this functionality later
 
   return $ vert_cat (visible_imgs ++ filler_imgs)
 
@@ -193,9 +208,11 @@ resize newSize wRef = do
 -- * Moves the scrolling window position if necessary (i.e., if the
 --   cursor moves to an item not currently in view)
 scrollBy :: (MonadIO m) => Int -> Widget (List a b) -> m ()
-scrollBy amount wRef = do
-  list <- state <~ wRef
+scrollBy amount wRef = updateWidgetState_ wRef $ scrollBy' amount
 
+-- Pure interface; should be used internally to the widget.
+scrollBy' :: Int -> List a b -> List a b
+scrollBy' amount list =
   let sel = selectedIndex list
       lastPos = (length $ listItems list) - 1
       validPositions = [0..lastPos]
@@ -217,8 +234,8 @@ scrollBy amount wRef = do
                          then newSelected - scrollWindowSize list + 1
                          else newSelected
 
-  updateWidgetState_ wRef $ const $ list { scrollTopIndex = adjustedTop
-                                         , selectedIndex = newSelected }
+  in list { scrollTopIndex = adjustedTop
+          , selectedIndex = newSelected }
 
 -- |Scroll a list down by one position.
 scrollDown :: (MonadIO m) => Widget (List a b) -> m ()
@@ -231,13 +248,13 @@ scrollUp = scrollBy (-1)
 -- |Scroll a list down by one page from the current cursor position.
 pageDown :: (MonadIO m) => Widget (List a b) -> m ()
 pageDown wRef = do
-  amt <- (scrollWindowSize . state) <~ wRef
+  amt <- scrollWindowSize <~~ wRef
   scrollBy amt wRef
 
 -- |Scroll a list up by one page from the current cursor position.
 pageUp :: (MonadIO m) => Widget (List a b) -> m ()
 pageUp wRef = do
-  amt <- (scrollWindowSize . state) <~ wRef
+  amt <- scrollWindowSize <~~ wRef
   scrollBy (-1 * amt) wRef
 
 -- |Given a 'List', return the items that are currently visible

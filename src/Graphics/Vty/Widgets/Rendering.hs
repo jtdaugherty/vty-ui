@@ -10,7 +10,9 @@ module Graphics.Vty.Widgets.Rendering
     , updateWidgetState
     , updateWidgetState_
     , newWidget
+    , getState
     , (<~)
+    , (<~~)
 
     -- ** Miscellaneous
     , Orientation(..)
@@ -19,6 +21,10 @@ module Graphics.Vty.Widgets.Rendering
 
     , growVertical
     , growHorizontal
+
+    -- ** Events
+    , handleKeyEvent
+    , onKeyPressed
     )
 where
 
@@ -46,6 +52,7 @@ import Graphics.Vty
     ( DisplayRegion(DisplayRegion)
     , Image
     , Attr
+    , Key
     )
 
 -- |A simple orientation type.
@@ -94,6 +101,8 @@ data WidgetImpl a = WidgetImpl {
     -- |Will this widget expand to take advantage of available
     -- vertical space?
     , getGrowVertical :: ReaderT a IO Bool
+
+    , keyEventHandler :: Widget a -> Key -> IO Bool
     }
 
 type Widget a = IORef (WidgetImpl a)
@@ -124,16 +133,43 @@ newWidget =
                                    , draw = undefined
                                    , getGrowVertical = undefined
                                    , getGrowHorizontal = undefined
+                                   , keyEventHandler = \_ _ -> return False
                                    }
+
+handleKeyEvent :: (MonadIO m) => Widget a -> Key -> m Bool
+handleKeyEvent wRef keyEvent = do
+  act <- keyEventHandler <~ wRef
+  liftIO $ act wRef keyEvent
+
+onKeyPressed :: (MonadIO m) => Widget a -> (Widget a -> Key -> IO Bool) -> m ()
+onKeyPressed wRef handler = do
+  -- Create a new handler that calls this one but defers to the old
+  -- one if the new one doesn't handle the event.
+  oldHandler <- keyEventHandler <~ wRef
+
+  let combinedHandler =
+          \w k -> do
+            v <- handler w k
+            case v of
+              True -> return True
+              False -> oldHandler w k
+
+  updateWidget_ wRef $ \w -> w { keyEventHandler = combinedHandler }
 
 (<~) :: (MonadIO m) => (WidgetImpl a -> b) -> Widget a -> m b
 (<~) f wRef = (return . f) =<< (liftIO $ readIORef wRef)
+
+(<~~) :: (MonadIO m) => (a -> b) -> Widget a -> m b
+(<~~) f wRef = (return . f . state) =<< (liftIO $ readIORef wRef)
 
 updateWidget :: (MonadIO m) => Widget a -> (WidgetImpl a -> WidgetImpl a) -> m (Widget a)
 updateWidget wRef f = (liftIO $ modifyIORef wRef f) >> return wRef
 
 updateWidget_ :: (MonadIO m) => Widget a -> (WidgetImpl a -> WidgetImpl a) -> m ()
 updateWidget_ wRef f = updateWidget wRef f >> return ()
+
+getState :: (MonadIO m) => Widget a -> m a
+getState wRef = state <~ wRef
 
 updateWidgetState :: (MonadIO m) => Widget a -> (a -> a) -> m (Widget a)
 updateWidgetState wRef f =

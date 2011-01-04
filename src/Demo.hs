@@ -1,31 +1,12 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
 module Main where
 
-import Control.Monad ( when )
+import System.Exit ( exitSuccess )
 import Control.Monad.Trans ( liftIO )
-import Control.Monad.State ( StateT, get, evalStateT, gets )
-import Text.Regex.PCRE.Light.Char8 ( Regex, compile )
+import Control.Monad.State ( StateT, get, evalStateT )
 
 import Graphics.Vty
-    ( Event(..), Key(..), Vty, Attr, Color
-    , mkVty, shutdown, terminal, next_event, reserve_display
-    , pic_for_image, update, with_fore_color, with_back_color
-    , def_attr, blue, bright_white, bright_yellow, bright_green
-    , black, yellow, red, terminal, display_bounds
-    )
 import Graphics.Vty.Widgets.All
-    ( (<-->)
-    , (<++>)
-    , (&.&)
-    , Widget, FormattedText, List
-    , render
-    , prepareText, simpleText, wrap, highlight
-    , textWidget, setText, hBorder
-    , bottomPadded, mkSimpleList, pageUp, pageDown, resize
-    , scrollUp, scrollDown, listWidget, getSelected, bordered
-
-    , Collection, newCollection, addToCollection, setCurrent
-    )
 
 -- The application state; this contains references to widgets that
 -- need to be updated when events occur.
@@ -48,12 +29,6 @@ selAttr = black `on` yellow
 hlAttr1 = red `on` black
 hlAttr2 = yellow `on` black
 
-regex1 :: Regex
-regex1 = compile "(to|an|or|too)" []
-
-regex2 :: Regex
-regex2 = compile "(text|if|you)" []
-
 -- The data that we'll present in the interface.
 messages :: [(String, String)]
 messages = [ ("First", "This text is long enough that it will get wrapped \
@@ -70,70 +45,34 @@ messages = [ ("First", "This text is long enough that it will get wrapped \
 
 buildUi1 appst = do
   (hBorder titleAttr)
+      <--> (bottomPadded (theList appst) bodyAttr)
+      <--> ((return $ theFooter appst) <++> hBorder titleAttr)
+
+buildUi2 appst = do
+  (hBorder titleAttr)
       <--> (return $ theList appst)
       <--> (hBorder titleAttr)
       <--> (bottomPadded (theBody appst) bodyAttr)
       <--> ((return $ theFooter appst) <++> hBorder titleAttr)
 
-buildUi2 appst = do
-  bordered titleAttr =<< bottomPadded (theBody appst) bodyAttr
-
-scrollListUp :: StateT AppState IO ()
-scrollListUp = gets theList >>= scrollUp
-
-scrollListDown :: StateT AppState IO ()
-scrollListDown = gets theList >>= scrollDown
-
-pageListUp :: StateT AppState IO ()
-pageListUp = gets theList >>= pageUp
-
-pageListDown :: StateT AppState IO ()
-pageListDown = gets theList >>= pageDown
-
-resizeList :: Int -> StateT AppState IO ()
-resizeList s = gets theList >>= (resize s)
-
 -- Process events from VTY, possibly modifying the application state.
 eventloop :: Vty
           -> Widget a
-          -> (Event -> StateT AppState IO Bool)
           -> StateT AppState IO ()
-eventloop vty w handle = do
+eventloop vty w = do
+  -- XXX shouldn't be here
+  updateUiFromState
   evt <- liftIO $ do
            sz <- display_bounds $ terminal vty
            img <- render w sz Nothing
            update vty $ pic_for_image img
            next_event vty
-  next <- handle evt
-  if next then
-      eventloop vty w handle else
-      return ()
 
-continue :: StateT AppState IO Bool
-continue = return True
+  case evt of
+    (EvKey k _) -> handleKeyEvent w k >> return ()
+    _ -> return ()
 
-stop :: StateT AppState IO Bool
-stop = return False
-
-handleEvent :: Event -> StateT AppState IO Bool
-handleEvent (EvKey KUp []) = scrollListUp >> updateUiFromState >> continue
-handleEvent (EvKey KDown []) = scrollListDown >> updateUiFromState >> continue
-handleEvent (EvKey KPageUp []) = pageListUp >> updateUiFromState >> continue
-handleEvent (EvKey KPageDown []) = pageListDown >> updateUiFromState >> continue
-handleEvent (EvKey (KASCII 'q') []) = stop
-handleEvent (EvResize _ h) = do
-  let newSize = ceiling ((0.05 :: Double) * fromIntegral h)
-  when (newSize > 0) $ resizeList newSize
-  continue
-handleEvent (EvKey (KASCII '0') []) = do
-  st <- get
-  setCurrent (uis st) 0
-  continue
-handleEvent (EvKey (KASCII '1') []) = do
-  st <- get
-  setCurrent (uis st) 1
-  continue
-handleEvent _ = continue
+  eventloop vty w
 
 updateUiFromState :: StateT AppState IO ()
 updateUiFromState = do
@@ -148,13 +87,9 @@ updateUiFromState = do
 mkAppState :: IO AppState
 mkAppState = do
   let labels = map fst messages
+
   lw <- listWidget =<< mkSimpleList bodyAttr selAttr 5 labels
-
-  let formatter = wrap &.&
-                  highlight regex1 hlAttr1 &.&
-                  highlight regex2 hlAttr2
-
-  b <- textWidget formatter $ prepareText bodyAttr ""
+  b <- simpleText bodyAttr ""
   f <- simpleText titleAttr ""
 
   c <- newCollection
@@ -172,12 +107,35 @@ main = do
 
   st <- mkAppState
 
-  addToCollection (uis st) =<< buildUi1 st
-  addToCollection (uis st) =<< buildUi2 st
+  ui1 <- buildUi1 st
+  ui2 <- buildUi2 st
 
-  -- Perform initial interface setup and enter the event loop.
-  evalStateT (updateUiFromState >> eventloop vty (uis st) handleEvent) st
+  addToCollection (uis st) ui1
+  addToCollection (uis st) ui2
 
-  -- Clear the screen.
-  reserve_display $ terminal vty
-  shutdown vty
+  let exitApp = liftIO $ do
+                  reserve_display $ terminal vty
+                  shutdown vty
+                  exitSuccess
+
+      universalKeys =
+          \_ k -> do
+            case k of
+              (KASCII 'q') -> exitApp
+              _ -> return False
+
+  ui1 `onKeyPressed` \_ k -> do
+         case k of
+           KEnter -> setCurrent (uis st) 1 >> return True
+           _ -> return False
+
+  ui2 `onKeyPressed` \_ k -> do
+         case k of
+           KEsc -> setCurrent (uis st) 0 >> return True
+           (KASCII 'w') -> setCurrent (uis st) 0 >> return True
+           _ -> return False
+
+  (uis st) `onKeyPressed` universalKeys
+
+  -- Enter the event loop.
+  evalStateT (eventloop vty (uis st)) st

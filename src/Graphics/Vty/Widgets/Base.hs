@@ -43,6 +43,8 @@ import Graphics.Vty.Widgets.Rendering
     , withWidth
     , growHorizontal
     , growVertical
+    , handleKeyEvent
+    , getState
     )
 import Graphics.Vty
     ( DisplayRegion
@@ -124,6 +126,13 @@ box o a b = do
             v1 <- growVertical ch1
             v2 <- growVertical ch2
             return $ v1 || v2
+
+        , keyEventHandler =
+            \this key -> do
+              Box _ ch1 ch2 <- getState this
+              handled <- handleKeyEvent ch1 key
+              if handled then return True else
+                  handleKeyEvent ch2 key
 
         , draw = \s mAttr -> do
                    Box orientation _ _ <- get
@@ -216,6 +225,11 @@ hLimit maxWidth child = do
             HLimit _ ch <- ask
             liftIO $ growVertical ch
 
+        , keyEventHandler =
+            \this key -> do
+              HLimit _ ch <- getState this
+              handleKeyEvent ch key
+
         , draw = \s mAttr -> do
                    HLimit width ch <- get
                    img <- if region_width s < fromIntegral width
@@ -236,6 +250,11 @@ vLimit maxHeight child = do
         , getGrowHorizontal = do
             VLimit _ ch <- ask
             liftIO $ growHorizontal ch
+
+        , keyEventHandler =
+            \this key -> do
+              VLimit _ ch <- getState this
+              handleKeyEvent ch key
 
         , draw = \s mAttr -> do
                    VLimit height ch <- get

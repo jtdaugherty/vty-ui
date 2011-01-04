@@ -17,6 +17,7 @@ import Graphics.Vty
     ( DisplayRegion
     , Attr
     , Image
+    , Key
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget
@@ -26,6 +27,8 @@ import Graphics.Vty.Widgets.Rendering
     , newWidget
     , updateWidget
     , render
+    , handleKeyEvent
+    , getState
     )
 
 -- Ultimately we'd want support for "stacks" to provide things like
@@ -43,6 +46,9 @@ data Collection =
 renderEntry :: (MonadIO m) => Entry -> DisplayRegion -> Maybe Attr -> m Image
 renderEntry (Entry w) = render w
 
+entryHandleKeyEvent :: (MonadIO m) => Entry -> Key -> m Bool
+entryHandleKeyEvent (Entry w) k = handleKeyEvent w k
+
 newCollection :: (MonadIO m) => m (Widget Collection)
 newCollection = do
   wRef <- newWidget
@@ -52,6 +58,16 @@ newCollection = do
                              }
         , getGrowHorizontal = return True
         , getGrowVertical = return True
+
+        , keyEventHandler =
+            \this key -> do
+              st <- getState this
+              case currentEntryNum st of
+                (-1) -> return False
+                i -> do
+                       let e = entries st !! i
+                       entryHandleKeyEvent e key
+
         , draw = \size mAttr -> do
                    st <- get
                    case currentEntryNum st of

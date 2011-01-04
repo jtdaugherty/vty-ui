@@ -43,6 +43,8 @@ import Graphics.Vty.Widgets.Rendering
     , growVertical
     , growHorizontal
     , render
+    , handleKeyEvent
+    , getState
     )
 import Graphics.Vty.Widgets.Base
     ( hBox
@@ -109,6 +111,11 @@ bordered att child = do
         , getGrowHorizontal = do
             Bordered _ ch <- ask
             liftIO $ growHorizontal ch
+
+        , keyEventHandler =
+            \this key -> do
+              Bordered _ ch <- getState this
+              handleKeyEvent ch key
 
         , draw = drawBordered
         }
