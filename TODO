@@ -1,4 +1,44 @@
 
+- Rewriting tasks:
+
+  - Take draw out of StateT!
+
+  - Size and position information saved in Widget by rendering process
+
+  - Lists: support for taking up all available space instead of
+    requiring a fixed scroll window size.  Try to come up with a way
+    for the list to know how many elements are visible (keeping in
+    mind that they are arbitrary!) so we can basically detect the
+    scroll window size instead of knowing it.  One thing to try here
+    is to render the list element widgets one at a time until you run
+    out of space (since you know how much space you have and how big
+    the widgets are).
+
+    - Real edit widgets!
+
+  - Resize event handler support
+
+  - Truly generalized event loop
+
+  - Layering (i.e., dialogs), probably needs research into transposed
+    images in Vty (do they even work?)
+
+  - Ability to clear (reset) key event handler on a widget
+
+  - Focus support
+
+    - It should be possible to do something similar to the Collection
+      type with focusing widgets, and let the user create a "focus
+      ring" so we don't have to do anything fancy.  This makes the
+      most sense because we won't always know from the UI layout what
+      the most intuitive focus cycle is, so the user can choose it
+      instead.  Then we'd just modify the focus state of each widget
+      and call event handlers.
+
+  - Code cleanup
+
+  - Richer list interface (add / remove elements!)
+
 - Testing:
 
   - Write quickcheck properties for Text.Trans.Tokenize!
