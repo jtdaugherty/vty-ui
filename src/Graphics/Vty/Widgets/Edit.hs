@@ -141,15 +141,17 @@ editKeyEvent this k mods = do
     (KASCII ch, []) -> insertChar this ch >> moveCursorRight this >> notifyChangeHandler this >> return True
     (KHome, []) -> cursorHome this >> return True
     (KEnd, []) -> cursorEnd this >> return True
-    (KEnter, []) -> do
-                   h <- activateHandler <~~ this
-                   h this
-                   return True
+    (KEnter, []) -> notifyActivateHandler this >> return True
     _ -> return False
 
 notifyChangeHandler :: Widget Edit -> IO ()
 notifyChangeHandler wRef = do
   h <- changeHandler <~~ wRef
+  h wRef
+
+notifyActivateHandler :: Widget Edit -> IO ()
+notifyActivateHandler wRef = do
+  h <- activateHandler <~~ wRef
   h wRef
 
 gotoBeginning :: Widget Edit -> IO ()
