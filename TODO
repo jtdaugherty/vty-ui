@@ -5,11 +5,24 @@
     even necessary?
 
   - Layering (i.e., dialogs), probably needs research into transposed
-    images in Vty (which are not implemented yet).
+    images in Vty (which are not implemented yet).  Once dialogs work,
+    we could make them fancy and modal by rendering the underlying UI
+    in black and white and the dialog in color!
 
   - Ability to clear (reset) key event handler on a widget
 
-  - Richer list interface (add / remove elements!)
+  - Richer list interface (add / remove elements!), see if we can
+    support a list with zero elements initially and add to the list as
+    needed.  Also add handlers for adding and removing elements, like
+
+    list `onItemAdded` \this (idx, w) -> ...
+    list `onItemRemoved` \this (idx, w) -> ...
+
+  - Consider removing (Widget a) from signature of event handlers;
+    while for some this could be ugly (and in some cases having that
+    could be really useful), in most cases it'll probably be
+    unnecessary noise (binding a second name to something already in
+    closure scope)
 
   - Support for "showing" and "hiding" widgets
 
@@ -22,11 +35,7 @@
   - Focus groups: rethink initialization interface (it's annoying that
     it takes a required element, but it's safe).  The API is weird.
 
-- Testing:
-
-  - Ugh.  Need loads of tests for tricky things.
-
-- Widgets:
+  - Use vty-ui exceptions to report errors instead of calling error
 
   - Scrollable area (a generalization of the List) which can wrap a
     widget and make it scrollable in a confined space.  To make this
@@ -38,3 +47,7 @@
   - table widget for laying out name/value pairs in nice format
 
   - support for right-aligning text (just left-padding?)
+
+- Testing:
+
+  - Ugh.  Need loads of tests for tricky things.
