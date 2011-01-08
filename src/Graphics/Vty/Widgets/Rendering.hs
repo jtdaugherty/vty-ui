@@ -12,6 +12,7 @@ module Graphics.Vty.Widgets.Rendering
     , newWidget
     , getState
     , getPhysicalSize
+    , getPhysicalPosition
     , (<~)
     , (<~~)
 
@@ -94,7 +95,8 @@ data WidgetImpl a = WidgetImpl {
     -- |Render the widget with the given dimensions.  The result
     -- /must/ not be larger than the specified dimensions, but may be
     -- smaller.
-    , draw :: Widget a -> DisplayRegion -> Maybe Attr -> IO Image
+    , draw :: Widget a -> DisplayRegion -> DisplayRegion -> Maybe Attr
+           -> IO Image
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
@@ -105,6 +107,7 @@ data WidgetImpl a = WidgetImpl {
     , getGrowVertical :: ReaderT a IO Bool
 
     , physicalSize :: DisplayRegion
+    , physicalPosition :: DisplayRegion
 
     , keyEventHandler :: Widget a -> Key -> IO Bool
     }
@@ -123,11 +126,15 @@ growVertical w = do
   st <- state <~ w
   liftIO $ runReaderT act st
 
-render :: (MonadIO m) => Widget a -> DisplayRegion -> Maybe Attr -> m Image
-render wRef sz overrideAttr =
+render :: (MonadIO m) => Widget a -> DisplayRegion -> DisplayRegion -> Maybe Attr -> m Image
+render wRef pos sz overrideAttr =
     liftIO $ do
       impl <- readIORef wRef
-      img <- draw impl wRef sz overrideAttr
+      -- Set the position first, in case it needs to be used by the
+      -- drawing routine.
+      setPhysicalPosition wRef pos
+      img <- draw impl wRef (DisplayRegion 0 0) sz overrideAttr
+      -- But we can't set the size until after drawing is done.
       setPhysicalSize wRef $ DisplayRegion (image_width img) (image_height img)
       return img
 
@@ -138,6 +145,13 @@ setPhysicalSize wRef newSize =
 getPhysicalSize :: (MonadIO m, Functor m) => Widget a -> m DisplayRegion
 getPhysicalSize wRef = physicalSize <$> (liftIO $ readIORef wRef)
 
+setPhysicalPosition :: (MonadIO m) => Widget a -> DisplayRegion -> m ()
+setPhysicalPosition wRef newPos =
+    liftIO $ modifyIORef wRef $ \w -> w { physicalPosition = newPos }
+
+getPhysicalPosition :: (MonadIO m, Functor m) => Widget a -> m DisplayRegion
+getPhysicalPosition wRef = physicalPosition <$> (liftIO $ readIORef wRef)
+
 newWidget :: (MonadIO m) => m (Widget a)
 newWidget =
     liftIO $ newIORef $ WidgetImpl { state = undefined
@@ -146,6 +160,7 @@ newWidget =
                                    , getGrowHorizontal = undefined
                                    , keyEventHandler = \_ _ -> return False
                                    , physicalSize = DisplayRegion 0 0
+                                   , physicalPosition = DisplayRegion 0 0
                                    }
 
 handleKeyEvent :: (MonadIO m) => Widget a -> Key -> m Bool

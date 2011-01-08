@@ -66,7 +66,7 @@ vFill att c = do
       w { state = VFill att c
         , getGrowHorizontal = return False
         , getGrowVertical = return True
-        , draw = \this s mAttr -> do
+        , draw = \this _ s mAttr -> do
                    VFill attr ch <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) (region_height s)
@@ -83,7 +83,7 @@ hFill att c h = do
       w { state = HFill att c h
         , getGrowHorizontal = return True
         , getGrowVertical = return False
-        , draw = \this s mAttr -> do
+        , draw = \this _ s mAttr -> do
                    HFill attr ch height <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) (toEnum height)
@@ -130,15 +130,15 @@ box o a b = do
               if handled then return True else
                   handleKeyEvent ch2 key
 
-        , draw = \this s mAttr -> do
+        , draw = \this pos s mAttr -> do
                    st@(Box orientation _ _) <- getState this
 
                    case orientation of
                      Vertical ->
-                         renderBox s mAttr st growVertical growVertical region_height
+                         renderBox pos s mAttr st growVertical growVertical region_height
                                    image_height withHeight
                      Horizontal ->
-                         renderBox s mAttr st growHorizontal growHorizontal region_width
+                         renderBox pos s mAttr st growHorizontal growHorizontal region_width
                                    image_width withWidth
         }
 
@@ -148,6 +148,7 @@ box o a b = do
 -- dimensions on regions and images as they are manipulated by the
 -- layout algorithm.
 renderBox :: DisplayRegion
+          -> DisplayRegion
           -> Maybe Attr
           -> Box a b
           -> (Widget a -> IO Bool) -- growth comparison function
@@ -156,16 +157,17 @@ renderBox :: DisplayRegion
           -> (Image -> Word) -- image dimension fetch function
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
           -> IO Image
-renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim = do
+renderBox pos s mAttr this growFirst growSecond regDimension renderDimension withDim = do
   let Box orientation first second = this
 
   let renderOrdered a b = do
-        a_img <- render a s mAttr
+        a_img <- render a pos s mAttr
 
         let remaining = regDimension s - renderDimension a_img
             s' = s `withDim` remaining
+            pos' = pos `withDim` (regDimension pos + renderDimension a_img)
 
-        b_img <- render b s' mAttr
+        b_img <- render b pos' s' mAttr
 
         return $ if renderDimension a_img >= regDimension s
                  then [a_img]
@@ -176,8 +178,9 @@ renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim
             half' = if regDimension s `mod` 2 == 0
                     then half
                     else half `withDim` (regDimension half + 1)
-        first_img <- render first half mAttr
-        second_img <- render second half' mAttr
+            pos' = pos `withDim` (regDimension pos + regDimension half)
+        first_img <- render first pos half mAttr
+        second_img <- render second pos' half' mAttr
         return [first_img, second_img]
 
       cat = case orientation of
@@ -227,11 +230,11 @@ hLimit maxWidth child = do
               HLimit _ ch <- getState this
               handleKeyEvent ch key
 
-        , draw = \this s mAttr -> do
+        , draw = \this pos s mAttr -> do
                    HLimit width ch <- getState this
                    img <- if region_width s < fromIntegral width
-                          then render ch s mAttr
-                          else render ch (s `withWidth` fromIntegral width) mAttr
+                          then render ch pos s mAttr
+                          else render ch pos (s `withWidth` fromIntegral width) mAttr
                    return img
         }
 
@@ -253,11 +256,11 @@ vLimit maxHeight child = do
               VLimit _ ch <- getState this
               handleKeyEvent ch key
 
-        , draw = \this s mAttr -> do
+        , draw = \this pos s mAttr -> do
                    VLimit height ch <- getState this
                    img <- if region_height s < fromIntegral height
-                          then render ch s mAttr
-                          else render ch (s `withHeight` fromIntegral height) mAttr
+                          then render ch pos s mAttr
+                          else render ch pos (s `withHeight` fromIntegral height) mAttr
                    return img
         }
 

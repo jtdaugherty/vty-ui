@@ -49,6 +49,8 @@ import Graphics.Vty
     , Image
     , Key(..)
     , vert_cat
+    , region_height
+    , image_height
     )
 import Graphics.Vty.Widgets.Rendering
     ( WidgetImpl(..)
@@ -60,6 +62,7 @@ import Graphics.Vty.Widgets.Rendering
     , updateWidget
     , updateWidgetState_
     , getState
+    , withHeight
     )
 import Graphics.Vty.Widgets.Base
     ( hFill
@@ -119,9 +122,9 @@ listWidget list = do
               v <- listKeyEvent this k
               return v
 
-        , draw = \this sz mAttr -> do
+        , draw = \this pos sz mAttr -> do
             listData <- getState this
-            renderListWidget listData sz mAttr
+            renderListWidget listData pos sz mAttr
         }
 
 listKeyEvent :: Widget (List a b) -> Key -> IO Bool
@@ -131,17 +134,31 @@ listKeyEvent w KPageUp = pageUp w >> return True
 listKeyEvent w KPageDown = pageDown w >> return True
 listKeyEvent _ _ = return False
 
-renderListWidget :: List a b -> DisplayRegion -> Maybe Attr -> IO Image
-renderListWidget list s mAttr = do
+renderListWidget :: List a b -> DisplayRegion -> DisplayRegion -> Maybe Attr -> IO Image
+renderListWidget list pos s mAttr = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
-      visible_render (w, sel) = render w s att
-          where
-            att = if sel then (Just $ selectedAttr list) else mAttr
+
+      renderFiller _ [] = return []
+      renderFiller position (w:ws) = do
+        img <- render w position s mAttr
+        let newPos = position `withHeight`
+                     (region_height position + image_height img)
+        imgs <- renderFiller newPos ws
+        return (img:imgs)
+
+      renderVisible _ [] = return []
+      renderVisible position ((w, sel):ws) = do
+        let att = if sel then (Just $ selectedAttr list) else mAttr
+        img <- render w position s att
+        let newPos = position `withHeight`
+                     (region_height position + image_height img)
+        imgs <- renderVisible newPos ws
+        return (img:imgs)
 
   filler_ws <- replicateM (scrollWindowSize list - length items)
                (hFill (normalAttr list) ' ' 1)
-  filler_imgs <- mapM (\w -> render w s mAttr) filler_ws
-  visible_imgs <- mapM visible_render items
+  filler_imgs <- renderFiller pos filler_ws
+  visible_imgs <- renderVisible pos items
 
   return $ vert_cat (visible_imgs ++ filler_imgs)
 

@@ -64,7 +64,7 @@ eventloop vty w = do
   updateUiFromState
   evt <- liftIO $ do
            sz <- display_bounds $ terminal vty
-           img <- render w sz Nothing
+           img <- render w (DisplayRegion 0 0) sz Nothing
            update vty $ pic_for_image img
            next_event vty
 
