@@ -49,11 +49,11 @@ uiCore appst w help = do
             <++> simpleText titleAttr help)
 
 buildUi1 appst =
-    uiCore appst (bottomPadded (theList appst) bodyAttr)
+    uiCore appst (return $ theList appst)
                " Enter: view  q: quit "
 
 buildUi2 appst =
-    uiCore appst ((return $ theList appst)
+    uiCore appst ((vLimit 5 (theList appst))
                   <--> (hBorder titleAttr)
                   <--> (bottomPadded (theBody appst) bodyAttr))
                  " Esc: close "
@@ -63,7 +63,7 @@ mkAppState :: IO AppState
 mkAppState = do
   let labels = map fst messages
 
-  lw <- listWidget =<< mkSimpleList bodyAttr selAttr 5 labels
+  lw <- listWidget =<< mkSimpleList bodyAttr selAttr labels
   b <- textWidget wrap $ prepareText bodyAttr ""
   f1 <- simpleText titleAttr ""
   f2 <- simpleText titleAttr "[]"

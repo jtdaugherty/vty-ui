@@ -47,11 +47,12 @@ import Control.Monad
     )
 import Graphics.Vty
     ( Attr
-    , DisplayRegion
+    , DisplayRegion(..)
     , Image
     , Key(..)
     , Modifier
     , vert_cat
+    , image_height
     )
 import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
@@ -93,20 +94,25 @@ data List a b = List { normalAttr :: Attr
                      , listItems :: [ListItem a b]
                      -- ^The items in the list.
                      , selectionChangeHandler :: Widget (List a b) -> IO ()
+                     , itemHeight :: Int
                      }
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
 mkList :: Attr -- ^The attribute of normal, non-selected items
        -> Attr -- ^The attribute of the selected item
-       -> Int -- ^The scrolling window size, i.e., the number of items
-              -- which should be visible to the user at any given time
        -> [ListItem a b] -- ^The list items
-       -> List a b
-mkList _ _ _ [] = error "Lists cannot be empty"
-mkList normAttr selAttr swSize contents
-    | swSize <= 0 = error "Scrolling window size must be > 0"
-    | otherwise = List normAttr selAttr 0 0 swSize contents (const $ return ())
+       -> IO (List a b)
+mkList _ _ [] = error "Lists cannot be empty"
+mkList normAttr selAttr contents = do
+  -- Render the first item in the list to get the item height.  This
+  -- assumes that the height of all items will be the same in part
+  -- because they have the same type.  If you break this assumption,
+  -- you'll get interesting results... but this is the price you have
+  -- to pay for getting lists that magically show as many items as
+  -- they can.
+  img <- render (snd $ contents !! 0) (DisplayRegion 100 100) Nothing
+  return $ List normAttr selAttr 0 0 0 contents (const $ return ()) (fromEnum $ image_height img)
 
 onSelectionChange :: (MonadIO m) => Widget (List a b) -> (Widget (List a b) -> IO ()) -> m ()
 onSelectionChange wRef handler = do
@@ -125,15 +131,22 @@ listWidget list = do
   updateWidget wRef $ \w ->
       w { state = list
         , getGrowHorizontal = return False
-        , getGrowVertical = return False
+        , getGrowVertical = return True
 
         -- XXX it might be crazy, but we could even pass events we
         -- don't handle onto the currently selected widget!
         , keyEventHandler = listKeyEvent
 
-        , draw = \this sz mAttr -> do
-            listData <- getState this
-            renderListWidget listData sz mAttr
+        , draw =
+            \this sz mAttr -> do
+              h <- itemHeight <~~ this
+
+              -- Resize the list based on the available space and the
+              -- height of each item.
+              resize ((fromEnum $ region_height sz) `div` h) this
+
+              listData <- getState this
+              renderListWidget listData sz mAttr
 
         -- XXX!!! define setPosition to set position of visible
         -- widgets in list
@@ -175,16 +188,13 @@ renderListWidget list s mAttr = do
 mkSimpleList :: (MonadIO m) =>
                 Attr -- ^The attribute of normal, non-selected items
              -> Attr -- ^The attribute of the selected item
-             -> Int -- ^The scrolling window size, i.e., the number of
-                    -- items which should be visible to the user at
-                    -- any given time
              -> [String] -- ^The list items
              -> m (List String FormattedText)
-mkSimpleList normAttr selAttr swSize labels = do
+mkSimpleList normAttr selAttr labels = do
   pairs <- forM labels $ \l -> do
              w <- simpleText normAttr l
              return (l, w)
-  return $ mkList normAttr selAttr swSize pairs
+  liftIO $ mkList normAttr selAttr pairs
 
 -- note that !! here will always succeed because selectedIndex will
 -- never be out of bounds and the list will always be non-empty.
