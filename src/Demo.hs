@@ -110,7 +110,7 @@ main = do
   (fg, focusableList) <- newFocusGroup (theList st)
   addToFocusGroup_ fg (theEdit st)
 
-  (theEdit st) `onActivate` \w -> do
+  (theEdit st) `onChange` \w -> do
          t <- getEditText w
          setText (theFooter st) t titleAttr
 

@@ -3,6 +3,7 @@ module Graphics.Vty.Widgets.Edit
     , editWidget
     , getEditText
     , onActivate
+    , onChange
     )
 where
 
@@ -41,6 +42,7 @@ data Edit = Edit { currentText :: String
                  , displayStart :: Int
                  , displayWidth :: Int
                  , activateHandler :: Widget Edit -> IO ()
+                 , changeHandler :: Widget Edit -> IO ()
                  }
 
 editWidget :: (MonadIO m) => Attr -> Attr -> String -> m (Widget Edit)
@@ -54,6 +56,7 @@ editWidget normAtt focAtt str = do
                        , displayStart = 0
                        , displayWidth = 0
                        , activateHandler = const $ return ()
+                       , changeHandler = const $ return ()
                        }
 
         , getGrowHorizontal = return True
@@ -96,6 +99,17 @@ onActivate wRef handler = do
 
   updateWidgetState_ wRef $ \s -> s { activateHandler = combinedHandler }
 
+onChange :: Widget Edit -> (Widget Edit -> IO ()) -> IO ()
+onChange wRef handler = do
+  oldHandler <- changeHandler <~~ wRef
+
+  let combinedHandler =
+          \w -> do
+            oldHandler w
+            handler w
+
+  updateWidgetState_ wRef $ \s -> s { changeHandler = combinedHandler }
+
 getEditText :: Widget Edit -> IO String
 getEditText = (currentText <~~)
 
@@ -121,9 +135,10 @@ editKeyEvent this k mods = do
            when (pos /= 0) $ do
                         moveCursorLeft this
                         delCurrentChar this
+                        notifyChangeHandler this
            return True
-    (KDel, []) -> delCurrentChar this >> return True
-    (KASCII ch, []) -> insertChar this ch >> moveCursorRight this >> return True
+    (KDel, []) -> delCurrentChar this >> notifyChangeHandler this >> return True
+    (KASCII ch, []) -> insertChar this ch >> moveCursorRight this >> notifyChangeHandler this >> return True
     (KHome, []) -> cursorHome this >> return True
     (KEnd, []) -> cursorEnd this >> return True
     (KEnter, []) -> do
@@ -131,6 +146,11 @@ editKeyEvent this k mods = do
                    h this
                    return True
     _ -> return False
+
+notifyChangeHandler :: Widget Edit -> IO ()
+notifyChangeHandler wRef = do
+  h <- changeHandler <~~ wRef
+  h wRef
 
 gotoBeginning :: Widget Edit -> IO ()
 gotoBeginning wRef = do
