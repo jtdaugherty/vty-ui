@@ -42,6 +42,11 @@
     t <- textWidget ...
     t `beforeDraw` $ \this -> setText this (stuff appstate)
 
+  - Edit widget: need set/get text API
+
+  - Focus groups: rethink initialization interface (it's annoying that
+    it takes a required element, but it's safe).  The API is weird.
+
 - Testing:
 
   - Write quickcheck properties for Text.Trans.Tokenize!
