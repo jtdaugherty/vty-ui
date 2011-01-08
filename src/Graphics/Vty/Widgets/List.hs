@@ -266,18 +266,26 @@ resize newSize wRef = do
 
   case compare newSize size of
     EQ -> return () -- Do nothing if the window size isn't changing.
-    GT -> updateWidgetState_ wRef $ \list -> list { scrollWindowSize = newSize }
+    GT -> updateWidgetState_ wRef $ \list ->
+          list { scrollWindowSize = newSize
+               , scrollTopIndex = max 0 (scrollTopIndex list - (newSize - scrollWindowSize list))
+               }
     -- Otherwise it's smaller, so we need to look at which item is
     -- selected and decide whether to change the scrollTopIndex.
     LT -> do
       list <- state <~ wRef
+
+      -- If the currently selected item would be out of view in the
+      -- new size, then we need to move the display top down to keep
+      -- it visible.
       let newBottomPosition = scrollTopIndex list + newSize - 1
           current = selectedIndex list
-          newSelected = if current > newBottomPosition
-                        then newBottomPosition
-                        else current
+          newScrollTopIndex = if current > newBottomPosition
+                              then current - newSize + 1
+                              else scrollTopIndex list
+
       updateWidgetState_ wRef $ const $ list { scrollWindowSize = newSize
-                                             , selectedIndex = newSelected
+                                             , scrollTopIndex = newScrollTopIndex
                                              }
 
 -- |Scroll a list up or down by the specified number of positions and
