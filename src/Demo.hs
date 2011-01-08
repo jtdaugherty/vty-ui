@@ -134,6 +134,5 @@ main = do
            _ -> return False
 
   -- Enter the event loop.
-  -- evalStateT (eventloop vty (uis st)) st
   -- XXX rebuild widgets to pull state from appst on their own
   runUi vty (uis st) fg
