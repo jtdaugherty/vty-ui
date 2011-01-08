@@ -2,9 +2,6 @@
 module Main where
 
 import System.Exit ( exitSuccess )
-import Control.Monad.Trans ( liftIO )
-import Control.Monad.State ( StateT, get )
-
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
 
@@ -31,10 +28,7 @@ hlAttr2 = yellow `on` black
 
 -- The data that we'll present in the interface.
 messages :: [(String, String)]
-messages = [ ("First", "This text is long enough that it will get wrapped \
-                       \if you resize your terminal to something small. \
-                       \It also contains enough text to get truncated at \
-                       \the bottom if the display area is too small.\n\n\n" )
+messages = [ ("First", "the first message" )
            , ("Second", "the second message")
            , ("Third", "the third message")
            , ("Fourth", "the fourth message")
@@ -83,6 +77,12 @@ mkAppState = do
                     , uis = c
                     }
 
+exitApp :: Vty -> IO a
+exitApp vty = do
+  reserve_display $ terminal vty
+  shutdown vty
+  exitSuccess
+
 main :: IO ()
 main = do
   vty <- mkVty
@@ -111,15 +111,10 @@ main = do
          let msg = " " ++ (show $ i + 1) ++ "/" ++ (show $ length $ theMessages st) ++ " "
          setText (theFooter st) msg titleAttr
 
-  let exitApp = liftIO $ do
-                  reserve_display $ terminal vty
-                  shutdown vty
-                  exitSuccess
-
-      universalKeys =
+  let universalKeys =
           \_ k _ -> do
             case k of
-              (KASCII 'q') -> exitApp
+              (KASCII 'q') -> exitApp vty
               _ -> return False
 
   focusableList `onKeyPressed` universalKeys
