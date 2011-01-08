@@ -114,6 +114,10 @@ main = do
          t <- getEditText w
          setText (theFooter st) t titleAttr
 
+  (theList st) `onSelectionChange` \w -> do
+         (i, _) <- getSelected w
+         setText (theBody st) (snd $ theMessages st !! i) bodyAttr
+
   let exitApp = liftIO $ do
                   reserve_display $ terminal vty
                   shutdown vty

@@ -24,6 +24,7 @@ module Graphics.Vty.Widgets.List
     , pageUp
     , pageDown
     , resize
+    , onSelectionChange
     -- ** List inspection
     , listItems
     , getSelected
@@ -39,6 +40,7 @@ import Control.Monad
     )
 import Control.Monad.Trans
     ( MonadIO
+    , liftIO
     )
 import Control.Monad
     ( replicateM
@@ -90,6 +92,7 @@ data List a b = List { normalAttr :: Attr
                      -- ^The size of the window of visible list items.
                      , listItems :: [ListItem a b]
                      -- ^The items in the list.
+                     , selectionChangeHandler :: Widget (List a b) -> IO ()
                      }
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
@@ -103,7 +106,18 @@ mkList :: Attr -- ^The attribute of normal, non-selected items
 mkList _ _ _ [] = error "Lists cannot be empty"
 mkList normAttr selAttr swSize contents
     | swSize <= 0 = error "Scrolling window size must be > 0"
-    | otherwise = List normAttr selAttr 0 0 swSize contents
+    | otherwise = List normAttr selAttr 0 0 swSize contents (const $ return ())
+
+onSelectionChange :: (MonadIO m) => Widget (List a b) -> (Widget (List a b) -> IO ()) -> m ()
+onSelectionChange wRef handler = do
+  oldHandler <- selectionChangeHandler <~~ wRef
+
+  let combinedHandler =
+          \w -> do
+            oldHandler w
+            handler w
+
+  updateWidgetState_ wRef $ \s -> s { selectionChangeHandler = combinedHandler }
 
 listWidget :: List a b -> IO (Widget (List a b))
 listWidget list = do
@@ -248,25 +262,32 @@ scrollBy' amount list =
   in list { scrollTopIndex = adjustedTop
           , selectedIndex = newSelected }
 
+notifySelectionHanlder :: (MonadIO m) => Widget (List a b) -> m ()
+notifySelectionHanlder wRef = do
+  h <- selectionChangeHandler <~~ wRef
+  liftIO $ h wRef
+
 -- |Scroll a list down by one position.
 scrollDown :: (MonadIO m) => Widget (List a b) -> m ()
-scrollDown = scrollBy 1
+scrollDown wRef = scrollBy 1 wRef >> notifySelectionHanlder wRef
 
 -- |Scroll a list up by one position.
 scrollUp :: (MonadIO m) => Widget (List a b) -> m ()
-scrollUp = scrollBy (-1)
+scrollUp wRef = scrollBy (-1) wRef >> notifySelectionHanlder wRef
 
 -- |Scroll a list down by one page from the current cursor position.
 pageDown :: (MonadIO m) => Widget (List a b) -> m ()
 pageDown wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy amt wRef
+  notifySelectionHanlder wRef
 
 -- |Scroll a list up by one page from the current cursor position.
 pageUp :: (MonadIO m) => Widget (List a b) -> m ()
 pageUp wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy (-1 * amt) wRef
+  notifySelectionHanlder wRef
 
 -- |Given a 'List', return the items that are currently visible
 -- according to the state of the list.  Returns the visible items and
