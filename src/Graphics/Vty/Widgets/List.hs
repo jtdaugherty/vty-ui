@@ -17,6 +17,7 @@ module Graphics.Vty.Widgets.List
     , mkList
     , mkSimpleList
     , listWidget
+    , addToList
     -- ** List manipulation
     , scrollBy
     , scrollUp
@@ -34,16 +35,17 @@ module Graphics.Vty.Widgets.List
     )
 where
 
+import Data.Maybe
+    ( isJust
+    , fromJust
+    )
 import Control.Monad
-    ( forM
+    ( forM_
     , when
     )
 import Control.Monad.Trans
     ( MonadIO
     , liftIO
-    )
-import Control.Monad
-    ( replicateM
     )
 import Graphics.Vty
     ( Attr
@@ -53,6 +55,7 @@ import Graphics.Vty
     , Modifier
     , vert_cat
     , image_height
+    , char_fill
     )
 import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
@@ -64,9 +67,6 @@ import Graphics.Vty.Widgets.Core
     , updateWidget
     , updateWidgetState_
     , getState
-    )
-import Graphics.Vty.Widgets.Base
-    ( hFill
     )
 import Graphics.Vty.Widgets.Text
     ( FormattedText
@@ -101,18 +101,36 @@ data List a b = List { normalAttr :: Attr
 -- not allowed.
 mkList :: Attr -- ^The attribute of normal, non-selected items
        -> Attr -- ^The attribute of the selected item
-       -> [ListItem a b] -- ^The list items
-       -> IO (List a b)
-mkList _ _ [] = error "Lists cannot be empty"
-mkList normAttr selAttr contents = do
-  -- Render the first item in the list to get the item height.  This
-  -- assumes that the height of all items will be the same in part
-  -- because they have the same type.  If you break this assumption,
-  -- you'll get interesting results... but this is the price you have
-  -- to pay for getting lists that magically show as many items as
-  -- they can.
-  img <- render (snd $ contents !! 0) (DisplayRegion 100 100) Nothing
-  return $ List normAttr selAttr 0 0 0 contents (const $ return ()) (fromEnum $ image_height img)
+       -> List a b
+mkList normAttr selAttr =
+    List normAttr selAttr (-1) 0 0 [] (const $ return ()) 0
+
+addToList :: (MonadIO m) => Widget (List a b) -> a -> Widget b -> m ()
+addToList list key w = do
+  numItems <- (length . listItems) <~~ list
+
+  h <- case numItems of
+         0 -> do
+           -- We're adding the first element to the list, so we need
+           -- to compute the item height based on this widget.  We
+           -- just render it in an unreasonably large space (since,
+           -- really, list items should never be THAT big) and measure
+           -- the result, assuming that all list widgets will have the
+           -- same size.  If you violate this, you'll have interesting
+           -- results!
+           img <- render w (DisplayRegion 100 100) Nothing
+           return $ fromEnum $ image_height img
+         _ -> itemHeight <~~ list
+
+  updateWidgetState_ list $ \s -> s { itemHeight = h
+                                    , listItems = listItems s ++ [(key, w)]
+                                    , selectedIndex = if numItems == 0
+                                                      then 0
+                                                      else selectedIndex s
+                                    }
+
+  when (numItems == 0) $
+       notifySelectionHanlder list
 
 onSelectionChange :: (MonadIO m) => Widget (List a b) -> (Widget (List a b) -> IO ()) -> m ()
 onSelectionChange wRef handler = do
@@ -125,7 +143,7 @@ onSelectionChange wRef handler = do
 
   updateWidgetState_ wRef $ \s -> s { selectionChangeHandler = combinedHandler }
 
-listWidget :: List a b -> IO (Widget (List a b))
+listWidget :: (MonadIO m) => List a b -> m (Widget (List a b))
 listWidget list = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
@@ -143,7 +161,8 @@ listWidget list = do
 
               -- Resize the list based on the available space and the
               -- height of each item.
-              resize ((fromEnum $ region_height sz) `div` h) this
+              when (h > 0) $
+                   resize ((fromEnum $ region_height sz) `div` h) this
 
               listData <- getState this
               renderListWidget listData sz mAttr
@@ -163,12 +182,6 @@ renderListWidget :: List a b -> DisplayRegion -> Maybe Attr -> IO Image
 renderListWidget list s mAttr = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
 
-      renderFiller [] = return []
-      renderFiller (w:ws) = do
-        img <- render w s mAttr
-        imgs <- renderFiller ws
-        return (img:imgs)
-
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
         let att = if sel then (Just $ selectedAttr list) else mAttr
@@ -176,12 +189,16 @@ renderListWidget list s mAttr = do
         imgs <- renderVisible ws
         return (img:imgs)
 
-  filler_ws <- replicateM (scrollWindowSize list - length items)
-               (hFill (normalAttr list) ' ' 1)
-  filler_imgs <- renderFiller filler_ws
+  -- XXX this is probably incorrect for widgets with height > 1
+  let filler = char_fill attr ' ' (region_width s) fill_height
+      fill_height = if scrollWindowSize list == 0
+                    then region_height s
+                    else toEnum $ scrollWindowSize list - length items
+      attr = if isJust mAttr then fromJust mAttr else normalAttr list
+
   visible_imgs <- renderVisible items
 
-  return $ vert_cat (visible_imgs ++ filler_imgs)
+  return $ vert_cat (visible_imgs ++ [filler])
 
 -- |A convenience function to create a new list using 'String's as the
 -- internal identifiers and 'Text' widgets to represent those strings.
@@ -189,20 +206,25 @@ mkSimpleList :: (MonadIO m) =>
                 Attr -- ^The attribute of normal, non-selected items
              -> Attr -- ^The attribute of the selected item
              -> [String] -- ^The list items
-             -> m (List String FormattedText)
+             -> m (Widget (List String FormattedText))
 mkSimpleList normAttr selAttr labels = do
-  pairs <- forM labels $ \l -> do
-             w <- simpleText normAttr l
-             return (l, w)
-  liftIO $ mkList normAttr selAttr pairs
+  list <- listWidget $ mkList normAttr selAttr
+
+  forM_ labels $ \label -> do
+    item <- simpleText normAttr label
+    addToList list label item
+
+  return list
 
 -- note that !! here will always succeed because selectedIndex will
 -- never be out of bounds and the list will always be non-empty.
 -- |Get the currently selected list item.
-getSelected :: (MonadIO m) => Widget (List a b) -> m (Int, ListItem a b)
+getSelected :: (MonadIO m) => Widget (List a b) -> m (Maybe (Int, ListItem a b))
 getSelected wRef = do
   list <- state <~ wRef
-  return $ (selectedIndex list, (listItems list) !! (selectedIndex list))
+  case selectedIndex list of
+    (-1) -> return Nothing
+    i -> return $ Just (i, (listItems list) !! i)
 
 -- |Set the window size of the list.  This automatically adjusts the
 -- window position to keep the selected item visible.
@@ -266,8 +288,10 @@ scrollBy' amount list =
                          then newSelected - scrollWindowSize list + 1
                          else newSelected
 
-  in list { scrollTopIndex = adjustedTop
-          , selectedIndex = newSelected }
+  in if scrollWindowSize list == 0
+     then list
+     else list { scrollTopIndex = adjustedTop
+               , selectedIndex = newSelected }
 
 notifySelectionHanlder :: (MonadIO m) => Widget (List a b) -> m ()
 notifySelectionHanlder wRef = do

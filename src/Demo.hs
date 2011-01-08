@@ -64,7 +64,7 @@ mkAppState :: IO AppState
 mkAppState = do
   let labels = map fst messages
 
-  lw <- listWidget =<< mkSimpleList bodyAttr selAttr labels
+  lw <- mkSimpleList bodyAttr selAttr labels
   b <- textWidget wrap $ prepareText bodyAttr ""
   f1 <- simpleText titleAttr ""
   f2 <- simpleText titleAttr "[]"
@@ -91,13 +91,20 @@ exitApp vty = do
 
 updateBody :: AppState -> Widget (List a b) -> IO ()
 updateBody st w = do
-  (i, _) <- getSelected w
-  setText (theBody st) (snd $ theMessages st !! i) bodyAttr
+  result <- getSelected w
+  let msg = case result of
+              Nothing -> ""
+              Just (i, _) -> snd $ theMessages st !! i
+  setText (theBody st) msg bodyAttr
 
 updateFooterNums :: AppState -> Widget (List a b) -> IO ()
 updateFooterNums st w = do
-  (i, _) <- getSelected w
-  let msg = "-" ++ (show $ i + 1) ++ "/" ++ (show $ length $ theMessages st) ++ "-"
+  result <- getSelected w
+  let msg = case result of
+              Nothing -> "--/--"
+              Just (i, _) ->
+                  "-" ++ (show $ i + 1) ++ "/" ++
+                          (show $ length $ theMessages st) ++ "-"
   setText (theFooter1 st) msg titleAttr
 
 updateFooterText :: AppState -> Widget Edit -> IO ()
@@ -126,6 +133,10 @@ main = do
   -- These event handlers will fire regardless of the input event
   -- context.
   (theEdit st) `onChange` (updateFooterText st)
+  (theEdit st) `onActivate` \e -> do
+         str <- getEditText e
+         addToList (theList st) str =<< simpleText bodyAttr str
+
   (theList st) `onSelectionChange` (updateBody st)
   (theList st) `onSelectionChange` (updateFooterNums st)
 
@@ -135,7 +146,11 @@ main = do
   listCtx1 `onKeyPressed` \_ k _ -> do
             case k of
               (KASCII 'q') -> exitApp vty
-              KEnter -> setCurrent (uis st) 1 >> return True
+              KEnter -> do
+                     r <- getSelected (theList st)
+                     case r of
+                       Nothing -> return True
+                       Just _ -> setCurrent (uis st) 1 >> return True
               _ -> return False
 
   listCtx2 `onKeyPressed` \_ k _ -> do
