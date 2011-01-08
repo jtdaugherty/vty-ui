@@ -31,6 +31,9 @@ module Graphics.Vty.Widgets.Rendering
     , onKeyPressed
     , onGainFocus
     , onLoseFocus
+
+    , focus
+    , unfocus
     )
 where
 
@@ -208,6 +211,16 @@ onKeyPressed wRef handler = do
               False -> oldHandler w k
 
   updateWidget_ wRef $ \w -> w { keyEventHandler = combinedHandler }
+
+focus :: (MonadIO m) => Widget a -> m ()
+focus wRef = do
+  act <- gainFocus <~ wRef
+  liftIO $ act wRef
+
+unfocus :: (MonadIO m) => Widget a -> m ()
+unfocus wRef = do
+  act <- loseFocus <~ wRef
+  liftIO $ act wRef
 
 onGainFocus :: (MonadIO m) => Widget a -> (Widget a -> IO ()) -> m ()
 onGainFocus wRef handler = do

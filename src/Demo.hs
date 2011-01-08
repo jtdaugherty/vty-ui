@@ -106,9 +106,8 @@ main = do
   addToCollection (uis st) ui1
   addToCollection (uis st) ui2
 
-  fg <- newFocusGroup
-  addToFocusGroup fg (theList st)
-  addToFocusGroup fg (theEdit st)
+  fg <- newFocusGroup (theList st)
+  addToFocusGroup_ fg (theEdit st)
 
   let exitApp = liftIO $ do
                   reserve_display $ terminal vty

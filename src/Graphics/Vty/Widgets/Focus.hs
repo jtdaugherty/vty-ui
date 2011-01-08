@@ -3,6 +3,7 @@ module Graphics.Vty.Widgets.Focus
     ( FocusGroup
     , newFocusGroup
     , addToFocusGroup
+    , addToFocusGroup_
     , focusNext
     , focusPrevious
     , setCurrentFocus
@@ -17,6 +18,9 @@ import Control.Monad.Trans
     ( MonadIO
     , liftIO
     )
+import Control.Monad.Reader
+    ( ask
+    )
 import Graphics.Vty
     ( Key(..)
     , DisplayRegion
@@ -30,22 +34,71 @@ import Graphics.Vty.Widgets.Rendering
     , updateWidgetState_
     , newWidget
     , updateWidget
+    , updateWidget_
     , handleKeyEvent
     , getState
+    , growHorizontal
+    , growVertical
+    , setPhysicalPosition
+    , render
+    , focus
+    , unfocus
+    , onLoseFocus
+    , onGainFocus
+    , onKeyPressed
     )
 
 data FocusEntry = forall a. FocusEntry (Widget a)
 
-data FocusGroup = FocusGroup { entries :: [FocusEntry]
+data FocusGroup = FocusGroup { entries :: [Widget FocusEntry]
                              , currentEntryNum :: Int
                              }
 
-newFocusGroup :: (MonadIO m) => m (Widget FocusGroup)
-newFocusGroup = do
+
+
+newFocusEntry :: (MonadIO m) =>
+                 Widget a
+              -> m (Widget FocusEntry)
+newFocusEntry chRef = do
   wRef <- newWidget
+  updateWidget_ wRef $ \w ->
+      w { state = FocusEntry chRef
+
+        , getGrowHorizontal = do
+            (FocusEntry ch) <- ask
+            growHorizontal ch
+
+        , getGrowVertical = do
+            (FocusEntry ch) <- ask
+            growVertical ch
+
+        , draw =
+            \this sz mAttr -> do
+              (FocusEntry ch) <- getState this
+              render ch sz mAttr
+
+        , setPosition =
+            \this pos -> do
+              (setPosition w) this pos
+              (FocusEntry ch) <- getState this
+              setPhysicalPosition ch pos
+        }
+
+  wRef `onLoseFocus` (const $ unfocus chRef)
+  wRef `onGainFocus` (const $ focus chRef)
+  wRef `onKeyPressed` (\_ k -> handleKeyEvent chRef k)
+
+  return wRef
+
+newFocusGroup :: (MonadIO m) => Widget a -> m (Widget FocusGroup)
+newFocusGroup initialWidget = do
+  wRef <- newWidget
+  eRef <- newFocusEntry initialWidget
+  focus eRef
+
   updateWidget wRef $ \w ->
-      w { state = FocusGroup { entries = []
-                             , currentEntryNum = -1
+      w { state = FocusGroup { entries = [eRef]
+                             , currentEntryNum = 0
                              }
         , getGrowHorizontal = return False
         , getGrowVertical = return False
@@ -61,7 +114,7 @@ newFocusGroup = do
                              return True
                     k -> do
                        let e = entries st !! i
-                       entryHandleKeyEvent e k
+                       handleKeyEvent e k
 
         -- Should never be rendered.
         , draw = \_ _ _ -> return empty_image
@@ -69,51 +122,46 @@ newFocusGroup = do
 
 getCursorPosition :: (MonadIO m) => Widget FocusGroup -> m (Maybe DisplayRegion)
 getCursorPosition wRef = do
-  (FocusEntry w) <- currentEntry wRef
+  eRef <- currentEntry wRef
+  (FocusEntry w) <- state <~ eRef
   ci <- cursorInfo <~ w
   liftIO (ci w)
 
-currentEntry :: (MonadIO m) => Widget FocusGroup -> m FocusEntry
+currentEntry :: (MonadIO m) => Widget FocusGroup -> m (Widget FocusEntry)
 currentEntry wRef = do
   es <- entries <~~ wRef
   i <- currentEntryNum <~~ wRef
-  if i >= 0 && i < (length es) then
-      return (es !! i) else
-      error "Cannot get current entry of an empty focus group"
+  return (es !! i)
 
-entryHandleKeyEvent :: (MonadIO m) => FocusEntry -> Key -> m Bool
-entryHandleKeyEvent (FocusEntry w) k = handleKeyEvent w k
+addToFocusGroup :: (MonadIO m) => Widget FocusGroup -> Widget a -> m (Widget FocusEntry)
+addToFocusGroup cRef wRef = do
+  eRef <- newFocusEntry wRef
+  updateWidgetState_ cRef $ \s -> s { entries = (entries s) ++ [eRef] }
+  return eRef
 
-addToFocusGroup :: (MonadIO m) => Widget FocusGroup -> Widget a -> m ()
-addToFocusGroup cRef wRef =
-    updateWidgetState_ cRef $ \st ->
-        st { entries = (entries st) ++ [FocusEntry wRef]
-           , currentEntryNum = if currentEntryNum st == -1
-                               then 0
-                               else currentEntryNum st
-           }
+addToFocusGroup_ :: (MonadIO m) => Widget FocusGroup -> Widget a -> m ()
+addToFocusGroup_ cRef wRef = addToFocusGroup cRef wRef >> return ()
 
 focusNext :: (MonadIO m) => Widget FocusGroup -> m ()
 focusNext wRef = do
   st <- getState wRef
-  case currentEntryNum st of
-    (-1) -> return ()
-    cur -> if cur < length (entries st) - 1 then
-               setCurrentFocus wRef (cur + 1) else
-               setCurrentFocus wRef 0
+  let cur = currentEntryNum st
+  if cur < length (entries st) - 1 then
+      setCurrentFocus wRef (cur + 1) else
+      setCurrentFocus wRef 0
 
 focusPrevious :: (MonadIO m) => Widget FocusGroup -> m ()
 focusPrevious wRef = do
   st <- getState wRef
-  case currentEntryNum st of
-    (-1) -> return ()
-    cur -> if cur > 0 then
-               setCurrentFocus wRef (cur - 1) else
-               setCurrentFocus wRef (length (entries st) - 1)
+  let cur = currentEntryNum st
+  if cur > 0 then
+      setCurrentFocus wRef (cur - 1) else
+      setCurrentFocus wRef (length (entries st) - 1)
 
 setCurrentFocus :: (MonadIO m) => Widget FocusGroup -> Int -> m ()
 setCurrentFocus cRef i = do
   st <- state <~ cRef
+
   when (i >= length (entries st) || i < 0) $
        error $ "collection index " ++ (show i) ++
                  " bad; size is " ++ (show $ length $ entries st)
@@ -122,17 +170,7 @@ setCurrentFocus cRef i = do
   -- handlers.
   when (currentEntryNum st /= i) $
        do
-         entryLoseFocus ((entries st) !! (currentEntryNum st))
-         entryGainFocus ((entries st) !! i)
+         unfocus ((entries st) !! (currentEntryNum st))
+         focus ((entries st) !! i)
 
   updateWidgetState_ cRef $ \s -> s { currentEntryNum = i }
-
-entryLoseFocus :: (MonadIO m) => FocusEntry -> m ()
-entryLoseFocus (FocusEntry w) = do
-  act <- loseFocus <~ w
-  liftIO $ act w
-
-entryGainFocus :: (MonadIO m) => FocusEntry -> m ()
-entryGainFocus (FocusEntry w) = do
-  act <- gainFocus <~ w
-  liftIO $ act w
