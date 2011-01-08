@@ -40,8 +40,7 @@ import Data.Maybe
     , fromJust
     )
 import Control.Monad
-    ( forM_
-    , when
+    ( when
     )
 import Control.Monad.Trans
     ( MonadIO
@@ -95,19 +94,25 @@ data List a b = List { normalAttr :: Attr
                      -- ^The items in the list.
                      , selectionChangeHandler :: Widget (List a b) -> IO ()
                      , itemHeight :: Int
+                     , itemConstructor :: a -> IO (Widget b)
+                     -- ^Function to construct new items
                      }
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
 mkList :: Attr -- ^The attribute of normal, non-selected items
        -> Attr -- ^The attribute of the selected item
+       -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
        -> List a b
-mkList normAttr selAttr =
-    List normAttr selAttr (-1) 0 0 [] (const $ return ()) 0
+mkList normAttr selAttr f =
+    List normAttr selAttr (-1) 0 0 [] (const $ return ()) 0 f
 
-addToList :: (MonadIO m) => Widget (List a b) -> a -> Widget b -> m ()
-addToList list key w = do
+addToList :: (MonadIO m) => Widget (List a b) -> a -> m ()
+addToList list key = do
   numItems <- (length . listItems) <~~ list
+
+  makeWidget <- itemConstructor <~~ list
+  w <- liftIO $ makeWidget key
 
   h <- case numItems of
          0 -> do
@@ -208,12 +213,11 @@ mkSimpleList :: (MonadIO m) =>
              -> [String] -- ^The list items
              -> m (Widget (List String FormattedText))
 mkSimpleList normAttr selAttr labels = do
-  list <- listWidget $ mkList normAttr selAttr
-
-  forM_ labels $ \label -> do
-    item <- simpleText normAttr label
-    addToList list label item
-
+  -- XXX the simpleText call here should really always first look at
+  -- the widget's normal attribute setting, but really, it should be
+  -- default_attr with an attribute override at render time.
+  list <- listWidget $ mkList normAttr selAttr (simpleText normAttr)
+  mapM_ (addToList list) labels
   return list
 
 -- note that !! here will always succeed because selectedIndex will

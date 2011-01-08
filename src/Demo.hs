@@ -133,9 +133,8 @@ main = do
   -- These event handlers will fire regardless of the input event
   -- context.
   (theEdit st) `onChange` (updateFooterText st)
-  (theEdit st) `onActivate` \e -> do
-         str <- getEditText e
-         addToList (theList st) str =<< simpleText bodyAttr str
+  (theEdit st) `onActivate` \e ->
+      addToList (theList st) =<< getEditText e
 
   (theList st) `onSelectionChange` (updateBody st)
   (theList st) `onSelectionChange` (updateFooterNums st)
