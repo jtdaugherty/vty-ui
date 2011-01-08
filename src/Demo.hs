@@ -19,9 +19,6 @@ data AppState =
              , uis :: Widget Collection
              }
 
-on :: Color -> Color -> Attr
-on a b = def_attr `with_back_color` b `with_fore_color` a
-
 -- Visual attributes.
 titleAttr = bright_white `on` blue
 editAttr = white `on` black
