@@ -11,12 +11,19 @@
 
   - Ability to clear (reset) key event handler on a widget
 
-  - Richer list interface (add / remove elements!), see if we can
-    support a list with zero elements initially and add to the list as
-    needed.  Also add handlers for adding and removing elements, like
+  - Lists: add handlers for adding and removing elements, like
 
     list `onItemAdded` \this (idx, w) -> ...
     list `onItemRemoved` \this (idx, w) -> ...
+
+  - Lists: function for setting the currently-selected element by
+    index?
+
+  - Lists: sort out list normal attributes vs. widget attributes;
+    which one takes precedence?  If the list, then we can construct
+    item widgets with the default attribute and always override at
+    render time with either the normal or selected attributes (or the
+    global override attribute, mAttr)
 
   - Consider removing (Widget a) from signature of event handlers;
     while for some this could be ugly (and in some cases having that
