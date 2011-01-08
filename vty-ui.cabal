@@ -40,6 +40,9 @@ Library
           Graphics.Vty.Widgets.List
           Graphics.Vty.Widgets.Borders
           Graphics.Vty.Widgets.Collections
+          Graphics.Vty.Widgets.EventLoop
+          Graphics.Vty.Widgets.Edit
+          Graphics.Vty.Widgets.Focus
   Other-Modules:
           Text.Trans.Tokenize
 
@@ -64,7 +67,7 @@ Executable vty-ui-tests
 
 Executable vty-ui-demo
   Hs-Source-Dirs:  src
-  GHC-Options:     -Wall -Werror
+  GHC-Options:     -Wall
   Main-is:         Demo.hs
   Build-Depends:
     mtl >= 2.0 && < 2.1

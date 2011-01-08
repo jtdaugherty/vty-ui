@@ -41,6 +41,8 @@ import Graphics.Vty.Widgets.Rendering
     , growVertical
     , handleKeyEvent
     , getState
+    , setPhysicalPosition
+    , getPhysicalSize
     )
 import Graphics.Vty
     ( DisplayRegion
@@ -66,7 +68,7 @@ vFill att c = do
       w { state = VFill att c
         , getGrowHorizontal = return False
         , getGrowVertical = return True
-        , draw = \this _ s mAttr -> do
+        , draw = \this s mAttr -> do
                    VFill attr ch <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) (region_height s)
@@ -83,7 +85,7 @@ hFill att c h = do
       w { state = HFill att c h
         , getGrowHorizontal = return True
         , getGrowVertical = return False
-        , draw = \this _ s mAttr -> do
+        , draw = \this s mAttr -> do
                    HFill attr ch height <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) (toEnum height)
@@ -130,16 +132,28 @@ box o a b = do
               if handled then return True else
                   handleKeyEvent ch2 key
 
-        , draw = \this pos s mAttr -> do
+        , draw = \this s mAttr -> do
                    st@(Box orientation _ _) <- getState this
 
                    case orientation of
                      Vertical ->
-                         renderBox pos s mAttr st growVertical growVertical region_height
+                         renderBox s mAttr st growVertical growVertical region_height
                                    image_height withHeight
                      Horizontal ->
-                         renderBox pos s mAttr st growHorizontal growHorizontal region_width
+                         renderBox s mAttr st growHorizontal growHorizontal region_width
                                    image_width withWidth
+
+        , setPosition =
+            \this pos -> do
+              (setPosition w) this pos
+              Box orientation ch1 ch2 <- getState this
+              ch1_size <- getPhysicalSize ch1
+              setPhysicalPosition ch1 pos
+              case orientation of
+                Horizontal -> setPhysicalPosition ch2 $
+                              pos `withWidth` ((region_width pos) + (region_width ch1_size))
+                Vertical -> setPhysicalPosition ch2 $
+                            pos `withHeight` ((region_height pos) + (region_height ch1_size))
         }
 
 -- Box layout rendering implementation. This is generalized over the
@@ -148,7 +162,6 @@ box o a b = do
 -- dimensions on regions and images as they are manipulated by the
 -- layout algorithm.
 renderBox :: DisplayRegion
-          -> DisplayRegion
           -> Maybe Attr
           -> Box a b
           -> (Widget a -> IO Bool) -- growth comparison function
@@ -157,17 +170,16 @@ renderBox :: DisplayRegion
           -> (Image -> Word) -- image dimension fetch function
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
           -> IO Image
-renderBox pos s mAttr this growFirst growSecond regDimension renderDimension withDim = do
+renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim = do
   let Box orientation first second = this
 
   let renderOrdered a b = do
-        a_img <- render a pos s mAttr
+        a_img <- render a s mAttr
 
         let remaining = regDimension s - renderDimension a_img
             s' = s `withDim` remaining
-            pos' = pos `withDim` (regDimension pos + renderDimension a_img)
 
-        b_img <- render b pos' s' mAttr
+        b_img <- render b s' mAttr
 
         return $ if renderDimension a_img >= regDimension s
                  then [a_img]
@@ -178,9 +190,8 @@ renderBox pos s mAttr this growFirst growSecond regDimension renderDimension wit
             half' = if regDimension s `mod` 2 == 0
                     then half
                     else half `withDim` (regDimension half + 1)
-            pos' = pos `withDim` (regDimension pos + regDimension half)
-        first_img <- render first pos half mAttr
-        second_img <- render second pos' half' mAttr
+        first_img <- render first half mAttr
+        second_img <- render second half' mAttr
         return [first_img, second_img]
 
       cat = case orientation of
@@ -230,12 +241,18 @@ hLimit maxWidth child = do
               HLimit _ ch <- getState this
               handleKeyEvent ch key
 
-        , draw = \this pos s mAttr -> do
+        , draw = \this s mAttr -> do
                    HLimit width ch <- getState this
                    img <- if region_width s < fromIntegral width
-                          then render ch pos s mAttr
-                          else render ch pos (s `withWidth` fromIntegral width) mAttr
+                          then render ch s mAttr
+                          else render ch (s `withWidth` fromIntegral width) mAttr
                    return img
+
+        , setPosition =
+            \this pos -> do
+              (setPosition w) this pos
+              HLimit _ ch <- getState this
+              setPhysicalPosition ch pos
         }
 
 data VLimit a = VLimit Int (Widget a)
@@ -256,12 +273,18 @@ vLimit maxHeight child = do
               VLimit _ ch <- getState this
               handleKeyEvent ch key
 
-        , draw = \this pos s mAttr -> do
+        , draw = \this s mAttr -> do
                    VLimit height ch <- getState this
                    img <- if region_height s < fromIntegral height
-                          then render ch pos s mAttr
-                          else render ch pos (s `withHeight` fromIntegral height) mAttr
+                          then render ch s mAttr
+                          else render ch (s `withHeight` fromIntegral height) mAttr
                    return img
+
+        , setPosition =
+            \this pos -> do
+              (setPosition w) this pos
+              VLimit _ ch <- getState this
+              setPhysicalPosition ch pos
         }
 
 (<-->) :: (MonadIO m) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))

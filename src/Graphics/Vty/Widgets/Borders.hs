@@ -43,6 +43,7 @@ import Graphics.Vty.Widgets.Rendering
     , getState
     , withWidth
     , withHeight
+    , setPhysicalPosition
     )
 import Graphics.Vty.Widgets.Base
     ( hBox
@@ -66,7 +67,7 @@ hBorderWith ch att = do
       w { state = HBorder att ch
         , getGrowVertical = return False
         , getGrowHorizontal = return True
-        , draw = \this _ s mAttr -> do
+        , draw = \this s mAttr -> do
                    HBorder attr _ <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) 1
@@ -87,7 +88,7 @@ vBorderWith ch att = do
       w { state = VBorder att ch
         , getGrowHorizontal = return False
         , getGrowVertical = return True
-        , draw = \this _ s mAttr -> do
+        , draw = \this s mAttr -> do
                    VBorder attr _ <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch 1 (region_height s)
@@ -116,13 +117,22 @@ bordered att child = do
               handleKeyEvent ch key
 
         , draw =
-            \this pos s mAttr -> do
+            \this s mAttr -> do
               st <- getState this
-              drawBordered st pos s mAttr
+              drawBordered st s mAttr
+
+        , setPosition =
+            \this pos -> do
+              (setPosition w) this pos
+              Bordered _ ch <- getState this
+              let chPos = pos
+                          `withWidth` (region_width pos + 1)
+                          `withHeight` (region_height pos + 1)
+              setPhysicalPosition ch chPos
         }
 
-drawBordered :: Bordered a -> DisplayRegion -> DisplayRegion -> Maybe Attr -> IO Image
-drawBordered this pos s mAttr = do
+drawBordered :: Bordered a -> DisplayRegion -> Maybe Attr -> IO Image
+drawBordered this s mAttr = do
   let Bordered attr child = this
       attr' = maybe attr id mAttr
 
@@ -130,11 +140,8 @@ drawBordered this pos s mAttr = do
   -- Then, use the size of the rendered widget to constrain the space
   -- used by the (expanding) borders.
   let constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
-      pos' = pos
-             `withHeight` (region_height pos + 1)
-             `withWidth` (region_width pos + 1)
 
-  childImage <- render child pos' constrained mAttr
+  childImage <- render child constrained mAttr
 
   let adjusted = DisplayRegion (image_width childImage + 2)
                  (image_height childImage)
@@ -142,10 +149,10 @@ drawBordered this pos s mAttr = do
 
   hb <- hBorder attr'
   topWidget <- hBox corner =<< hBox hb corner
-  topBottom <- render topWidget (DisplayRegion 0 0) adjusted mAttr
+  topBottom <- render topWidget adjusted mAttr
 
   vb <- vBorder attr'
-  leftRight <- render vb (DisplayRegion 0 0) adjusted mAttr
+  leftRight <- render vb adjusted mAttr
 
   let middle = horiz_cat [leftRight, childImage, leftRight]
 

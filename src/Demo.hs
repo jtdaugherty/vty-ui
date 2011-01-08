@@ -3,7 +3,7 @@ module Main where
 
 import System.Exit ( exitSuccess )
 import Control.Monad.Trans ( liftIO )
-import Control.Monad.State ( StateT, get, evalStateT )
+import Control.Monad.State ( StateT, get )
 
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
@@ -15,6 +15,7 @@ data AppState =
              , theMessages :: [(String, String)]
              , theBody :: Widget FormattedText
              , theFooter :: Widget FormattedText
+             , theEdit :: Widget Edit
              , uis :: Widget Collection
              }
 
@@ -23,6 +24,8 @@ on a b = def_attr `with_back_color` b `with_fore_color` a
 
 -- Visual attributes.
 titleAttr = bright_white `on` blue
+editAttr = white `on` black
+editFocusAttr = bright_green `on` blue
 boxAttr = bright_yellow `on` black
 bodyAttr = bright_green `on` black
 selAttr = black `on` yellow
@@ -43,36 +46,24 @@ messages = [ ("First", "This text is long enough that it will get wrapped \
            , ("Seventh", "the seventh message")
            ]
 
-buildUi1 appst = do
+helpStr :: String
+helpStr = " Enter: view  q: quit "
+
+uiCore appst w = do
   (hBorder titleAttr)
-      <--> (bottomPadded (theList appst) bodyAttr)
-      <--> ((return $ theFooter appst) <++> hBorder titleAttr)
+      <--> w
+      <--> (return $ theEdit appst)
+      <--> ((return $ theFooter appst)
+            <++> hBorder titleAttr
+            <++> simpleText titleAttr helpStr)
 
-buildUi2 appst = do
-  (hBorder titleAttr)
-      <--> (return $ theList appst)
-      <--> (hBorder titleAttr)
-      <--> (bottomPadded (theBody appst) bodyAttr)
-      <--> ((return $ theFooter appst) <++> hBorder titleAttr)
+buildUi1 appst =
+    uiCore appst (bottomPadded (theList appst) bodyAttr)
 
--- Process events from VTY, possibly modifying the application state.
-eventloop :: Vty
-          -> Widget a
-          -> StateT AppState IO ()
-eventloop vty w = do
-  -- XXX shouldn't be here
-  updateUiFromState
-  evt <- liftIO $ do
-           sz <- display_bounds $ terminal vty
-           img <- render w (DisplayRegion 0 0) sz Nothing
-           update vty $ pic_for_image img
-           next_event vty
-
-  case evt of
-    (EvKey k _) -> handleKeyEvent w k >> return ()
-    _ -> return ()
-
-  eventloop vty w
+buildUi2 appst =
+    uiCore appst ((return $ theList appst)
+                  <--> (hBorder titleAttr)
+                  <--> (bottomPadded (theBody appst) bodyAttr))
 
 updateUiFromState :: StateT AppState IO ()
 updateUiFromState = do
@@ -91,6 +82,7 @@ mkAppState = do
   lw <- listWidget =<< mkSimpleList bodyAttr selAttr 5 labels
   b <- textWidget wrap $ prepareText bodyAttr ""
   f <- simpleText titleAttr ""
+  e <- editWidget editAttr editFocusAttr "foobar"
 
   c <- newCollection
 
@@ -98,6 +90,7 @@ mkAppState = do
                     , theMessages = messages
                     , theBody = b
                     , theFooter = f
+                    , theEdit = e
                     , uis = c
                     }
 
@@ -113,6 +106,10 @@ main = do
   addToCollection (uis st) ui1
   addToCollection (uis st) ui2
 
+  fg <- newFocusGroup
+  addToFocusGroup fg (theList st)
+  addToFocusGroup fg (theEdit st)
+
   let exitApp = liftIO $ do
                   reserve_display $ terminal vty
                   shutdown vty
@@ -123,6 +120,8 @@ main = do
             case k of
               (KASCII 'q') -> exitApp
               _ -> return False
+
+  (theList st) `onKeyPressed` universalKeys
 
   ui1 `onKeyPressed` \_ k -> do
          case k of
@@ -135,7 +134,7 @@ main = do
            (KASCII 'w') -> setCurrent (uis st) 0 >> return True
            _ -> return False
 
-  (uis st) `onKeyPressed` universalKeys
-
   -- Enter the event loop.
-  evalStateT (eventloop vty (uis st)) st
+  -- evalStateT (eventloop vty (uis st)) st
+  -- XXX rebuild widgets to pull state from appst on their own
+  runUi vty (uis st) fg

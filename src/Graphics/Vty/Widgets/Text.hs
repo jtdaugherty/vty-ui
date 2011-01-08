@@ -144,7 +144,7 @@ textWidget format t = do
         , getGrowHorizontal = return False
         , getGrowVertical = return False
         , draw =
-            \this _ size mAttr -> do
+            \this size mAttr -> do
               ft <- getState this
               return $ renderText (text ft) (formatter ft) size mAttr
         }

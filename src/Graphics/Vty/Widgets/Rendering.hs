@@ -4,6 +4,7 @@
 module Graphics.Vty.Widgets.Rendering
     ( WidgetImpl(..)
     , Widget
+    , renderAndPosition
     , render
     , updateWidget
     , updateWidget_
@@ -12,6 +13,7 @@ module Graphics.Vty.Widgets.Rendering
     , newWidget
     , getState
     , getPhysicalSize
+    , setPhysicalPosition
     , getPhysicalPosition
     , (<~)
     , (<~~)
@@ -27,6 +29,8 @@ module Graphics.Vty.Widgets.Rendering
     -- ** Events
     , handleKeyEvent
     , onKeyPressed
+    , onGainFocus
+    , onLoseFocus
     )
 where
 
@@ -95,8 +99,7 @@ data WidgetImpl a = WidgetImpl {
     -- |Render the widget with the given dimensions.  The result
     -- /must/ not be larger than the specified dimensions, but may be
     -- smaller.
-    , draw :: Widget a -> DisplayRegion -> DisplayRegion -> Maybe Attr
-           -> IO Image
+    , draw :: Widget a -> DisplayRegion -> Maybe Attr -> IO Image
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
@@ -109,7 +112,15 @@ data WidgetImpl a = WidgetImpl {
     , physicalSize :: DisplayRegion
     , physicalPosition :: DisplayRegion
 
+    , setPosition :: Widget a -> DisplayRegion -> IO ()
+
     , keyEventHandler :: Widget a -> Key -> IO Bool
+
+    , gainFocus :: Widget a -> IO ()
+    , loseFocus :: Widget a -> IO ()
+    , focused :: Bool
+
+    , cursorInfo :: Widget a -> IO (Maybe DisplayRegion)
     }
 
 type Widget a = IORef (WidgetImpl a)
@@ -126,31 +137,37 @@ growVertical w = do
   st <- state <~ w
   liftIO $ runReaderT act st
 
-render :: (MonadIO m) => Widget a -> DisplayRegion -> DisplayRegion -> Maybe Attr -> m Image
-render wRef pos sz overrideAttr =
+render :: (MonadIO m) => Widget a -> DisplayRegion -> Maybe Attr -> m Image
+render wRef sz overrideAttr =
     liftIO $ do
       impl <- readIORef wRef
-      -- Set the position first, in case it needs to be used by the
-      -- drawing routine.
-      setPhysicalPosition wRef pos
-      img <- draw impl wRef (DisplayRegion 0 0) sz overrideAttr
-      -- But we can't set the size until after drawing is done.
+      img <- draw impl wRef sz overrideAttr
       setPhysicalSize wRef $ DisplayRegion (image_width img) (image_height img)
       return img
+
+renderAndPosition :: (MonadIO m) => Widget a -> DisplayRegion -> DisplayRegion
+                  -> Maybe Attr -> m Image
+renderAndPosition wRef pos sz mAttr = do
+  img <- render wRef sz mAttr
+  -- Position post-processing depends on the sizes being correct!
+  setPhysicalPosition wRef pos
+  return img
 
 setPhysicalSize :: (MonadIO m) => Widget a -> DisplayRegion -> m ()
 setPhysicalSize wRef newSize =
     liftIO $ modifyIORef wRef $ \w -> w { physicalSize = newSize }
 
-getPhysicalSize :: (MonadIO m, Functor m) => Widget a -> m DisplayRegion
-getPhysicalSize wRef = physicalSize <$> (liftIO $ readIORef wRef)
-
-setPhysicalPosition :: (MonadIO m) => Widget a -> DisplayRegion -> m ()
-setPhysicalPosition wRef newPos =
-    liftIO $ modifyIORef wRef $ \w -> w { physicalPosition = newPos }
+getPhysicalSize :: (MonadIO m) => Widget a -> m DisplayRegion
+getPhysicalSize wRef = (return . physicalSize) =<< (liftIO $ readIORef wRef)
 
 getPhysicalPosition :: (MonadIO m, Functor m) => Widget a -> m DisplayRegion
 getPhysicalPosition wRef = physicalPosition <$> (liftIO $ readIORef wRef)
+
+setPhysicalPosition :: (MonadIO m) => Widget a -> DisplayRegion -> m ()
+setPhysicalPosition wRef pos =
+    liftIO $ do
+      w <- readIORef wRef
+      (setPosition w) wRef pos
 
 newWidget :: (MonadIO m) => m (Widget a)
 newWidget =
@@ -161,6 +178,15 @@ newWidget =
                                    , keyEventHandler = \_ _ -> return False
                                    , physicalSize = DisplayRegion 0 0
                                    , physicalPosition = DisplayRegion 0 0
+                                   , gainFocus =
+                                       \this -> updateWidget_ this $ \w -> w { focused = True }
+                                   , loseFocus =
+                                       \this -> updateWidget_ this $ \w -> w { focused = False }
+                                   , focused = False
+                                   , cursorInfo = const $ return Nothing
+                                   , setPosition =
+                                       \this newPos ->
+                                           updateWidget_ this $ \w -> w { physicalPosition = newPos }
                                    }
 
 handleKeyEvent :: (MonadIO m) => Widget a -> Key -> m Bool
@@ -182,6 +208,18 @@ onKeyPressed wRef handler = do
               False -> oldHandler w k
 
   updateWidget_ wRef $ \w -> w { keyEventHandler = combinedHandler }
+
+onGainFocus :: (MonadIO m) => Widget a -> (Widget a -> IO ()) -> m ()
+onGainFocus wRef handler = do
+  oldHandler <- gainFocus <~ wRef
+  let combinedHandler = \w -> oldHandler w >> handler w
+  updateWidget_ wRef $ \w -> w { gainFocus = combinedHandler }
+
+onLoseFocus :: (MonadIO m) => Widget a -> (Widget a -> IO ()) -> m ()
+onLoseFocus wRef handler = do
+  oldHandler <- loseFocus <~ wRef
+  let combinedHandler = \w -> oldHandler w >> handler w
+  updateWidget_ wRef $ \w -> w { loseFocus = combinedHandler }
 
 (<~) :: (MonadIO m) => (WidgetImpl a -> b) -> Widget a -> m b
 (<~) f wRef = (return . f) =<< (liftIO $ readIORef wRef)

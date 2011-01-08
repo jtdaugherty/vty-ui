@@ -21,6 +21,7 @@ import Graphics.Vty.Widgets.Rendering
     , WidgetImpl(..)
     , (<~)
     , updateWidgetState_
+    , setPhysicalPosition
     , newWidget
     , updateWidget
     , render
@@ -40,8 +41,11 @@ data Collection =
                , currentEntryNum :: Int
                }
 
-renderEntry :: (MonadIO m) => Entry -> DisplayRegion -> DisplayRegion -> Maybe Attr -> m Image
+renderEntry :: (MonadIO m) => Entry -> DisplayRegion -> Maybe Attr -> m Image
 renderEntry (Entry w) = render w
+
+positionEntry :: Entry -> DisplayRegion -> IO ()
+positionEntry (Entry w) = setPhysicalPosition w
 
 entryHandleKeyEvent :: (MonadIO m) => Entry -> Key -> m Bool
 entryHandleKeyEvent (Entry w) k = handleKeyEvent w k
@@ -53,6 +57,8 @@ newCollection = do
       w { state = Collection { entries = []
                              , currentEntryNum = -1
                              }
+        -- XXX technically this should defer to whichever entry is
+        -- current!
         , getGrowHorizontal = return True
         , getGrowVertical = return True
 
@@ -65,13 +71,23 @@ newCollection = do
                        let e = entries st !! i
                        entryHandleKeyEvent e key
 
-        , draw = \this pos size mAttr -> do
+        , draw = \this size mAttr -> do
                    st <- getState this
                    case currentEntryNum st of
                      (-1) -> error "Tried to draw empty collection!"
                      i -> do
                        let e = entries st !! i
-                       renderEntry e pos size mAttr
+                       renderEntry e size mAttr
+
+        , setPosition =
+            \this pos -> do
+              (setPosition w) this pos
+              st <- getState this
+              case currentEntryNum st of
+                (-1) -> error "Tried to position empty collection!"
+                i -> do
+                  let e = entries st !! i
+                  positionEntry e pos
         }
 
 addToCollection :: (MonadIO m) => Widget Collection -> Widget a -> m ()
