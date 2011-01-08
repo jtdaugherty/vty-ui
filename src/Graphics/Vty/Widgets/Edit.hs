@@ -42,7 +42,7 @@ editWidget normAtt focAtt str = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = Edit { currentText = str
-                       , cursorPosition = 0
+                       , cursorPosition = length str
                        , normalAttr = normAtt
                        , focusAttr = focAtt
                        }
