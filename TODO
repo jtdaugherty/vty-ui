@@ -10,11 +10,13 @@
     scroll window size instead of knowing it.  One thing to try here
     is to render the list element widgets one at a time until you run
     out of space (since you know how much space you have and how big
-    the widgets are).
+    the widgets are).  But then you can end up with a situation where
+    you have some space remaining, but not enough to fit another
+    widget.  Do you just collapse the region consumed by the list?
 
-    - Real edit widgets!
+  - Real edit widgets!
 
-  - Resize event handler support
+  - Resize event handler support.  Top-level or per-widget?
 
   - Truly generalized event loop
 
@@ -36,6 +38,27 @@
   - Code cleanup
 
   - Richer list interface (add / remove elements!)
+
+  - Support for "showing" and "hiding" widgets
+
+  - Generalize borders by adding "spacing" widgets that add a number
+    of rows or columns of space on a given side of a widget.  This is
+    already basically possible with vBorderWith ' ' and hBorderWith '
+    ', but it would also be nice to make these explicit and add a
+    "bordered"-style box spacing wrapping widget type.
+
+  - Think about how we can support a programming style in which the
+    most natural thing to do is to create widgets using the library's
+    built-in functionality but with custom draw actions that rely on
+    application state.  This way there doesn't even need to be an
+    "update the UI from app state" function that gets called from the
+    event loop, because it will be implicit in the rendering process.
+    And this is a natural thing to do in other UI programming
+    toolkits, too.  One option would be to create a beforeDraw
+    combinator that takes an action in IO, like so:
+
+    t <- textWidget ...
+    t `beforeDraw` $ \this -> setText this (stuff appstate)
 
 - Testing:
 
