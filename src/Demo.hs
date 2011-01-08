@@ -25,7 +25,7 @@ on a b = def_attr `with_back_color` b `with_fore_color` a
 -- Visual attributes.
 titleAttr = bright_white `on` blue
 editAttr = white `on` black
-editFocusAttr = bright_green `on` blue
+editFocusAttr = bright_green `on` black
 boxAttr = bright_yellow `on` black
 bodyAttr = bright_green `on` black
 selAttr = black `on` yellow
@@ -52,6 +52,7 @@ helpStr = " Enter: view  q: quit "
 uiCore appst w = do
   (hBorder titleAttr)
       <--> w
+      <--> hBorder titleAttr
       <--> (return $ theEdit appst)
       <--> ((return $ theFooter appst)
             <++> hBorder titleAttr
