@@ -26,6 +26,7 @@ module Graphics.Vty.Widgets.List
     , pageDown
     , resize
     , onSelectionChange
+    , onItemAdded
     -- ** List inspection
     , listItems
     , getSelected
@@ -93,6 +94,7 @@ data List a b = List { normalAttr :: Attr
                      , listItems :: [ListItem a b]
                      -- ^The items in the list.
                      , selectionChangeHandler :: Widget (List a b) -> IO ()
+                     , itemAddHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
                      , itemHeight :: Int
                      , itemConstructor :: a -> IO (Widget b)
                      -- ^Function to construct new items
@@ -105,7 +107,17 @@ mkList :: Attr -- ^The attribute of normal, non-selected items
        -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
        -> List a b
 mkList normAttr selAttr f =
-    List normAttr selAttr (-1) 0 0 [] (const $ return ()) 0 f
+    List { normalAttr = normAttr
+         , selectedAttr = selAttr
+         , selectedIndex = -1
+         , scrollTopIndex = 0
+         , scrollWindowSize = 0
+         , listItems = []
+         , selectionChangeHandler = const $ return ()
+         , itemAddHandler = \_ _ _ _ -> return ()
+         , itemHeight = 0
+         , itemConstructor = f
+         }
 
 addToList :: (MonadIO m) => Widget (List a b) -> a -> m ()
 addToList list key = do
@@ -134,6 +146,8 @@ addToList list key = do
                                                       else selectedIndex s
                                     }
 
+  notifyItemAddHandler list (numItems + 1) key w
+
   when (numItems == 0) $
        notifySelectionHanlder list
 
@@ -147,6 +161,18 @@ onSelectionChange wRef handler = do
             handler w
 
   updateWidgetState_ wRef $ \s -> s { selectionChangeHandler = combinedHandler }
+
+onItemAdded :: (MonadIO m) => Widget (List a b)
+            -> (Widget (List a b) -> Int -> a -> Widget b -> IO ()) -> m ()
+onItemAdded wRef handler = do
+  oldHandler <- itemAddHandler <~~ wRef
+
+  let combinedHandler =
+          \w pos k iw -> do
+            oldHandler w pos k iw
+            handler w pos k iw
+
+  updateWidgetState_ wRef $ \s -> s { itemAddHandler = combinedHandler }
 
 listWidget :: (MonadIO m) => List a b -> m (Widget (List a b))
 listWidget list = do
@@ -301,6 +327,11 @@ notifySelectionHanlder :: (MonadIO m) => Widget (List a b) -> m ()
 notifySelectionHanlder wRef = do
   h <- selectionChangeHandler <~~ wRef
   liftIO $ h wRef
+
+notifyItemAddHandler :: (MonadIO m) => Widget (List a b) -> Int -> a -> Widget b -> m ()
+notifyItemAddHandler wRef pos k w = do
+  h <- itemAddHandler <~~ wRef
+  liftIO $ h wRef pos k w
 
 -- |Scroll a list down by one position.
 scrollDown :: (MonadIO m) => Widget (List a b) -> m ()
