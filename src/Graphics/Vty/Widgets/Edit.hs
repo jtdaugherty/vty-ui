@@ -22,7 +22,7 @@ import Graphics.Vty
     , string
     , char_fill
     )
-import Graphics.Vty.Widgets.Rendering
+import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , (<~)

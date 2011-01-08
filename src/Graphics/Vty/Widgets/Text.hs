@@ -39,7 +39,7 @@ import Graphics.Vty
     , region_width
     , region_height
     )
-import Graphics.Vty.Widgets.Rendering
+import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
     , newWidget

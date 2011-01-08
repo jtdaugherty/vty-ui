@@ -17,7 +17,7 @@ import Graphics.Vty
     , Key
     , Modifier
     )
-import Graphics.Vty.Widgets.Rendering
+import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , (<~)

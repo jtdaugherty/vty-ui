@@ -31,7 +31,7 @@ import Graphics.Vty
     , vert_cat
     , horiz_cat
     )
-import Graphics.Vty.Widgets.Rendering
+import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
     , newWidget

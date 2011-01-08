@@ -9,7 +9,7 @@ where
 import Graphics.Vty
     ( Attr
     )
-import Graphics.Vty.Widgets.Rendering
+import Graphics.Vty.Widgets.Core
     ( Widget
     )
 import Graphics.Vty.Widgets.Base

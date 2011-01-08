@@ -26,7 +26,7 @@ import Graphics.Vty
     , DisplayRegion
     , empty_image
     )
-import Graphics.Vty.Widgets.Rendering
+import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , (<~)

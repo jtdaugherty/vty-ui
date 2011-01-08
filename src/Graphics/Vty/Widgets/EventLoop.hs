@@ -8,7 +8,7 @@ import Control.Monad.Trans
     , liftIO
     )
 import Graphics.Vty
-import Graphics.Vty.Widgets.Rendering
+import Graphics.Vty.Widgets.Core
     ( Widget
     , renderAndPosition
     , handleKeyEvent

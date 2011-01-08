@@ -28,7 +28,7 @@ import Control.Monad.Trans
 import Control.Monad.Reader
     ( ask
     )
-import Graphics.Vty.Widgets.Rendering
+import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , Orientation(..)

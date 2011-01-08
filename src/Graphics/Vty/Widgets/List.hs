@@ -53,7 +53,7 @@ import Graphics.Vty
     , Modifier
     , vert_cat
     )
-import Graphics.Vty.Widgets.Rendering
+import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
     , (<~)
