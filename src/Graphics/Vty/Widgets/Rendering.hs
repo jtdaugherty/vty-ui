@@ -11,6 +11,7 @@ module Graphics.Vty.Widgets.Rendering
     , updateWidgetState_
     , newWidget
     , getState
+    , getPhysicalSize
     , (<~)
     , (<~~)
 
@@ -36,6 +37,9 @@ import Data.IORef
     , modifyIORef
     , writeIORef
     )
+import Control.Applicative
+    ( (<$>)
+    )
 import Control.Monad.Reader
     ( ReaderT
     , runReaderT
@@ -49,6 +53,8 @@ import Graphics.Vty
     , Image
     , Attr
     , Key
+    , image_width
+    , image_height
     )
 
 -- |A simple orientation type.
@@ -98,6 +104,8 @@ data WidgetImpl a = WidgetImpl {
     -- vertical space?
     , getGrowVertical :: ReaderT a IO Bool
 
+    , physicalSize :: DisplayRegion
+
     , keyEventHandler :: Widget a -> Key -> IO Bool
     }
 
@@ -116,11 +124,19 @@ growVertical w = do
   liftIO $ runReaderT act st
 
 render :: (MonadIO m) => Widget a -> DisplayRegion -> Maybe Attr -> m Image
-render wRef size overrideAttr =
+render wRef sz overrideAttr =
     liftIO $ do
       impl <- readIORef wRef
-      img <- draw impl wRef size overrideAttr
+      img <- draw impl wRef sz overrideAttr
+      setPhysicalSize wRef $ DisplayRegion (image_width img) (image_height img)
       return img
+
+setPhysicalSize :: (MonadIO m) => Widget a -> DisplayRegion -> m ()
+setPhysicalSize wRef newSize =
+    liftIO $ modifyIORef wRef $ \w -> w { physicalSize = newSize }
+
+getPhysicalSize :: (MonadIO m, Functor m) => Widget a -> m DisplayRegion
+getPhysicalSize wRef = physicalSize <$> (liftIO $ readIORef wRef)
 
 newWidget :: (MonadIO m) => m (Widget a)
 newWidget =
@@ -129,6 +145,7 @@ newWidget =
                                    , getGrowVertical = undefined
                                    , getGrowHorizontal = undefined
                                    , keyEventHandler = \_ _ -> return False
+                                   , physicalSize = DisplayRegion 0 0
                                    }
 
 handleKeyEvent :: (MonadIO m) => Widget a -> Key -> m Bool
