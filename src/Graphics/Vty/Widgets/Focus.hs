@@ -33,7 +33,6 @@ import Graphics.Vty.Widgets.Rendering
     , (<~~)
     , updateWidgetState_
     , newWidget
-    , updateWidget
     , updateWidget_
     , handleKeyEvent
     , getState
@@ -90,13 +89,13 @@ newFocusEntry chRef = do
 
   return wRef
 
-newFocusGroup :: (MonadIO m) => Widget a -> m (Widget FocusGroup)
+newFocusGroup :: (MonadIO m) => Widget a -> m (Widget FocusGroup, Widget FocusEntry)
 newFocusGroup initialWidget = do
   wRef <- newWidget
   eRef <- newFocusEntry initialWidget
   focus eRef
 
-  updateWidget wRef $ \w ->
+  updateWidget_ wRef $ \w ->
       w { state = FocusGroup { entries = [eRef]
                              , currentEntryNum = 0
                              }
@@ -119,6 +118,8 @@ newFocusGroup initialWidget = do
         -- Should never be rendered.
         , draw = \_ _ _ -> return empty_image
         }
+
+  return (wRef, eRef)
 
 getCursorPosition :: (MonadIO m) => Widget FocusGroup -> m (Maybe DisplayRegion)
 getCursorPosition wRef = do

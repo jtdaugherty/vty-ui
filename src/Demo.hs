@@ -106,7 +106,7 @@ main = do
   addToCollection (uis st) ui1
   addToCollection (uis st) ui2
 
-  fg <- newFocusGroup (theList st)
+  (fg, focusableList) <- newFocusGroup (theList st)
   addToFocusGroup_ fg (theEdit st)
 
   let exitApp = liftIO $ do
@@ -120,7 +120,7 @@ main = do
               (KASCII 'q') -> exitApp
               _ -> return False
 
-  (theList st) `onKeyPressed` universalKeys
+  focusableList `onKeyPressed` universalKeys
 
   ui1 `onKeyPressed` \_ k -> do
          case k of
