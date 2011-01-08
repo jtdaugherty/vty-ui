@@ -19,9 +19,6 @@
     ', but it would also be nice to make these explicit and add a
     "bordered"-style box spacing wrapping widget type.
 
-  - Edit widget: need set-text API, make creation API not even take
-    contents
-
   - Focus groups: rethink initialization interface (it's annoying that
     it takes a required element, but it's safe).  The API is weird.
 
