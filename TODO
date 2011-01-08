@@ -34,6 +34,9 @@
     depends on available space and top/left positions are modified by
     the application as scrolling requests are received.
 
+  - List: do audit for calculations that should be done in terms of
+    itemHeight
+
   - table widget for laying out name/value pairs in nice format
 
   - support for right-aligning text (just left-padding?)
