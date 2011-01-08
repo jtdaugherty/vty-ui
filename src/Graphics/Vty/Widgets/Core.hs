@@ -76,7 +76,7 @@ import Graphics.Vty
     , Image
     , Attr
     , Key(..)
-    , Modifier
+    , Modifier(..)
     , image_width
     , image_height
     , empty_image
@@ -353,13 +353,16 @@ newFocusGroup initialWidget = do
               case currentEntryNum st of
                 (-1) -> return False
                 i -> do
-                  case key of
-                    (KASCII '\t') -> do
+                  case (key, mods) of
+                    (KASCII '\t', []) -> do
                              focusNext this
                              return True
-                    k -> do
+                    (KASCII '\t', [MShift]) -> do
+                             focusPrevious this
+                             return True
+                    _ -> do
                        let e = entries st !! i
-                       handleKeyEvent e k mods
+                       handleKeyEvent e key mods
 
         -- Should never be rendered.
         , draw = \_ _ _ -> return empty_image
