@@ -66,15 +66,6 @@ buildUi2 appst =
                   <--> (hBorder titleAttr)
                   <--> (bottomPadded (theBody appst) bodyAttr))
 
-updateUiFromState :: StateT AppState IO ()
-updateUiFromState = do
-  appst <- get
-  (i, _) <- getSelected $ theList appst
-  setText (theBody appst) (snd $ theMessages appst !! i) bodyAttr
-
-  let msg = " " ++ (show $ i + 1) ++ "/" ++ (show $ length $ theMessages appst) ++ " "
-  setText (theFooter appst) msg titleAttr
-
 -- Construct the application state using the message map.
 mkAppState :: IO AppState
 mkAppState = do
@@ -118,6 +109,11 @@ main = do
          (i, _) <- getSelected w
          setText (theBody st) (snd $ theMessages st !! i) bodyAttr
 
+  (theList st) `onSelectionChange` \w -> do
+         (i, _) <- getSelected w
+         let msg = " " ++ (show $ i + 1) ++ "/" ++ (show $ length $ theMessages st) ++ " "
+         setText (theFooter st) msg titleAttr
+
   let exitApp = liftIO $ do
                   reserve_display $ terminal vty
                   shutdown vty
@@ -143,5 +139,4 @@ main = do
            _ -> return False
 
   -- Enter the event loop.
-  -- XXX rebuild widgets to pull state from appst on their own
   runUi vty (uis st) fg
