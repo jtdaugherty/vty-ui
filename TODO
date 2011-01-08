@@ -1,21 +1,11 @@
 
 - Rewriting tasks:
 
-  - Lists: support for taking up all available space instead of
-    requiring a fixed scroll window size.  Try to come up with a way
-    for the list to know how many elements are visible (keeping in
-    mind that they are arbitrary!) so we can basically detect the
-    scroll window size instead of knowing it.  One thing to try here
-    is to render the list element widgets one at a time until you run
-    out of space (since you know how much space you have and how big
-    the widgets are).  But then you can end up with a situation where
-    you have some space remaining, but not enough to fit another
-    widget.  Do you just collapse the region consumed by the list?
-
-  - Resize event handler support.  Top-level or per-widget?
+  - Resize event handler support.  Top-level or per-widget?  Maybe not
+    even necessary?
 
   - Layering (i.e., dialogs), probably needs research into transposed
-    images in Vty (do they even work?)
+    images in Vty (which are not implemented yet).
 
   - Ability to clear (reset) key event handler on a widget
 
@@ -29,27 +19,15 @@
     ', but it would also be nice to make these explicit and add a
     "bordered"-style box spacing wrapping widget type.
 
-  - Think about how we can support a programming style in which the
-    most natural thing to do is to create widgets using the library's
-    built-in functionality but with custom draw actions that rely on
-    application state.  This way there doesn't even need to be an
-    "update the UI from app state" function that gets called from the
-    event loop, because it will be implicit in the rendering process.
-    And this is a natural thing to do in other UI programming
-    toolkits, too.  One option would be to create a beforeDraw
-    combinator that takes an action in IO, like so:
-
-    t <- textWidget ...
-    t `beforeDraw` $ \this -> setText this (stuff appstate)
-
-  - Edit widget: need set/get text API
+  - Edit widget: need set-text API, make creation API not even take
+    contents
 
   - Focus groups: rethink initialization interface (it's annoying that
     it takes a required element, but it's safe).  The API is weird.
 
 - Testing:
 
-  - Write quickcheck properties for Text.Trans.Tokenize!
+  - Ugh.  Need loads of tests for tricky things.
 
 - Widgets:
 
@@ -59,23 +37,6 @@
     just (top, left, widget, mask window size) where the window size
     depends on available space and top/left positions are modified by
     the application as scrolling requests are received.
-
-  - horizontal / vertical boxes which can take absolute values or
-    percentages to determine how to allocate space to their children
-    (this may entail re-tooling the existing types to take one of
-    various space allocation specifiers).  Maybe something like:
-
-    Size = Absolute Int Int
-         | Percent Int
-         | Auto
-    sizedHBox :: Widget -> Widget -> Size -> Widget
-
-    Sizing policy (Size) determines how a box reserves space for each
-    of its two children.  Percent a implies (100-a) percent space
-    allocated for one child.  Absolute a b implies a rows or columns
-    for the "first" child and b rows or columns for the "second"
-    child.  Auto implies that the box may grow to accomodate the size
-    of its children.
 
   - table widget for laying out name/value pairs in nice format
 
