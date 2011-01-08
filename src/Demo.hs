@@ -168,8 +168,13 @@ main = do
 
   setEditText (theEdit st) "edit me"
 
-  -- Initial UI updates from state
-  updateBody st (theList st)
+  -- We need to call this handler manually because while it will be
+  -- called automatically as items are added to the list in the
+  -- future, the items currently in the list didn't call this handler
+  -- because it wasn't registered at the time the items were added.
+  -- And that was impossible because the list was created and
+  -- populated before we even got a reference to it, so we couldn't
+  -- have set up event handlers.
   updateFooterNums st (theList st)
 
   -- Enter the event loop.
