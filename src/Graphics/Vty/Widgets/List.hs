@@ -129,10 +129,7 @@ listWidget list = do
 
         -- XXX it might be crazy, but we could even pass events we
         -- don't handle onto the currently selected widget!
-        , keyEventHandler =
-            \this k -> do
-              v <- listKeyEvent this k
-              return v
+        , keyEventHandler = listKeyEvent
 
         , draw = \this sz mAttr -> do
             listData <- getState this
