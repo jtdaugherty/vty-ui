@@ -110,6 +110,10 @@ main = do
   (fg, focusableList) <- newFocusGroup (theList st)
   addToFocusGroup_ fg (theEdit st)
 
+  (theEdit st) `onActivate` \w -> do
+         t <- getEditText w
+         setText (theFooter st) t titleAttr
+
   let exitApp = liftIO $ do
                   reserve_display $ terminal vty
                   shutdown vty

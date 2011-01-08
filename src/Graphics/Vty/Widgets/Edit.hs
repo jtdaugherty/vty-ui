@@ -1,6 +1,8 @@
 module Graphics.Vty.Widgets.Edit
     ( Edit
     , editWidget
+    , getEditText
+    , onActivate
     )
 where
 
@@ -38,6 +40,7 @@ data Edit = Edit { currentText :: String
                  , focusAttr :: Attr
                  , displayStart :: Int
                  , displayWidth :: Int
+                 , activateHandler :: Widget Edit -> IO ()
                  }
 
 editWidget :: (MonadIO m) => Attr -> Attr -> String -> m (Widget Edit)
@@ -50,6 +53,7 @@ editWidget normAtt focAtt str = do
                        , focusAttr = focAtt
                        , displayStart = 0
                        , displayWidth = 0
+                       , activateHandler = const $ return ()
                        }
 
         , getGrowHorizontal = return True
@@ -81,6 +85,20 @@ editWidget normAtt focAtt str = do
         , keyEventHandler = editKeyEvent
         }
 
+onActivate :: Widget Edit -> (Widget Edit -> IO ()) -> IO ()
+onActivate wRef handler = do
+  oldHandler <- activateHandler <~~ wRef
+
+  let combinedHandler =
+          \w -> do
+            oldHandler w
+            handler w
+
+  updateWidgetState_ wRef $ \s -> s { activateHandler = combinedHandler }
+
+getEditText :: Widget Edit -> IO String
+getEditText = (currentText <~~)
+
 setDisplayWidth :: Widget Edit -> Int -> IO ()
 setDisplayWidth this width =
     updateWidgetState_ this $ \s ->
@@ -108,6 +126,10 @@ editKeyEvent this k mods = do
     (KASCII ch, []) -> insertChar this ch >> moveCursorRight this >> return True
     (KHome, []) -> cursorHome this >> return True
     (KEnd, []) -> cursorEnd this >> return True
+    (KEnter, []) -> do
+                   h <- activateHandler <~~ this
+                   h this
+                   return True
     _ -> return False
 
 gotoBeginning :: Widget Edit -> IO ()
