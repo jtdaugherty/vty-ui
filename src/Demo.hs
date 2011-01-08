@@ -14,6 +14,7 @@ data AppState =
              , theFooter1 :: Widget FormattedText
              , theFooter2 :: Widget FormattedText
              , theEdit :: Widget Edit
+             , theListLimit :: Widget (VLimit (List String FormattedText))
              , uis :: Widget Collection
              }
 
@@ -53,7 +54,7 @@ buildUi1 appst =
                " Enter: view  q: quit "
 
 buildUi2 appst =
-    uiCore appst ((vLimit 5 (theList appst))
+    uiCore appst ((return $ theListLimit appst)
                   <--> (hBorder titleAttr)
                   <--> (bottomPadded (theBody appst) bodyAttr))
                  " Esc: close "
@@ -68,6 +69,7 @@ mkAppState = do
   f1 <- simpleText titleAttr ""
   f2 <- simpleText titleAttr "[]"
   e <- editWidget editAttr editFocusAttr "foobar"
+  ll <- vLimit 5 lw
 
   c <- newCollection
 
@@ -77,6 +79,7 @@ mkAppState = do
                     , theFooter1 = f1
                     , theFooter2 = f2
                     , theEdit = e
+                    , theListLimit = ll
                     , uis = c
                     }
 
@@ -138,6 +141,14 @@ main = do
   listCtx2 `onKeyPressed` \_ k _ -> do
          case k of
            KEsc -> setCurrent (uis st) 0 >> return True
+           KASCII '+' -> do
+                  lim <- getVLimit (theListLimit st)
+                  setVLimit (theListLimit st) (lim + 1)
+                  return True
+           KASCII '-' -> do
+                  lim <- getVLimit (theListLimit st)
+                  setVLimit (theListLimit st) (lim - 1)
+                  return True
            _ -> return False
 
   setFocusGroup ui1 fg1

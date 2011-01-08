@@ -17,10 +17,19 @@ module Graphics.Vty.Widgets.Base
     , HLimit
     , hLimit
     , vLimit
+
+    , setVLimit
+    , setHLimit
+
+    , getVLimit
+    , getHLimit
     )
 where
 
 import GHC.Word ( Word )
+import Control.Monad
+    ( when
+    )
 import Control.Monad.Trans
     ( MonadIO
     , liftIO
@@ -32,6 +41,7 @@ import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , Orientation(..)
+    , (<~)
     , newWidget
     , updateWidget
     , render
@@ -42,6 +52,7 @@ import Graphics.Vty.Widgets.Core
     , handleKeyEvent
     , getState
     , setPhysicalPosition
+    , updateWidgetState_
     , getPhysicalSize
     )
 import Graphics.Vty
@@ -286,6 +297,26 @@ vLimit maxHeight child = do
               VLimit _ ch <- getState this
               setPhysicalPosition ch pos
         }
+
+setVLimit :: (MonadIO m) => Widget (VLimit a) -> Int -> m ()
+setVLimit wRef lim =
+    when (lim >= 1) $
+         updateWidgetState_ wRef $ \(VLimit _ ch) -> VLimit lim ch
+
+setHLimit :: (MonadIO m) => Widget (HLimit a) -> Int -> m ()
+setHLimit wRef lim =
+    when (lim >= 1) $
+         updateWidgetState_ wRef $ \(HLimit _  ch) -> HLimit lim ch
+
+getVLimit :: (MonadIO m) => Widget (VLimit a) -> m Int
+getVLimit wRef = do
+  (VLimit lim _) <- state <~ wRef
+  return lim
+
+getHLimit :: (MonadIO m) => Widget (HLimit a) -> m Int
+getHLimit wRef = do
+  (HLimit lim _) <- state <~ wRef
+  return lim
 
 (<-->) :: (MonadIO m) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
 (<-->) act1 act2 = do
