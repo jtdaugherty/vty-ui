@@ -18,12 +18,6 @@
   - Lists: function for setting the currently-selected element by
     index?
 
-  - Lists: sort out list normal attributes vs. widget attributes;
-    which one takes precedence?  If the list, then we can construct
-    item widgets with the default attribute and always override at
-    render time with either the normal or selected attributes (or the
-    global override attribute, mAttr)
-
   - Support for "showing" and "hiding" widgets
 
   - Generalize borders by adding "spacing" widgets that add a number

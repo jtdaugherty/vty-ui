@@ -56,6 +56,7 @@ import Graphics.Vty
     , vert_cat
     , image_height
     , char_fill
+    , def_attr
     )
 import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
@@ -215,7 +216,11 @@ renderListWidget list s mAttr = do
 
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
-        let att = if sel then (Just $ selectedAttr list) else mAttr
+        let att = if sel
+                  then (Just $ selectedAttr list)
+                  else if isJust mAttr
+                       then mAttr
+                       else (Just $ normalAttr list)
         img <- render w s att
         imgs <- renderVisible ws
         return (img:imgs)
@@ -239,10 +244,7 @@ mkSimpleList :: (MonadIO m) =>
              -> [String] -- ^The list items
              -> m (Widget (List String FormattedText))
 mkSimpleList normAttr selAttr labels = do
-  -- XXX the simpleText call here should really always first look at
-  -- the widget's normal attribute setting, but really, it should be
-  -- default_attr with an attribute override at render time.
-  list <- listWidget $ mkList normAttr selAttr (simpleText normAttr)
+  list <- listWidget $ mkList normAttr selAttr (simpleText def_attr)
   mapM_ (addToList list) labels
   return list
 
