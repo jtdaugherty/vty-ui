@@ -41,6 +41,8 @@ module Graphics.Vty.Widgets.Core
     , focusPrevious
     , setCurrentFocus
     , getCursorPosition
+    , setFocusGroup
+    , getFocusGroup
     , focus
     , unfocus
     )
@@ -137,11 +139,21 @@ data WidgetImpl a = WidgetImpl {
     , gainFocus :: Widget a -> IO ()
     , loseFocus :: Widget a -> IO ()
     , focused :: Bool
+    , focusGroup :: Widget a -> IO (Maybe (Widget FocusGroup))
 
     , cursorInfo :: Widget a -> IO (Maybe DisplayRegion)
     }
 
 type Widget a = IORef (WidgetImpl a)
+
+setFocusGroup :: (MonadIO m) => Widget a -> Widget FocusGroup -> m ()
+setFocusGroup wRef fg =
+    updateWidget_ wRef $ \w -> w { focusGroup = const $ return $ Just fg }
+
+getFocusGroup :: (MonadIO m) => Widget a -> m (Maybe (Widget FocusGroup))
+getFocusGroup wRef = do
+  act <- focusGroup <~ wRef
+  liftIO $ act wRef
 
 growHorizontal :: (MonadIO m) => Widget a -> m Bool
 growHorizontal w = do
@@ -205,6 +217,7 @@ newWidget =
                                    , setPosition =
                                        \this newPos ->
                                            updateWidget_ this $ \w -> w { physicalPosition = newPos }
+                                   , focusGroup = const $ return Nothing
                                    }
 
 handleKeyEvent :: (MonadIO m) => Widget a -> Key -> [Modifier] -> m Bool

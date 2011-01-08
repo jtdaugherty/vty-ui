@@ -11,7 +11,8 @@ data AppState =
     AppState { theList :: Widget (List String FormattedText)
              , theMessages :: [(String, String)]
              , theBody :: Widget FormattedText
-             , theFooter :: Widget FormattedText
+             , theFooter1 :: Widget FormattedText
+             , theFooter2 :: Widget FormattedText
              , theEdit :: Widget Edit
              , uis :: Widget Collection
              }
@@ -37,25 +38,25 @@ messages = [ ("First", "the first message" )
            , ("Seventh", "the seventh message")
            ]
 
-helpStr :: String
-helpStr = " Enter: view  q: quit "
-
-uiCore appst w = do
+uiCore appst w help = do
   (hBorder titleAttr)
       <--> w
       <--> hBorder titleAttr
       <--> (return $ theEdit appst)
-      <--> ((return $ theFooter appst)
+      <--> ((return $ theFooter1 appst)
+            <++> (return $ theFooter2 appst)
             <++> hBorder titleAttr
-            <++> simpleText titleAttr helpStr)
+            <++> simpleText titleAttr help)
 
 buildUi1 appst =
     uiCore appst (bottomPadded (theList appst) bodyAttr)
+               " Enter: view  q: quit "
 
 buildUi2 appst =
     uiCore appst ((return $ theList appst)
                   <--> (hBorder titleAttr)
                   <--> (bottomPadded (theBody appst) bodyAttr))
+                 " Esc: close "
 
 -- Construct the application state using the message map.
 mkAppState :: IO AppState
@@ -64,7 +65,8 @@ mkAppState = do
 
   lw <- listWidget =<< mkSimpleList bodyAttr selAttr 5 labels
   b <- textWidget wrap $ prepareText bodyAttr ""
-  f <- simpleText titleAttr ""
+  f1 <- simpleText titleAttr ""
+  f2 <- simpleText titleAttr "[]"
   e <- editWidget editAttr editFocusAttr "foobar"
 
   c <- newCollection
@@ -72,7 +74,8 @@ mkAppState = do
   return $ AppState { theList = lw
                     , theMessages = messages
                     , theBody = b
-                    , theFooter = f
+                    , theFooter1 = f1
+                    , theFooter2 = f2
                     , theEdit = e
                     , uis = c
                     }
@@ -82,6 +85,22 @@ exitApp vty = do
   reserve_display $ terminal vty
   shutdown vty
   exitSuccess
+
+updateBody :: AppState -> Widget (List a b) -> IO ()
+updateBody st w = do
+  (i, _) <- getSelected w
+  setText (theBody st) (snd $ theMessages st !! i) bodyAttr
+
+updateFooterNums :: AppState -> Widget (List a b) -> IO ()
+updateFooterNums st w = do
+  (i, _) <- getSelected w
+  let msg = "-" ++ (show $ i + 1) ++ "/" ++ (show $ length $ theMessages st) ++ "-"
+  setText (theFooter1 st) msg titleAttr
+
+updateFooterText :: AppState -> Widget Edit -> IO ()
+updateFooterText st w = do
+  t <- getEditText w
+  setText (theFooter2 st) ("[" ++ t ++ "]") titleAttr
 
 main :: IO ()
 main = do
@@ -95,40 +114,39 @@ main = do
   addToCollection (uis st) ui1
   addToCollection (uis st) ui2
 
-  (fg, focusableList) <- newFocusGroup (theList st)
-  addToFocusGroup_ fg (theEdit st)
+  (fg1, listCtx1) <- newFocusGroup (theList st)
+  addToFocusGroup_ fg1 (theEdit st)
 
-  (theEdit st) `onChange` \w -> do
-         t <- getEditText w
-         setText (theFooter st) t titleAttr
+  (fg2, listCtx2) <- newFocusGroup (theList st)
+  addToFocusGroup_ fg2 (theEdit st)
 
-  (theList st) `onSelectionChange` \w -> do
-         (i, _) <- getSelected w
-         setText (theBody st) (snd $ theMessages st !! i) bodyAttr
+  -- These event handlers will fire regardless of the input event
+  -- context.
+  (theEdit st) `onChange` (updateFooterText st)
+  (theList st) `onSelectionChange` (updateBody st)
+  (theList st) `onSelectionChange` (updateFooterNums st)
 
-  (theList st) `onSelectionChange` \w -> do
-         (i, _) <- getSelected w
-         let msg = " " ++ (show $ i + 1) ++ "/" ++ (show $ length $ theMessages st) ++ " "
-         setText (theFooter st) msg titleAttr
-
-  let universalKeys =
-          \_ k _ -> do
+  -- These event handlers will only fire when the UI is in the
+  -- appropriate mode, depending on the state of the Widget
+  -- Collection.
+  listCtx1 `onKeyPressed` \_ k _ -> do
             case k of
               (KASCII 'q') -> exitApp vty
+              KEnter -> setCurrent (uis st) 1 >> return True
               _ -> return False
 
-  focusableList `onKeyPressed` universalKeys
-
-  (theList st) `onKeyPressed` \_ k _ -> do
-         case k of
-           KEnter -> setCurrent (uis st) 1 >> return True
-           _ -> return False
-
-  ui2 `onKeyPressed` \_ k _ -> do
+  listCtx2 `onKeyPressed` \_ k _ -> do
          case k of
            KEsc -> setCurrent (uis st) 0 >> return True
-           (KASCII 'w') -> setCurrent (uis st) 0 >> return True
            _ -> return False
 
+  setFocusGroup ui1 fg1
+  setFocusGroup ui2 fg2
+
+  -- Initial UI updates from state
+  updateBody st (theList st)
+  updateFooterNums st (theList st)
+  updateFooterText st (theEdit st)
+
   -- Enter the event loop.
-  runUi vty (uis st) fg
+  runUi vty (uis st)

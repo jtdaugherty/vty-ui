@@ -3,6 +3,12 @@ module Graphics.Vty.Widgets.EventLoop
     )
 where
 
+import Data.Maybe
+    ( isNothing
+    )
+import Control.Monad
+    ( when
+    )
 import Control.Monad.Trans
     ( MonadIO
     , liftIO
@@ -12,22 +18,26 @@ import Graphics.Vty.Widgets.Core
     ( Widget
     , renderAndPosition
     , handleKeyEvent
-    , FocusGroup
+    , getFocusGroup
     , getCursorPosition
     )
 
 runUi :: (MonadIO m) =>
          Vty
       -> Widget a
-      -> Widget FocusGroup
       -> m ()
-runUi vty uiWidget focusGroup = do
+runUi vty uiWidget = do
+  mFg <- getFocusGroup uiWidget
+  when (isNothing mFg) $ error "fatal: top-level widget has no FocusGroup widget"
+
+  let Just fg = mFg
+
   evt <- liftIO $ do
            sz <- display_bounds $ terminal vty
            img <- renderAndPosition uiWidget (DisplayRegion 0 0) sz Nothing
            update vty $ pic_for_image img
 
-           mPos <- getCursorPosition focusGroup
+           mPos <- getCursorPosition fg
            case mPos of
              Just (DisplayRegion w h) -> do
                                   show_cursor $ terminal vty
@@ -36,7 +46,7 @@ runUi vty uiWidget focusGroup = do
            next_event vty
 
   case evt of
-    (EvKey k mods) -> handleKeyEvent focusGroup k mods >> return ()
+    (EvKey k mods) -> handleKeyEvent fg k mods >> return ()
     _ -> return ()
 
-  runUi vty uiWidget focusGroup
+  runUi vty uiWidget

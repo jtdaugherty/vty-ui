@@ -20,7 +20,9 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
+    , FocusGroup
     , (<~)
+    , getFocusGroup
     , updateWidgetState_
     , setPhysicalPosition
     , newWidget
@@ -51,6 +53,9 @@ positionEntry (Entry w) = setPhysicalPosition w
 entryHandleKeyEvent :: (MonadIO m) => Entry -> Key -> [Modifier] -> m Bool
 entryHandleKeyEvent (Entry w) k mods = handleKeyEvent w k mods
 
+entryFocusGroup :: Entry -> IO (Maybe (Widget FocusGroup))
+entryFocusGroup (Entry w) = getFocusGroup w
+
 newCollection :: (MonadIO m) => m (Widget Collection)
 newCollection = do
   wRef <- newWidget
@@ -62,6 +67,15 @@ newCollection = do
         -- current!
         , getGrowHorizontal = return True
         , getGrowVertical = return True
+
+        , focusGroup =
+            \this -> do
+              st <- getState this
+              case currentEntryNum st of
+                (-1) -> return Nothing
+                i -> do
+                       let e = entries st !! i
+                       entryFocusGroup e
 
         , keyEventHandler =
             \this key mods -> do
