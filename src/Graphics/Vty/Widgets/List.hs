@@ -18,6 +18,8 @@ module Graphics.Vty.Widgets.List
     , mkSimpleList
     , listWidget
     , addToList
+    , removeFromList
+    , getListSize
     -- ** List manipulation
     , scrollBy
     , scrollUp
@@ -27,6 +29,7 @@ module Graphics.Vty.Widgets.List
     , resize
     , onSelectionChange
     , onItemAdded
+    , onItemRemoved
     -- ** List inspection
     , listItems
     , getSelected
@@ -96,6 +99,7 @@ data List a b = List { normalAttr :: Attr
                      -- ^The items in the list.
                      , selectionChangeHandler :: Widget (List a b) -> IO ()
                      , itemAddHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
+                     , itemRemoveHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
                      , itemHeight :: Int
                      , itemConstructor :: a -> IO (Widget b)
                      -- ^Function to construct new items
@@ -116,9 +120,49 @@ mkList normAttr selAttr f =
          , listItems = []
          , selectionChangeHandler = const $ return ()
          , itemAddHandler = \_ _ _ _ -> return ()
+         , itemRemoveHandler = \_ _ _ _ -> return ()
          , itemHeight = 0
          , itemConstructor = f
          }
+
+getListSize :: (MonadIO m) => Widget (List a b) -> m Int
+getListSize = ((length . listItems) <~~)
+
+removeFromList :: (MonadIO m) => Widget (List a b) -> Int -> m (ListItem a b)
+removeFromList list pos = do
+  st <- getState list
+
+  let numItems = length $ listItems st
+
+  when (pos < 0 || pos >= numItems) $
+       error $ "removeFromList: cannot remove item " ++
+                 (show pos) ++ ", only " ++ (show numItems) ++ " items"
+
+  -- Get the item from the list.
+  let (label, w) = listItems st !! pos
+      sel = selectedIndex st
+
+  -- If that item is currently selected, select a different item.
+      newSelectedIndex = if pos == sel && pos == numItems - 1
+                         then if pos == 0
+                              then -1
+                              else pos - 1
+                         else pos
+
+  updateWidgetState_ list $ \s -> s { selectedIndex = newSelectedIndex
+                                    , listItems = take pos (listItems st) ++
+                                                  drop (pos + 1) (listItems st)
+                                    }
+
+  -- Notify the removal handler.
+  notifyItemRemoveHandler list pos label w
+
+  -- Notify the selection handler.
+  when (pos /= selectedIndex st) $
+       notifySelectionHanlder list
+
+  -- Return the removed item.
+  return (label, w)
 
 addToList :: (MonadIO m) => Widget (List a b) -> a -> m ()
 addToList list key = do
@@ -174,6 +218,18 @@ onItemAdded wRef handler = do
             handler w pos k iw
 
   updateWidgetState_ wRef $ \s -> s { itemAddHandler = combinedHandler }
+
+onItemRemoved :: (MonadIO m) => Widget (List a b)
+            -> (Widget (List a b) -> Int -> a -> Widget b -> IO ()) -> m ()
+onItemRemoved wRef handler = do
+  oldHandler <- itemRemoveHandler <~~ wRef
+
+  let combinedHandler =
+          \w pos k iw -> do
+            oldHandler w pos k iw
+            handler w pos k iw
+
+  updateWidgetState_ wRef $ \s -> s { itemRemoveHandler = combinedHandler }
 
 listWidget :: (MonadIO m) => List a b -> m (Widget (List a b))
 listWidget list = do
@@ -337,6 +393,11 @@ notifySelectionHanlder :: (MonadIO m) => Widget (List a b) -> m ()
 notifySelectionHanlder wRef = do
   h <- selectionChangeHandler <~~ wRef
   liftIO $ h wRef
+
+notifyItemRemoveHandler :: (MonadIO m) => Widget (List a b) -> Int -> a -> Widget b -> m ()
+notifyItemRemoveHandler wRef pos k w = do
+  h <- itemRemoveHandler <~~ wRef
+  liftIO $ h wRef pos k w
 
 notifyItemAddHandler :: (MonadIO m) => Widget (List a b) -> Int -> a -> Widget b -> m ()
 notifyItemAddHandler wRef pos k w = do

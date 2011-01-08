@@ -100,11 +100,12 @@ updateBody st w = do
 updateFooterNums :: AppState -> Widget (List a b) -> IO ()
 updateFooterNums st w = do
   result <- getSelected w
+  sz <- getListSize w
   let msg = case result of
               Nothing -> "--/--"
               Just (i, _) ->
                   "-" ++ (show $ i + 1) ++ "/" ++
-                          (show $ length $ theMessages st) ++ "-"
+                          (show sz) ++ "-"
   setText (theFooter1 st) msg titleAttr
 
 updateFooterText :: AppState -> Widget Edit -> IO ()
@@ -138,6 +139,8 @@ main = do
 
   (theList st) `onSelectionChange` (updateBody st)
   (theList st) `onSelectionChange` (updateFooterNums st)
+  (theList st) `onItemAdded` (\l _ _ _ -> updateFooterNums st l)
+  (theList st) `onItemRemoved` (\l _ _ _ -> updateFooterNums st l)
 
   -- These event handlers will only fire when the UI is in the
   -- appropriate mode, depending on the state of the Widget
@@ -145,6 +148,12 @@ main = do
   listCtx1 `onKeyPressed` \_ k _ -> do
             case k of
               (KASCII 'q') -> exitApp vty
+              KDel -> do
+                     result <- getSelected (theList st)
+                     case result of
+                       Nothing -> return ()
+                       Just (i, _) -> removeFromList (theList st) i >> return ()
+                     return True
               KEnter -> do
                      r <- getSelected (theList st)
                      case r of

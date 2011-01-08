@@ -11,10 +11,6 @@
 
   - Ability to clear (reset) key event handler on a widget
 
-  - Lists: add handlers for adding and removing elements, like
-
-    list `onItemRemoved` \this (idx, w) -> ...
-
   - Lists: function for setting the currently-selected element by
     index?
 
