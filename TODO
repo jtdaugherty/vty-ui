@@ -13,7 +13,6 @@
 
   - Lists: add handlers for adding and removing elements, like
 
-    list `onItemAdded` \this (idx, w) -> ...
     list `onItemRemoved` \this (idx, w) -> ...
 
   - Lists: function for setting the currently-selected element by
@@ -24,12 +23,6 @@
     item widgets with the default attribute and always override at
     render time with either the normal or selected attributes (or the
     global override attribute, mAttr)
-
-  - Consider removing (Widget a) from signature of event handlers;
-    while for some this could be ugly (and in some cases having that
-    could be really useful), in most cases it'll probably be
-    unnecessary noise (binding a second name to something already in
-    closure scope)
 
   - Support for "showing" and "hiding" widgets
 
