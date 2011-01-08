@@ -102,7 +102,7 @@ newFocusGroup initialWidget = do
         , getGrowHorizontal = return False
         , getGrowVertical = return False
         , keyEventHandler =
-            \this key -> do
+            \this key mods -> do
               st <- getState this
               case currentEntryNum st of
                 (-1) -> return False
@@ -113,7 +113,7 @@ newFocusGroup initialWidget = do
                              return True
                     k -> do
                        let e = entries st !! i
-                       handleKeyEvent e k
+                       handleKeyEvent e k mods
 
         -- Should never be rendered.
         , draw = \_ _ _ -> return empty_image

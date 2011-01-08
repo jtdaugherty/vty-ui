@@ -126,11 +126,11 @@ box o a b = do
             return $ v1 || v2
 
         , keyEventHandler =
-            \this key -> do
+            \this key mods -> do
               Box _ ch1 ch2 <- getState this
-              handled <- handleKeyEvent ch1 key
+              handled <- handleKeyEvent ch1 key mods
               if handled then return True else
-                  handleKeyEvent ch2 key
+                  handleKeyEvent ch2 key mods
 
         , draw = \this s mAttr -> do
                    st@(Box orientation _ _) <- getState this
@@ -237,9 +237,9 @@ hLimit maxWidth child = do
             liftIO $ growVertical ch
 
         , keyEventHandler =
-            \this key -> do
+            \this key mods -> do
               HLimit _ ch <- getState this
-              handleKeyEvent ch key
+              handleKeyEvent ch key mods
 
         , draw = \this s mAttr -> do
                    HLimit width ch <- getState this
@@ -269,9 +269,9 @@ vLimit maxHeight child = do
             liftIO $ growHorizontal ch
 
         , keyEventHandler =
-            \this key -> do
+            \this key mods -> do
               VLimit _ ch <- getState this
-              handleKeyEvent ch key
+              handleKeyEvent ch key mods
 
         , draw = \this s mAttr -> do
                    VLimit height ch <- getState this

@@ -112,9 +112,9 @@ bordered att child = do
             liftIO $ growHorizontal ch
 
         , keyEventHandler =
-            \this key -> do
+            \this key mods -> do
               Bordered _ ch <- getState this
-              handleKeyEvent ch key
+              handleKeyEvent ch key mods
 
         , draw =
             \this s mAttr -> do

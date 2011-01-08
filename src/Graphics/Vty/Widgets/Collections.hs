@@ -15,6 +15,7 @@ import Graphics.Vty
     , Attr
     , Image
     , Key
+    , Modifier
     )
 import Graphics.Vty.Widgets.Rendering
     ( Widget
@@ -47,8 +48,8 @@ renderEntry (Entry w) = render w
 positionEntry :: Entry -> DisplayRegion -> IO ()
 positionEntry (Entry w) = setPhysicalPosition w
 
-entryHandleKeyEvent :: (MonadIO m) => Entry -> Key -> m Bool
-entryHandleKeyEvent (Entry w) k = handleKeyEvent w k
+entryHandleKeyEvent :: (MonadIO m) => Entry -> Key -> [Modifier] -> m Bool
+entryHandleKeyEvent (Entry w) k mods = handleKeyEvent w k mods
 
 newCollection :: (MonadIO m) => m (Widget Collection)
 newCollection = do
@@ -63,13 +64,13 @@ newCollection = do
         , getGrowVertical = return True
 
         , keyEventHandler =
-            \this key -> do
+            \this key mods -> do
               st <- getState this
               case currentEntryNum st of
                 (-1) -> return False
                 i -> do
                        let e = entries st !! i
-                       entryHandleKeyEvent e key
+                       entryHandleKeyEvent e key mods
 
         , draw = \this size mAttr -> do
                    st <- getState this

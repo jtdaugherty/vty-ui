@@ -61,6 +61,7 @@ import Graphics.Vty
     , Image
     , Attr
     , Key
+    , Modifier
     , image_width
     , image_height
     )
@@ -117,7 +118,7 @@ data WidgetImpl a = WidgetImpl {
 
     , setPosition :: Widget a -> DisplayRegion -> IO ()
 
-    , keyEventHandler :: Widget a -> Key -> IO Bool
+    , keyEventHandler :: Widget a -> Key -> [Modifier] -> IO Bool
 
     , gainFocus :: Widget a -> IO ()
     , loseFocus :: Widget a -> IO ()
@@ -178,7 +179,7 @@ newWidget =
                                    , draw = undefined
                                    , getGrowVertical = undefined
                                    , getGrowHorizontal = undefined
-                                   , keyEventHandler = \_ _ -> return False
+                                   , keyEventHandler = \_ _ _ -> return False
                                    , physicalSize = DisplayRegion 0 0
                                    , physicalPosition = DisplayRegion 0 0
                                    , gainFocus =
@@ -192,23 +193,23 @@ newWidget =
                                            updateWidget_ this $ \w -> w { physicalPosition = newPos }
                                    }
 
-handleKeyEvent :: (MonadIO m) => Widget a -> Key -> m Bool
-handleKeyEvent wRef keyEvent = do
+handleKeyEvent :: (MonadIO m) => Widget a -> Key -> [Modifier] -> m Bool
+handleKeyEvent wRef keyEvent mods = do
   act <- keyEventHandler <~ wRef
-  liftIO $ act wRef keyEvent
+  liftIO $ act wRef keyEvent mods
 
-onKeyPressed :: (MonadIO m) => Widget a -> (Widget a -> Key -> IO Bool) -> m ()
+onKeyPressed :: (MonadIO m) => Widget a -> (Widget a -> Key -> [Modifier] -> IO Bool) -> m ()
 onKeyPressed wRef handler = do
   -- Create a new handler that calls this one but defers to the old
   -- one if the new one doesn't handle the event.
   oldHandler <- keyEventHandler <~ wRef
 
   let combinedHandler =
-          \w k -> do
-            v <- handler w k
+          \w k ms -> do
+            v <- handler w k ms
             case v of
               True -> return True
-              False -> oldHandler w k
+              False -> oldHandler w k ms
 
   updateWidget_ wRef $ \w -> w { keyEventHandler = combinedHandler }
 

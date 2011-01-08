@@ -38,7 +38,7 @@ runUi vty uiWidget focusGroup = do
            next_event vty
 
   case evt of
-    (EvKey k _) -> handleKeyEvent focusGroup k >> return ()
+    (EvKey k mods) -> handleKeyEvent focusGroup k mods >> return ()
     _ -> return ()
 
   runUi vty uiWidget focusGroup

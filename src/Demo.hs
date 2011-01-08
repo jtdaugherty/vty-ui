@@ -116,19 +116,19 @@ main = do
                   exitSuccess
 
       universalKeys =
-          \_ k -> do
+          \_ k _ -> do
             case k of
               (KASCII 'q') -> exitApp
               _ -> return False
 
   focusableList `onKeyPressed` universalKeys
 
-  (theList st) `onKeyPressed` \_ k -> do
+  (theList st) `onKeyPressed` \_ k _ -> do
          case k of
            KEnter -> setCurrent (uis st) 1 >> return True
            _ -> return False
 
-  ui2 `onKeyPressed` \_ k -> do
+  ui2 `onKeyPressed` \_ k _ -> do
          case k of
            KEsc -> setCurrent (uis st) 0 >> return True
            (KASCII 'w') -> setCurrent (uis st) 0 >> return True

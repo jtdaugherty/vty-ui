@@ -13,6 +13,7 @@ import Control.Monad.Trans
 import Graphics.Vty
     ( Attr
     , Key(..)
+    , Modifier
     , (<|>)
     , region_width
     , string
@@ -90,8 +91,8 @@ setDisplayWidth this width =
              , displayStart = newDispStart
              }
 
-editKeyEvent :: Widget Edit -> Key -> IO Bool
-editKeyEvent this k = do
+editKeyEvent :: Widget Edit -> Key -> [Modifier] -> IO Bool
+editKeyEvent this k _mods = do
   case k of
     KLeft -> moveCursorLeft this >> return True
     KRight -> moveCursorRight this >> return True

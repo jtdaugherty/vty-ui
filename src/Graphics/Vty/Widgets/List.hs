@@ -48,6 +48,7 @@ import Graphics.Vty
     , DisplayRegion
     , Image
     , Key(..)
+    , Modifier
     , vert_cat
     )
 import Graphics.Vty.Widgets.Rendering
@@ -127,12 +128,12 @@ listWidget list = do
         -- widgets in list
         }
 
-listKeyEvent :: Widget (List a b) -> Key -> IO Bool
-listKeyEvent w KUp = scrollUp w >> return True
-listKeyEvent w KDown = scrollDown w >> return True
-listKeyEvent w KPageUp = pageUp w >> return True
-listKeyEvent w KPageDown = pageDown w >> return True
-listKeyEvent _ _ = return False
+listKeyEvent :: Widget (List a b) -> Key -> [Modifier] -> IO Bool
+listKeyEvent w KUp _ = scrollUp w >> return True
+listKeyEvent w KDown _ = scrollDown w >> return True
+listKeyEvent w KPageUp _ = pageUp w >> return True
+listKeyEvent w KPageDown _ = pageDown w >> return True
+listKeyEvent _ _ _ = return False
 
 renderListWidget :: List a b -> DisplayRegion -> Maybe Attr -> IO Image
 renderListWidget list s mAttr = do
