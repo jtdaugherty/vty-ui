@@ -12,9 +12,7 @@ import Graphics.Vty.Widgets.Core
     ( Widget
     , renderAndPosition
     , handleKeyEvent
-    )
-import Graphics.Vty.Widgets.Focus
-    ( FocusGroup
+    , FocusGroup
     , getCursorPosition
     )
 

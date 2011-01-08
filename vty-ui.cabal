@@ -42,7 +42,6 @@ Library
           Graphics.Vty.Widgets.Collections
           Graphics.Vty.Widgets.EventLoop
           Graphics.Vty.Widgets.Edit
-          Graphics.Vty.Widgets.Focus
           Graphics.Vty.Widgets.Util
   Other-Modules:
           Text.Trans.Tokenize
