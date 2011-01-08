@@ -122,7 +122,7 @@ main = do
 
   focusableList `onKeyPressed` universalKeys
 
-  ui1 `onKeyPressed` \_ k -> do
+  (theList st) `onKeyPressed` \_ k -> do
          case k of
            KEnter -> setCurrent (uis st) 1 >> return True
            _ -> return False
