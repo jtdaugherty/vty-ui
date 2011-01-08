@@ -121,8 +121,8 @@ main = do
   ui1 <- buildUi1 st
   ui2 <- buildUi2 st
 
-  addToCollection (uis st) ui1
-  addToCollection (uis st) ui2
+  showMainUI <- addToCollection (uis st) ui1
+  showMessageUI <- addToCollection (uis st) ui2
 
   (fg1, listCtx1) <- newFocusGroup (theList st)
   addToFocusGroup_ fg1 (theEdit st)
@@ -149,12 +149,12 @@ main = do
                      r <- getSelected (theList st)
                      case r of
                        Nothing -> return True
-                       Just _ -> setCurrent (uis st) 1 >> return True
+                       Just _ -> showMessageUI >> return True
               _ -> return False
 
   listCtx2 `onKeyPressed` \_ k _ -> do
          case k of
-           KASCII 'c' -> setCurrent (uis st) 0 >> return True
+           KASCII 'c' -> showMainUI >> return True
            KASCII '+' -> do
                   addToVLimit (theListLimit st) 1
                   return True

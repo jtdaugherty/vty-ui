@@ -22,6 +22,7 @@ import Graphics.Vty.Widgets.Core
     , WidgetImpl(..)
     , FocusGroup
     , (<~)
+    , (<~~)
     , getFocusGroup
     , updateWidgetState_
     , setPhysicalPosition
@@ -105,14 +106,16 @@ newCollection = do
                   positionEntry e pos
         }
 
-addToCollection :: (MonadIO m) => Widget Collection -> Widget a -> m ()
-addToCollection cRef wRef =
-    updateWidgetState_ cRef $ \st ->
-        st { entries = (entries st) ++ [Entry wRef]
-           , currentEntryNum = if currentEntryNum st == -1
-                               then 0
-                               else currentEntryNum st
-           }
+addToCollection :: (MonadIO m) => Widget Collection -> Widget a -> m (m ())
+addToCollection cRef wRef = do
+  i <- (length . entries) <~~ cRef
+  updateWidgetState_ cRef $ \st ->
+      st { entries = (entries st) ++ [Entry wRef]
+         , currentEntryNum = if currentEntryNum st == -1
+                             then 0
+                             else currentEntryNum st
+         }
+  return $ setCurrent cRef i
 
 setCurrent :: (MonadIO m) => Widget Collection -> Int -> m ()
 setCurrent cRef i = do
