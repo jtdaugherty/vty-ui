@@ -68,7 +68,7 @@ mkAppState = do
   b <- textWidget wrap $ prepareText bodyAttr ""
   f1 <- simpleText titleAttr ""
   f2 <- simpleText titleAttr "[]"
-  e <- editWidget editAttr editFocusAttr "foobar"
+  e <- editWidget editAttr editFocusAttr
   ll <- vLimit 5 lw
 
   c <- newCollection
@@ -154,10 +154,11 @@ main = do
   setFocusGroup ui1 fg1
   setFocusGroup ui2 fg2
 
+  setEditText (theEdit st) "edit me"
+
   -- Initial UI updates from state
   updateBody st (theList st)
   updateFooterNums st (theList st)
-  updateFooterText st (theEdit st)
 
   -- Enter the event loop.
   runUi vty (uis st)

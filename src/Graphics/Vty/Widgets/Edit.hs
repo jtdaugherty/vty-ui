@@ -2,6 +2,7 @@ module Graphics.Vty.Widgets.Edit
     ( Edit
     , editWidget
     , getEditText
+    , setEditText
     , onActivate
     , onChange
     )
@@ -45,12 +46,12 @@ data Edit = Edit { currentText :: String
                  , changeHandler :: Widget Edit -> IO ()
                  }
 
-editWidget :: (MonadIO m) => Attr -> Attr -> String -> m (Widget Edit)
-editWidget normAtt focAtt str = do
+editWidget :: (MonadIO m) => Attr -> Attr -> m (Widget Edit)
+editWidget normAtt focAtt = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Edit { currentText = str
-                       , cursorPosition = length str
+      w { state = Edit { currentText = ""
+                       , cursorPosition = 0
                        , normalAttr = normAtt
                        , focusAttr = focAtt
                        , displayStart = 0
@@ -112,6 +113,12 @@ onChange wRef handler = do
 
 getEditText :: Widget Edit -> IO String
 getEditText = (currentText <~~)
+
+setEditText :: Widget Edit -> String -> IO ()
+setEditText wRef str = do
+  updateWidgetState_ wRef $ \s -> s { currentText = str }
+  gotoBeginning wRef
+  notifyChangeHandler wRef
 
 setDisplayWidth :: Widget Edit -> Int -> IO ()
 setDisplayWidth this width =
