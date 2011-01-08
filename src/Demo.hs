@@ -142,12 +142,10 @@ main = do
          case k of
            KEsc -> setCurrent (uis st) 0 >> return True
            KASCII '+' -> do
-                  lim <- getVLimit (theListLimit st)
-                  setVLimit (theListLimit st) (lim + 1)
+                  addToVLimit (theListLimit st) 1
                   return True
            KASCII '-' -> do
-                  lim <- getVLimit (theListLimit st)
-                  setVLimit (theListLimit st) (lim - 1)
+                  addToVLimit (theListLimit st) (-1)
                   return True
            _ -> return False
 

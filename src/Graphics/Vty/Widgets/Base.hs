@@ -20,6 +20,8 @@ module Graphics.Vty.Widgets.Base
 
     , setVLimit
     , setHLimit
+    , addToVLimit
+    , addToHLimit
 
     , getVLimit
     , getHLimit
@@ -307,6 +309,16 @@ setHLimit :: (MonadIO m) => Widget (HLimit a) -> Int -> m ()
 setHLimit wRef lim =
     when (lim >= 1) $
          updateWidgetState_ wRef $ \(HLimit _  ch) -> HLimit lim ch
+
+addToVLimit :: (MonadIO m) => Widget (VLimit a) -> Int -> m ()
+addToVLimit wRef delta = do
+  lim <- getVLimit wRef
+  setVLimit wRef $ lim + delta
+
+addToHLimit :: (MonadIO m) => Widget (HLimit a) -> Int -> m ()
+addToHLimit wRef delta = do
+  lim <- getHLimit wRef
+  setHLimit wRef $ lim + delta
 
 getVLimit :: (MonadIO m) => Widget (VLimit a) -> m Int
 getVLimit wRef = do
