@@ -159,7 +159,7 @@ removeFromList list pos = do
 
   -- Notify the selection handler.
   when (pos /= selectedIndex st) $
-       notifySelectionHanlder list
+       notifySelectionHandler list
 
   -- Return the removed item.
   return (label, w)
@@ -194,7 +194,7 @@ addToList list key = do
   notifyItemAddHandler list (numItems + 1) key w
 
   when (numItems == 0) $
-       notifySelectionHanlder list
+       notifySelectionHandler list
 
 onSelectionChange :: (MonadIO m) => Widget (List a b) -> (Widget (List a b) -> IO ()) -> m ()
 onSelectionChange wRef handler = do
@@ -389,8 +389,8 @@ scrollBy' amount list =
      else list { scrollTopIndex = adjustedTop
                , selectedIndex = newSelected }
 
-notifySelectionHanlder :: (MonadIO m) => Widget (List a b) -> m ()
-notifySelectionHanlder wRef = do
+notifySelectionHandler :: (MonadIO m) => Widget (List a b) -> m ()
+notifySelectionHandler wRef = do
   h <- selectionChangeHandler <~~ wRef
   liftIO $ h wRef
 
@@ -406,25 +406,25 @@ notifyItemAddHandler wRef pos k w = do
 
 -- |Scroll a list down by one position.
 scrollDown :: (MonadIO m) => Widget (List a b) -> m ()
-scrollDown wRef = scrollBy 1 wRef >> notifySelectionHanlder wRef
+scrollDown wRef = scrollBy 1 wRef >> notifySelectionHandler wRef
 
 -- |Scroll a list up by one position.
 scrollUp :: (MonadIO m) => Widget (List a b) -> m ()
-scrollUp wRef = scrollBy (-1) wRef >> notifySelectionHanlder wRef
+scrollUp wRef = scrollBy (-1) wRef >> notifySelectionHandler wRef
 
 -- |Scroll a list down by one page from the current cursor position.
 pageDown :: (MonadIO m) => Widget (List a b) -> m ()
 pageDown wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy amt wRef
-  notifySelectionHanlder wRef
+  notifySelectionHandler wRef
 
 -- |Scroll a list up by one page from the current cursor position.
 pageUp :: (MonadIO m) => Widget (List a b) -> m ()
 pageUp wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy (-1 * amt) wRef
-  notifySelectionHanlder wRef
+  notifySelectionHandler wRef
 
 -- |Given a 'List', return the items that are currently visible
 -- according to the state of the list.  Returns the visible items and
