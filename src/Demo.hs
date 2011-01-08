@@ -89,7 +89,7 @@ mkAppState = do
   let labels = map fst messages
 
   lw <- listWidget =<< mkSimpleList bodyAttr selAttr 5 labels
-  b <- simpleText bodyAttr ""
+  b <- textWidget wrap $ prepareText bodyAttr ""
   f <- simpleText titleAttr ""
 
   c <- newCollection
