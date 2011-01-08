@@ -13,7 +13,7 @@ import Control.Monad.Trans
 import Graphics.Vty
     ( Attr
     , Key(..)
-    , Modifier
+    , Modifier(..)
     , (<|>)
     , region_width
     , string
@@ -92,21 +92,38 @@ setDisplayWidth this width =
              }
 
 editKeyEvent :: Widget Edit -> Key -> [Modifier] -> IO Bool
-editKeyEvent this k _mods = do
-  case k of
-    KLeft -> moveCursorLeft this >> return True
-    KRight -> moveCursorRight this >> return True
-    KBS -> do
+editKeyEvent this k mods = do
+  case (k, mods) of
+    (KASCII 'a', [MCtrl]) -> gotoBeginning this >> return True
+    (KASCII 'e', [MCtrl]) -> gotoEnd this >> return True
+    (KLeft, []) -> moveCursorLeft this >> return True
+    (KRight, []) -> moveCursorRight this >> return True
+    (KBS, []) -> do
            pos <- cursorPosition <~~ this
            when (pos /= 0) $ do
                         moveCursorLeft this
                         delCurrentChar this
            return True
-    KDel -> delCurrentChar this >> return True
-    (KASCII ch) -> insertChar this ch >> moveCursorRight this >> return True
-    KHome -> cursorHome this >> return True
-    KEnd -> cursorEnd this >> return True
+    (KDel, []) -> delCurrentChar this >> return True
+    (KASCII ch, []) -> insertChar this ch >> moveCursorRight this >> return True
+    (KHome, []) -> cursorHome this >> return True
+    (KEnd, []) -> cursorEnd this >> return True
     _ -> return False
+
+gotoBeginning :: Widget Edit -> IO ()
+gotoBeginning wRef = do
+  updateWidgetState_ wRef $ \s -> s { displayStart = 0
+                                    , cursorPosition = 0
+                                    }
+
+gotoEnd :: Widget Edit -> IO ()
+gotoEnd wRef = do
+  updateWidgetState_ wRef $ \s ->
+      s { displayStart = if (length $ currentText s) > displayWidth s
+                         then (length $ currentText s) - displayWidth s
+                         else 0
+        , cursorPosition = length $ currentText s
+        }
 
 moveCursorLeft :: Widget Edit -> IO ()
 moveCursorLeft wRef = do
