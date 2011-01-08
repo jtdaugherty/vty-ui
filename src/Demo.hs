@@ -154,7 +154,7 @@ main = do
 
   listCtx2 `onKeyPressed` \_ k _ -> do
          case k of
-           KEsc -> setCurrent (uis st) 0 >> return True
+           KASCII 'c' -> setCurrent (uis st) 0 >> return True
            KASCII '+' -> do
                   addToVLimit (theListLimit st) 1
                   return True
