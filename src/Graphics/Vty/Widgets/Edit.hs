@@ -3,6 +3,7 @@ module Graphics.Vty.Widgets.Edit
     , editWidget
     , getEditText
     , setEditText
+    , setEditPosition
     , onActivate
     , onChange
     )
@@ -120,6 +121,14 @@ setEditText wRef str = do
   gotoBeginning wRef
   notifyChangeHandler wRef
 
+setEditPosition :: Widget Edit -> Int -> IO ()
+setEditPosition wRef pos = do
+  updateWidgetState_ wRef $ \s ->
+      s { cursorPosition = if pos > (length $ currentText s)
+                           then length $ currentText s
+                           else pos
+        }
+
 setDisplayWidth :: Widget Edit -> Int -> IO ()
 setDisplayWidth this width =
     updateWidgetState_ this $ \s ->
@@ -134,6 +143,20 @@ editKeyEvent :: Widget Edit -> Key -> [Modifier] -> IO Bool
 editKeyEvent this k mods = do
   case (k, mods) of
     (KASCII 'a', [MCtrl]) -> gotoBeginning this >> return True
+    (KASCII 'k', [MCtrl]) ->
+        do
+          -- Preserve some state since setEditText changes it.
+          pos <- cursorPosition <~~ this
+          st <- displayStart <~~ this
+          str <- getEditText this
+
+          setEditText this $ take pos str
+          updateWidgetState_ this $ \s ->
+              s { displayStart = st
+                , cursorPosition = pos
+                }
+          return True
+
     (KASCII 'e', [MCtrl]) -> gotoEnd this >> return True
     (KLeft, []) -> moveCursorLeft this >> return True
     (KRight, []) -> moveCursorRight this >> return True
