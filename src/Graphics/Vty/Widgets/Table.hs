@@ -56,7 +56,8 @@ import Graphics.Vty.Widgets.Core
     , getPhysicalSize
     )
 import Graphics.Vty.Widgets.Text
-    ( simpleText
+    ( FormattedText
+    , simpleText
     )
 
 data TableCell = forall a. TableCell (Widget a)
@@ -228,10 +229,11 @@ autoWidth t sz = do
 
   return $ region_width sz - toEnum totalFixed - edgeWidth - colWidth
 
-addHeadingRow :: (MonadIO m) => Widget Table -> Attr -> [String] -> m ()
+addHeadingRow :: (MonadIO m) => Widget Table -> Attr -> [String] -> m [Widget FormattedText]
 addHeadingRow tbl attr labels = do
   ws <- mapM (simpleText attr) labels
   addRow tbl $ map mkCell ws
+  return ws
 
 addRow :: (MonadIO m) => Widget Table -> [TableCell] -> m ()
 addRow t cells = do
