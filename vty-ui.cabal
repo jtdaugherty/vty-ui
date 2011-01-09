@@ -78,4 +78,5 @@ Executable vty-ui-demo2
   GHC-Options:     -Wall
   Main-is:         Demo2.hs
   Build-Depends:
-    mtl >= 2.0 && < 2.1
+    mtl >= 2.0 && < 2.1,
+    bytestring >= 0.9 && < 1.0

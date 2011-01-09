@@ -2,8 +2,10 @@
 module Main where
 
 import System.Exit ( exitSuccess )
+import Text.Regex.PCRE.Light
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
+import qualified Data.ByteString.Char8 as BS8
 
 -- Visual attributes.
 borderAttr = blue `on` black
@@ -19,15 +21,18 @@ exitApp vty = do
   shutdown vty
   exitSuccess
 
+color :: Formatter
+color = highlight (compile (BS8.pack "<.*>") []) (bright_green `on` black)
+
 main :: IO ()
 main = do
   vty <- mkVty
 
-  let msg = "Press <TAB> to switch edit fields, ordinary keystrokes to edit; press <ESC> to quit."
+  let msg = "<TAB> switches edit fields, ordinary \
+            \keystrokes edit, <ESC> quits."
 
   table <- newTable borderAttr [Fixed 15, Auto] BorderFull
-  mainBox <- (return table)
-          <--> (textWidget wrap $ prepareText msgAttr msg)
+  mainBox <- (return table) <--> (textWidget (wrap &.& color) $ prepareText msgAttr msg)
 
   setBoxSpacing mainBox 2
 
