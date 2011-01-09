@@ -43,6 +43,7 @@ Library
           Graphics.Vty.Widgets.EventLoop
           Graphics.Vty.Widgets.Edit
           Graphics.Vty.Widgets.Util
+          Graphics.Vty.Widgets.Table
   Other-Modules:
           Text.Trans.Tokenize
 

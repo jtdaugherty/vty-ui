@@ -15,6 +15,7 @@ data AppState =
              , theEdit :: Widget Edit
              , theListLimit :: Widget (VLimit (List String FormattedText))
              , uis :: Widget Collection
+             , theTable :: Widget Table
              }
 
 -- Visual attributes.
@@ -38,8 +39,8 @@ uiCore appst w help = do
             <++> simpleText titleAttr help)
 
 buildUi1 appst =
-    uiCore appst (return $ theList appst)
-               " Enter: view  q: quit "
+    -- uiCore appst (return $ theList appst)
+  uiCore appst (bottomPadded (theTable appst) bodyAttr) " Enter: view  q: quit "
 
 buildUi2 appst =
     uiCore appst ((return $ theListLimit appst)
@@ -56,6 +57,7 @@ mkAppState = do
   f2 <- simpleText titleAttr "[]"
   e <- editWidget editAttr editFocusAttr
   ll <- vLimit 5 lw
+  t <- newTable bodyAttr [Auto, Fixed 10, Fixed 15] BorderFull
 
   c <- newCollection
 
@@ -66,6 +68,7 @@ mkAppState = do
                     , theEdit = e
                     , theListLimit = ll
                     , uis = c
+                    , theTable = t
                     }
 
 exitApp :: Vty -> IO a
@@ -166,6 +169,26 @@ main = do
   setFocusGroup ui2 fg2
 
   setEditText (theEdit st) "edit me"
+
+  addHeadingRow (theTable st) (bright_yellow `on` black) ["Foo", "Bar", "Baz"]
+
+  w1 <- textWidget wrap $ prepareText bodyAttr "FOO BAR BAZ FOO BAR BAZ FOO BAR BAZ FOO BAR BAZ FOO BAR BAZ"
+  w2 <- simpleText bodyAttr "BAR"
+  w3 <- hFill bodyAttr ',' 1
+
+  addRow (theTable st) [ mkCell w1
+                       , mkCell w2
+                       , mkCell w3
+                       ]
+
+  w4 <- simpleText bodyAttr "BAZ"
+  w5 <- simpleText bodyAttr "BLARX"
+  w6 <- hFill bodyAttr '|' 1
+
+  addRow (theTable st) [ mkCell w4
+                       , mkCell w5
+                       , mkCell w6
+                       ]
 
   -- We need to call these handlers manually because while they will
   -- be called automatically as items are added to the list in the
