@@ -145,36 +145,39 @@ editKeyEvent :: Widget Edit -> Key -> [Modifier] -> IO Bool
 editKeyEvent this k mods = do
   case (k, mods) of
     (KASCII 'a', [MCtrl]) -> gotoBeginning this >> return True
-    (KASCII 'k', [MCtrl]) ->
-        do
-          -- Preserve some state since setEditText changes it.
-          pos <- cursorPosition <~~ this
-          st <- displayStart <~~ this
-          str <- getEditText this
-
-          setEditText this $ take pos str
-          updateWidgetState_ this $ \s ->
-              s { displayStart = st
-                , cursorPosition = pos
-                }
-          return True
-
+    (KASCII 'k', [MCtrl]) -> killToEOL this >> return True
     (KASCII 'e', [MCtrl]) -> gotoEnd this >> return True
     (KLeft, []) -> moveCursorLeft this >> return True
     (KRight, []) -> moveCursorRight this >> return True
-    (KBS, []) -> do
-           pos <- cursorPosition <~~ this
-           when (pos /= 0) $ do
-                        moveCursorLeft this
-                        delCurrentChar this
-                        notifyChangeHandler this
-           return True
-    (KDel, []) -> delCurrentChar this >> notifyChangeHandler this >> return True
-    (KASCII ch, []) -> insertChar this ch >> moveCursorRight this >> notifyChangeHandler this >> return True
+    (KBS, []) -> deletePreviousChar this >> return True
+    (KDel, []) -> delCurrentChar this >> return True
+    (KASCII ch, []) -> insertChar this ch >> return True
     (KHome, []) -> cursorHome this >> return True
     (KEnd, []) -> cursorEnd this >> return True
     (KEnter, []) -> notifyActivateHandler this >> return True
     _ -> return False
+
+killToEOL :: Widget Edit -> IO ()
+killToEOL this = do
+  -- Preserve some state since setEditText changes it.
+  pos <- cursorPosition <~~ this
+  st <- displayStart <~~ this
+  str <- getEditText this
+
+  setEditText this $ take pos str
+  updateWidgetState_ this $ \s ->
+      s { displayStart = st
+        , cursorPosition = pos
+        }
+
+  notifyChangeHandler this
+
+deletePreviousChar :: Widget Edit -> IO ()
+deletePreviousChar this = do
+  pos <- cursorPosition <~~ this
+  when (pos /= 0) $ do
+    moveCursorLeft this
+    delCurrentChar this
 
 notifyChangeHandler :: Widget Edit -> IO ()
 notifyChangeHandler wRef = do
@@ -248,6 +251,8 @@ insertChar wRef ch = do
       in st { currentText = newContent
             , displayStart = newViewStart
             }
+  moveCursorRight wRef
+  notifyChangeHandler wRef
 
 delCurrentChar :: Widget Edit -> IO ()
 delCurrentChar wRef = do
@@ -256,6 +261,7 @@ delCurrentChar wRef = do
        do
          let newContent = remove (cursorPosition st) (currentText st)
          updateWidgetState_ wRef $ \s -> s { currentText = newContent }
+         notifyChangeHandler wRef
 
 remove :: Int -> [a] -> [a]
 remove pos as = (take pos as) ++ (drop (pos + 1) as)
