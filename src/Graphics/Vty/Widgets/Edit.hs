@@ -147,6 +147,7 @@ editKeyEvent this k mods = do
     (KASCII 'a', [MCtrl]) -> gotoBeginning this >> return True
     (KASCII 'k', [MCtrl]) -> killToEOL this >> return True
     (KASCII 'e', [MCtrl]) -> gotoEnd this >> return True
+    (KASCII 'd', [MCtrl]) -> delCurrentChar this >> return True
     (KLeft, []) -> moveCursorLeft this >> return True
     (KRight, []) -> moveCursorRight this >> return True
     (KBS, []) -> deletePreviousChar this >> return True
