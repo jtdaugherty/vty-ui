@@ -28,6 +28,11 @@ module Graphics.Vty.Widgets.Base
 
     , HCentered
     , hCentered
+
+    , VCentered
+    , vCentered
+
+    , centered
     )
 where
 
@@ -93,7 +98,7 @@ hCentered ch = do
 
                    -- XXX def_attr can be wrong
                    let attr' = maybe def_attr id mAttr
-                       (half, half') = centered_halves s (image_width img)
+                       (half, half') = hCentered_halves s (image_width img)
 
                    return $ if half > 0
                             then horiz_cat [ char_fill attr' ' ' half (image_height img)
@@ -107,13 +112,63 @@ hCentered ch = do
               HCentered child <- getState this
               s <- getPhysicalSize this
               chSz <- getPhysicalSize child
-              let (half, _) = centered_halves s (region_width chSz)
+              let (half, _) = hCentered_halves s (region_width chSz)
                   chPos = pos `withWidth` (region_width pos + half)
               setPhysicalPosition child chPos
         }
 
-centered_halves :: DisplayRegion -> Word -> (Word, Word)
-centered_halves s obj_width =
+data VCentered a = VCentered (Widget a)
+
+vCentered :: (MonadIO m) => Widget a -> m (Widget (VCentered a))
+vCentered ch = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = VCentered ch
+        , getGrowVertical = return True
+
+        , getGrowHorizontal = do
+            VCentered child <- ask
+            growHorizontal child
+
+        , draw = \this s mAttr -> do
+                   VCentered child <- getState this
+                   img <- render child s mAttr
+
+                   -- XXX def_attr can be wrong
+                   let attr' = maybe def_attr id mAttr
+                       (half, half') = vCentered_halves s (image_height img)
+
+                   return $ if half > 0
+                            then vert_cat [ char_fill attr' ' ' (image_width img) half
+                                          , img
+                                          , char_fill attr' ' ' (image_width img) half'
+                                          ]
+                            else img
+
+        , setPosition =
+            \this pos -> do
+              VCentered child <- getState this
+              s <- getPhysicalSize this
+              chSz <- getPhysicalSize child
+              let (half, _) = vCentered_halves s (region_height chSz)
+                  chPos = pos `withHeight` (region_height pos + half)
+              setPhysicalPosition child chPos
+        }
+
+centered :: (MonadIO m) => Widget a -> m (Widget (VCentered (HCentered a)))
+centered wRef = vCentered =<< hCentered wRef
+
+vCentered_halves :: DisplayRegion -> Word -> (Word, Word)
+vCentered_halves s obj_height =
+    let remaining = region_height s - obj_height
+        half = remaining `div` 2
+        half' = if remaining `mod` 2 == 0
+                then half
+                else half + 1
+    in (half, half')
+
+hCentered_halves :: DisplayRegion -> Word -> (Word, Word)
+hCentered_halves s obj_width =
     let remaining = region_width s - obj_width
         half = remaining `div` 2
         half' = if remaining `mod` 2 == 0
