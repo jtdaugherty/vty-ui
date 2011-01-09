@@ -8,6 +8,7 @@ module Graphics.Vty.Widgets.Table
     , newTable
     , addRow
     , addHeadingRow
+    , addHeadingRow_
     )
 where
 
@@ -234,6 +235,9 @@ addHeadingRow tbl attr labels = do
   ws <- mapM (simpleText attr) labels
   addRow tbl $ map mkCell ws
   return ws
+
+addHeadingRow_ :: (MonadIO m) => Widget Table -> Attr -> [String] -> m ()
+addHeadingRow_ tbl attr labels = addHeadingRow_ tbl attr labels >> return ()
 
 addRow :: (MonadIO m) => Widget Table -> [TableCell] -> m ()
 addRow t cells = do
