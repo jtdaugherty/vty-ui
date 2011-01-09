@@ -33,6 +33,19 @@
 
   - support for right-aligning text (just left-padding?)
 
+  - Table cell properties (maybe fold this into the Cell size spec
+    type?):
+
+    - padding
+    - alignment
+
+  - Center alignment widget (just render, divide remaining space by
+    two, and pad accordingly)
+
+  - When a table has N columns with an edit widget in the Nth column
+    and no edge border, the underline attribute goes to the right side
+    of the terminal. :(  Perhaps enclose the edit area in [...]?
+
   - Radio button widgets
 
     newRadio :: (MonadIO m) => String -> Char -> m (Widget Radio)
