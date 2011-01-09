@@ -39,9 +39,6 @@
     - padding
     - alignment
 
-  - Center alignment widget (just render, divide remaining space by
-    two, and pad accordingly)
-
   - When a table has N columns with an edit widget in the Nth column
     and no edge border, the underline attribute goes to the right side
     of the terminal. :(  Perhaps enclose the edit area in [...]?

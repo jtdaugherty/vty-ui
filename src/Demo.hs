@@ -35,8 +35,9 @@ uiCore appst w = do
             <++> (return $ theFooter2 appst)
             <++> hBorder titleAttr)
 
-buildUi1 appst =
-    uiCore appst (bottomPadded (theTable appst) bodyAttr)
+buildUi1 appst = do
+  c <- centered $ theTable appst
+  uiCore appst (bottomPadded c bodyAttr)
 
 buildUi2 appst =
     uiCore appst ((return $ theListLimit appst)

@@ -25,6 +25,9 @@ module Graphics.Vty.Widgets.Base
 
     , getVLimit
     , getHLimit
+
+    , Centered
+    , centered
     )
 where
 
@@ -68,7 +71,59 @@ import Graphics.Vty
     , image_height
     , vert_cat
     , horiz_cat
+    , def_attr
     )
+
+data Centered a = Centered (Widget a)
+
+-- |A vertical fill widget.  Fills all available space with the
+-- specified character and attribute.
+centered :: (MonadIO m) => Widget a -> m (Widget (Centered a))
+centered ch = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+      w { state = Centered ch
+        , getGrowHorizontal = do
+            Centered child <- ask
+            growHorizontal child
+
+        , getGrowVertical = do
+            Centered child <- ask
+            growVertical child
+
+        , draw = \this s mAttr -> do
+                   Centered child <- getState this
+                   img <- render child s mAttr
+
+                   -- XXX def_attr can be wrong
+                   let attr' = maybe def_attr id mAttr
+                       (half, half') = centered_halves s (image_width img)
+
+                   return $ if half > 0
+                            then horiz_cat [ char_fill attr' ' ' half (region_height s)
+                                           , img
+                                           , char_fill attr' ' ' half' (region_height s)
+                                           ]
+                            else img
+
+        , setPosition =
+            \this pos -> do
+              Centered child <- getState this
+              s <- getPhysicalSize this
+              chSz <- getPhysicalSize child
+              let (half, _) = centered_halves s (region_width chSz)
+                  chPos = pos `withWidth` (region_width pos + half)
+              setPhysicalPosition child chPos
+        }
+
+centered_halves :: DisplayRegion -> Word -> (Word, Word)
+centered_halves s obj_width =
+    let remaining = region_width s - obj_width
+        half = remaining `div` 2
+        half' = if remaining `mod` 2 == 0
+                then half
+                else half + 1
+    in (half, half')
 
 data VFill = VFill Attr Char
 
