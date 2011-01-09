@@ -145,11 +145,19 @@ removeFromList list pos = do
       sel = selectedIndex st
 
   -- If that item is currently selected, select a different item.
-      newSelectedIndex = if pos == sel && pos == numItems - 1
-                         then if pos == 0
-                              then -1
-                              else pos - 1
-                         else pos
+      newSelectedIndex = if pos > sel
+                         then pos
+                         else if pos < sel
+                              then if sel == 0
+                                   then 0
+                                   else sel - 1
+                              else if sel == 0
+                                   then if numItems == 1
+                                        then (-1)
+                                        else 0
+                                   else if sel == numItems - 1
+                                        then sel - 1
+                                        else sel
 
   updateWidgetState_ list $ \s -> s { selectedIndex = newSelectedIndex
                                     , listItems = take pos (listItems st) ++
@@ -159,8 +167,9 @@ removeFromList list pos = do
   -- Notify the removal handler.
   notifyItemRemoveHandler list pos label w
 
-  -- Notify the selection handler.
-  when (pos /= selectedIndex st) $
+  -- Notify the selection handler, but only if the position we deleted
+  -- from is the selected position; that means the selection changed.
+  when (pos <= selectedIndex st) $
        notifySelectionHandler list
 
   -- Return the removed item.
