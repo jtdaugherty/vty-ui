@@ -28,25 +28,20 @@ selAttr = black `on` yellow
 hlAttr1 = red `on` black
 hlAttr2 = yellow `on` black
 
-uiCore appst w help = do
+uiCore appst w = do
   (hBorder titleAttr)
       <--> w
-      <--> hBorder titleAttr
-      <--> (return $ theEdit appst)
       <--> ((return $ theFooter1 appst)
             <++> (return $ theFooter2 appst)
-            <++> hBorder titleAttr
-            <++> simpleText titleAttr help)
+            <++> hBorder titleAttr)
 
 buildUi1 appst =
-    -- uiCore appst (return $ theList appst)
-  uiCore appst (bottomPadded (theTable appst) bodyAttr) " Enter: view  q: quit "
+    uiCore appst (bottomPadded (theTable appst) bodyAttr)
 
 buildUi2 appst =
     uiCore appst ((return $ theListLimit appst)
                   <--> (hBorder titleAttr)
                   <--> (bottomPadded (theBody appst) bodyAttr))
-                 " Esc: close "
 
 -- Construct the application state using the message map.
 mkAppState :: IO AppState
@@ -57,7 +52,7 @@ mkAppState = do
   f2 <- simpleText titleAttr "[]"
   e <- editWidget editAttr editFocusAttr
   ll <- vLimit 5 lw
-  t <- newTable bodyAttr [Auto, Fixed 10, Fixed 15] BorderFull
+  t <- newTable bodyAttr [Fixed 10, Fixed 20] (BorderPartial [Rows, Columns, Edges])
 
   c <- newCollection
 
@@ -172,24 +167,11 @@ main = do
 
   setEditText (theEdit st) "edit me"
 
-  addHeadingRow (theTable st) (bright_yellow `on` black) ["Foo", "Bar", "Baz"]
+  addHeadingRow (theTable st) (bright_yellow `on` black) ["Static", "Editable"]
 
-  w1 <- textWidget wrap $ prepareText bodyAttr "FOO BAR BAZ FOO BAR BAZ FOO BAR BAZ FOO BAR BAZ FOO BAR BAZ"
-  w2 <- simpleText bodyAttr "BAR"
-  w3 <- hFill bodyAttr ',' 1
-
+  w1 <- simpleText bodyAttr "Foobar"
   addRow (theTable st) [ mkCell w1
-                       , mkCell w2
-                       , mkCell w3
-                       ]
-
-  w4 <- simpleText bodyAttr "BAZ"
-  w5 <- simpleText bodyAttr "BLARX"
-  w6 <- hFill bodyAttr '|' 1
-
-  addRow (theTable st) [ mkCell w4
-                       , mkCell w5
-                       , mkCell w6
+                       , mkCell $ theEdit st
                        ]
 
   -- We need to call these handlers manually because while they will

@@ -51,6 +51,9 @@ import Graphics.Vty.Widgets.Core
     , newWidget
     , updateWidget
     , updateWidgetState_
+    , withWidth
+    , setPhysicalPosition
+    , getPhysicalSize
     )
 import Graphics.Vty.Widgets.Text
     ( simpleText
@@ -156,13 +159,60 @@ newTable attr sizes borderSty = do
               return $ vert_cat withBorders'
 
         , setPosition =
-            \_this _pos -> do
-              -- XXX set position of all cell contents based on border
-              -- settings; write row-positioning function that takes
-              -- care of this and just map it over the rows (possibly
-              -- accounting for rows that didn't get rendered?)
+            \this pos -> do
+              bs <- borderStyle <~~ this
+              rs <- rows <~~ this
+
+              let edgeOffset = if edgeBorders bs
+                               then 1 else 0
+
+                  positionRows _ [] = return ()
+                  positionRows height (row:rest) =
+                    do
+                      -- Compute the position for this row based on
+                      -- border settings
+                      let rowPos = DisplayRegion (region_width pos + edgeOffset)
+                                   height
+
+                      -- Get the maximum cell height
+                      cellPhysSizes <- forM row $ \(TableCell cw) -> getPhysicalSize cw
+                      let maxSize = maximum $ map region_height cellPhysSizes
+                          borderOffset = if rowBorders bs
+                                         then 1 else 0
+
+                      -- Position the individual row widgets (again,
+                      -- based on border settings)
+                      positionRow this bs rowPos row
+                      positionRows (height + maxSize + borderOffset) rest
+
+              positionRows (region_height pos + edgeOffset) rs
+
               return ()
         }
+
+positionRow :: Widget Table -> BorderStyle -> DisplayRegion -> [TableCell] -> IO ()
+positionRow t bs pos cells = do
+  -- Position each cell widget based on the base position of the row
+  -- (which starts from the origin of the leftmost widget, NOT the
+  -- leftmost cell border)
+  oldSize <- getPhysicalSize t
+  aw <- autoWidth t oldSize
+  szs <- columnSizes <~~ t
+
+  let offset = if colBorders bs
+               then 1
+               else 0
+
+      cellWidth Auto = aw
+      cellWidth (Fixed n) = toEnum n
+
+      doPositioning _ [] = return ()
+      doPositioning width ((szPolicy, TableCell w):ws) =
+          do
+            setPhysicalPosition w $ pos `withWidth` (region_width pos + width)
+            doPositioning (width + cellWidth szPolicy + offset) ws
+
+  doPositioning 0 $ zip szs cells
 
 autoWidth :: (MonadIO m) => Widget Table -> DisplayRegion -> m Word
 autoWidth t sz = do
