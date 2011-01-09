@@ -335,15 +335,12 @@ newFocusEntry chRef = do
 
   return wRef
 
-newFocusGroup :: (MonadIO m) => Widget a -> m (Widget FocusGroup, Widget FocusEntry)
-newFocusGroup initialWidget = do
+newFocusGroup :: (MonadIO m) => m (Widget FocusGroup)
+newFocusGroup = do
   wRef <- newWidget
-  eRef <- newFocusEntry initialWidget
-  focus eRef
-
-  updateWidget_ wRef $ \w ->
-      w { state = FocusGroup { entries = [eRef]
-                             , currentEntryNum = 0
+  updateWidget wRef $ \w ->
+      w { state = FocusGroup { entries = []
+                             , currentEntryNum = -1
                              }
         , getGrowHorizontal = return False
         , getGrowVertical = return False
@@ -368,8 +365,6 @@ newFocusGroup initialWidget = do
         , draw = \_ _ _ -> return empty_image
         }
 
-  return (wRef, eRef)
-
 getCursorPosition :: (MonadIO m) => Widget FocusGroup -> m (Maybe DisplayRegion)
 getCursorPosition wRef = do
   eRef <- currentEntry wRef
@@ -381,12 +376,21 @@ currentEntry :: (MonadIO m) => Widget FocusGroup -> m (Widget FocusEntry)
 currentEntry wRef = do
   es <- entries <~~ wRef
   i <- currentEntryNum <~~ wRef
+  when (i == -1) $ error "Focus group empty"
   return (es !! i)
 
 addToFocusGroup :: (MonadIO m) => Widget FocusGroup -> Widget a -> m (Widget FocusEntry)
 addToFocusGroup cRef wRef = do
   eRef <- newFocusEntry wRef
   updateWidgetState_ cRef $ \s -> s { entries = (entries s) ++ [eRef] }
+
+  -- If we just added the first widget to the group, focus it so
+  -- something has focus.
+  numEntries <- (length . entries) <~~ cRef
+  when (numEntries == 1) $ do
+    updateWidgetState_ cRef $ \s -> s { currentEntryNum = 0 }
+    focus eRef
+
   return eRef
 
 addToFocusGroup_ :: (MonadIO m) => Widget FocusGroup -> Widget a -> m ()
@@ -396,6 +400,7 @@ focusNext :: (MonadIO m) => Widget FocusGroup -> m ()
 focusNext wRef = do
   st <- getState wRef
   let cur = currentEntryNum st
+  when (cur == -1) $ error "Focus group empty"
   if cur < length (entries st) - 1 then
       setCurrentFocus wRef (cur + 1) else
       setCurrentFocus wRef 0
@@ -404,6 +409,7 @@ focusPrevious :: (MonadIO m) => Widget FocusGroup -> m ()
 focusPrevious wRef = do
   st <- getState wRef
   let cur = currentEntryNum st
+  when (cur == -1) $ error "Focus group empty"
   if cur > 0 then
       setCurrentFocus wRef (cur - 1) else
       setCurrentFocus wRef (length (entries st) - 1)
@@ -420,7 +426,8 @@ setCurrentFocus cRef i = do
   -- handlers.
   when (currentEntryNum st /= i) $
        do
-         unfocus ((entries st) !! (currentEntryNum st))
+         when (currentEntryNum st >= 0) $
+              unfocus ((entries st) !! (currentEntryNum st))
          focus ((entries st) !! i)
 
   updateWidgetState_ cRef $ \s -> s { currentEntryNum = i }

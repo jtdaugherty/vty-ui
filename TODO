@@ -22,9 +22,6 @@
     ', but it would also be nice to make these explicit and add a
     "bordered"-style box spacing wrapping widget type.
 
-  - Focus groups: rethink initialization interface (it's annoying that
-    it takes a required element, but it's safe).  The API is weird.
-
   - Use vty-ui exceptions to report errors instead of calling error
 
   - Scrollable area (a generalization of the List) which can wrap a

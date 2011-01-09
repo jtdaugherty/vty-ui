@@ -113,10 +113,12 @@ main = do
   showMainUI <- addToCollection (uis st) ui1
   showMessageUI <- addToCollection (uis st) ui2
 
-  (fg1, listCtx1) <- newFocusGroup (theList st)
+  fg1 <- newFocusGroup
+  listCtx1 <- addToFocusGroup fg1 (theList st)
   addToFocusGroup_ fg1 (theEdit st)
 
-  (fg2, listCtx2) <- newFocusGroup (theList st)
+  fg2 <- newFocusGroup
+  listCtx2 <- addToFocusGroup fg2 (theList st)
   addToFocusGroup_ fg2 (theEdit st)
 
   -- These event handlers will fire regardless of the input event
