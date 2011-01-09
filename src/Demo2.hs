@@ -23,15 +23,15 @@ main :: IO ()
 main = do
   vty <- mkVty
 
-  let msg = "Press <TAB> to switch edit fields; press <ESC> to quit."
+  let msg = "Press <TAB> to switch edit fields, ordinary keystrokes to edit; press <ESC> to quit."
 
-  table <- newTable borderAttr [Fixed 20, Fixed 20] BorderFull
+  table <- newTable borderAttr [Fixed 15, Auto] BorderFull
   mainBox <- (return table)
-          <--> (hLimit 43 =<< (textWidget wrap $ prepareText msgAttr msg))
+          <--> (textWidget wrap $ prepareText msgAttr msg)
 
   setBoxSpacing mainBox 2
 
-  ui <- centered mainBox
+  ui <- centered =<< hLimit 50 mainBox
 
   [col1Header, col2Header] <-
       addHeadingRow table headerAttr ["", ""]
