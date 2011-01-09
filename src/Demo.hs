@@ -9,7 +9,6 @@ import Graphics.Vty.Widgets.All
 -- need to be updated when events occur.
 data AppState =
     AppState { theList :: Widget (List String FormattedText)
-             , theMessages :: [(String, String)]
              , theBody :: Widget FormattedText
              , theFooter1 :: Widget FormattedText
              , theFooter2 :: Widget FormattedText
@@ -27,17 +26,6 @@ bodyAttr = bright_green `on` black
 selAttr = black `on` yellow
 hlAttr1 = red `on` black
 hlAttr2 = yellow `on` black
-
--- The data that we'll present in the interface.
-messages :: [(String, String)]
-messages = [ ("First", "the first message" )
-           , ("Second", "the second message")
-           , ("Third", "the third message")
-           , ("Fourth", "the fourth message")
-           , ("Fifth", "the fifth message")
-           , ("Sixth", "the sixth message")
-           , ("Seventh", "the seventh message")
-           ]
 
 uiCore appst w help = do
   (hBorder titleAttr)
@@ -62,9 +50,7 @@ buildUi2 appst =
 -- Construct the application state using the message map.
 mkAppState :: IO AppState
 mkAppState = do
-  let labels = map fst messages
-
-  lw <- mkSimpleList bodyAttr selAttr labels
+  lw <- mkSimpleList bodyAttr selAttr []
   b <- textWidget wrap $ prepareText bodyAttr ""
   f1 <- simpleText titleAttr ""
   f2 <- simpleText titleAttr "[]"
@@ -74,7 +60,6 @@ mkAppState = do
   c <- newCollection
 
   return $ AppState { theList = lw
-                    , theMessages = messages
                     , theBody = b
                     , theFooter1 = f1
                     , theFooter2 = f2
@@ -94,7 +79,7 @@ updateBody st w = do
   result <- getSelected w
   let msg = case result of
               Nothing -> ""
-              Just (i, _) -> snd $ theMessages st !! i
+              Just (i, _) -> "This is the text for list entry " ++ (show $ i + 1)
   setText (theBody st) msg bodyAttr
 
 updateFooterNums :: AppState -> Widget (List a b) -> IO ()
@@ -141,20 +126,25 @@ main = do
   (theList st) `onSelectionChange` (updateBody st)
   (theList st) `onSelectionChange` (updateFooterNums st)
   (theList st) `onItemAdded` (\l _ _ _ -> updateFooterNums st l)
+  (theList st) `onItemAdded` (\l _ _ _ -> updateFooterNums st l)
   (theList st) `onItemRemoved` (\l _ _ _ -> updateFooterNums st l)
+
+  (theList st) `onKeyPressed` \_ k _ -> do
+         case k of
+           (KASCII 'q') -> exitApp vty
+           KDel -> do
+                  result <- getSelected (theList st)
+                  case result of
+                    Nothing -> return ()
+                    Just (i, _) -> removeFromList (theList st) i >> return ()
+                  return True
+           _ -> return False
 
   -- These event handlers will only fire when the UI is in the
   -- appropriate mode, depending on the state of the Widget
   -- Collection.
   listCtx1 `onKeyPressed` \_ k _ -> do
             case k of
-              (KASCII 'q') -> exitApp vty
-              KDel -> do
-                     result <- getSelected (theList st)
-                     case result of
-                       Nothing -> return ()
-                       Just (i, _) -> removeFromList (theList st) i >> return ()
-                     return True
               KEnter -> do
                      r <- getSelected (theList st)
                      case r of
