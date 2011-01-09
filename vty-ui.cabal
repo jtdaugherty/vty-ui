@@ -72,3 +72,10 @@ Executable vty-ui-demo
   Main-is:         Demo.hs
   Build-Depends:
     mtl >= 2.0 && < 2.1
+
+Executable vty-ui-demo2
+  Hs-Source-Dirs:  src
+  GHC-Options:     -Wall
+  Main-is:         Demo2.hs
+  Build-Depends:
+    mtl >= 2.0 && < 2.1
