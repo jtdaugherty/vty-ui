@@ -11,9 +11,6 @@
 
   - Ability to clear (reset) key event handler on a widget
 
-  - Lists: function for setting the currently-selected element by
-    index?
-
   - Support for "showing" and "hiding" widgets
 
   - Generalize borders by adding "spacing" widgets that add a number
@@ -41,6 +38,11 @@
     newRadio :: (MonadIO m) => String -> Char -> m (Widget Radio)
     (label, char used to indicate checked)
     newRadioGroup :: ...
+
+    Need to think about how to make it impossible to avoid putting all
+    radio buttons in a group into the same focus group; in a way we
+    don't want to care about which specific things are in the group;
+    we just want to say "link this focus group with that radio group."
 
   - Checkbox widgets (same as radio, just not linked)
 
