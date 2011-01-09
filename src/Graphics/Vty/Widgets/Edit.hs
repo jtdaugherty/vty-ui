@@ -23,6 +23,8 @@ import Graphics.Vty
     , region_width
     , string
     , char_fill
+    , with_style
+    , underline
     )
 import Graphics.Vty.Widgets.Core
     ( Widget
@@ -53,8 +55,8 @@ editWidget normAtt focAtt = do
   updateWidget wRef $ \w ->
       w { state = Edit { currentText = ""
                        , cursorPosition = 0
-                       , normalAttr = normAtt
-                       , focusAttr = focAtt
+                       , normalAttr = normAtt `with_style` underline
+                       , focusAttr = focAtt `with_style` underline
                        , displayStart = 0
                        , displayWidth = 0
                        , activateHandler = const $ return ()
