@@ -51,6 +51,10 @@
     rendered before B, then it's impossible to depend on the current
     dimensions of B.
 
+  - Consider rewriting table to use boxes instead of direct layout;
+    could greatly simplify the positioning!  You'd just need to do
+    some limiting on the cell contents and padding where appropriate.
+
   - Fix bug: text widget wrapping does not correctly preserve
     preexisting newlines.
 
