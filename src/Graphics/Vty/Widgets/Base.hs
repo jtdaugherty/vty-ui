@@ -76,8 +76,6 @@ import Graphics.Vty
 
 data Centered a = Centered (Widget a)
 
--- |A vertical fill widget.  Fills all available space with the
--- specified character and attribute.
 centered :: (MonadIO m) => Widget a -> m (Widget (Centered a))
 centered ch = do
   wRef <- newWidget
