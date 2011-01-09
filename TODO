@@ -39,6 +39,14 @@
 
   - support for right-aligning text (just left-padding?)
 
+  - Radio button widgets
+
+    newRadio :: (MonadIO m) => String -> Char -> m (Widget Radio)
+    (label, char used to indicate checked)
+    newRadioGroup :: ...
+
+  - Checkbox widgets (same as radio, just not linked)
+
 - Testing:
 
   - Ugh.  Need loads of tests for tricky things.
