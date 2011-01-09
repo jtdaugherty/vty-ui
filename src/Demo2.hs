@@ -31,15 +31,10 @@ main = do
   [col1Header, col2Header] <-
       addHeadingRow table headerAttr ["", ""]
 
-  addRow table [ mkCell edit1
-               , mkCell edit2
-               ]
+  addRow table [ mkCell edit1, mkCell edit2 ]
 
-  edit1 `onChange` \_ s ->
-      setText col1Header headerAttr s
-
-  edit2 `onChange` \_ s ->
-      setText col2Header headerAttr s
+  edit1 `onChange` \_ s -> setText col1Header headerAttr s
+  edit2 `onChange` \_ s -> setText col2Header headerAttr s
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
