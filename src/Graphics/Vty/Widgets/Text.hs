@@ -149,8 +149,8 @@ textWidget format t = do
               return $ renderText (text ft) (formatter ft) size mAttr
         }
 
-setText :: (MonadIO m) => Widget FormattedText -> String -> Attr -> m ()
-setText wRef s attr =
+setText :: (MonadIO m) => Widget FormattedText -> Attr -> String -> m ()
+setText wRef attr s =
     updateWidgetState_ wRef $ \st -> st { text = prepareText attr s }
 
 -- |Low-level text-rendering routine.

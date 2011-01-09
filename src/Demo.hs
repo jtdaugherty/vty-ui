@@ -79,7 +79,7 @@ updateBody st w = do
   let msg = case result of
               Nothing -> ""
               Just (i, _) -> "This is the text for list entry " ++ (show $ i + 1)
-  setText (theBody st) msg bodyAttr
+  setText (theBody st) bodyAttr msg
 
 updateFooterNums :: AppState -> Widget (List a b) -> IO ()
 updateFooterNums st w = do
@@ -90,12 +90,12 @@ updateFooterNums st w = do
               Just (i, _) ->
                   "-" ++ (show $ i + 1) ++ "/" ++
                           (show sz) ++ "-"
-  setText (theFooter1 st) msg titleAttr
+  setText (theFooter1 st) titleAttr msg
 
 updateFooterText :: AppState -> Widget Edit -> IO ()
 updateFooterText st w = do
   t <- getEditText w
-  setText (theFooter2 st) ("[" ++ t ++ "]") titleAttr
+  setText (theFooter2 st) titleAttr ("[" ++ t ++ "]")
 
 main :: IO ()
 main = do
