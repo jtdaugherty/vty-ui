@@ -43,6 +43,17 @@
     and no edge border, the underline attribute goes to the right side
     of the terminal. :(  Perhaps enclose the edit area in [...]?
 
+  - Think about possible ways to link the size of one widget (say,
+    text) to another (say, a table).  Right now you have to use an
+    hLimit or vLimit, but if you don't want to hard-code a size that
+    can be ugly.  The trouble with doing this is that if widget A
+    depends on the size of B but due to the UI layout A needs to be
+    rendered before B, then it's impossible to depend on the current
+    dimensions of B.
+
+  - Fix bug: text widget wrapping does not correctly preserve
+    preexisting newlines.
+
   - Radio button widgets
 
     newRadio :: (MonadIO m) => String -> Char -> m (Widget Radio)
