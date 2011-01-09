@@ -56,6 +56,8 @@ import Graphics.Vty
     , Image
     , Key(..)
     , Modifier
+    , (<|>)
+    , image_width
     , vert_cat
     , image_height
     , char_fill
@@ -272,14 +274,17 @@ renderListWidget list s mAttr = do
 
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
-        let att = if sel
-                  then (Just $ selectedAttr list)
-                  else if isJust mAttr
-                       then mAttr
-                       else (Just $ normalAttr list)
-        img <- render w s att
+        let Just att = if sel
+                       then (Just $ selectedAttr list)
+                       else if isJust mAttr
+                            then mAttr
+                            else (Just $ normalAttr list)
+        img <- render w s $ Just att
+        let img' = img <|> char_fill att ' '
+                   (region_width s - image_width img)
+                   (toEnum $ itemHeight list)
         imgs <- renderVisible ws
-        return (img:imgs)
+        return (img':imgs)
 
   -- XXX this is probably incorrect for widgets with height > 1
   let filler = char_fill attr ' ' (region_width s) fill_height
