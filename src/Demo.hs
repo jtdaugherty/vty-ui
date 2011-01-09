@@ -170,7 +170,7 @@ main = do
 
   addHeadingRow (theTable st) (bright_yellow `on` black) ["Static", "Editable"]
 
-  w1 <- simpleText bodyAttr "Foobar"
+  w1 <- centered =<< simpleText bodyAttr "Foobar"
   addRow (theTable st) [ mkCell w1
                        , mkCell $ theEdit st
                        ]
