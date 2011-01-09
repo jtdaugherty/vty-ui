@@ -126,7 +126,6 @@ main = do
   (theList st) `onSelectionChange` (updateBody st)
   (theList st) `onSelectionChange` (updateFooterNums st)
   (theList st) `onItemAdded` (\l _ _ _ -> updateFooterNums st l)
-  (theList st) `onItemAdded` (\l _ _ _ -> updateFooterNums st l)
   (theList st) `onItemRemoved` (\l _ _ _ -> updateFooterNums st l)
 
   (theList st) `onKeyPressed` \_ k _ -> do
