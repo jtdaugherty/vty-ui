@@ -26,8 +26,8 @@ module Graphics.Vty.Widgets.Base
     , getVLimit
     , getHLimit
 
-    , Centered
-    , centered
+    , HCentered
+    , hCentered
     )
 where
 
@@ -74,23 +74,21 @@ import Graphics.Vty
     , def_attr
     )
 
-data Centered a = Centered (Widget a)
+data HCentered a = HCentered (Widget a)
 
-centered :: (MonadIO m) => Widget a -> m (Widget (Centered a))
-centered ch = do
+hCentered :: (MonadIO m) => Widget a -> m (Widget (HCentered a))
+hCentered ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Centered ch
-        , getGrowHorizontal = do
-            Centered child <- ask
-            growHorizontal child
+      w { state = HCentered ch
+        , getGrowHorizontal = return True
 
         , getGrowVertical = do
-            Centered child <- ask
+            HCentered child <- ask
             growVertical child
 
         , draw = \this s mAttr -> do
-                   Centered child <- getState this
+                   HCentered child <- getState this
                    img <- render child s mAttr
 
                    -- XXX def_attr can be wrong
@@ -106,7 +104,7 @@ centered ch = do
 
         , setPosition =
             \this pos -> do
-              Centered child <- getState this
+              HCentered child <- getState this
               s <- getPhysicalSize this
               chSz <- getPhysicalSize child
               let (half, _) = centered_halves s (region_width chSz)

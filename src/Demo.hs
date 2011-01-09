@@ -36,7 +36,7 @@ uiCore appst w = do
             <++> hBorder titleAttr)
 
 buildUi1 appst = do
-  c <- centered $ theTable appst
+  c <- hCentered $ theTable appst
   uiCore appst (bottomPadded c bodyAttr)
 
 buildUi2 appst =
@@ -170,7 +170,7 @@ main = do
 
   addHeadingRow_ (theTable st) (bright_yellow `on` black) ["Static", "Editable"]
 
-  w1 <- centered =<< simpleText bodyAttr "Foobar"
+  w1 <- hCentered =<< simpleText bodyAttr "Foobar"
   addRow (theTable st) [ mkCell w1
                        , mkCell $ theEdit st
                        ]

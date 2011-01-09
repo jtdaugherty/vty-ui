@@ -26,7 +26,7 @@ main = do
   edit2 <- editWidget editAttr editFocusAttr
 
   table <- newTable bodyAttr [Fixed 20, Fixed 20] BorderFull
-  ui <- centered table
+  ui <- hCentered table
 
   [col1Header, col2Header] <-
       addHeadingRow table headerAttr ["", ""]
