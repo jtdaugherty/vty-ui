@@ -100,9 +100,9 @@ centered ch = do
                        (half, half') = centered_halves s (image_width img)
 
                    return $ if half > 0
-                            then horiz_cat [ char_fill attr' ' ' half (region_height s)
+                            then horiz_cat [ char_fill attr' ' ' half (image_height img)
                                            , img
-                                           , char_fill attr' ' ' half' (region_height s)
+                                           , char_fill attr' ' ' half' (image_height img)
                                            ]
                             else img
 
