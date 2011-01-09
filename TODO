@@ -67,6 +67,9 @@
 
   - Checkbox widgets (same as radio, just not linked)
 
+  - Use Text instead of String?  (And encode Text as Utf8, which Vty
+    supports)
+
 - Testing:
 
   - Ugh.  Need loads of tests for tricky things.
