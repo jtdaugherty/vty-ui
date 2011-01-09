@@ -35,11 +35,11 @@ main = do
                , mkCell edit2
                ]
 
-  edit1 `onChange` \e ->
-      setText col1Header headerAttr =<< getEditText e
+  edit1 `onChange` \_ s ->
+      setText col1Header headerAttr s
 
-  edit2 `onChange` \e ->
-      setText col2Header headerAttr =<< getEditText e
+  edit2 `onChange` \_ s ->
+      setText col2Header headerAttr s
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"

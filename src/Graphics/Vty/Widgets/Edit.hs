@@ -46,7 +46,7 @@ data Edit = Edit { currentText :: String
                  , displayStart :: Int
                  , displayWidth :: Int
                  , activateHandler :: Widget Edit -> IO ()
-                 , changeHandler :: Widget Edit -> IO ()
+                 , changeHandler :: Widget Edit -> String -> IO ()
                  }
 
 editWidget :: (MonadIO m) => Attr -> Attr -> m (Widget Edit)
@@ -60,7 +60,7 @@ editWidget normAtt focAtt = do
                        , displayStart = 0
                        , displayWidth = 0
                        , activateHandler = const $ return ()
-                       , changeHandler = const $ return ()
+                       , changeHandler = \_ _ -> return ()
                        }
 
         , getGrowHorizontal = return True
@@ -103,14 +103,14 @@ onActivate wRef handler = do
 
   updateWidgetState_ wRef $ \s -> s { activateHandler = combinedHandler }
 
-onChange :: Widget Edit -> (Widget Edit -> IO ()) -> IO ()
+onChange :: Widget Edit -> (Widget Edit -> String -> IO ()) -> IO ()
 onChange wRef handler = do
   oldHandler <- changeHandler <~~ wRef
 
   let combinedHandler =
-          \w -> do
-            oldHandler w
-            handler w
+          \w str -> do
+            oldHandler w str
+            handler w str
 
   updateWidgetState_ wRef $ \s -> s { changeHandler = combinedHandler }
 
@@ -183,7 +183,8 @@ deletePreviousChar this = do
 notifyChangeHandler :: Widget Edit -> IO ()
 notifyChangeHandler wRef = do
   h <- changeHandler <~~ wRef
-  h wRef
+  str <- getEditText wRef
+  h wRef str
 
 notifyActivateHandler :: Widget Edit -> IO ()
 notifyActivateHandler wRef = do

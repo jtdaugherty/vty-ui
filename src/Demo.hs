@@ -92,10 +92,8 @@ updateFooterNums st w = do
                           (show sz) ++ "-"
   setText (theFooter1 st) titleAttr msg
 
-updateFooterText :: AppState -> Widget Edit -> IO ()
-updateFooterText st w = do
-  t <- getEditText w
-  setText (theFooter2 st) titleAttr ("[" ++ t ++ "]")
+updateFooterText :: AppState -> Widget Edit -> String -> IO ()
+updateFooterText st _ t = setText (theFooter2 st) titleAttr ("[" ++ t ++ "]")
 
 main :: IO ()
 main = do
