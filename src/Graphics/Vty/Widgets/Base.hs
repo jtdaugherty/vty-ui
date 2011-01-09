@@ -7,6 +7,7 @@ module Graphics.Vty.Widgets.Base
     , vBox
     , (<-->)
     , (<++>)
+    , setBoxSpacing
 
     , VFill
     , HFill
@@ -77,6 +78,7 @@ import Graphics.Vty
     , vert_cat
     , horiz_cat
     , def_attr
+    , empty_image
     )
 
 data HCentered a = HCentered (Widget a)
@@ -210,7 +212,7 @@ hFill att c h = do
                    return $ char_fill attr' ch (region_width s) (toEnum height)
         }
 
-data Box a b = Box Orientation (Widget a) (Widget b)
+data Box a b = Box Orientation Int (Widget a) (Widget b)
 
 -- |A box layout widget capable of containing two 'Widget's
 -- horizontally or vertically.  See 'hBox' and 'vBox'.  Boxes lay out
@@ -227,32 +229,32 @@ data Box a b = Box Orientation (Widget a) (Widget b)
 -- * Otherwise, both children are rendered in top-to-bottom or
 --   left-to-right order and the resulting container uses only as much
 --   space as its children combined
-box :: (MonadIO m) => Orientation -> Widget a -> Widget b -> m (Widget (Box a b))
-box o a b = do
+box :: (MonadIO m) => Orientation -> Int -> Widget a -> Widget b -> m (Widget (Box a b))
+box o spacing a b = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Box o a b
+      w { state = Box o spacing a b
         , getGrowHorizontal = do
-            Box _ ch1 ch2 <- ask
+            Box _ _ ch1 ch2 <- ask
             h1 <- growHorizontal ch1
             h2 <- growHorizontal ch2
             return $ h1 || h2
 
         , getGrowVertical = do
-            Box _ ch1 ch2 <- ask
+            Box _ _ ch1 ch2 <- ask
             v1 <- growVertical ch1
             v2 <- growVertical ch2
             return $ v1 || v2
 
         , keyEventHandler =
             \this key mods -> do
-              Box _ ch1 ch2 <- getState this
+              Box _ _ ch1 ch2 <- getState this
               handled <- handleKeyEvent ch1 key mods
               if handled then return True else
                   handleKeyEvent ch2 key mods
 
         , draw = \this s mAttr -> do
-                   st@(Box orientation _ _) <- getState this
+                   st@(Box orientation _ _ _) <- getState this
 
                    case orientation of
                      Vertical ->
@@ -265,15 +267,21 @@ box o a b = do
         , setPosition =
             \this pos -> do
               (setPosition w) this pos
-              Box orientation ch1 ch2 <- getState this
+              Box orientation sp ch1 ch2 <- getState this
               ch1_size <- getPhysicalSize ch1
               setPhysicalPosition ch1 pos
               case orientation of
                 Horizontal -> setPhysicalPosition ch2 $
-                              pos `withWidth` ((region_width pos) + (region_width ch1_size))
+                              pos `withWidth` ((region_width pos) + (region_width ch1_size) +
+                                                                  toEnum sp)
                 Vertical -> setPhysicalPosition ch2 $
-                            pos `withHeight` ((region_height pos) + (region_height ch1_size))
+                            pos `withHeight` ((region_height pos) + (region_height ch1_size) +
+                                                                  toEnum sp)
         }
+
+setBoxSpacing :: (MonadIO m) => Widget (Box a b) -> Int -> m ()
+setBoxSpacing wRef spacing =
+    updateWidgetState_ wRef $ \(Box o _ a b) -> Box o spacing a b
 
 -- Box layout rendering implementation. This is generalized over the
 -- two dimensions in which box layout can be performed; it takes lot
@@ -290,23 +298,24 @@ renderBox :: DisplayRegion
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
           -> IO Image
 renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim = do
-  let Box orientation first second = this
+  let Box orientation spacing first second = this
+      actualSpace = s `withDim` (max (regDimension s - toEnum spacing) 0)
 
-  let renderOrdered a b = do
-        a_img <- render a s mAttr
+      renderOrdered a b = do
+        a_img <- render a actualSpace mAttr
 
-        let remaining = regDimension s - renderDimension a_img
-            s' = s `withDim` remaining
+        let remaining = regDimension actualSpace - renderDimension a_img
+            s' = actualSpace `withDim` remaining
 
         b_img <- render b s' mAttr
 
-        return $ if renderDimension a_img >= regDimension s
+        return $ if renderDimension a_img >= regDimension actualSpace
                  then [a_img]
                  else [a_img, b_img]
 
       renderHalves = do
-        let half = s `withDim` div (regDimension s) 2
-            half' = if regDimension s `mod` 2 == 0
+        let half = actualSpace `withDim` div (regDimension actualSpace) 2
+            half' = if regDimension actualSpace `mod` 2 == 0
                     then half
                     else half `withDim` (regDimension half + 1)
         first_img <- render first half mAttr
@@ -320,26 +329,34 @@ renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim
   gf <- liftIO $ growFirst first
   gs <- liftIO $ growSecond second
 
-  imgs <- case (gf, gs) of
-            (True, True) -> renderHalves
-            (False, _) -> renderOrdered first second
-            (_, False) -> do
-              images <- renderOrdered second first
-              return $ reverse images
+  [img1, img2] <- case (gf, gs) of
+                    (True, True) -> renderHalves
+                    (False, _) -> renderOrdered first second
+                    (_, False) -> do
+                                  images <- renderOrdered second first
+                                  return $ reverse images
 
-  return $ cat imgs
+  let spacer = case spacing of
+                 0 -> empty_image
+                 _ -> case orientation of
+                         Horizontal -> let h = max (image_height img1) (image_height img2)
+                                       in char_fill def_attr ' ' (toEnum spacing) h
+                         Vertical -> let w = max (image_width img1) (image_width img2)
+                                     in char_fill def_attr ' ' w (toEnum spacing)
+
+  return $ cat [img1, spacer, img2]
 
 -- |Create a horizontal box layout widget containing two widgets side
 -- by side.  Space consumed by the box will depend on its contents and
 -- the available space.
 hBox :: (MonadIO m) => Widget a -> Widget b -> m (Widget (Box a b))
-hBox = box Horizontal
+hBox = box Horizontal 0
 
 -- |Create a vertical box layout widget containing two widgets.  Space
 -- consumed by the box will depend on its contents and the available
 -- space.
 vBox :: (MonadIO m) => Widget a -> Widget b -> m (Widget (Box a b))
-vBox = box Vertical
+vBox = box Vertical 0
 
 data HLimit a = HLimit Int (Widget a)
 

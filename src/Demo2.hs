@@ -26,8 +26,12 @@ main = do
   let msg = "Press <TAB> to switch edit fields; press <ESC> to quit."
 
   table <- newTable borderAttr [Fixed 20, Fixed 20] BorderFull
-  ui <- centered =<< (return table
-                      <--> (hLimit 43 =<< (textWidget wrap $ prepareText msgAttr msg)))
+  mainBox <- (return table)
+          <--> (hLimit 43 =<< (textWidget wrap $ prepareText msgAttr msg))
+
+  setBoxSpacing mainBox 2
+
+  ui <- centered mainBox
 
   [col1Header, col2Header] <-
       addHeadingRow table headerAttr ["", ""]
