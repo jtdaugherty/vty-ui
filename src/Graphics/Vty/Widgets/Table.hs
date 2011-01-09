@@ -178,7 +178,12 @@ newTable attr sizes borderSty = do
 
                       -- Get the maximum cell height
                       cellPhysSizes <- forM row $ \(TableCell cw) -> getPhysicalSize cw
-                      let maxSize = maximum $ map region_height cellPhysSizes
+                      -- Include 1 as a possible height to prevent
+                      -- zero-height images from breaking position
+                      -- computations.  This won't hurt in the case
+                      -- where other cells are bigger, since their
+                      -- heights will be chosen instead.
+                      let maxSize = maximum $ 1 : map region_height cellPhysSizes
                           borderOffset = if rowBorders bs
                                          then 1 else 0
 
