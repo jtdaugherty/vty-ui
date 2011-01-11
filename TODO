@@ -1,9 +1,6 @@
 
 - Rewriting tasks:
 
-  - Is it possible to make Box's rendering shortcut when one of its
-    cells is empty?
-
   - Use vty-ui exceptions to report errors instead of calling error
 
   - List: do audit for calculations that should be done in terms of
@@ -35,7 +32,8 @@
   - Fix bug(s): some widgets crash when they can't be rendered (i.e.,
     they return images anyway, but there is no space).  Start by
     adding a check in the render function to blow up and hopefully
-    provide some info about the violation.
+    provide some info about the violation.  Table is known buggy this
+    area.
 
   - Radio button widgets
 
