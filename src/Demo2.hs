@@ -10,7 +10,7 @@ import qualified Data.ByteString.Char8 as BS8
 -- Visual attributes.
 borderAttr = blue `on` black
 editAttr = white `on` black
-editFocusAttr = bright_yellow `on` blue
+focusAttr = bright_yellow `on` blue
 bodyAttr = white `on` black
 headerAttr = bright_yellow `on` black
 msgAttr = bright_white `on` black
@@ -38,20 +38,24 @@ main = do
 
   ui <- centered =<< hLimit 50 mainBox
 
-  [_, col1Header, col2Header] <-
+  [col0Header, col1Header, col2Header] <-
       addHeadingRow table headerAttr ["", "", ""]
 
-  edit1 <- editWidget editAttr editFocusAttr
-  edit2 <- editWidget editAttr editFocusAttr
-  t <- simpleText bodyAttr "testing"
+  edit1 <- editWidget editAttr focusAttr
+  edit2 <- editWidget editAttr focusAttr
 
-  addRow table [ mkCell t, mkCell edit1, mkCell edit2 ]
+  r <- newRadio "Radio" bodyAttr focusAttr
+  addRow table [ mkCell r, mkCell edit1, mkCell edit2 ]
 
   edit1 `onChange` \_ s -> setText col1Header headerAttr s
   edit2 `onChange` \_ s -> setText col2Header headerAttr s
 
+  r `onRadioChange` \_ v -> setText col0Header headerAttr
+                            (if v then "checked" else "unchecked")
+
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
+  setRadioUnchecked r
 
   fg <- newFocusGroup
   fg `onKeyPressed` \_ k _ -> do
@@ -59,6 +63,7 @@ main = do
            KEsc -> exitApp vty
            _ -> return False
 
+  addToFocusGroup_ fg r
   addToFocusGroup_ fg edit1
   addToFocusGroup_ fg edit2
   setFocusGroup ui fg
