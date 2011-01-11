@@ -29,29 +29,33 @@ main = do
   vty <- mkVty
 
   let msg = "<TAB> switches edit fields, ordinary \
-            \keystrokes edit, <ESC> quits."
+            \keystrokes edit, <SPC> toggles radio \
+            \button, <ESC> quits."
 
-  table <- newTable borderAttr [Auto, Fixed 20, Auto] BorderFull
+  table <- newTable borderAttr [Fixed 20, Auto] BorderFull
   mainBox <- (return table) <--> (textWidget (wrap &.& color) $ prepareText msgAttr msg)
 
   setBoxSpacing mainBox 2
 
   ui <- centered =<< hLimit 50 mainBox
 
-  [col0Header, col1Header, col2Header] <-
-      addHeadingRow table headerAttr ["", "", ""]
+  r <- newRadio "Radio" bodyAttr focusAttr
+  radioHeader <- simpleText headerAttr ""
 
   edit1 <- editWidget editAttr focusAttr
+  edit1Header <- simpleText headerAttr ""
+
   edit2 <- editWidget editAttr focusAttr
+  edit2Header <- simpleText headerAttr ""
 
-  r <- newRadio "Radio" bodyAttr focusAttr
-  addRow table [ mkCell r, mkCell edit1, mkCell edit2 ]
+  addRow table [ mkCell radioHeader, mkCell r ]
+  addRow table [ mkCell edit1Header, mkCell edit1 ]
+  addRow table [ mkCell edit2Header, mkCell edit2 ]
 
-  edit1 `onChange` \_ s -> setText col1Header headerAttr s
-  edit2 `onChange` \_ s -> setText col2Header headerAttr s
-
-  r `onRadioChange` \_ v -> setText col0Header headerAttr
+  r `onRadioChange` \_ v -> setText radioHeader headerAttr
                             (if v then "checked" else "unchecked")
+  edit1 `onChange` \_ s -> setText edit1Header headerAttr s
+  edit2 `onChange` \_ s -> setText edit2Header headerAttr s
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
