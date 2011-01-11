@@ -111,54 +111,19 @@ newTable attr sizes borderSty = do
         , draw =
             \this sz mAttr -> do
               rs <- rows <~~ this
-              bs <- borderStyle <~~ this
-              bAttr <- borderAttr <~~ this
-              szs <- columnSizes <~~ this
-              aw <- autoWidth this sz
 
               rowImgs <- mapM (\r -> renderRow this sz r mAttr) rs
 
-              let mkRowBorder =
-                      if not $ rowBorders bs
-                      then empty_image
-                      else mkRowBorder'
-                  mkRowBorder' =
-                      let intersection = string bAttr "+"
-                          imgs = (flip map) szs $ \s ->
-                                 case s of
-                                   Fixed n -> char_fill bAttr '-' n 1
-                                   Auto -> char_fill bAttr '-' aw 1
-                          imgs' = if colBorders bs
-                                  then intersperse intersection imgs
-                                  else imgs
-                          imgs'' = if edgeBorders bs
-                                   then intersection : imgs' ++ [intersection]
-                                   else imgs'
-                      in horiz_cat imgs''
-                  mkTopBottomBorder =
-                      if edgeBorders bs
-                      then mkRowBorder'
-                      else empty_image
+              rowBorder <- mkRowBorder this sz
+              topBottomBorder <- mkTopBottomBorder this sz
+              sideBorder <- mkSideBorder this
 
-              let withBorders =
-                      concat $ (flip map) rowImgs $ \img ->
-                          let img' = if edgeBorders bs
-                                     then horiz_cat [ char_fill bAttr '|' 1 (image_height img)
-                                                    , img
-                                                    , char_fill bAttr '|' 1 (image_height img)
-                                                    ]
-                                     else img
-                          in [img', mkRowBorder]
-
-              -- If edge borders are active, draw them on the top of
-              -- the table.
-              let withBorders' = mkTopBottomBorder : rowImgs' ++ [mkTopBottomBorder]
-                  rowImgs' = if rowBorders bs && edgeBorders bs
-                             then take (length withBorders - 1) withBorders
-                             else withBorders
+              let body = vert_cat $ intersperse rowBorder rowImgs
+                  withTBBorders = vert_cat [topBottomBorder, body, topBottomBorder]
+                  withSideBorders = horiz_cat [sideBorder, withTBBorders, sideBorder]
 
               -- XXX only cat rows until we exceed the available space
-              return $ vert_cat withBorders'
+              return withSideBorders
 
         , setPosition =
             \this pos -> do
@@ -196,6 +161,72 @@ newTable attr sizes borderSty = do
 
               return ()
         }
+
+mkRowBorder :: Widget Table -> DisplayRegion-> IO Image
+mkRowBorder t sz = do
+  bs <- borderStyle <~~ t
+
+  if not $ rowBorders bs then
+      return empty_image else
+      mkRowBorder_ t sz
+
+-- Make a row border that matches the width of each row but does not
+-- include outermost edge characters.
+mkRowBorder_ :: Widget Table -> DisplayRegion -> IO Image
+mkRowBorder_ t sz = do
+  bs <- borderStyle <~~ t
+  bAttr <- borderAttr <~~ t
+  szs <- columnSizes <~~ t
+  aw <- autoWidth t sz
+
+  let intersection = string bAttr "+"
+      imgs = (flip map) szs $ \s ->
+             case s of
+               Fixed n -> char_fill bAttr '-' n 1
+               Auto -> char_fill bAttr '-' aw 1
+      imgs' = if colBorders bs
+              then intersperse intersection imgs
+              else imgs
+
+  return $ horiz_cat imgs'
+
+mkTopBottomBorder :: Widget Table -> DisplayRegion -> IO Image
+mkTopBottomBorder t sz = do
+  bs <- borderStyle <~~ t
+
+  if edgeBorders bs then
+      mkRowBorder_ t sz else
+      return empty_image
+
+-- Make vertical side borders for the table, including row border
+-- intersections if necessary.
+mkSideBorder :: Widget Table -> IO Image
+mkSideBorder t = do
+  bs <- borderStyle <~~ t
+
+  if edgeBorders bs then
+      mkSideBorder_ t else
+      return empty_image
+
+mkSideBorder_ :: Widget Table -> IO Image
+mkSideBorder_ t = do
+  bs <- borderStyle <~~ t
+  bAttr <- borderAttr <~~ t
+  rs <- rows <~~ t
+
+  let intersection = string bAttr "+"
+
+  rowHeights <- forM rs $ \row -> do
+                    hs <- forM row $ \(TableCell cw) ->
+                          getPhysicalSize cw >>= (return . region_height)
+                    return $ maximum hs
+
+  let borderImgs = (flip map) rowHeights $ \h -> char_fill bAttr '|' h 1
+      withIntersections = if rowBorders bs
+                          then intersperse intersection borderImgs
+                          else borderImgs
+
+  return $ vert_cat $ intersection : withIntersections ++ [intersection]
 
 positionRow :: Widget Table -> BorderStyle -> DisplayRegion -> [TableCell] -> IO ()
 positionRow t bs pos cells = do
