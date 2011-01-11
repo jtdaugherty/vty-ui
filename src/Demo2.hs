@@ -2,6 +2,7 @@
 module Main where
 
 import System.Exit ( exitSuccess )
+import Control.Monad ( when )
 import Text.Regex.PCRE.Light
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
@@ -39,7 +40,8 @@ main = do
 
   ui <- centered =<< hLimit 50 mainBox
 
-  r <- newRadio "Radio" bodyAttr focusAttr
+  r1 <- newRadio "Radio 1" bodyAttr focusAttr
+  r2 <- newRadio "Radio 2" bodyAttr focusAttr
   radioHeader <- simpleText headerAttr ""
 
   edit1 <- editWidget editAttr focusAttr
@@ -48,18 +50,23 @@ main = do
   edit2 <- editWidget editAttr focusAttr
   edit2Header <- simpleText headerAttr ""
 
-  addRow table [ mkCell radioHeader, mkCell r ]
+  e <- simpleText bodyAttr ""
+
+  addRow table [ mkCell radioHeader, mkCell r1 ]
+  addRow table [ mkCell e, mkCell r2 ]
   addRow table [ mkCell edit1Header, mkCell edit1 ]
   addRow table [ mkCell edit2Header, mkCell edit2 ]
 
-  r `onRadioChange` \_ v -> setText radioHeader headerAttr
-                            (if v then "checked" else "unchecked")
+  r1 `onRadioChange` \_ v -> when v $ setText radioHeader headerAttr "radio 1 checked"
+  r2 `onRadioChange` \_ v -> when v $ setText radioHeader headerAttr "radio 2 checked"
+
   edit1 `onChange` \_ s -> setText edit1Header headerAttr s
   edit2 `onChange` \_ s -> setText edit2Header headerAttr s
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
-  setRadioUnchecked r
+  setRadioChecked r1
+  setRadioUnchecked r2
 
   fg <- newFocusGroup
   fg `onKeyPressed` \_ k _ -> do
@@ -67,7 +74,8 @@ main = do
            KEsc -> exitApp vty
            _ -> return False
 
-  addToFocusGroup_ fg r
+  addToFocusGroup_ fg r1
+  addToFocusGroup_ fg r2
   addToFocusGroup_ fg edit1
   addToFocusGroup_ fg edit2
   setFocusGroup ui fg
