@@ -78,7 +78,7 @@ mkCell :: Widget a -> TableCell
 mkCell = TableCell
 
 data Table = Table { rows :: [[TableCell]]
-                   , rowSize :: Int
+                   , numColumns :: Int
                    , columnSizes :: [ColumnSize]
                    , borderStyle :: BorderStyle
                    , borderAttr :: Attr
@@ -98,7 +98,7 @@ newTable attr sizes borderSty = do
       w { state = Table { rows = []
                         , columnSizes = sizes
                         , borderStyle = borderSty
-                        , rowSize = 0
+                        , numColumns = length sizes
                         , borderAttr = attr
                         }
 
@@ -246,18 +246,11 @@ addHeadingRow_ tbl attr labels = addHeadingRow_ tbl attr labels >> return ()
 
 addRow :: (MonadIO m) => Widget Table -> [TableCell] -> m ()
 addRow t cells = do
-  num <- (length . rows) <~~ t
-
-  -- If this is the first row, set the row size.
-  when (num == 0) $
-       updateWidgetState_ t $ \s ->
-           s { rowSize = length cells }
-
-  rSz <- rowSize <~~ t
-  when (length cells > rSz) $
-       error $ "New row size (" ++ (show $ length cells) ++
-                 ") does not match table row size (" ++
-                 (show rSz) ++ ")"
+  nc <- numColumns <~~ t
+  when (length cells > nc) $
+       error $ "New row column count (" ++ (show $ length cells) ++
+                 ") does not match table column count (" ++
+                 (show nc) ++ ")"
 
   updateWidgetState_ t $ \s ->
       s { rows = rows s ++ [cells] }
