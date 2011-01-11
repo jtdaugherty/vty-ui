@@ -1,32 +1,11 @@
 
 - Rewriting tasks:
 
-  - Resize event handler support.  Top-level or per-widget?  Maybe not
-    even necessary?
-
-  - Layering (i.e., dialogs), probably needs research into transposed
-    images in Vty (which are not implemented yet).  Once dialogs work,
-    we could make them fancy and modal by rendering the underlying UI
-    in black and white and the dialog in color!
-
-  - Ability to clear (reset) key event handler on a widget
-
-  - Support for "showing" and "hiding" widgets
-
-  - Generalize borders by adding "spacing" widgets that add a number
-    of rows or columns of space on a given side of a widget.  This is
-    already basically possible with vBorderWith ' ' and hBorderWith '
-    ', but it would also be nice to make these explicit and add a
-    "bordered"-style box spacing wrapping widget type.
+  - Consider rewriting table to use boxes instead of direct layout;
+    could greatly simplify the positioning!  You'd just need to do
+    some limiting on the cell contents and padding where appropriate.
 
   - Use vty-ui exceptions to report errors instead of calling error
-
-  - Scrollable area (a generalization of the List) which can wrap a
-    widget and make it scrollable in a confined space.  To make this
-    work, we may need masking support in Vty.  Scrolling is really
-    just (top, left, widget, mask window size) where the window size
-    depends on available space and top/left positions are modified by
-    the application as scrolling requests are received.
 
   - List: do audit for calculations that should be done in terms of
     itemHeight
@@ -51,12 +30,13 @@
     rendered before B, then it's impossible to depend on the current
     dimensions of B.
 
-  - Consider rewriting table to use boxes instead of direct layout;
-    could greatly simplify the positioning!  You'd just need to do
-    some limiting on the cell contents and padding where appropriate.
-
   - Fix bug: text widget wrapping does not correctly preserve
     preexisting newlines.
+
+  - Fix bug(s): some widgets crash when they can't be rendered (i.e.,
+    they return images anyway, but there is no space).  Start by
+    adding a check in the render function to blow up and hopefully
+    provide some info about the violation.
 
   - Radio button widgets
 
@@ -73,6 +53,33 @@
 
   - Use Text instead of String?  (And encode Text as Utf8, which Vty
     supports)
+
+- Low priority:
+
+  - Resize event handler support.  Top-level or per-widget?  Maybe not
+    even necessary?
+
+  - Layering (i.e., dialogs), probably needs research into transposed
+    images in Vty (which are not implemented yet).  Once dialogs work,
+    we could make them fancy and modal by rendering the underlying UI
+    in black and white and the dialog in color!
+
+  - Ability to clear (reset) key event handler on a widget
+
+  - Support for "showing" and "hiding" widgets
+
+  - Generalize borders by adding "spacing" widgets that add a number
+    of rows or columns of space on a given side of a widget.  This is
+    already basically possible with vBorderWith ' ' and hBorderWith '
+    ', but it would also be nice to make these explicit and add a
+    "bordered"-style box spacing wrapping widget type.
+
+  - Scrollable area (a generalization of the List) which can wrap a
+    widget and make it scrollable in a confined space.  To make this
+    work, we may need masking support in Vty.  Scrolling is really
+    just (top, left, widget, mask window size) where the window size
+    depends on available space and top/left positions are modified by
+    the application as scrolling requests are received.
 
 - Testing:
 
