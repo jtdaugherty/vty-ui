@@ -1,9 +1,8 @@
 
 - Rewriting tasks:
 
-  - Consider rewriting table to use boxes instead of direct layout;
-    could greatly simplify the positioning!  You'd just need to do
-    some limiting on the cell contents and padding where appropriate.
+  - Is it possible to make Box's rendering shortcut when one of its
+    cells is empty?
 
   - Use vty-ui exceptions to report errors instead of calling error
 
@@ -80,6 +79,16 @@
     just (top, left, widget, mask window size) where the window size
     depends on available space and top/left positions are modified by
     the application as scrolling requests are received.
+
+  - Consider rewriting table to use boxes instead of direct layout;
+    could greatly simplify the positioning!  You'd just need to do
+    some limiting on the cell contents and padding where appropriate.
+    Later: except it's not that simple; if you're going to use boxes,
+    then you end up packaging up all the widgets and never actually
+    drawing them, since Box does that.  But then you don't know how
+    high each row is, so you don't know how to construct the borders
+    in between cells, since they depend on the maximum cell height for
+    each row.  And so on.
 
 - Testing:
 
