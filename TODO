@@ -51,6 +51,12 @@
   - Use Text instead of String?  (And encode Text as Utf8, which Vty
     supports)
 
+  - Think about how to enforce restrictions on what can go in table
+    cells
+
+  - Debug and fix what happens when you put (simpleText "x") <-->
+    (simpleText "y") into a table cell!
+
 - Low priority:
 
   - Resize event handler support.  Top-level or per-widget?  Maybe not
