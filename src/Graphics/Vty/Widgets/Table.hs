@@ -247,7 +247,7 @@ addHeadingRow_ tbl attr labels = addHeadingRow_ tbl attr labels >> return ()
 addRow :: (MonadIO m) => Widget Table -> [TableCell] -> m ()
 addRow t cells = do
   nc <- numColumns <~~ t
-  when (length cells > nc) $
+  when (length cells /= nc) $
        error $ "New row column count (" ++ (show $ length cells) ++
                  ") does not match table column count (" ++
                  (show nc) ++ ")"
