@@ -154,6 +154,7 @@ newTable attr sizes borderSty = do
                       positionRow this bs rowPos row
                       positionRows (height + maxSize + borderOffset) rest
 
+              -- XXX only position rendered rows
               positionRows (region_height pos + edgeOffset) rs
 
               return ()
