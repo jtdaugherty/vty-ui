@@ -90,9 +90,6 @@ newTable :: (MonadIO m) =>
          -> BorderStyle
          -> m (Widget Table)
 newTable attr sizes borderSty = do
-
-  -- XXX sanity-check column size specification list for > 1 Auto
-
   t <- newWidget
   updateWidget t $ \w ->
       w { state = Table { rows = []
@@ -257,14 +254,15 @@ autoWidth t sz = do
   sizes <- columnSizes <~~ t
   bs <- borderStyle <~~ t
 
-  let totalFixed = sum $ (flip map) sizes $ \s ->
+  let numAuto = length $ filter (== Auto) sizes
+      totalFixed = sum $ (flip map) sizes $ \s ->
                    case s of
                      Auto -> 0
                      Fixed n -> n
       edgeWidth = if edgeBorders bs then 2 else 0
       colWidth = if colBorders bs then (toEnum $ length sizes - 1) else 0
 
-  return $ region_width sz - toEnum totalFixed - edgeWidth - colWidth
+  return ((region_width sz - toEnum totalFixed - edgeWidth - colWidth) `div` toEnum numAuto)
 
 addHeadingRow :: (MonadIO m) => Widget Table -> Attr -> [String] -> m [Widget FormattedText]
 addHeadingRow tbl attr labels = do

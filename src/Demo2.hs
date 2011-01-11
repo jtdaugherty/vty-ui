@@ -31,19 +31,21 @@ main = do
   let msg = "<TAB> switches edit fields, ordinary \
             \keystrokes edit, <ESC> quits."
 
-  table <- newTable borderAttr [Fixed 15, Auto] BorderFull
+  table <- newTable borderAttr [Auto, Fixed 20, Auto] BorderFull
   mainBox <- (return table) <--> (textWidget (wrap &.& color) $ prepareText msgAttr msg)
 
   setBoxSpacing mainBox 2
 
   ui <- centered =<< hLimit 50 mainBox
 
-  [col1Header, col2Header] <-
-      addHeadingRow table headerAttr ["", ""]
+  [_, col1Header, col2Header] <-
+      addHeadingRow table headerAttr ["", "", ""]
 
   edit1 <- editWidget editAttr editFocusAttr
   edit2 <- editWidget editAttr editFocusAttr
-  addRow table [ mkCell edit1, mkCell edit2 ]
+  t <- simpleText bodyAttr "testing"
+
+  addRow table [ mkCell t, mkCell edit1, mkCell edit2 ]
 
   edit1 `onChange` \_ s -> setText col1Header headerAttr s
   edit2 `onChange` \_ s -> setText col2Header headerAttr s
