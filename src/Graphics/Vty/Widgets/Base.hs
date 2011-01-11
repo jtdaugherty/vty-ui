@@ -310,7 +310,7 @@ renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim
         b_img <- render b s' mAttr
 
         return $ if renderDimension a_img >= regDimension actualSpace
-                 then [a_img]
+                 then [a_img, empty_image]
                  else [a_img, b_img]
 
       renderHalves = do
