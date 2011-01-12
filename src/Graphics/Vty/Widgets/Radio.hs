@@ -1,17 +1,29 @@
 module Graphics.Vty.Widgets.Radio
-    ( Radio
-    , newRadio
+    ( CheckBox
+    , RadioGroup
+    , newCheckbox
+    , newRadioGroup
+    , addToRadioGroup
     , toggleChecked
-    , setRadioUnchecked
-    , setRadioChecked
-    , onRadioChange
-    , radioIsChecked
+    , setCheckboxUnchecked
+    , setCheckboxChecked
+    , onCheckboxChange
+    , checkboxIsChecked
     )
 where
 
+import Data.IORef
+    ( IORef
+    , newIORef
+    , readIORef
+    , writeIORef
+    )
 import Data.Maybe
     ( isJust
     , fromJust
+    )
+import Control.Monad
+    ( when
     )
 import Control.Monad.Trans
     ( MonadIO
@@ -35,25 +47,60 @@ import Graphics.Vty.Widgets.Core
     , updateWidgetState_
     )
 
-data Radio = Radio { isChecked :: Bool
-                   , normalAttr :: Attr
-                   , focusedAttr :: Attr
-                   , checkedChar :: Char
-                   , radioLabel :: String
-                   , radioChangeHandler :: Widget Radio -> Bool -> IO ()
-                   }
+data RadioGroupData = RadioGroupData { currentlySelected :: Maybe (Widget CheckBox)
+                                     }
 
-newRadio :: (MonadIO m) => String -> Attr -> Attr -> m (Widget Radio)
-newRadio label normAttr focAttr = do
+type RadioGroup = IORef RadioGroupData
+
+newRadioGroup :: (MonadIO m) => m RadioGroup
+newRadioGroup = liftIO $ newIORef $ RadioGroupData Nothing
+
+addToRadioGroup :: (MonadIO m) => RadioGroup -> Widget CheckBox -> m ()
+addToRadioGroup rg wRef = do
+  updateWidgetState_ wRef $ \s -> s { radioGroup = Just rg
+                                    , checkedChar = '*'
+                                    }
+
+radioGroupSetCurrent :: (MonadIO m) => Widget CheckBox -> m ()
+radioGroupSetCurrent wRef = do
+  mRg <- radioGroup <~~ wRef
+
+  when (isJust mRg) $
+       do
+         let Just rg = mRg
+         rgData <- liftIO $ readIORef rg
+
+         -- If the radio group has a currently-selected checkbox,
+         -- uncheck it (but only if it's a different widget: it could
+         -- be the only one in this group!)
+         when ((isJust $ currentlySelected rgData) &&
+               (currentlySelected rgData /= Just wRef)) $
+              setChecked__ (fromJust $ currentlySelected rgData) False
+
+         liftIO $ writeIORef rg $ rgData { currentlySelected = Just wRef }
+         setChecked__ wRef True
+
+data CheckBox = CheckBox { isChecked :: Bool
+                         , normalAttr :: Attr
+                         , focusedAttr :: Attr
+                         , checkedChar :: Char
+                         , checkboxLabel :: String
+                         , checkboxChangeHandler :: Widget CheckBox -> Bool -> IO ()
+                         , radioGroup :: Maybe RadioGroup
+                         }
+
+newCheckbox :: (MonadIO m) => String -> Attr -> Attr -> m (Widget CheckBox)
+newCheckbox label normAttr focAttr = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Radio { isChecked = False
-                        , normalAttr = normAttr
-                        , focusedAttr = focAttr
-                        , checkedChar = 'x'
-                        , radioLabel = label
-                        , radioChangeHandler = \_ _ -> return ()
-                        }
+      w { state = CheckBox { isChecked = False
+                           , normalAttr = normAttr
+                           , focusedAttr = focAttr
+                           , checkedChar = 'x'
+                           , checkboxLabel = label
+                           , checkboxChangeHandler = \_ _ -> return ()
+                           , radioGroup = Nothing
+                           }
         , keyEventHandler = radioKeyEvent
         , draw =
             \this sz mAttr -> do
@@ -67,48 +114,64 @@ newRadio label normAttr focAttr = do
                               else normalAttr st
                   ch = if isChecked st then checkedChar st else ' '
 
-                  s = ['[', ch, ']', ' '] ++ (radioLabel st)
+                  s = ['[', ch, ']', ' '] ++ (checkboxLabel st)
 
               return $ string attr $ take (fromEnum $ region_width sz) s
         }
 
-radioKeyEvent :: Widget Radio -> Key -> [Modifier] -> IO Bool
+radioKeyEvent :: Widget CheckBox -> Key -> [Modifier] -> IO Bool
 radioKeyEvent this (KASCII ' ') [] = toggleChecked this >> return True
 radioKeyEvent this KEnter [] = toggleChecked this >> return True
 radioKeyEvent _ _ _ = return False
 
-setRadioUnchecked :: (MonadIO m) => Widget Radio -> m ()
-setRadioUnchecked wRef = setChecked_ wRef False
+setCheckboxUnchecked :: (MonadIO m) => Widget CheckBox -> m ()
+setCheckboxUnchecked wRef = setChecked_ wRef False
 
-setRadioChecked :: (MonadIO m) => Widget Radio -> m ()
-setRadioChecked wRef = setChecked_ wRef True
+setCheckboxChecked :: (MonadIO m) => Widget CheckBox -> m ()
+setCheckboxChecked wRef = setChecked_ wRef True
 
-toggleChecked :: (MonadIO m) => Widget Radio -> m ()
+toggleChecked :: (MonadIO m) => Widget CheckBox -> m ()
 toggleChecked wRef = do
   v <- isChecked <~~ wRef
   setChecked_ wRef (not v)
 
-setChecked_ :: (MonadIO m) => Widget Radio -> Bool -> m ()
+setChecked_ :: (MonadIO m) => Widget CheckBox -> Bool -> m ()
 setChecked_ wRef v = do
-  updateWidgetState_ wRef $ \s -> s { isChecked = v }
-  notifyChangeHandler wRef
+  mRg <- radioGroup <~~ wRef
 
-notifyChangeHandler :: (MonadIO m) => Widget Radio -> m ()
+  case mRg of
+    Nothing -> setChecked__ wRef v
+    Just _ -> case v of
+                True -> radioGroupSetCurrent wRef
+                -- unchecking a radio button is not permitted except
+                -- by the internal API (setChecked__)
+                False -> return ()
+
+setChecked__ :: (MonadIO m) => Widget CheckBox -> Bool -> m ()
+setChecked__ wRef v = do
+  oldVal <- isChecked <~~ wRef
+
+  when (oldVal /= v) $
+       do
+         updateWidgetState_ wRef $ \s -> s { isChecked = v }
+         when (oldVal /= v) $ notifyChangeHandler wRef
+
+notifyChangeHandler :: (MonadIO m) => Widget CheckBox -> m ()
 notifyChangeHandler wRef = do
-  h <- radioChangeHandler <~~ wRef
-  v <- radioIsChecked wRef
+  h <- checkboxChangeHandler <~~ wRef
+  v <- checkboxIsChecked wRef
   liftIO $ h wRef v
 
-radioIsChecked :: (MonadIO m) => Widget Radio -> m Bool
-radioIsChecked = (isChecked <~~)
+checkboxIsChecked :: (MonadIO m) => Widget CheckBox -> m Bool
+checkboxIsChecked = (isChecked <~~)
 
-onRadioChange :: Widget Radio -> (Widget Radio -> Bool -> IO ()) -> IO ()
-onRadioChange wRef handler = do
-  oldHandler <- radioChangeHandler <~~ wRef
+onCheckboxChange :: Widget CheckBox -> (Widget CheckBox -> Bool -> IO ()) -> IO ()
+onCheckboxChange wRef handler = do
+  oldHandler <- checkboxChangeHandler <~~ wRef
 
   let combinedHandler =
           \w v -> do
             oldHandler w v
             handler w v
 
-  updateWidgetState_ wRef $ \s -> s { radioChangeHandler = combinedHandler }
+  updateWidgetState_ wRef $ \s -> s { checkboxChangeHandler = combinedHandler }

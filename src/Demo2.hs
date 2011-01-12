@@ -40,9 +40,15 @@ main = do
 
   ui <- centered =<< hLimit 50 mainBox
 
-  r1 <- newRadio "Radio 1" bodyAttr focusAttr
-  r2 <- newRadio "Radio 2" bodyAttr focusAttr
+  r1 <- newCheckbox "Cb 1" bodyAttr focusAttr
+  r2 <- newCheckbox "Cb 2" bodyAttr focusAttr
+  r3 <- newCheckbox "Cb 3 (no radio)" bodyAttr focusAttr
   radioHeader <- simpleText headerAttr ""
+  r3Header <- simpleText headerAttr ""
+
+  rg <- newRadioGroup
+  addToRadioGroup rg r1
+  addToRadioGroup rg r2
 
   edit1 <- editWidget editAttr focusAttr
   edit1Header <- simpleText headerAttr ""
@@ -54,19 +60,26 @@ main = do
 
   addRow table [ mkCell radioHeader, mkCell r1 ]
   addRow table [ mkCell e, mkCell r2 ]
+  addRow table [ mkCell r3Header, mkCell r3 ]
   addRow table [ mkCell edit1Header, mkCell edit1 ]
   addRow table [ mkCell edit2Header, mkCell edit2 ]
 
-  r1 `onRadioChange` \_ v -> when v $ setText radioHeader headerAttr "radio 1 checked"
-  r2 `onRadioChange` \_ v -> when v $ setText radioHeader headerAttr "radio 2 checked"
+  r1 `onCheckboxChange` \_ v ->
+      when v $ setText radioHeader headerAttr "radio 1 checked"
+
+  r2 `onCheckboxChange` \_ v ->
+      when v $ setText radioHeader headerAttr "radio 2 checked"
+
+  r3 `onCheckboxChange` \_ v ->
+      setText r3Header headerAttr $ if v then "checked" else "unchecked"
 
   edit1 `onChange` \_ s -> setText edit1Header headerAttr s
   edit2 `onChange` \_ s -> setText edit2Header headerAttr s
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
-  setRadioChecked r1
-  setRadioUnchecked r2
+  setCheckboxChecked r1
+  setCheckboxChecked r3
 
   fg <- newFocusGroup
   fg `onKeyPressed` \_ k _ -> do
@@ -76,6 +89,7 @@ main = do
 
   addToFocusGroup_ fg r1
   addToFocusGroup_ fg r2
+  addToFocusGroup_ fg r3
   addToFocusGroup_ fg edit1
   addToFocusGroup_ fg edit2
   setFocusGroup ui fg
