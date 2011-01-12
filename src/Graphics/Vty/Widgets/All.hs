@@ -11,7 +11,7 @@ module Graphics.Vty.Widgets.All
     , module Graphics.Vty.Widgets.Edit
     , module Graphics.Vty.Widgets.Util
     , module Graphics.Vty.Widgets.Table
-    , module Graphics.Vty.Widgets.Radio
+    , module Graphics.Vty.Widgets.CheckBox
     )
 where
 
@@ -26,4 +26,4 @@ import Graphics.Vty.Widgets.Collections
 import Graphics.Vty.Widgets.Edit
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Table
-import Graphics.Vty.Widgets.Radio
+import Graphics.Vty.Widgets.CheckBox

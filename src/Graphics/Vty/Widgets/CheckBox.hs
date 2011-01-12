@@ -1,4 +1,4 @@
-module Graphics.Vty.Widgets.Radio
+module Graphics.Vty.Widgets.CheckBox
     ( CheckBox
     , RadioGroup
     , newCheckbox
