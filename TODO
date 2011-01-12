@@ -18,6 +18,12 @@
     and no edge border, the underline attribute goes to the right side
     of the terminal. :(  Perhaps enclose the edit area in [...]?
 
+  - Tables: richer API
+
+    - add, remove rows
+    - get reference to cell contents
+    - events: onRowAdded, onRowRemoved
+
   - Think about possible ways to link the size of one widget (say,
     text) to another (say, a table).  Right now you have to use an
     hLimit or vLimit, but if you don't want to hard-code a size that
@@ -28,6 +34,9 @@
 
   - Fix bug: text widget wrapping does not correctly preserve
     preexisting newlines.
+
+  - Fix ugliness: text tokenization truncates whole tokens when
+    limiting what to render (instead of truncating mid-token)
 
   - Fix bug(s): some widgets crash when they can't be rendered (i.e.,
     they return images anyway, but there is no space).  Start by
