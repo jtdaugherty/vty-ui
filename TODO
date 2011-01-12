@@ -35,19 +35,6 @@
     provide some info about the violation.  Table is known buggy this
     area.
 
-  - Radio button widgets
-
-    newRadio :: (MonadIO m) => String -> Char -> m (Widget Radio)
-    (label, char used to indicate checked)
-    newRadioGroup :: ...
-
-    Need to think about how to make it impossible to avoid putting all
-    radio buttons in a group into the same focus group; in a way we
-    don't want to care about which specific things are in the group;
-    we just want to say "link this focus group with that radio group."
-
-  - Checkbox widgets (same as radio, just not linked)
-
   - Use Text instead of String?  (And encode Text as Utf8, which Vty
     supports)
 
