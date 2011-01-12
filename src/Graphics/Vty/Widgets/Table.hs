@@ -219,7 +219,7 @@ mkSideBorder_ t = do
                           getPhysicalSize cw >>= (return . region_height)
                     return $ maximum hs
 
-  let borderImgs = (flip map) rowHeights $ \h -> char_fill bAttr '|' h 1
+  let borderImgs = (flip map) rowHeights $ \h -> char_fill bAttr '|' 1 h
       withIntersections = if rowBorders bs
                           then intersperse intersection borderImgs
                           else borderImgs
