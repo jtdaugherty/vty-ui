@@ -103,7 +103,7 @@ main = do
   addToFocusGroup fg r3
   addToFocusGroup fg edit1
   addToFocusGroup fg edit2
-  addToFocusGroup fg selector
+  addToFocusGroup fg lst
   setFocusGroup ui fg
 
   -- Enter the event loop.
