@@ -1,5 +1,6 @@
 
 - Base, Core: modules getting big, think about splitting up further
+  (plus, Base and Core are not good module names!)
 
 - List: do audit for calculations that should be done in terms of
   itemHeight
