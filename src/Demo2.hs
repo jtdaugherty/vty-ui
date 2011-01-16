@@ -56,6 +56,7 @@ main = do
   edit2Header <- simpleText headerAttr ""
 
   b <- (simpleText bodyAttr "Foo") <--> (simpleText bodyAttr "Bar")
+  setBoxSpacing b 1
 
   addHeadingRow_ table bodyAttr ["Foo", "Bar"]
   addRow table $ radioHeader .|. r1
