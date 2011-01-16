@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, ExistentialQuantification #-}
+{-# LANGUAGE CPP, ExistentialQuantification, DeriveDataTypeable #-}
 -- |This module provides a basic infrastructure for modelling a user
 -- interface widget and converting it to Vty's 'Image' type.
 module Graphics.Vty.Widgets.Core
@@ -33,6 +33,7 @@ module Graphics.Vty.Widgets.Core
 
     -- ** Focus management
     , FocusGroup
+    , FocusGroupError(..)
     , newFocusGroup
     , addToFocusGroup
     , addToFocusGroup_
@@ -48,6 +49,9 @@ module Graphics.Vty.Widgets.Core
 where
 
 import GHC.Word ( Word )
+import Data.Typeable
+    ( Typeable
+    )
 import Data.IORef
     ( IORef
     , newIORef
@@ -69,6 +73,10 @@ import Control.Monad.Reader
 import Control.Monad.Trans
     ( MonadIO
     , liftIO
+    )
+import Control.Exception
+    ( Exception
+    , throw
     )
 import Graphics.Vty
     ( DisplayRegion(DisplayRegion)
@@ -290,6 +298,12 @@ withWidth (DisplayRegion _ h) w = DisplayRegion w h
 withHeight :: DisplayRegion -> Word -> DisplayRegion
 withHeight (DisplayRegion w _) h = DisplayRegion w h
 
+data FocusGroupError = FocusGroupEmpty
+                     | FocusGroupBadIndex Int
+                       deriving (Typeable, Show)
+
+instance Exception FocusGroupError
+
 data FocusEntry = forall a. FocusEntry (Widget a)
 
 data FocusGroup = FocusGroup { entries :: [Widget FocusEntry]
@@ -371,7 +385,7 @@ currentEntry :: (MonadIO m) => Widget FocusGroup -> m (Widget FocusEntry)
 currentEntry wRef = do
   es <- entries <~~ wRef
   i <- currentEntryNum <~~ wRef
-  when (i == -1) $ error "Focus group empty"
+  when (i == -1) $ throw FocusGroupEmpty
   return (es !! i)
 
 addToFocusGroup :: (MonadIO m) => Widget FocusGroup -> Widget a -> m (Widget FocusEntry)
@@ -395,7 +409,7 @@ focusNext :: (MonadIO m) => Widget FocusGroup -> m ()
 focusNext wRef = do
   st <- getState wRef
   let cur = currentEntryNum st
-  when (cur == -1) $ error "Focus group empty"
+  when (cur == -1) $ throw FocusGroupEmpty
   if cur < length (entries st) - 1 then
       setCurrentFocus wRef (cur + 1) else
       setCurrentFocus wRef 0
@@ -404,7 +418,7 @@ focusPrevious :: (MonadIO m) => Widget FocusGroup -> m ()
 focusPrevious wRef = do
   st <- getState wRef
   let cur = currentEntryNum st
-  when (cur == -1) $ error "Focus group empty"
+  when (cur == -1) $ throw FocusGroupEmpty
   if cur > 0 then
       setCurrentFocus wRef (cur - 1) else
       setCurrentFocus wRef (length (entries st) - 1)
@@ -414,8 +428,7 @@ setCurrentFocus cRef i = do
   st <- state <~ cRef
 
   when (i >= length (entries st) || i < 0) $
-       error $ "collection index " ++ (show i) ++
-                 " bad; size is " ++ (show $ length $ entries st)
+       throw $ FocusGroupBadIndex i
 
   -- If new entry number is different from existing one, invoke focus
   -- handlers.
