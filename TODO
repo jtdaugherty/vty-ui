@@ -16,7 +16,9 @@
 
   - When a table has N columns with an edit widget in the Nth column
     and no edge border, the underline attribute goes to the right side
-    of the terminal. :(  Perhaps enclose the edit area in [...]?
+    of the terminal. :( Perhaps enclose the edit area in [...]?  Is
+    this a VTY bug where the formatting should be terminated
+    explicitly?
 
   - Tables: richer API
 
@@ -33,7 +35,8 @@
     dimensions of B.
 
   - Fix bug: text widget wrapping does not correctly preserve
-    preexisting newlines.
+    preexisting newlines.  Could just be a tokenization bug.  Tests
+    would be nice here...
 
   - Fix ugliness: text tokenization truncates whole tokens when
     limiting what to render (instead of truncating mid-token)
@@ -48,12 +51,39 @@
     supports)
 
   - Think about how to enforce restrictions on what can go in table
-    cells
+    cells.  Could check growHorizontal and growVertical of things that
+    get added and raise an exception.
+
+  - Think about ways to improve the UI construction interface.  E.g.,
+
+    class (MonadIO m) => Liftable a m b | a -> m b where
+        getThing :: a -> m (Widget b)
+
+    instance (MonadIO m) => Liftable (m (Widget a)) m a where
+        getThing = id
+
+    instance (MonadIO m) => Liftable (Widget a) m a where
+        getThing = return
+
+    (<-->) :: (MonadIO m, Liftable w1 m a, Liftable w2 m b) =>
+              w1
+           -> w2
+           -> m (Widget (Box a b))
+    (<-->) act1 act2 = do
+      ch1 <- getThing act1
+      ch2 <- getThing act2
+      vBox ch1 ch2
+
+    (<++>) :: (MonadIO m, Liftable w1 m a, Liftable w2 m b) =>
+              w1
+           -> w2
+           -> m (Widget (Box a b))
+    (<++>) act1 act2 = do
+      ch1 <- getThing act1
+      ch2 <- getThing act2
+      hBox ch1 ch2
 
 - Low priority:
-
-  - Resize event handler support.  Top-level or per-widget?  Maybe not
-    even necessary?
 
   - Layering (i.e., dialogs), probably needs research into transposed
     images in Vty (which are not implemented yet).  Once dialogs work,
