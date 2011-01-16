@@ -52,6 +52,9 @@
     cells.  Could check growHorizontal and growVertical of things that
     get added and raise an exception.
 
+  - Exception types: add more metadata to each constructor, add custom
+    Show instances to make the errors more useful
+
   - Think about ways to improve the UI construction interface.  E.g.,
 
     class (MonadIO m) => Liftable a m b | a -> m b where
