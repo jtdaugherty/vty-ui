@@ -15,7 +15,6 @@ data AppState =
              , theEdit :: Widget Edit
              , theListLimit :: Widget (VLimit (List String FormattedText))
              , uis :: Widget Collection
-             , theTable :: Widget Table
              }
 
 -- Visual attributes.
@@ -54,7 +53,6 @@ mkAppState = do
   f2 <- simpleText titleAttr "[]"
   e <- editWidget editAttr editFocusAttr
   ll <- vLimit 5 lw
-  t <- newTable bodyAttr [Fixed 10, Fixed 20] (BorderPartial [Rows, Columns, Edges])
 
   c <- newCollection
 
@@ -65,7 +63,6 @@ mkAppState = do
                     , theEdit = e
                     , theListLimit = ll
                     , uis = c
-                    , theTable = t
                     }
 
 updateBody :: AppState -> Widget (List a b) -> IO ()
@@ -160,11 +157,6 @@ main = do
   setFocusGroup ui2 fg2
 
   setEditText (theEdit st) "edit me"
-
-  addHeadingRow_ (theTable st) (bright_yellow `on` black) ["Static", "Editable"]
-
-  w1 <- hCentered =<< simpleText bodyAttr "Foobar"
-  addRow (theTable st) $ w1 .|. theEdit st
 
   -- We need to call these handlers manually because while they will
   -- be called automatically as items are added to the list in the
