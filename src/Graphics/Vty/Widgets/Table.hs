@@ -24,6 +24,9 @@ import Data.Word
 import Data.List
     ( intersperse
     )
+import Control.Applicative
+    ( (<$>)
+    )
 import Control.Exception
     ( Exception
     , throw
@@ -265,7 +268,7 @@ mkSideBorder_ t = do
   rowHeights <- forM rs $ \(TableRow row) -> do
                     hs <- forM row $ \cell ->
                           case cell of
-                            TableCell cw -> getPhysicalSize cw >>= (return . region_height)
+                            TableCell cw -> region_height <$> getPhysicalSize cw
                             EmptyCell -> return 1
                     return $ maximum hs
 
