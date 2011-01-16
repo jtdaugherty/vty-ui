@@ -4,6 +4,7 @@ module Graphics.Vty.Widgets.Edit
     , getEditText
     , setEditText
     , setEditPosition
+    , getEditPosition
     , onActivate
     , onChange
     )
@@ -131,6 +132,9 @@ setEditPosition wRef pos = do
                            then length $ currentText s
                            else pos
         }
+
+getEditPosition :: Widget Edit -> IO Int
+getEditPosition = (cursorPosition <~~)
 
 setDisplayWidth :: Widget Edit -> Int -> IO ()
 setDisplayWidth this width =
