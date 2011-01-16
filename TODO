@@ -1,4 +1,6 @@
 
+- Do some testing with "current_attr" instead of "def_attr".
+
 - Base, Core: modules getting big, think about splitting up further
   (plus, Base and Core are not good module names!)
 
