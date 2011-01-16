@@ -82,6 +82,10 @@ import Graphics.Vty.Widgets.Core
     , updateWidget
     , updateWidgetState
     , getState
+    , getPhysicalPosition
+    , getPhysicalSize
+    , withWidth
+    , withHeight
     )
 import Graphics.Vty.Widgets.Text
     ( FormattedText
@@ -270,6 +274,15 @@ listWidget list = do
         -- XXX it might be crazy, but we could even pass events we
         -- don't handle onto the currently selected widget!
         , keyEventHandler = listKeyEvent
+
+        , cursorInfo =
+            \this -> do
+              st <- getState this
+              pos <- getPhysicalPosition this
+              sz <- getPhysicalSize this
+              return $ Just (pos
+                             `withWidth` (region_width pos + region_width sz - 1)
+                             `withHeight` (region_height pos + (toEnum $ selectedIndex st - scrollTopIndex st)))
 
         , draw =
             \this sz mAttr -> do

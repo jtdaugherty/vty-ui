@@ -25,13 +25,13 @@ main = do
             \keystrokes edit, <SPC> toggles radio \
             \button, <ESC> quits."
 
-  table <- newTable borderAttr [Fixed 20, Auto] BorderFull
+  table <- newTable borderAttr [Fixed 25, Auto] BorderFull
   tw <- textWidget (wrap &.& color) $ prepareText msgAttr msg
   mainBox <- (return table) <--> (return tw)
 
   setBoxSpacing mainBox 2
 
-  ui <- centered =<< hLimit 50 mainBox
+  ui <- centered =<< hLimit 70 mainBox
 
   r1 <- newCheckbox "Cb 1" bodyAttr focusAttr
   r2 <- newCheckbox "Cb 2" bodyAttr focusAttr
@@ -49,15 +49,9 @@ main = do
   edit2 <- editWidget editAttr focusAttr
   edit2Header <- simpleText headerAttr ""
 
-  b <- (simpleText bodyAttr "Foo") <--> (simpleText bodyAttr "Bar")
-  setBoxSpacing b 1
-
   lst <- listWidget $ mkList bodyAttr focusAttr (simpleText bodyAttr)
-  addToList lst "Foo"
-  addToList lst "Bar"
-  addToList lst "Baz"
 
-  selector <- vLimit 1 lst
+  selector <- vLimit 2 lst
   listHeader <- simpleText bodyAttr ""
 
   addHeadingRow_ table bodyAttr ["Foo", "Bar"]
@@ -66,8 +60,6 @@ main = do
   addRow table $ r3Header .|. r3
   addRow table $ edit1Header .|. edit1
   addRow table $ edit2Header .|. edit2
-  addRow table $ EmptyCell .|. b
-  addRow table $ EmptyCell .|. tw
   addRow table $ listHeader .|. selector
 
   r1 `onCheckboxChange` \_ v ->
@@ -83,7 +75,7 @@ main = do
   edit2 `onChange` \_ s -> setText edit2Header headerAttr s
 
   lst `onSelectionChange` \_ _ k _ ->
-      setText listHeader bodyAttr k
+      setText listHeader bodyAttr $ "You selected: " ++ k
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
@@ -97,6 +89,12 @@ main = do
          case k of
            KEsc -> exitSuccess
            _ -> return False
+
+  addToList lst "Foo"
+  addToList lst "Bar"
+  addToList lst "Baz"
+  addToList lst "Stuff"
+  addToList lst "Things"
 
   addToFocusGroup fg r1
   addToFocusGroup fg r2
