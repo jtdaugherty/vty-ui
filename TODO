@@ -52,6 +52,14 @@
     cells.  Could check growHorizontal and growVertical of things that
     get added and raise an exception.
 
+  - Think about ways to make it more reasonable to write widgets
+    mostly or completely in terms of existing ones, rather than having
+    to implement one's own WidgetImpl each time.  While it's really
+    nice to get type safety that way, mostly you want to *delegate*
+    functionality to composed widgets rather than writing your own.
+    Think about ways to make it possible to do both easily and
+    cleanly.
+
   - Exception types: add more metadata to each constructor, add custom
     Show instances to make the errors more useful
 
