@@ -1,14 +1,22 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExistentialQuantification, DeriveDataTypeable #-}
 module Graphics.Vty.Widgets.Collections
     ( Collection
+    , CollectionError(..)
     , newCollection
     , addToCollection
     , setCurrent
     )
 where
 
+import Data.Typeable
+    ( Typeable
+    )
 import Control.Monad.Trans
     ( MonadIO
+    )
+import Control.Exception
+    ( Exception
+    , throw
     )
 import Graphics.Vty
     ( DisplayRegion
@@ -37,6 +45,12 @@ import Graphics.Vty.Widgets.Core
 -- overlaid dialogs, but for now we'll just implement a "collection"
 -- type which allows is to have a collection of widgets and switch
 -- between them.
+
+data CollectionError = EmptyCollection
+                     | BadCollectionIndex Int
+                       deriving (Show, Typeable)
+
+instance Exception CollectionError
 
 data Entry = forall a. Entry (Widget a)
 
@@ -90,7 +104,7 @@ newCollection = do
         , draw = \this size mAttr -> do
                    st <- getState this
                    case currentEntryNum st of
-                     (-1) -> error "Tried to draw empty collection!"
+                     (-1) -> throw EmptyCollection
                      i -> do
                        let e = entries st !! i
                        renderEntry e size mAttr
@@ -100,7 +114,7 @@ newCollection = do
               (setPosition w) this pos
               st <- getState this
               case currentEntryNum st of
-                (-1) -> error "Tried to position empty collection!"
+                (-1) -> throw EmptyCollection
                 i -> do
                   let e = entries st !! i
                   positionEntry e pos
@@ -122,5 +136,4 @@ setCurrent cRef i = do
   st <- state <~ cRef
   if i < length (entries st) && i >= 0 then
       updateWidgetState_ cRef $ \s -> s { currentEntryNum = i } else
-      error $ "collection index " ++ (show i) ++
-                " bad; size is " ++ (show $ length $ entries st)
+      throw $ BadCollectionIndex i
