@@ -1,3 +1,4 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 -- |This module provides a 'List' widget for rendering a list of
 -- arbitrary widgets.  A 'List' has the following features:
 --
@@ -13,6 +14,7 @@
 module Graphics.Vty.Widgets.List
     ( List
     , ListItem
+    , ListError(..)
     -- ** List creation
     , mkList
     , mkSimpleList
@@ -39,9 +41,16 @@ module Graphics.Vty.Widgets.List
     )
 where
 
+import Data.Typeable
+    ( Typeable
+    )
 import Data.Maybe
     ( isJust
     , fromJust
+    )
+import Control.Exception
+    ( Exception
+    , throw
     )
 import Control.Monad
     ( when
@@ -78,6 +87,12 @@ import Graphics.Vty.Widgets.Text
     ( FormattedText
     , simpleText
     )
+
+data ListError = BadItemIndex Int
+               | ResizeError
+                 deriving (Show, Typeable)
+
+instance Exception ListError
 
 -- |A list item. Each item contains an arbitrary internal identifier
 -- @a@ and a 'Widget' representing it.
@@ -137,8 +152,7 @@ removeFromList list pos = do
   let numItems = length $ listItems st
 
   when (pos < 0 || pos >= numItems) $
-       error $ "removeFromList: cannot remove item " ++
-                 (show pos) ++ ", only " ++ (show numItems) ++ " items"
+       throw $ BadItemIndex pos
 
   -- Get the item from the list.
   let (label, w) = listItems st !! pos
@@ -332,7 +346,7 @@ getSelected wRef = do
 -- window position to keep the selected item visible.
 resize :: (MonadIO m) => Int -> Widget (List a b) -> m ()
 resize newSize wRef = do
-  when (newSize == 0) $ error "Cannot resize list window to zero"
+  when (newSize == 0) $ throw ResizeError
 
   size <- (scrollWindowSize . state) <~ wRef
 
