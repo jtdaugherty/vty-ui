@@ -119,7 +119,11 @@
     setting.
 
   - Exception types: add more metadata to each constructor, add custom
-    Show instances to make the errors more useful
+    Show instances to make the errors more useful.  This is especially
+    applicable to high-level errors (e.g., rendering errors) where it
+    would be important to know a lot about the widget that caused the
+    problem.  We probably want to either get its typerep or show its
+    state in the exception message.
 
   - Think about ways to improve the UI construction interface.  E.g.,
 
