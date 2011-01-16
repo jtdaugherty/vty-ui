@@ -154,7 +154,7 @@ setChecked__ wRef v = do
   when (oldVal /= v) $
        do
          updateWidgetState_ wRef $ \s -> s { isChecked = v }
-         when (oldVal /= v) $ notifyChangeHandler wRef
+         notifyChangeHandler wRef
 
 notifyChangeHandler :: (MonadIO m) => Widget CheckBox -> m ()
 notifyChangeHandler wRef = do
