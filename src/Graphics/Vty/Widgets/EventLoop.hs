@@ -13,6 +13,9 @@ import Control.Monad.Trans
     ( MonadIO
     , liftIO
     )
+import Control.Exception
+    ( finally
+    )
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( Widget
@@ -22,11 +25,14 @@ import Graphics.Vty.Widgets.Core
     , getCursorPosition
     )
 
-runUi :: (MonadIO m) =>
-         Vty
-      -> Widget a
-      -> m ()
-runUi vty uiWidget = do
+runUi :: Vty -> Widget a -> IO ()
+runUi vty uiWidget =
+    runUi' vty uiWidget `finally` do
+      reserve_display $ terminal vty
+      shutdown vty
+
+runUi' :: Vty -> Widget a -> IO ()
+runUi' vty uiWidget = do
   mFg <- getFocusGroup uiWidget
   when (isNothing mFg) $ error "fatal: top-level widget has no FocusGroup widget"
 
@@ -49,4 +55,4 @@ runUi vty uiWidget = do
     (EvKey k mods) -> handleKeyEvent fg k mods >> return ()
     _ -> return ()
 
-  runUi vty uiWidget
+  runUi' vty uiWidget
