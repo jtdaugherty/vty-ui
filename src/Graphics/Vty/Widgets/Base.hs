@@ -387,10 +387,8 @@ hLimit maxWidth child = do
 
         , draw = \this s mAttr -> do
                    HLimit width ch <- getState this
-                   img <- if region_width s < fromIntegral width
-                          then render ch s mAttr
-                          else render ch (s `withWidth` fromIntegral width) mAttr
-                   return img
+                   let region = s `withWidth` fromIntegral (min (toEnum width) (region_width s))
+                   render ch region mAttr
 
         , setPosition =
             \this pos -> do
@@ -420,10 +418,8 @@ vLimit maxHeight child = do
 
         , draw = \this s mAttr -> do
                    VLimit height ch <- getState this
-                   img <- if region_height s < fromIntegral height
-                          then render ch s mAttr
-                          else render ch (s `withHeight` fromIntegral height) mAttr
-                   return img
+                   let region = s `withHeight` fromIntegral (min (toEnum height) (region_height s))
+                   render ch region mAttr
 
         , setPosition =
             \this pos -> do
