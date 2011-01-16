@@ -19,7 +19,6 @@ module Graphics.Vty.Widgets.Core
     , (<~~)
 
     -- ** Miscellaneous
-    , Orientation(..)
     , withWidth
     , withHeight
 
@@ -81,10 +80,6 @@ import Graphics.Vty
     , image_height
     , empty_image
     )
-
--- |A simple orientation type.
-data Orientation = Horizontal | Vertical
-                   deriving (Eq, Show)
 
 -- |The type of user interface widgets.  A 'Widget' provides several
 -- properties:

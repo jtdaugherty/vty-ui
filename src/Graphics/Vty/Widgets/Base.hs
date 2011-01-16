@@ -51,7 +51,6 @@ import Control.Monad.Reader
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
-    , Orientation(..)
     , (<~)
     , newWidget
     , updateWidget
@@ -80,6 +79,10 @@ import Graphics.Vty
     , def_attr
     , empty_image
     )
+
+-- |A simple orientation type.
+data Orientation = Horizontal | Vertical
+                   deriving (Eq, Show)
 
 data HCentered a = HCentered (Widget a)
 
