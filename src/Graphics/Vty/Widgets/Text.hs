@@ -44,7 +44,7 @@ import Graphics.Vty.Widgets.Core
     , Widget
     , newWidget
     , updateWidget
-    , updateWidgetState_
+    , updateWidgetState
     , getState
     )
 import Text.Trans.Tokenize
@@ -148,10 +148,11 @@ textWidget format t = do
               ft <- getState this
               return $ renderText (text ft) (formatter ft) size mAttr
         }
+  return wRef
 
 setText :: (MonadIO m) => Widget FormattedText -> Attr -> String -> m ()
 setText wRef attr s =
-    updateWidgetState_ wRef $ \st -> st { text = prepareText attr s }
+    updateWidgetState wRef $ \st -> st { text = prepareText attr s }
 
 -- |Low-level text-rendering routine.
 renderText :: Text -> Formatter -> DisplayRegion -> Maybe Attr -> Image

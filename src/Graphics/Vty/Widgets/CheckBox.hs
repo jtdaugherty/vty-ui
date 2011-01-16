@@ -45,7 +45,7 @@ import Graphics.Vty.Widgets.Core
     , getState
     , newWidget
     , updateWidget
-    , updateWidgetState_
+    , updateWidgetState
     )
 
 data RadioGroupData = RadioGroupData { currentlySelected :: Maybe (Widget CheckBox)
@@ -58,13 +58,13 @@ newRadioGroup = liftIO $ newIORef $ RadioGroupData Nothing
 
 setCheckedChar :: (MonadIO m) => Widget CheckBox -> Char -> m ()
 setCheckedChar wRef ch =
-    updateWidgetState_ wRef $ \s -> s { checkedChar = ch
+    updateWidgetState wRef $ \s -> s { checkedChar = ch
                                       }
 
 addToRadioGroup :: (MonadIO m) => RadioGroup -> Widget CheckBox -> m ()
 addToRadioGroup rg wRef = do
-  updateWidgetState_ wRef $ \s -> s { radioGroup = Just rg
-                                    }
+  updateWidgetState wRef $ \s -> s { radioGroup = Just rg
+                                   }
   setCheckedChar wRef '*'
 
 radioGroupSetCurrent :: (MonadIO m) => Widget CheckBox -> m ()
@@ -124,6 +124,7 @@ newCheckbox label normAttr focAttr = do
 
               return $ string attr $ take (fromEnum $ region_width sz) s
         }
+  return wRef
 
 radioKeyEvent :: Widget CheckBox -> Key -> [Modifier] -> IO Bool
 radioKeyEvent this (KASCII ' ') [] = toggleChecked this >> return True
@@ -159,7 +160,7 @@ setChecked__ wRef v = do
 
   when (oldVal /= v) $
        do
-         updateWidgetState_ wRef $ \s -> s { isChecked = v }
+         updateWidgetState wRef $ \s -> s { isChecked = v }
          notifyChangeHandler wRef
 
 notifyChangeHandler :: (MonadIO m) => Widget CheckBox -> m ()
@@ -180,4 +181,4 @@ onCheckboxChange wRef handler = do
             oldHandler w v
             handler w v
 
-  updateWidgetState_ wRef $ \s -> s { checkboxChangeHandler = combinedHandler }
+  updateWidgetState wRef $ \s -> s { checkboxChangeHandler = combinedHandler }

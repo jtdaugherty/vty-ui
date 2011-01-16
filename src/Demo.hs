@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-unused-do-bind #-}
 module Main where
 
 import System.Exit ( exitSuccess )
@@ -109,11 +109,11 @@ main = do
 
   fg1 <- newFocusGroup
   listCtx1 <- addToFocusGroup fg1 (theList st)
-  addToFocusGroup_ fg1 (theEdit st)
+  addToFocusGroup fg1 (theEdit st)
 
   fg2 <- newFocusGroup
   listCtx2 <- addToFocusGroup fg2 (theList st)
-  addToFocusGroup_ fg2 (theEdit st)
+  addToFocusGroup fg2 (theEdit st)
 
   -- These event handlers will fire regardless of the input event
   -- context.

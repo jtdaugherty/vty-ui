@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-unused-do-bind #-}
 module Main where
 
 import System.Exit ( exitSuccess )
@@ -86,11 +86,11 @@ main = do
            KEsc -> exitSuccess
            _ -> return False
 
-  addToFocusGroup_ fg r1
-  addToFocusGroup_ fg r2
-  addToFocusGroup_ fg r3
-  addToFocusGroup_ fg edit1
-  addToFocusGroup_ fg edit2
+  addToFocusGroup fg r1
+  addToFocusGroup fg r2
+  addToFocusGroup fg r3
+  addToFocusGroup fg edit1
+  addToFocusGroup fg edit2
   setFocusGroup ui fg
 
   -- Enter the event loop.

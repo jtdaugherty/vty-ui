@@ -80,7 +80,7 @@ import Graphics.Vty.Widgets.Core
     , render
     , newWidget
     , updateWidget
-    , updateWidgetState_
+    , updateWidgetState
     , getState
     )
 import Graphics.Vty.Widgets.Text
@@ -173,10 +173,10 @@ removeFromList list pos = do
                                         then sel - 1
                                         else sel
 
-  updateWidgetState_ list $ \s -> s { selectedIndex = newSelectedIndex
-                                    , listItems = take pos (listItems st) ++
-                                                  drop (pos + 1) (listItems st)
-                                    }
+  updateWidgetState list $ \s -> s { selectedIndex = newSelectedIndex
+                                   , listItems = take pos (listItems st) ++
+                                                 drop (pos + 1) (listItems st)
+                                   }
 
   -- Notify the removal handler.
   notifyItemRemoveHandler list pos label w
@@ -209,12 +209,12 @@ addToList list key = do
            return $ fromEnum $ image_height img
          _ -> itemHeight <~~ list
 
-  updateWidgetState_ list $ \s -> s { itemHeight = h
-                                    , listItems = listItems s ++ [(key, w)]
-                                    , selectedIndex = if numItems == 0
-                                                      then 0
-                                                      else selectedIndex s
-                                    }
+  updateWidgetState list $ \s -> s { itemHeight = h
+                                   , listItems = listItems s ++ [(key, w)]
+                                   , selectedIndex = if numItems == 0
+                                                     then 0
+                                                     else selectedIndex s
+                                   }
 
   notifyItemAddHandler list (numItems + 1) key w
 
@@ -230,7 +230,7 @@ onSelectionChange wRef handler = do
             oldHandler w
             handler w
 
-  updateWidgetState_ wRef $ \s -> s { selectionChangeHandler = combinedHandler }
+  updateWidgetState wRef $ \s -> s { selectionChangeHandler = combinedHandler }
 
 onItemAdded :: (MonadIO m) => Widget (List a b)
             -> (Widget (List a b) -> Int -> a -> Widget b -> IO ()) -> m ()
@@ -242,7 +242,7 @@ onItemAdded wRef handler = do
             oldHandler w pos k iw
             handler w pos k iw
 
-  updateWidgetState_ wRef $ \s -> s { itemAddHandler = combinedHandler }
+  updateWidgetState wRef $ \s -> s { itemAddHandler = combinedHandler }
 
 onItemRemoved :: (MonadIO m) => Widget (List a b)
             -> (Widget (List a b) -> Int -> a -> Widget b -> IO ()) -> m ()
@@ -254,7 +254,7 @@ onItemRemoved wRef handler = do
             oldHandler w pos k iw
             handler w pos k iw
 
-  updateWidgetState_ wRef $ \s -> s { itemRemoveHandler = combinedHandler }
+  updateWidgetState wRef $ \s -> s { itemRemoveHandler = combinedHandler }
 
 listWidget :: (MonadIO m) => List a b -> m (Widget (List a b))
 listWidget list = do
@@ -283,6 +283,7 @@ listWidget list = do
         -- XXX!!! define setPosition to set position of visible
         -- widgets in list
         }
+  return wRef
 
 listKeyEvent :: Widget (List a b) -> Key -> [Modifier] -> IO Bool
 listKeyEvent w KUp _ = scrollUp w >> return True
@@ -352,7 +353,7 @@ resize newSize wRef = do
 
   case compare newSize size of
     EQ -> return () -- Do nothing if the window size isn't changing.
-    GT -> updateWidgetState_ wRef $ \list ->
+    GT -> updateWidgetState wRef $ \list ->
           list { scrollWindowSize = newSize
                , scrollTopIndex = max 0 (scrollTopIndex list - (newSize - scrollWindowSize list))
                }
@@ -370,9 +371,9 @@ resize newSize wRef = do
                               then current - newSize + 1
                               else scrollTopIndex list
 
-      updateWidgetState_ wRef $ const $ list { scrollWindowSize = newSize
-                                             , scrollTopIndex = newScrollTopIndex
-                                             }
+      updateWidgetState wRef $ const $ list { scrollWindowSize = newSize
+                                            , scrollTopIndex = newScrollTopIndex
+                                            }
 
 -- |Scroll a list up or down by the specified number of positions and
 -- return the new scrolled list.  Scrolling by a positive amount
@@ -386,7 +387,7 @@ resize newSize wRef = do
 -- * Moves the scrolling window position if necessary (i.e., if the
 --   cursor moves to an item not currently in view)
 scrollBy :: (MonadIO m) => Int -> Widget (List a b) -> m ()
-scrollBy amount wRef = updateWidgetState_ wRef $ scrollBy' amount
+scrollBy amount wRef = updateWidgetState wRef $ scrollBy' amount
 
 -- Pure interface; should be used internally to the widget.
 scrollBy' :: Int -> List a b -> List a b

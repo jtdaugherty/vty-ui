@@ -7,9 +7,7 @@ module Graphics.Vty.Widgets.Core
     , renderAndPosition
     , render
     , updateWidget
-    , updateWidget_
     , updateWidgetState
-    , updateWidgetState_
     , newWidget
     , getState
     , getPhysicalSize
@@ -36,7 +34,6 @@ module Graphics.Vty.Widgets.Core
     , FocusGroupError(..)
     , newFocusGroup
     , addToFocusGroup
-    , addToFocusGroup_
     , focusNext
     , focusPrevious
     , setCurrentFocus
@@ -151,7 +148,7 @@ type Widget a = IORef (WidgetImpl a)
 
 setFocusGroup :: (MonadIO m) => Widget a -> Widget FocusGroup -> m ()
 setFocusGroup wRef fg =
-    updateWidget_ wRef $ \w -> w { focusGroup = const $ return $ Just fg }
+    updateWidget wRef $ \w -> w { focusGroup = const $ return $ Just fg }
 
 getFocusGroup :: (MonadIO m) => Widget a -> m (Maybe (Widget FocusGroup))
 getFocusGroup wRef = do
@@ -212,14 +209,14 @@ newWidget =
                                    , physicalSize = DisplayRegion 0 0
                                    , physicalPosition = DisplayRegion 0 0
                                    , gainFocus =
-                                       \this -> updateWidget_ this $ \w -> w { focused = True }
+                                       \this -> updateWidget this $ \w -> w { focused = True }
                                    , loseFocus =
-                                       \this -> updateWidget_ this $ \w -> w { focused = False }
+                                       \this -> updateWidget this $ \w -> w { focused = False }
                                    , focused = False
                                    , cursorInfo = const $ return Nothing
                                    , setPosition =
                                        \this newPos ->
-                                           updateWidget_ this $ \w -> w { physicalPosition = newPos }
+                                           updateWidget this $ \w -> w { physicalPosition = newPos }
                                    , focusGroup = const $ return Nothing
                                    }
 
@@ -241,7 +238,7 @@ onKeyPressed wRef handler = do
               True -> return True
               False -> oldHandler w k ms
 
-  updateWidget_ wRef $ \w -> w { keyEventHandler = combinedHandler }
+  updateWidget wRef $ \w -> w { keyEventHandler = combinedHandler }
 
 focus :: (MonadIO m) => Widget a -> m ()
 focus wRef = do
@@ -257,13 +254,13 @@ onGainFocus :: (MonadIO m) => Widget a -> (Widget a -> IO ()) -> m ()
 onGainFocus wRef handler = do
   oldHandler <- gainFocus <~ wRef
   let combinedHandler = \w -> oldHandler w >> handler w
-  updateWidget_ wRef $ \w -> w { gainFocus = combinedHandler }
+  updateWidget wRef $ \w -> w { gainFocus = combinedHandler }
 
 onLoseFocus :: (MonadIO m) => Widget a -> (Widget a -> IO ()) -> m ()
 onLoseFocus wRef handler = do
   oldHandler <- loseFocus <~ wRef
   let combinedHandler = \w -> oldHandler w >> handler w
-  updateWidget_ wRef $ \w -> w { loseFocus = combinedHandler }
+  updateWidget wRef $ \w -> w { loseFocus = combinedHandler }
 
 (<~) :: (MonadIO m) => (WidgetImpl a -> b) -> Widget a -> m b
 (<~) f wRef = (return . f) =<< (liftIO $ readIORef wRef)
@@ -271,24 +268,17 @@ onLoseFocus wRef handler = do
 (<~~) :: (MonadIO m) => (a -> b) -> Widget a -> m b
 (<~~) f wRef = (return . f . state) =<< (liftIO $ readIORef wRef)
 
-updateWidget :: (MonadIO m) => Widget a -> (WidgetImpl a -> WidgetImpl a) -> m (Widget a)
-updateWidget wRef f = (liftIO $ modifyIORef wRef f) >> return wRef
-
-updateWidget_ :: (MonadIO m) => Widget a -> (WidgetImpl a -> WidgetImpl a) -> m ()
-updateWidget_ wRef f = updateWidget wRef f >> return ()
+updateWidget :: (MonadIO m) => Widget a -> (WidgetImpl a -> WidgetImpl a) -> m ()
+updateWidget wRef f = (liftIO $ modifyIORef wRef f)
 
 getState :: (MonadIO m) => Widget a -> m a
 getState wRef = state <~ wRef
 
-updateWidgetState :: (MonadIO m) => Widget a -> (a -> a) -> m (Widget a)
+updateWidgetState :: (MonadIO m) => Widget a -> (a -> a) -> m ()
 updateWidgetState wRef f =
     liftIO $ do
       w <- readIORef wRef
       writeIORef wRef $ w { state = f (state w) }
-      return wRef
-
-updateWidgetState_ :: (MonadIO m) => Widget a -> (a -> a) -> m ()
-updateWidgetState_ wRef f = updateWidgetState wRef f >> return ()
 
 -- |Modify the width component of a 'DisplayRegion'.
 withWidth :: DisplayRegion -> Word -> DisplayRegion
@@ -315,7 +305,7 @@ newFocusEntry :: (MonadIO m) =>
               -> m (Widget FocusEntry)
 newFocusEntry chRef = do
   wRef <- newWidget
-  updateWidget_ wRef $ \w ->
+  updateWidget wRef $ \w ->
       w { state = FocusEntry chRef
 
         , getGrowHorizontal = do
@@ -373,6 +363,7 @@ newFocusGroup = do
         -- Should never be rendered.
         , draw = \_ _ _ -> return empty_image
         }
+  return wRef
 
 getCursorPosition :: (MonadIO m) => Widget FocusGroup -> m (Maybe DisplayRegion)
 getCursorPosition wRef = do
@@ -391,19 +382,16 @@ currentEntry wRef = do
 addToFocusGroup :: (MonadIO m) => Widget FocusGroup -> Widget a -> m (Widget FocusEntry)
 addToFocusGroup cRef wRef = do
   eRef <- newFocusEntry wRef
-  updateWidgetState_ cRef $ \s -> s { entries = (entries s) ++ [eRef] }
+  updateWidgetState cRef $ \s -> s { entries = (entries s) ++ [eRef] }
 
   -- If we just added the first widget to the group, focus it so
   -- something has focus.
   numEntries <- (length . entries) <~~ cRef
   when (numEntries == 1) $ do
-    updateWidgetState_ cRef $ \s -> s { currentEntryNum = 0 }
+    updateWidgetState cRef $ \s -> s { currentEntryNum = 0 }
     focus eRef
 
   return eRef
-
-addToFocusGroup_ :: (MonadIO m) => Widget FocusGroup -> Widget a -> m ()
-addToFocusGroup_ cRef wRef = addToFocusGroup cRef wRef >> return ()
 
 focusNext :: (MonadIO m) => Widget FocusGroup -> m ()
 focusNext wRef = do
@@ -438,4 +426,4 @@ setCurrentFocus cRef i = do
               unfocus ((entries st) !! (currentEntryNum st))
          focus ((entries st) !! i)
 
-  updateWidgetState_ cRef $ \s -> s { currentEntryNum = i }
+  updateWidgetState cRef $ \s -> s { currentEntryNum = i }

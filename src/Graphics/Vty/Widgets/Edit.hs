@@ -34,7 +34,7 @@ import Graphics.Vty.Widgets.Core
     , getPhysicalPosition
     , withWidth
     , updateWidget
-    , updateWidgetState_
+    , updateWidgetState
     , newWidget
     , getState
     )
@@ -91,6 +91,7 @@ editWidget normAtt focAtt = do
 
         , keyEventHandler = editKeyEvent
         }
+  return wRef
 
 onActivate :: Widget Edit -> (Widget Edit -> IO ()) -> IO ()
 onActivate wRef handler = do
@@ -101,7 +102,7 @@ onActivate wRef handler = do
             oldHandler w
             handler w
 
-  updateWidgetState_ wRef $ \s -> s { activateHandler = combinedHandler }
+  updateWidgetState wRef $ \s -> s { activateHandler = combinedHandler }
 
 onChange :: Widget Edit -> (Widget Edit -> String -> IO ()) -> IO ()
 onChange wRef handler = do
@@ -112,20 +113,20 @@ onChange wRef handler = do
             oldHandler w str
             handler w str
 
-  updateWidgetState_ wRef $ \s -> s { changeHandler = combinedHandler }
+  updateWidgetState wRef $ \s -> s { changeHandler = combinedHandler }
 
 getEditText :: Widget Edit -> IO String
 getEditText = (currentText <~~)
 
 setEditText :: Widget Edit -> String -> IO ()
 setEditText wRef str = do
-  updateWidgetState_ wRef $ \s -> s { currentText = str }
+  updateWidgetState wRef $ \s -> s { currentText = str }
   gotoBeginning wRef
   notifyChangeHandler wRef
 
 setEditPosition :: Widget Edit -> Int -> IO ()
 setEditPosition wRef pos = do
-  updateWidgetState_ wRef $ \s ->
+  updateWidgetState wRef $ \s ->
       s { cursorPosition = if pos > (length $ currentText s)
                            then length $ currentText s
                            else pos
@@ -133,7 +134,7 @@ setEditPosition wRef pos = do
 
 setDisplayWidth :: Widget Edit -> Int -> IO ()
 setDisplayWidth this width =
-    updateWidgetState_ this $ \s ->
+    updateWidgetState this $ \s ->
         let newDispStart = if cursorPosition s - displayStart s >= width
                            then cursorPosition s - width + 1
                            else displayStart s
@@ -166,7 +167,7 @@ killToEOL this = do
   str <- getEditText this
 
   setEditText this $ take pos str
-  updateWidgetState_ this $ \s ->
+  updateWidgetState this $ \s ->
       s { displayStart = st
         , cursorPosition = pos
         }
@@ -193,13 +194,13 @@ notifyActivateHandler wRef = do
 
 gotoBeginning :: Widget Edit -> IO ()
 gotoBeginning wRef = do
-  updateWidgetState_ wRef $ \s -> s { displayStart = 0
+  updateWidgetState wRef $ \s -> s { displayStart = 0
                                     , cursorPosition = 0
                                     }
 
 gotoEnd :: Widget Edit -> IO ()
 gotoEnd wRef = do
-  updateWidgetState_ wRef $ \s ->
+  updateWidgetState wRef $ \s ->
       s { displayStart = if (length $ currentText s) > displayWidth s
                          then (length $ currentText s) - displayWidth s
                          else 0
@@ -216,7 +217,7 @@ moveCursorLeft wRef = do
       let newDispStart = if p == displayStart st
                          then displayStart st - 1
                          else displayStart st
-      updateWidgetState_ wRef $ \s ->
+      updateWidgetState wRef $ \s ->
           s { cursorPosition = p - 1
             , displayStart = newDispStart
             }
@@ -230,21 +231,21 @@ moveCursorRight wRef = do
          let newDispStart = if cursorPosition st == displayStart st + displayWidth st - 1
                             then displayStart st + 1
                             else displayStart st
-         updateWidgetState_ wRef $ \s ->
+         updateWidgetState wRef $ \s ->
              s { cursorPosition = cursorPosition st + 1
                , displayStart = newDispStart
                }
 
 cursorHome :: Widget Edit -> IO ()
-cursorHome wRef = updateWidgetState_ wRef $ \st -> st { cursorPosition = 0 }
+cursorHome wRef = updateWidgetState wRef $ \st -> st { cursorPosition = 0 }
 
 cursorEnd :: Widget Edit -> IO ()
-cursorEnd wRef = updateWidgetState_ wRef $ \st ->
+cursorEnd wRef = updateWidgetState wRef $ \st ->
                  st { cursorPosition = length (currentText st) }
 
 insertChar :: Widget Edit -> Char -> IO ()
 insertChar wRef ch = do
-  updateWidgetState_ wRef $ \st ->
+  updateWidgetState wRef $ \st ->
       let newContent = inject (cursorPosition st) ch (currentText st)
           newViewStart =
               if cursorPosition st == displayStart st + displayWidth st - 1
@@ -262,7 +263,7 @@ delCurrentChar wRef = do
   when (cursorPosition st < (length $ currentText st)) $
        do
          let newContent = remove (cursorPosition st) (currentText st)
-         updateWidgetState_ wRef $ \s -> s { currentText = newContent }
+         updateWidgetState wRef $ \s -> s { currentText = newContent }
          notifyChangeHandler wRef
 
 remove :: Int -> [a] -> [a]

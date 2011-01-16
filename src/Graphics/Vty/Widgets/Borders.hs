@@ -72,6 +72,7 @@ hBorderWith ch att = do
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) 1
         }
+  return wRef
 
 data VBorder = VBorder Attr Char
 
@@ -93,6 +94,7 @@ vBorderWith ch att = do
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch 1 (region_height s)
         }
+  return wRef
 
 data Bordered a = Bordered Attr (Widget a)
 
@@ -130,6 +132,7 @@ bordered att child = do
                           `withHeight` (region_height pos + 1)
               setPhysicalPosition ch chPos
         }
+  return wRef
 
 drawBordered :: Bordered a -> DisplayRegion -> Maybe Attr -> IO Image
 drawBordered this s mAttr = do

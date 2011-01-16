@@ -62,7 +62,7 @@ import Graphics.Vty.Widgets.Core
     , render
     , newWidget
     , updateWidget
-    , updateWidgetState_
+    , updateWidgetState
     , withWidth
     , setPhysicalPosition
     , getPhysicalSize
@@ -206,6 +206,7 @@ newTable attr sizes borderSty = do
 
               return ()
         }
+  return t
 
 mkRowBorder :: Widget Table -> DisplayRegion-> IO Image
 mkRowBorder t sz = do
@@ -339,7 +340,7 @@ addRow t row = do
   nc <- numColumns <~~ t
   when (length cells /= nc) $ throw ColumnCountMismatch
 
-  updateWidgetState_ t $ \s ->
+  updateWidgetState t $ \s ->
       s { rows = rows s ++ [TableRow cells] }
 
 renderCell :: DisplayRegion -> TableCell -> Maybe Attr -> IO Image

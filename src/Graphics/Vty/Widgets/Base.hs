@@ -62,8 +62,8 @@ import Graphics.Vty.Widgets.Core
     , handleKeyEvent
     , getState
     , setPhysicalPosition
-    , updateWidgetState_
     , getPhysicalSize
+    , updateWidgetState
     )
 import Graphics.Vty
     ( DisplayRegion
@@ -121,6 +121,7 @@ hCentered ch = do
                   chPos = pos `withWidth` (region_width pos + half)
               setPhysicalPosition child chPos
         }
+  return wRef
 
 data VCentered a = VCentered (Widget a)
 
@@ -159,6 +160,7 @@ vCentered ch = do
                   chPos = pos `withHeight` (region_height pos + half)
               setPhysicalPosition child chPos
         }
+  return wRef
 
 centered :: (MonadIO m) => Widget a -> m (Widget (VCentered (HCentered a)))
 centered wRef = vCentered =<< hCentered wRef
@@ -197,6 +199,7 @@ vFill att c = do
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) (region_height s)
         }
+  return wRef
 
 data HFill = HFill Attr Char Int
 
@@ -214,6 +217,7 @@ hFill att c h = do
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) (toEnum height)
         }
+  return wRef
 
 data Box a b = Box Orientation Int (Widget a) (Widget b)
 
@@ -281,10 +285,11 @@ box o spacing a b = do
                             pos `withHeight` ((region_height pos) + (region_height ch1_size) +
                                                                   toEnum sp)
         }
+  return wRef
 
 setBoxSpacing :: (MonadIO m) => Widget (Box a b) -> Int -> m ()
 setBoxSpacing wRef spacing =
-    updateWidgetState_ wRef $ \(Box o _ a b) -> Box o spacing a b
+    updateWidgetState wRef $ \(Box o _ a b) -> Box o spacing a b
 
 -- Box layout rendering implementation. This is generalized over the
 -- two dimensions in which box layout can be performed; it takes lot
@@ -393,6 +398,7 @@ hLimit maxWidth child = do
               HLimit _ ch <- getState this
               setPhysicalPosition ch pos
         }
+  return wRef
 
 data VLimit a = VLimit Int (Widget a)
 
@@ -425,16 +431,17 @@ vLimit maxHeight child = do
               VLimit _ ch <- getState this
               setPhysicalPosition ch pos
         }
+  return wRef
 
 setVLimit :: (MonadIO m) => Widget (VLimit a) -> Int -> m ()
 setVLimit wRef lim =
     when (lim >= 1) $
-         updateWidgetState_ wRef $ \(VLimit _ ch) -> VLimit lim ch
+         updateWidgetState wRef $ \(VLimit _ ch) -> VLimit lim ch
 
 setHLimit :: (MonadIO m) => Widget (HLimit a) -> Int -> m ()
 setHLimit wRef lim =
     when (lim >= 1) $
-         updateWidgetState_ wRef $ \(HLimit _  ch) -> HLimit lim ch
+         updateWidgetState wRef $ \(HLimit _  ch) -> HLimit lim ch
 
 addToVLimit :: (MonadIO m) => Widget (VLimit a) -> Int -> m ()
 addToVLimit wRef delta = do
