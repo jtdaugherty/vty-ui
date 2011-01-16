@@ -7,6 +7,7 @@ module Graphics.Vty.Widgets.CheckBox
     , toggleChecked
     , setCheckboxUnchecked
     , setCheckboxChecked
+    , setCheckedChar
     , onCheckboxChange
     , checkboxIsChecked
     )
@@ -55,11 +56,16 @@ type RadioGroup = IORef RadioGroupData
 newRadioGroup :: (MonadIO m) => m RadioGroup
 newRadioGroup = liftIO $ newIORef $ RadioGroupData Nothing
 
+setCheckedChar :: (MonadIO m) => Widget CheckBox -> Char -> m ()
+setCheckedChar wRef ch =
+    updateWidgetState_ wRef $ \s -> s { checkedChar = ch
+                                      }
+
 addToRadioGroup :: (MonadIO m) => RadioGroup -> Widget CheckBox -> m ()
 addToRadioGroup rg wRef = do
   updateWidgetState_ wRef $ \s -> s { radioGroup = Just rg
-                                    , checkedChar = '*'
                                     }
+  setCheckedChar wRef '*'
 
 radioGroupSetCurrent :: (MonadIO m) => Widget CheckBox -> m ()
 radioGroupSetCurrent wRef = do
