@@ -81,6 +81,9 @@
 - Use Text instead of String?  (And encode Text as Utf8, which Vty
   supports)
 
+- List: make it possible to provide a focused-selected and
+  non-focused-selected attributes, update drawing routine to use them
+
 - Think about how to enforce restrictions on what can go in table
   cells.  Could check growHorizontal and growVertical of things that
   get added and raise an exception.
