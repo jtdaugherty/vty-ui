@@ -67,12 +67,6 @@ mkAppState = do
                     , theTable = t
                     }
 
-exitApp :: Vty -> IO a
-exitApp vty = do
-  reserve_display $ terminal vty
-  shutdown vty
-  exitSuccess
-
 updateBody :: AppState -> Widget (List a b) -> IO ()
 updateBody st w = do
   result <- getSelected w
@@ -129,7 +123,7 @@ main = do
 
   (theList st) `onKeyPressed` \_ k _ -> do
          case k of
-           (KASCII 'q') -> exitApp vty
+           (KASCII 'q') -> exitSuccess
            KDel -> do
                   result <- getSelected (theList st)
                   case result of
