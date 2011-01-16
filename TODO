@@ -154,6 +154,18 @@
       ch2 <- getThing act2
       hBox ch1 ch2
 
+  - Test a list widget with elements > 1 row high
+
+  - Throw exception on adding a widget to a list when its size policy
+    is bad (grows vertically)?
+
+  - Consistency issue: when using a Collection and a FocusGroup for
+    each element of the collection, if the FocusGroups share widgets,
+    there will be a consistency problem where one of the FocusGroups
+    could have a widget set as its focus, yet the widget's internal
+    state would not appear focused since it was being manipulated by a
+    different focus group.
+
 - Low priority:
 
   - Layering (i.e., dialogs), probably needs research into transposed
