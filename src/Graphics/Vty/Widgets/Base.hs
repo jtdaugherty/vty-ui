@@ -103,7 +103,7 @@ hCentered ch = do
 
                    -- XXX def_attr can be wrong
                    let attr' = maybe def_attr id mAttr
-                       (half, half') = hCentered_halves s (image_width img)
+                       (half, half') = centered_halves region_width s (image_width img)
 
                    return $ if half > 0
                             then horiz_cat [ char_fill attr' ' ' half (image_height img)
@@ -117,7 +117,7 @@ hCentered ch = do
               HCentered child <- getState this
               s <- getPhysicalSize this
               chSz <- getPhysicalSize child
-              let (half, _) = hCentered_halves s (region_width chSz)
+              let (half, _) = centered_halves region_width s (region_width chSz)
                   chPos = pos `withWidth` (region_width pos + half)
               setPhysicalPosition child chPos
         }
@@ -142,7 +142,7 @@ vCentered ch = do
 
                    -- XXX def_attr can be wrong
                    let attr' = maybe def_attr id mAttr
-                       (half, half') = vCentered_halves s (image_height img)
+                       (half, half') = centered_halves region_height s (image_height img)
 
                    return $ if half > 0
                             then vert_cat [ char_fill attr' ' ' (image_width img) half
@@ -156,7 +156,7 @@ vCentered ch = do
               VCentered child <- getState this
               s <- getPhysicalSize this
               chSz <- getPhysicalSize child
-              let (half, _) = vCentered_halves s (region_height chSz)
+              let (half, _) = centered_halves region_height s (region_height chSz)
                   chPos = pos `withHeight` (region_height pos + half)
               setPhysicalPosition child chPos
         }
@@ -165,18 +165,9 @@ vCentered ch = do
 centered :: (MonadIO m) => Widget a -> m (Widget (VCentered (HCentered a)))
 centered wRef = vCentered =<< hCentered wRef
 
-vCentered_halves :: DisplayRegion -> Word -> (Word, Word)
-vCentered_halves s obj_height =
-    let remaining = region_height s - obj_height
-        half = remaining `div` 2
-        half' = if remaining `mod` 2 == 0
-                then half
-                else half + 1
-    in (half, half')
-
-hCentered_halves :: DisplayRegion -> Word -> (Word, Word)
-hCentered_halves s obj_width =
-    let remaining = region_width s - obj_width
+centered_halves :: (DisplayRegion -> Word) -> DisplayRegion -> Word -> (Word, Word)
+centered_halves region_size s obj_sz =
+    let remaining = region_size s - obj_sz
         half = remaining `div` 2
         half' = if remaining `mod` 2 == 0
                 then half
