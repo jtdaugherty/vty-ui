@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification, MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE ExistentialQuantification, MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances, DeriveDataTypeable #-}
 module Graphics.Vty.Widgets.Table
     ( Table
     , TableCell(EmptyCell)
@@ -14,11 +14,18 @@ module Graphics.Vty.Widgets.Table
     )
 where
 
+import Data.Typeable
+    ( Typeable
+    )
 import Data.Word
     ( Word
     )
 import Data.List
     ( intersperse
+    )
+import Control.Exception
+    ( Exception
+    , throw
     )
 import Control.Monad
     ( when
@@ -62,6 +69,12 @@ import Graphics.Vty.Widgets.Text
     ( FormattedText
     , simpleText
     )
+
+data TableError = ColumnCountMismatch
+                | CellImageTooBig
+                  deriving (Show, Typeable)
+
+instance Exception TableError
 
 data TableCell = forall a. TableCell (Widget a)
                | EmptyCell
@@ -312,10 +325,7 @@ addRow :: (MonadIO m, RowLike a) => Widget Table -> a -> m ()
 addRow t row = do
   let (TableRow cells) = mkRow row
   nc <- numColumns <~~ t
-  when (length cells /= nc) $
-       error $ "New row column count (" ++ (show $ length cells) ++
-                 ") does not match table column count (" ++
-                 (show nc) ++ ")"
+  when (length cells /= nc) $ throw ColumnCountMismatch
 
   updateWidgetState_ t $ \s ->
       s { rows = rows s ++ [TableRow cells] }
@@ -369,7 +379,7 @@ renderRow tbl sz cells mAttr = do
               LT -> return $ img <|> char_fill def_attr ' '
                                      (region_width cellSz - image_width img)
                                      (max (image_height img) 1)
-              GT -> error "Table cell widget too big, should never happen!"
+              GT -> throw CellImageTooBig
 
   -- If we need to draw borders in between columns, do that.
   let withBorders = case colBorders borderSty of
