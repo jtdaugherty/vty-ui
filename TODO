@@ -6,11 +6,49 @@
 
   - support for right-aligning text (just left-padding?)
 
-  - Table cell properties (maybe fold this into the Cell size spec
-    type?):
+  - Table cell properties:
 
     - padding
     - alignment
+
+    What would be a decent API for this sort of thing?
+
+    A common thing to do would be to specify it on a per-column basis.
+    But... you might also want to specify it on a per-cell basis!
+
+    So one possible API would be to create a type for cell properties
+    like this:
+
+    data Padding = All Int Int Int Int
+                 | LeftRight Int | TopBottom Int
+                 | Left Int | Right Int | Top Int | Bottom Int
+                 | NoPadding
+
+    data Alignment = AlignCenter | AlignLeft | AlignRight
+
+    data CellProps = CellProps { cellPadding :: Padding
+                               , cellAlignment :: Alignment
+                               }
+
+    defaultCellProps :: CellProps
+    defaultCellProps = CellProps { cellPadding = NoPadding
+                                 , cellAlignment = AlignLeft
+                                 }
+
+    Then add that type to the column specifier as a default, and make
+    it possible to override it in the table cell itself:
+
+    data ColumnSpec = ColumnSpec { columnSize :: ColumnSize
+                                 , columnDefaultCellProps :: CellProps
+                                 }
+
+    Then, when widgets are added to the table, they'll be wrapped (if
+    appropriate) with properly configured padding, centering, and
+    filling widgets depending on the settings.  This would be a
+    one-time operation and you wouldn't be able to change the settings
+    once the table was created!
+
+    What would it take to make this dynamically configurable?
 
   - When a table has N columns with an edit widget in the Nth column
     and no edge border, the underline attribute goes to the right side
@@ -20,7 +58,7 @@
 
   - Tables: richer API
 
-    - add, remove rows
+    - remove rows
     - get reference to cell contents
     - events: onRowAdded, onRowRemoved
 
@@ -59,6 +97,26 @@
     functionality to composed widgets rather than writing your own.
     Think about ways to make it possible to do both easily and
     cleanly.
+
+    One way to make it easier to manage, syntactically, is with a type
+    alias for the true widget type, assuming there are no functions
+    that operate on the custom type:
+
+    type Foo = Box FormattedText FormattedText
+
+    newFoo :: (MonadIO m) => String -> String -> m (Widget Foo)
+    newFoo s1 s2 =
+      (simpleText def_attr s1) <--> (simpleText def_attr s2)
+
+  - Widget "parent" relationship: set parent on each widget?  Could be
+    used to get "default" attribute for a widget when adding children,
+    for example.  But we also need a better way to deal with
+    attributes in general; sometimes you don't care what the attribute
+    is and you want to defer to the widget that will contain it; other
+    times you definitely want to specify it.  And in yet other cases
+    you may want to specify it but you might not *want* it to
+    automatically apply to children with no explicit attribute
+    setting.
 
   - Exception types: add more metadata to each constructor, add custom
     Show instances to make the errors more useful
