@@ -1,131 +1,124 @@
 
-- Rewriting tasks:
+- List: do audit for calculations that should be done in terms of
+  itemHeight
 
-  - List: do audit for calculations that should be done in terms of
-    itemHeight
+- support for right-aligning text (just left-padding?)
 
-  - support for right-aligning text (just left-padding?)
+- Table cell properties:
 
-  - Table cell properties:
+  - padding
+  - alignment
 
-    - padding
-    - alignment
+  What would be a decent API for this sort of thing?
 
-    What would be a decent API for this sort of thing?
+  A common thing to do would be to specify it on a per-column basis.
+  But... you might also want to specify it on a per-cell basis!
 
-    A common thing to do would be to specify it on a per-column basis.
-    But... you might also want to specify it on a per-cell basis!
+  So one possible API would be to create a type for cell properties
+  like this:
 
-    So one possible API would be to create a type for cell properties
-    like this:
+  data Padding = All Int Int Int Int
+               | LeftRight Int | TopBottom Int
+               | Left Int | Right Int | Top Int | Bottom Int
+               | NoPadding
 
-    data Padding = All Int Int Int Int
-                 | LeftRight Int | TopBottom Int
-                 | Left Int | Right Int | Top Int | Bottom Int
-                 | NoPadding
+  data Alignment = AlignCenter | AlignLeft | AlignRight
 
-    data Alignment = AlignCenter | AlignLeft | AlignRight
+  data CellProps = CellProps { cellPadding :: Padding
+                             , cellAlignment :: Alignment
+                             }
 
-    data CellProps = CellProps { cellPadding :: Padding
-                               , cellAlignment :: Alignment
+  defaultCellProps :: CellProps
+  defaultCellProps = CellProps { cellPadding = NoPadding
+                               , cellAlignment = AlignLeft
                                }
 
-    defaultCellProps :: CellProps
-    defaultCellProps = CellProps { cellPadding = NoPadding
-                                 , cellAlignment = AlignLeft
-                                 }
+  Then add that type to the column specifier as a default, and make it
+  possible to override it in the table cell itself:
 
-    Then add that type to the column specifier as a default, and make
-    it possible to override it in the table cell itself:
+  data ColumnSpec = ColumnSpec { columnSize :: ColumnSize
+                               , columnDefaultCellProps :: CellProps
+                               }
 
-    data ColumnSpec = ColumnSpec { columnSize :: ColumnSize
-                                 , columnDefaultCellProps :: CellProps
-                                 }
+  Then, when widgets are added to the table, they'll be wrapped (if
+  appropriate) with properly configured padding, centering, and
+  filling widgets depending on the settings.  This would be a one-time
+  operation and you wouldn't be able to change the settings once the
+  table was created!
 
-    Then, when widgets are added to the table, they'll be wrapped (if
-    appropriate) with properly configured padding, centering, and
-    filling widgets depending on the settings.  This would be a
-    one-time operation and you wouldn't be able to change the settings
-    once the table was created!
+  What would it take to make this dynamically configurable?
 
-    What would it take to make this dynamically configurable?
+- When a table has N columns with an edit widget in the Nth column and
+  no edge border, the underline attribute goes to the right side of
+  the terminal. :( Perhaps enclose the edit area in [...]?  Is this a
+  VTY bug where the formatting should be terminated explicitly?
 
-  - When a table has N columns with an edit widget in the Nth column
-    and no edge border, the underline attribute goes to the right side
-    of the terminal. :( Perhaps enclose the edit area in [...]?  Is
-    this a VTY bug where the formatting should be terminated
-    explicitly?
+- Tables: richer API
 
-  - Tables: richer API
+  - remove rows
+  - get reference to cell contents
+  - events: onRowAdded, onRowRemoved
 
-    - remove rows
-    - get reference to cell contents
-    - events: onRowAdded, onRowRemoved
+- Think about possible ways to link the size of one widget (say, text)
+  to another (say, a table).  Right now you have to use an hLimit or
+  vLimit, but if you don't want to hard-code a size that can be ugly.
+  The trouble with doing this is that if widget A depends on the size
+  of B but due to the UI layout A needs to be rendered before B, then
+  it's impossible to depend on the current dimensions of B.
 
-  - Think about possible ways to link the size of one widget (say,
-    text) to another (say, a table).  Right now you have to use an
-    hLimit or vLimit, but if you don't want to hard-code a size that
-    can be ugly.  The trouble with doing this is that if widget A
-    depends on the size of B but due to the UI layout A needs to be
-    rendered before B, then it's impossible to depend on the current
-    dimensions of B.
+- Fix bug: text widget wrapping does not correctly preserve
+  preexisting newlines.  Could just be a tokenization bug.  Tests
+  would be nice here...
 
-  - Fix bug: text widget wrapping does not correctly preserve
-    preexisting newlines.  Could just be a tokenization bug.  Tests
-    would be nice here...
+- Fix ugliness: text tokenization truncates whole tokens when limiting
+  what to render (instead of truncating mid-token)
 
-  - Fix ugliness: text tokenization truncates whole tokens when
-    limiting what to render (instead of truncating mid-token)
+- Fix bug(s): some widgets crash when they can't be rendered (i.e.,
+  they return images anyway, but there is no space).  Start by adding
+  a check in the render function to blow up and hopefully provide some
+  info about the violation.  Table is known buggy this area.
 
-  - Fix bug(s): some widgets crash when they can't be rendered (i.e.,
-    they return images anyway, but there is no space).  Start by
-    adding a check in the render function to blow up and hopefully
-    provide some info about the violation.  Table is known buggy this
-    area.
+- Use Text instead of String?  (And encode Text as Utf8, which Vty
+  supports)
 
-  - Use Text instead of String?  (And encode Text as Utf8, which Vty
-    supports)
+- Think about how to enforce restrictions on what can go in table
+  cells.  Could check growHorizontal and growVertical of things that
+  get added and raise an exception.
 
-  - Think about how to enforce restrictions on what can go in table
-    cells.  Could check growHorizontal and growVertical of things that
-    get added and raise an exception.
+- Think about ways to make it more reasonable to write widgets mostly
+  or completely in terms of existing ones, rather than having to
+  implement one's own WidgetImpl each time.  While it's really nice to
+  get type safety that way, mostly you want to *delegate*
+  functionality to composed widgets rather than writing your own.
+  Think about ways to make it possible to do both easily and cleanly.
 
-  - Think about ways to make it more reasonable to write widgets
-    mostly or completely in terms of existing ones, rather than having
-    to implement one's own WidgetImpl each time.  While it's really
-    nice to get type safety that way, mostly you want to *delegate*
-    functionality to composed widgets rather than writing your own.
-    Think about ways to make it possible to do both easily and
-    cleanly.
+  One way to make it easier to manage, syntactically, is with a type
+  alias for the true widget type, assuming there are no functions that
+  operate on the custom type:
 
-    One way to make it easier to manage, syntactically, is with a type
-    alias for the true widget type, assuming there are no functions
-    that operate on the custom type:
+  type Foo = Box FormattedText FormattedText
 
-    type Foo = Box FormattedText FormattedText
+  newFoo :: (MonadIO m) => String -> String -> m (Widget Foo)
+  newFoo s1 s2 =
+    (simpleText def_attr s1) <--> (simpleText def_attr s2)
 
-    newFoo :: (MonadIO m) => String -> String -> m (Widget Foo)
-    newFoo s1 s2 =
-      (simpleText def_attr s1) <--> (simpleText def_attr s2)
+- Widget "parent" relationship: set parent on each widget?  Could be
+  used to get "default" attribute for a widget when adding children,
+  for example.  But we also need a better way to deal with attributes
+  in general; sometimes you don't care what the attribute is and you
+  want to defer to the widget that will contain it; other times you
+  definitely want to specify it.  And in yet other cases you may want
+  to specify it but you might not *want* it to automatically apply to
+  children with no explicit attribute setting.
 
-  - Widget "parent" relationship: set parent on each widget?  Could be
-    used to get "default" attribute for a widget when adding children,
-    for example.  But we also need a better way to deal with
-    attributes in general; sometimes you don't care what the attribute
-    is and you want to defer to the widget that will contain it; other
-    times you definitely want to specify it.  And in yet other cases
-    you may want to specify it but you might not *want* it to
-    automatically apply to children with no explicit attribute
-    setting.
+- Exception types: add more metadata to each constructor, add custom
+  Show instances to make the errors more useful.  This is especially
+  applicable to high-level errors (e.g., rendering errors) where it
+  would be important to know a lot about the widget that caused the
+  problem.  We probably want to either get its typerep or show its
+  state in the exception message.
 
-  - Exception types: add more metadata to each constructor, add custom
-    Show instances to make the errors more useful.  This is especially
-    applicable to high-level errors (e.g., rendering errors) where it
-    would be important to know a lot about the widget that caused the
-    problem.  We probably want to either get its typerep or show its
-    state in the exception message.
-
-  - Think about ways to improve the UI construction interface.  E.g.,
+- Think about ways to improve the UI construction interface.  E.g.,
 
     class (MonadIO m) => Liftable a m b | a -> m b where
         getThing :: a -> m (Widget b)
@@ -154,52 +147,57 @@
       ch2 <- getThing act2
       hBox ch1 ch2
 
-  - Test a list widget with elements > 1 row high
+- Test a list widget with elements > 1 row high
 
-  - Throw exception on adding a widget to a list when its size policy
-    is bad (grows vertically)?
+- Throw exception on adding a widget to a list when its size policy is
+  bad (grows vertically)?
 
-  - Consistency issue: when using a Collection and a FocusGroup for
-    each element of the collection, if the FocusGroups share widgets,
-    there will be a consistency problem where one of the FocusGroups
-    could have a widget set as its focus, yet the widget's internal
-    state would not appear focused since it was being manipulated by a
-    different focus group.
+- Consistency issue: when using a Collection and a FocusGroup for each
+  element of the collection, if the FocusGroups share widgets, there
+  will be a consistency problem where one of the FocusGroups could
+  have a widget set as its focus, yet the widget's internal state
+  would not appear focused since it was being manipulated by a
+  different focus group.
 
-- Low priority:
+- Edit: add getter for cursor position, add cursor position change
+  event
 
-  - Layering (i.e., dialogs), probably needs research into transposed
-    images in Vty (which are not implemented yet).  Once dialogs work,
-    we could make them fancy and modal by rendering the underlying UI
-    in black and white and the dialog in color!
+Low priority
+============
 
-  - Ability to clear (reset) key event handler on a widget
+- Layering (i.e., dialogs), probably needs research into transposed
+  images in Vty (which are not implemented yet).  Once dialogs work,
+  we could make them fancy and modal by rendering the underlying UI in
+  black and white and the dialog in color!
 
-  - Support for "showing" and "hiding" widgets
+- Ability to clear (reset) key event handler on a widget
 
-  - Generalize borders by adding "spacing" widgets that add a number
-    of rows or columns of space on a given side of a widget.  This is
-    already basically possible with vBorderWith ' ' and hBorderWith '
-    ', but it would also be nice to make these explicit and add a
-    "bordered"-style box spacing wrapping widget type.
+- Support for "showing" and "hiding" widgets
 
-  - Scrollable area (a generalization of the List) which can wrap a
-    widget and make it scrollable in a confined space.  To make this
-    work, we may need masking support in Vty.  Scrolling is really
-    just (top, left, widget, mask window size) where the window size
-    depends on available space and top/left positions are modified by
-    the application as scrolling requests are received.
+- Generalize borders by adding "spacing" widgets that add a number of
+  rows or columns of space on a given side of a widget.  This is
+  already basically possible with vBorderWith ' ' and hBorderWith ' ',
+  but it would also be nice to make these explicit and add a
+  "bordered"-style box spacing wrapping widget type.
 
-  - Consider rewriting table to use boxes instead of direct layout;
-    could greatly simplify the positioning!  You'd just need to do
-    some limiting on the cell contents and padding where appropriate.
-    Later: except it's not that simple; if you're going to use boxes,
-    then you end up packaging up all the widgets and never actually
-    drawing them, since Box does that.  But then you don't know how
-    high each row is, so you don't know how to construct the borders
-    in between cells, since they depend on the maximum cell height for
-    each row.  And so on.
+- Scrollable area (a generalization of the List) which can wrap a
+  widget and make it scrollable in a confined space.  To make this
+  work, we may need masking support in Vty.  Scrolling is really just
+  (top, left, widget, mask window size) where the window size depends
+  on available space and top/left positions are modified by the
+  application as scrolling requests are received.
 
-- Testing:
+- Consider rewriting table to use boxes instead of direct layout;
+  could greatly simplify the positioning!  You'd just need to do some
+  limiting on the cell contents and padding where appropriate.  Later:
+  except it's not that simple; if you're going to use boxes, then you
+  end up packaging up all the widgets and never actually drawing them,
+  since Box does that.  But then you don't know how high each row is,
+  so you don't know how to construct the borders in between cells,
+  since they depend on the maximum cell height for each row.  And so
+  on.
 
-  - Ugh.  Need loads of tests for tricky things.
+Testing
+=======
+
+- Ugh.  Need loads of tests for tricky things.
