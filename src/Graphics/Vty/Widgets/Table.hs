@@ -6,6 +6,7 @@ module Graphics.Vty.Widgets.Table
     , BorderStyle(..)
     , BorderFlag(..)
     , RowLike
+    , TableError(..)
     , (.|.)
     , newTable
     , addRow
