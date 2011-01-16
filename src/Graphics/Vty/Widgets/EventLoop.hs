@@ -1,10 +1,19 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Graphics.Vty.Widgets.EventLoop
     ( runUi
+    , EventLoopError(..)
     )
 where
 
+import Data.Typeable
+    ( Typeable
+    )
 import Data.Maybe
     ( isNothing
+    )
+import Control.Exception
+    ( Exception
+    , throw
     )
 import Control.Monad
     ( when
@@ -25,6 +34,11 @@ import Graphics.Vty.Widgets.Core
     , getCursorPosition
     )
 
+data EventLoopError = NoFocusGroup
+                      deriving (Show, Typeable)
+
+instance Exception EventLoopError
+
 runUi :: Vty -> Widget a -> IO ()
 runUi vty uiWidget =
     runUi' vty uiWidget `finally` do
@@ -34,7 +48,7 @@ runUi vty uiWidget =
 runUi' :: Vty -> Widget a -> IO ()
 runUi' vty uiWidget = do
   mFg <- getFocusGroup uiWidget
-  when (isNothing mFg) $ error "fatal: top-level widget has no FocusGroup widget"
+  when (isNothing mFg) $ throw NoFocusGroup
 
   let Just fg = mFg
 
