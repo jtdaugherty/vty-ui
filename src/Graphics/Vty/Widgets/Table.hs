@@ -31,6 +31,7 @@ import Control.Exception
 import Control.Monad
     ( when
     , forM
+    , forM_
     )
 import Control.Monad.Trans
     ( MonadIO
@@ -65,6 +66,7 @@ import Graphics.Vty.Widgets.Core
     , withWidth
     , setPhysicalPosition
     , getPhysicalSize
+    , growVertical
     )
 import Graphics.Vty.Widgets.Text
     ( FormattedText
@@ -73,6 +75,7 @@ import Graphics.Vty.Widgets.Text
 
 data TableError = ColumnCountMismatch
                 | CellImageTooBig
+                | BadWidgetSizePolicy Int
                   deriving (Show, Typeable)
 
 instance Exception TableError
@@ -325,6 +328,14 @@ addHeadingRow_ tbl attr labels = addHeadingRow tbl attr labels >> return ()
 addRow :: (MonadIO m, RowLike a) => Widget Table -> a -> m ()
 addRow t row = do
   let (TableRow cells) = mkRow row
+
+  forM_ (zip [1..] cells) $ \(i, c) -> do
+                 case c of
+                   EmptyCell -> return ()
+                   TableCell w -> do
+                          v <- growVertical w
+                          when (v) $ throw $ BadWidgetSizePolicy i
+
   nc <- numColumns <~~ t
   when (length cells /= nc) $ throw ColumnCountMismatch
 
