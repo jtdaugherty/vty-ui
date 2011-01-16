@@ -65,12 +65,9 @@ mkAppState = do
                     , uis = c
                     }
 
-updateBody :: AppState -> Widget (List a b) -> IO ()
-updateBody st w = do
-  result <- getSelected w
-  let msg = case result of
-              Nothing -> ""
-              Just (i, _) -> "This is the text for list entry " ++ (show $ i + 1)
+updateBody :: AppState -> Int -> IO ()
+updateBody st i = do
+  let msg = "This is the text for list entry " ++ (show $ i + 1)
   setText (theBody st) bodyAttr msg
 
 updateFooterNums :: AppState -> Widget (List a b) -> IO ()
@@ -114,8 +111,8 @@ main = do
          addToList (theList st) =<< getEditText e
          setEditText e ""
 
-  (theList st) `onSelectionChange` (updateBody st)
-  (theList st) `onSelectionChange` (updateFooterNums st)
+  (theList st) `onSelectionChange` \_ i _ _ -> updateBody st i
+  (theList st) `onSelectionChange` \lst _ _ _ -> updateFooterNums st lst
   (theList st) `onItemAdded` (\l _ _ _ -> updateFooterNums st l)
   (theList st) `onItemRemoved` (\l _ _ _ -> updateFooterNums st l)
 
@@ -166,7 +163,6 @@ main = do
   -- before we even got a reference to it, so we couldn't have set up
   -- event handlers.
   updateFooterNums st (theList st)
-  updateBody st (theList st)
 
   -- Enter the event loop.
   runUi vty (uis st)

@@ -52,6 +52,14 @@ main = do
   b <- (simpleText bodyAttr "Foo") <--> (simpleText bodyAttr "Bar")
   setBoxSpacing b 1
 
+  lst <- listWidget $ mkList bodyAttr focusAttr (simpleText bodyAttr)
+  addToList lst "Foo"
+  addToList lst "Bar"
+  addToList lst "Baz"
+
+  selector <- vLimit 1 lst
+  listHeader <- simpleText bodyAttr ""
+
   addHeadingRow_ table bodyAttr ["Foo", "Bar"]
   addRow table $ radioHeader .|. r1
   addRow table $ EmptyCell .|. r2
@@ -60,6 +68,7 @@ main = do
   addRow table $ edit2Header .|. edit2
   addRow table $ EmptyCell .|. b
   addRow table $ EmptyCell .|. tw
+  addRow table $ listHeader .|. selector
 
   r1 `onCheckboxChange` \_ v ->
       when v $ setText radioHeader headerAttr "radio 1 checked"
@@ -72,6 +81,9 @@ main = do
 
   edit1 `onChange` \_ s -> setText edit1Header headerAttr s
   edit2 `onChange` \_ s -> setText edit2Header headerAttr s
+
+  lst `onSelectionChange` \_ _ k _ ->
+      setText listHeader bodyAttr k
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
@@ -91,6 +103,7 @@ main = do
   addToFocusGroup fg r3
   addToFocusGroup fg edit1
   addToFocusGroup fg edit2
+  addToFocusGroup fg selector
   setFocusGroup ui fg
 
   -- Enter the event loop.

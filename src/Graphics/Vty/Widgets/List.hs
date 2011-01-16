@@ -114,7 +114,7 @@ data List a b = List { normalAttr :: Attr
                      -- ^The size of the window of visible list items.
                      , listItems :: [ListItem a b]
                      -- ^The items in the list.
-                     , selectionChangeHandler :: Widget (List a b) -> IO ()
+                     , selectionChangeHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
                      , itemAddHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
                      , itemRemoveHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
                      , itemHeight :: Int
@@ -135,7 +135,7 @@ mkList normAttr selAttr f =
          , scrollTopIndex = 0
          , scrollWindowSize = 0
          , listItems = []
-         , selectionChangeHandler = const $ return ()
+         , selectionChangeHandler = \_ _ _ _ -> return ()
          , itemAddHandler = \_ _ _ _ -> return ()
          , itemRemoveHandler = \_ _ _ _ -> return ()
          , itemHeight = 0
@@ -221,14 +221,17 @@ addToList list key = do
   when (numItems == 0) $
        notifySelectionHandler list
 
-onSelectionChange :: (MonadIO m) => Widget (List a b) -> (Widget (List a b) -> IO ()) -> m ()
+onSelectionChange :: (MonadIO m) =>
+                     Widget (List a b)
+                  -> (Widget (List a b) -> Int -> a -> Widget b -> IO ())
+                  -> m ()
 onSelectionChange wRef handler = do
   oldHandler <- selectionChangeHandler <~~ wRef
 
   let combinedHandler =
-          \w -> do
-            oldHandler w
-            handler w
+          \w pos k ch -> do
+            oldHandler w pos k ch
+            handler w pos k ch
 
   updateWidgetState wRef $ \s -> s { selectionChangeHandler = combinedHandler }
 
@@ -421,7 +424,10 @@ scrollBy' amount list =
 notifySelectionHandler :: (MonadIO m) => Widget (List a b) -> m ()
 notifySelectionHandler wRef = do
   h <- selectionChangeHandler <~~ wRef
-  liftIO $ h wRef
+  result <- getSelected wRef
+  case result of
+    Nothing -> error "notifySelectionHandler: nothing is selected, this is a bug!"
+    Just (pos, (k, ch)) -> liftIO $ h wRef pos k ch
 
 notifyItemRemoveHandler :: (MonadIO m) => Widget (List a b) -> Int -> a -> Widget b -> m ()
 notifyItemRemoveHandler wRef pos k w = do
