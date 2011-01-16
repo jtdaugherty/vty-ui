@@ -46,6 +46,8 @@ import Graphics.Vty.Widgets.Core
     , newWidget
     , updateWidget
     , updateWidgetState
+    , getPhysicalPosition
+    , withWidth
     )
 
 data RadioGroupData = RadioGroupData { currentlySelected :: Maybe (Widget CheckBox)
@@ -107,6 +109,11 @@ newCheckbox label normAttr focAttr = do
                            , checkboxChangeHandler = \_ _ -> return ()
                            , radioGroup = Nothing
                            }
+        , cursorInfo =
+            \this -> do
+              pos <- getPhysicalPosition this
+              return $ Just (pos `withWidth` (region_width pos + 1))
+
         , keyEventHandler = radioKeyEvent
         , draw =
             \this sz mAttr -> do
