@@ -31,13 +31,14 @@ hlAttr2 = yellow `on` black
 uiCore appst w = do
   (hBorder titleAttr)
       <--> w
+      <--> (hBorder titleAttr)
+      <--> (return $ theEdit appst)
       <--> ((return $ theFooter1 appst)
             <++> (return $ theFooter2 appst)
             <++> hBorder titleAttr)
 
 buildUi1 appst = do
-  c <- hCentered $ theTable appst
-  uiCore appst (bottomPadded c bodyAttr)
+  uiCore appst (return $ theList appst)
 
 buildUi2 appst =
     uiCore appst ((return $ theListLimit appst)
