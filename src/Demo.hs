@@ -169,9 +169,7 @@ main = do
   addHeadingRow_ (theTable st) (bright_yellow `on` black) ["Static", "Editable"]
 
   w1 <- hCentered =<< simpleText bodyAttr "Foobar"
-  addRow (theTable st) [ mkCell w1
-                       , mkCell $ theEdit st
-                       ]
+  addRow (theTable st) $ w1 .|. theEdit st
 
   -- We need to call these handlers manually because while they will
   -- be called automatically as items are added to the list in the

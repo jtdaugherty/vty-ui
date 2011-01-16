@@ -27,14 +27,13 @@ color = highlight (compile (BS8.pack "<.*>") []) (bright_green `on` black)
 
 main :: IO ()
 main = do
-  vty <- mkVty
-
   let msg = "<TAB> switches edit fields, ordinary \
             \keystrokes edit, <SPC> toggles radio \
             \button, <ESC> quits."
 
   table <- newTable borderAttr [Fixed 20, Auto] BorderFull
-  mainBox <- (return table) <--> (textWidget (wrap &.& color) $ prepareText msgAttr msg)
+  tw <- textWidget (wrap &.& color) $ prepareText msgAttr msg
+  mainBox <- (return table) <--> (return tw)
 
   setBoxSpacing mainBox 2
 
@@ -56,13 +55,16 @@ main = do
   edit2 <- editWidget editAttr focusAttr
   edit2Header <- simpleText headerAttr ""
 
-  e <- simpleText bodyAttr ""
+  b <- (simpleText bodyAttr "Foo") <--> (simpleText bodyAttr "Bar")
 
-  addRow table [ mkCell radioHeader, mkCell r1 ]
-  addRow table [ mkCell e, mkCell r2 ]
-  addRow table [ mkCell r3Header, mkCell r3 ]
-  addRow table [ mkCell edit1Header, mkCell edit1 ]
-  addRow table [ mkCell edit2Header, mkCell edit2 ]
+  addHeadingRow_ table bodyAttr ["Foo", "Bar"]
+  addRow table $ radioHeader .|. r1
+  addRow table $ EmptyCell .|. r2
+  addRow table $ r3Header .|. r3
+  addRow table $ edit1Header .|. edit1
+  addRow table $ edit2Header .|. edit2
+  addRow table $ EmptyCell .|. b
+  addRow table $ EmptyCell .|. tw
 
   r1 `onCheckboxChange` \_ v ->
       when v $ setText radioHeader headerAttr "radio 1 checked"
@@ -80,6 +82,8 @@ main = do
   setEditText edit2 "Bar"
   setCheckboxChecked r1
   setCheckboxChecked r3
+
+  vty <- mkVty
 
   fg <- newFocusGroup
   fg `onKeyPressed` \_ k _ -> do

@@ -1,10 +1,12 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExistentialQuantification, MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances #-}
 module Graphics.Vty.Widgets.Table
     ( Table
+    , TableCell(EmptyCell)
     , ColumnSize(..)
     , BorderStyle(..)
     , BorderFlag(..)
-    , mkCell
+    , RowLike
+    , (.|.)
     , newTable
     , addRow
     , addHeadingRow
@@ -62,6 +64,9 @@ import Graphics.Vty.Widgets.Text
     )
 
 data TableCell = forall a. TableCell (Widget a)
+               | EmptyCell
+
+data TableRow = TableRow [TableCell]
 
 data BorderFlag = Rows | Columns | Edges
                   deriving (Eq, Show)
@@ -74,10 +79,31 @@ data BorderStyle = BorderPartial [BorderFlag]
 data ColumnSize = Fixed Int | Auto
                   deriving (Eq, Show)
 
-mkCell :: Widget a -> TableCell
-mkCell = TableCell
+class RowLike a where
+    mkRow :: a -> TableRow
 
-data Table = Table { rows :: [[TableCell]]
+instance RowLike TableRow where
+    mkRow = id
+
+instance RowLike TableCell where
+    mkRow c = TableRow [c]
+
+instance RowLike (Widget a) where
+    mkRow = TableRow . (:[]) . TableCell
+
+instance (RowLike a) => RowLike [a] where
+    mkRow rs = TableRow cs
+        where
+          cs = concat $ map (\(TableRow cells) -> cells) rs'
+          rs' = map mkRow rs
+
+(.|.) :: (RowLike a, RowLike b) => a -> b -> TableRow
+(.|.) a b = TableRow (cs ++ ds)
+    where
+      (TableRow cs) = mkRow a
+      (TableRow ds) = mkRow b
+
+data Table = Table { rows :: [TableRow]
                    , numColumns :: Int
                    , columnSizes :: [ColumnSize]
                    , borderStyle :: BorderStyle
@@ -109,7 +135,7 @@ newTable attr sizes borderSty = do
             \this sz mAttr -> do
               rs <- rows <~~ this
 
-              rowImgs <- mapM (\r -> renderRow this sz r mAttr) rs
+              rowImgs <- mapM (\(TableRow r) -> renderRow this sz r mAttr) rs
 
               rowBorder <- mkRowBorder this sz
               topBottomBorder <- mkTopBottomBorder this sz
@@ -131,7 +157,7 @@ newTable attr sizes borderSty = do
                                then 1 else 0
 
                   positionRows _ [] = return ()
-                  positionRows height (row:rest) =
+                  positionRows height ((TableRow row):rest) =
                     do
                       -- Compute the position for this row based on
                       -- border settings
@@ -139,7 +165,11 @@ newTable attr sizes borderSty = do
                                    height
 
                       -- Get the maximum cell height
-                      cellPhysSizes <- forM row $ \(TableCell cw) -> getPhysicalSize cw
+                      cellPhysSizes <- forM row $ \cell ->
+                                       case cell of
+                                         TableCell cw -> getPhysicalSize cw
+                                         EmptyCell -> return $ DisplayRegion 0 1
+
                       -- Include 1 as a possible height to prevent
                       -- zero-height images from breaking position
                       -- computations.  This won't hurt in the case
@@ -214,9 +244,11 @@ mkSideBorder_ t = do
 
   let intersection = string bAttr "+"
 
-  rowHeights <- forM rs $ \row -> do
-                    hs <- forM row $ \(TableCell cw) ->
-                          getPhysicalSize cw >>= (return . region_height)
+  rowHeights <- forM rs $ \(TableRow row) -> do
+                    hs <- forM row $ \cell ->
+                          case cell of
+                            TableCell cw -> getPhysicalSize cw >>= (return . region_height)
+                            EmptyCell -> return 1
                     return $ maximum hs
 
   let borderImgs = (flip map) rowHeights $ \h -> char_fill bAttr '|' 1 h
@@ -243,9 +275,11 @@ positionRow t bs pos cells = do
       cellWidth (Fixed n) = toEnum n
 
       doPositioning _ [] = return ()
-      doPositioning width ((szPolicy, TableCell w):ws) =
+      doPositioning width ((szPolicy, cell):ws) =
           do
-            setPhysicalPosition w $ pos `withWidth` (region_width pos + width)
+            case cell of
+              TableCell w -> setPhysicalPosition w $ pos `withWidth` (region_width pos + width)
+              EmptyCell -> return ()
             doPositioning (width + cellWidth szPolicy + offset) ws
 
   doPositioning 0 $ zip szs cells
@@ -268,14 +302,15 @@ autoWidth t sz = do
 addHeadingRow :: (MonadIO m) => Widget Table -> Attr -> [String] -> m [Widget FormattedText]
 addHeadingRow tbl attr labels = do
   ws <- mapM (simpleText attr) labels
-  addRow tbl $ map mkCell ws
+  addRow tbl ws
   return ws
 
 addHeadingRow_ :: (MonadIO m) => Widget Table -> Attr -> [String] -> m ()
 addHeadingRow_ tbl attr labels = addHeadingRow tbl attr labels >> return ()
 
-addRow :: (MonadIO m) => Widget Table -> [TableCell] -> m ()
-addRow t cells = do
+addRow :: (MonadIO m, RowLike a) => Widget Table -> a -> m ()
+addRow t row = do
+  let (TableRow cells) = mkRow row
   nc <- numColumns <~~ t
   when (length cells /= nc) $
        error $ "New row column count (" ++ (show $ length cells) ++
@@ -283,9 +318,12 @@ addRow t cells = do
                  (show nc) ++ ")"
 
   updateWidgetState_ t $ \s ->
-      s { rows = rows s ++ [cells] }
+      s { rows = rows s ++ [TableRow cells] }
 
 renderCell :: DisplayRegion -> TableCell -> Maybe Attr -> IO Image
+renderCell region EmptyCell mAttr = do
+  w <- simpleText def_attr ""
+  render w region mAttr
 renderCell region (TableCell w) mAttr = render w region mAttr
 
 colBorders :: BorderStyle -> Bool
