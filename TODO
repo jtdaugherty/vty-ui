@@ -1,6 +1,10 @@
 
+- Base, Core: modules getting big, think about splitting up further
+
 - List: do audit for calculations that should be done in terms of
   itemHeight
+
+  - Test a list widget with elements > 1 row high
 
 - support for right-aligning text (just left-padding?)
 
@@ -82,7 +86,7 @@
   supports)
 
 - List: make it possible to provide a focused-selected and
-  non-focused-selected attributes, update drawing routine to use them
+  non-focused-selected attributes, update drawing routine to use them.
 
 - Think about how to enforce restrictions on what can go in table
   cells.  Could check growHorizontal and growVertical of things that
@@ -149,8 +153,6 @@
       ch1 <- getThing act1
       ch2 <- getThing act2
       hBox ch1 ch2
-
-- Test a list widget with elements > 1 row high
 
 - Throw exception on adding a widget to a list when its size policy is
   bad (grows vertically)?
