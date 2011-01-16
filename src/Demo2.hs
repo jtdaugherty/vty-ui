@@ -16,12 +16,6 @@ bodyAttr = white `on` black
 headerAttr = bright_yellow `on` black
 msgAttr = bright_white `on` black
 
-exitApp :: Vty -> IO a
-exitApp vty = do
-  reserve_display $ terminal vty
-  shutdown vty
-  exitSuccess
-
 color :: Formatter
 color = highlight (compile (BS8.pack "<.*>") []) (bright_green `on` black)
 
@@ -89,7 +83,7 @@ main = do
   fg <- newFocusGroup
   fg `onKeyPressed` \_ k _ -> do
          case k of
-           KEsc -> exitApp vty
+           KEsc -> exitSuccess
            _ -> return False
 
   addToFocusGroup_ fg r1
