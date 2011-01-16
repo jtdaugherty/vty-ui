@@ -1,8 +1,6 @@
 
 - Rewriting tasks:
 
-  - Use vty-ui exceptions to report errors instead of calling error
-
   - List: do audit for calculations that should be done in terms of
     itemHeight
 
