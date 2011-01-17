@@ -8,8 +8,6 @@ module Graphics.Vty.Widgets.Table
     , RowLike
     , TableError(..)
     , ColumnSpec
-    , Alignable(..)
-    , Alignment(..)
     , (.|.)
     , newTable
     , setDefaultCellAlignment
@@ -92,6 +90,10 @@ import Graphics.Vty.Widgets.Padding
     , padded
     , padNone
     )
+import Graphics.Vty.Widgets.Alignment
+    ( Alignable(..)
+    , Alignment(..)
+    )
 
 data TableError = ColumnCountMismatch
                 | CellImageTooBig
@@ -99,8 +101,6 @@ data TableError = ColumnCountMismatch
                   deriving (Show, Typeable)
 
 instance Exception TableError
-
-data Alignment = AlignCenter | AlignLeft | AlignRight
 
 data TableCell = forall a. TableCell (Widget a) (Maybe Alignment) (Maybe Padding)
                | EmptyCell
@@ -122,6 +122,12 @@ data ColumnSpec = ColumnSpec { columnSize :: ColumnSize
                              , columnAlignment :: Maybe Alignment
                              , columnPadding :: Maybe Padding
                              }
+
+instance Paddable ColumnSpec where
+    pad c p = c { columnPadding = Just p }
+
+instance Alignable ColumnSpec where
+    align c a = c { columnAlignment = Just a }
 
 class RowLike a where
     mkRow :: a -> TableRow
@@ -156,9 +162,6 @@ data Table = Table { rows :: [TableRow]
                    , defaultCellPadding :: Padding
                    }
 
-class Alignable a where
-    align :: a -> Alignment -> a
-
 setDefaultCellAlignment :: (MonadIO m) => Widget Table -> Alignment -> m ()
 setDefaultCellAlignment t a = updateWidgetState t $ \s -> s { defaultCellAlignment = a }
 
@@ -167,12 +170,6 @@ setDefaultCellPadding t p = updateWidgetState t $ \s -> s { defaultCellPadding =
 
 column :: ColumnSize -> ColumnSpec
 column sz = ColumnSpec sz Nothing Nothing
-
-instance Paddable ColumnSpec where
-    pad c p = c { columnPadding = Just p }
-
-instance Alignable ColumnSpec where
-    align c a = c { columnAlignment = Just a }
 
 newTable :: (MonadIO m) =>
             Attr

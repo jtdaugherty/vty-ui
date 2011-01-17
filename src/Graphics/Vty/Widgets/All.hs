@@ -13,6 +13,7 @@ module Graphics.Vty.Widgets.All
     , module Graphics.Vty.Widgets.Table
     , module Graphics.Vty.Widgets.CheckBox
     , module Graphics.Vty.Widgets.Padding
+    , module Graphics.Vty.Widgets.Alignment
     )
 where
 
@@ -29,3 +30,4 @@ import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Table
 import Graphics.Vty.Widgets.CheckBox
 import Graphics.Vty.Widgets.Padding
+import Graphics.Vty.Widgets.Alignment
