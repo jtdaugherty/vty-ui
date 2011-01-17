@@ -7,8 +7,12 @@ module Graphics.Vty.Widgets.Table
     , BorderFlag(..)
     , RowLike
     , TableError(..)
+    , Alignment(..)
+    , ColumnSpec(..)
     , (.|.)
     , newTable
+    , setDefaultCellAlignment
+    , setDefaultCellPadding
     , addRow
     , addHeadingRow
     , addHeadingRow_
@@ -34,7 +38,6 @@ import Control.Exception
 import Control.Monad
     ( when
     , forM
-    , forM_
     )
 import Control.Monad.Trans
     ( MonadIO
@@ -70,10 +73,21 @@ import Graphics.Vty.Widgets.Core
     , setPhysicalPosition
     , getPhysicalSize
     , growVertical
+    , growHorizontal
     )
 import Graphics.Vty.Widgets.Text
     ( FormattedText
     , simpleText
+    )
+import Graphics.Vty.Widgets.Base
+    ( (<++>)
+    , hCentered
+    , hFill
+    )
+import Graphics.Vty.Widgets.Padding
+    ( Padding
+    , pad
+    , padNone
     )
 
 data TableError = ColumnCountMismatch
@@ -83,7 +97,9 @@ data TableError = ColumnCountMismatch
 
 instance Exception TableError
 
-data TableCell = forall a. TableCell (Widget a)
+data Alignment = AlignCenter | AlignLeft | AlignRight
+
+data TableCell = forall a. TableCell (Widget a) (Maybe Alignment) (Maybe Padding)
                | EmptyCell
 
 data TableRow = TableRow [TableCell]
@@ -99,6 +115,11 @@ data BorderStyle = BorderPartial [BorderFlag]
 data ColumnSize = Fixed Int | Auto
                   deriving (Eq, Show)
 
+data ColumnSpec = ColumnSpec { columnSize :: ColumnSize
+                             , columnAlignment :: Maybe Alignment
+                             , columnPadding :: Maybe Padding
+                             }
+
 class RowLike a where
     mkRow :: a -> TableRow
 
@@ -109,7 +130,7 @@ instance RowLike TableCell where
     mkRow c = TableRow [c]
 
 instance RowLike (Widget a) where
-    mkRow = TableRow . (:[]) . TableCell
+    mkRow w = TableRow [TableCell w Nothing Nothing]
 
 instance (RowLike a) => RowLike [a] where
     mkRow rs = TableRow cs
@@ -125,29 +146,39 @@ instance (RowLike a) => RowLike [a] where
 
 data Table = Table { rows :: [TableRow]
                    , numColumns :: Int
-                   , columnSizes :: [ColumnSize]
+                   , columnSpecs :: [ColumnSpec]
                    , borderStyle :: BorderStyle
                    , borderAttr :: Attr
+                   , defaultCellAlignment :: Alignment
+                   , defaultCellPadding :: Padding
                    }
+
+setDefaultCellAlignment :: (MonadIO m) => Widget Table -> Alignment -> m ()
+setDefaultCellAlignment t a = updateWidgetState t $ \s -> s { defaultCellAlignment = a }
+
+setDefaultCellPadding :: (MonadIO m) => Widget Table -> Padding -> m ()
+setDefaultCellPadding t p = updateWidgetState t $ \s -> s { defaultCellPadding = p }
 
 newTable :: (MonadIO m) =>
             Attr
-         -> [ColumnSize]
+         -> [ColumnSpec]
          -> BorderStyle
          -> m (Widget Table)
-newTable attr sizes borderSty = do
+newTable attr specs borderSty = do
   t <- newWidget
   updateWidget t $ \w ->
       w { state = Table { rows = []
-                        , columnSizes = sizes
+                        , columnSpecs = specs
                         , borderStyle = borderSty
-                        , numColumns = length sizes
+                        , numColumns = length specs
                         , borderAttr = attr
+                        , defaultCellAlignment = AlignLeft
+                        , defaultCellPadding = padNone
                         }
 
         , getGrowHorizontal = do
             st <- ask
-            return $ any (== Auto) (columnSizes st)
+            return $ any (== Auto) (map columnSize $ columnSpecs st)
 
         , getGrowVertical = return False
 
@@ -187,7 +218,7 @@ newTable attr sizes borderSty = do
                       -- Get the maximum cell height
                       cellPhysSizes <- forM row $ \cell ->
                                        case cell of
-                                         TableCell cw -> getPhysicalSize cw
+                                         TableCell cw _ _ -> getPhysicalSize cw
                                          EmptyCell -> return $ DisplayRegion 0 1
 
                       -- Include 1 as a possible height to prevent
@@ -211,7 +242,31 @@ newTable attr sizes borderSty = do
         }
   return t
 
-mkRowBorder :: Widget Table -> DisplayRegion-> IO Image
+getCellAlignment :: (MonadIO m) => Widget Table -> Int -> TableCell -> m Alignment
+getCellAlignment _ _ (TableCell _ (Just p) _) = return p
+getCellAlignment t columnNumber _ = do
+  -- If the column for this cell has properties, use those; otherwise
+  -- default to table-wide properties.
+  specs <- columnSpecs <~~ t
+  let spec = specs !! columnNumber
+
+  case columnAlignment spec of
+    Nothing -> defaultCellAlignment <~~ t
+    Just p -> return p
+
+getCellPadding :: (MonadIO m) => Widget Table -> Int -> TableCell -> m Padding
+getCellPadding _ _ (TableCell _ _ (Just p)) = return p
+getCellPadding t columnNumber _ = do
+  -- If the column for this cell has properties, use those; otherwise
+  -- default to table-wide properties.
+  specs <- columnSpecs <~~ t
+  let spec = specs !! columnNumber
+
+  case columnPadding spec of
+    Nothing -> defaultCellPadding <~~ t
+    Just p -> return p
+
+mkRowBorder :: Widget Table -> DisplayRegion -> IO Image
 mkRowBorder t sz = do
   bs <- borderStyle <~~ t
 
@@ -225,10 +280,11 @@ mkRowBorder_ :: Widget Table -> DisplayRegion -> IO Image
 mkRowBorder_ t sz = do
   bs <- borderStyle <~~ t
   bAttr <- borderAttr <~~ t
-  szs <- columnSizes <~~ t
+  specs <- columnSpecs <~~ t
   aw <- autoWidth t sz
 
-  let intersection = string bAttr "+"
+  let szs = map columnSize specs
+      intersection = string bAttr "+"
       imgs = (flip map) szs $ \s ->
              case s of
                Fixed n -> char_fill bAttr '-' n 1
@@ -268,7 +324,7 @@ mkSideBorder_ t = do
   rowHeights <- forM rs $ \(TableRow row) -> do
                     hs <- forM row $ \cell ->
                           case cell of
-                            TableCell cw -> region_height <$> getPhysicalSize cw
+                            TableCell cw _ _ -> region_height <$> getPhysicalSize cw
                             EmptyCell -> return 1
                     return $ maximum hs
 
@@ -286,9 +342,10 @@ positionRow t bs pos cells = do
   -- leftmost cell border)
   oldSize <- getPhysicalSize t
   aw <- autoWidth t oldSize
-  szs <- columnSizes <~~ t
+  specs <- columnSpecs <~~ t
 
-  let offset = if colBorders bs
+  let szs = map columnSize specs
+      offset = if colBorders bs
                then 1
                else 0
 
@@ -299,7 +356,7 @@ positionRow t bs pos cells = do
       doPositioning width ((szPolicy, cell):ws) =
           do
             case cell of
-              TableCell w -> setPhysicalPosition w $ pos `withWidth` (region_width pos + width)
+              TableCell w _ _ -> setPhysicalPosition w $ pos `withWidth` (region_width pos + width)
               EmptyCell -> return ()
             doPositioning (width + cellWidth szPolicy + offset) ws
 
@@ -307,10 +364,11 @@ positionRow t bs pos cells = do
 
 autoWidth :: (MonadIO m) => Widget Table -> DisplayRegion -> m Word
 autoWidth t sz = do
-  sizes <- columnSizes <~~ t
+  specs <- columnSpecs <~~ t
   bs <- borderStyle <~~ t
 
-  let numAuto = length $ filter (== Auto) sizes
+  let sizes = map columnSize specs
+      numAuto = length $ filter (== Auto) sizes
       totalFixed = sum $ (flip map) sizes $ \s ->
                    case s of
                      Auto -> 0
@@ -329,16 +387,51 @@ addHeadingRow tbl attr labels = do
 addHeadingRow_ :: (MonadIO m) => Widget Table -> Attr -> [String] -> m ()
 addHeadingRow_ tbl attr labels = addHeadingRow tbl attr labels >> return ()
 
+applyCellAlignment :: (MonadIO m) => Alignment -> TableCell -> m TableCell
+applyCellAlignment _ EmptyCell = return EmptyCell
+applyCellAlignment align (TableCell w a p) = do
+  case align of
+    AlignLeft -> return $ TableCell w a p
+
+    AlignCenter -> do
+      -- XXX this check belongs in the centering code...
+      grow <- growHorizontal w
+      case grow of
+        False -> do
+                  w' <- hCentered w
+                  return $ TableCell w' a p
+        True -> return $ TableCell w a p
+
+    AlignRight -> do
+      grow <- growHorizontal w
+      case grow of
+        False -> do
+                  w' <- hFill def_attr ' ' 1 <++> (return w)
+                  return $ TableCell w' a p
+        True -> return $ TableCell w a p
+
+applyCellPadding :: (MonadIO m) => Padding -> TableCell -> m TableCell
+applyCellPadding _ EmptyCell = return EmptyCell
+applyCellPadding padding (TableCell w a p) = do
+  w' <- pad w padding
+  return $ TableCell w' a p
+
 addRow :: (MonadIO m, RowLike a) => Widget Table -> a -> m ()
 addRow t row = do
-  let (TableRow cells) = mkRow row
+  let (TableRow cells_) = mkRow row
 
-  forM_ (zip [1..] cells) $ \(i, c) -> do
+  cells <- forM (zip [1..] cells_) $ \(i, c) -> do
                  case c of
                    EmptyCell -> return ()
-                   TableCell w -> do
+                   TableCell w _ _ -> do
                           v <- growVertical w
                           when (v) $ throw $ BadWidgetSizePolicy i
+
+                 -- Apply cell properties to the widget in this cell.
+                 alignment <- getCellAlignment t (i - 1) c
+                 padding <- getCellPadding t (i - 1) c
+
+                 applyCellAlignment alignment c >>= applyCellPadding padding
 
   nc <- numColumns <~~ t
   when (length cells /= nc) $ throw ColumnCountMismatch
@@ -350,7 +443,7 @@ renderCell :: DisplayRegion -> TableCell -> Maybe Attr -> IO Image
 renderCell region EmptyCell mAttr = do
   w <- simpleText def_attr ""
   render w region mAttr
-renderCell region (TableCell w) mAttr = render w region mAttr
+renderCell region (TableCell w _ _) mAttr = render w region mAttr
 
 colBorders :: BorderStyle -> Bool
 colBorders (BorderPartial fs) = Columns `elem` fs
@@ -372,10 +465,12 @@ rowHeight = maximum . map image_height
 
 renderRow :: Widget Table -> DisplayRegion -> [TableCell] -> Maybe Attr -> IO Image
 renderRow tbl sz cells mAttr = do
-  sizes <- columnSizes <~~ tbl
+  specs <- columnSpecs <~~ tbl
   borderSty <- borderStyle <~~ tbl
   bAttr <- borderAttr <~~ tbl
   aw <- autoWidth tbl sz
+
+  let sizes = map columnSize specs
 
   cellImgs <-
       forM (zip cells sizes) $ \(cellW, sizeSpec) ->

@@ -25,7 +25,12 @@ main = do
             \keystrokes edit, <SPC> toggles radio \
             \button, <ESC> quits."
 
-  table <- newTable borderAttr [Fixed 25, Auto] BorderFull
+      specs = [ ColumnSpec (Fixed 25) Nothing Nothing
+              , ColumnSpec Auto Nothing (Just $ padAll 1)
+              ]
+
+  table <- newTable borderAttr specs BorderFull
+
   tw <- textWidget (wrap &.& color) $ prepareText msgAttr msg
   mainBox <- (return table) <--> (return tw)
 
