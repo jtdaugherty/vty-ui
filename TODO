@@ -1,59 +1,12 @@
 
 - Do some testing with "current_attr" instead of "def_attr".
 
-- Base, Core: modules getting big, think about splitting up further
-  (plus, Base and Core are not good module names!)
-
 - List: do audit for calculations that should be done in terms of
   itemHeight
 
   - Test a list widget with elements > 1 row high
 
 - support for right-aligning text (just left-padding?)
-
-- Table cell properties:
-
-  - padding
-  - alignment
-
-  What would be a decent API for this sort of thing?
-
-  A common thing to do would be to specify it on a per-column basis.
-  But... you might also want to specify it on a per-cell basis!
-
-  So one possible API would be to create a type for cell properties
-  like this:
-
-  data Padding = All Int Int Int Int
-               | LeftRight Int | TopBottom Int
-               | Left Int | Right Int | Top Int | Bottom Int
-               | NoPadding
-
-  data Alignment = AlignCenter | AlignLeft | AlignRight
-
-  data CellProps = CellProps { cellPadding :: Padding
-                             , cellAlignment :: Alignment
-                             }
-
-  defaultCellProps :: CellProps
-  defaultCellProps = CellProps { cellPadding = NoPadding
-                               , cellAlignment = AlignLeft
-                               }
-
-  Then add that type to the column specifier as a default, and make it
-  possible to override it in the table cell itself:
-
-  data ColumnSpec = ColumnSpec { columnSize :: ColumnSize
-                               , columnDefaultCellProps :: CellProps
-                               }
-
-  Then, when widgets are added to the table, they'll be wrapped (if
-  appropriate) with properly configured padding, centering, and
-  filling widgets depending on the settings.  This would be a one-time
-  operation and you wouldn't be able to change the settings once the
-  table was created!
-
-  What would it take to make this dynamically configurable?
 
 - When a table has N columns with an edit widget in the Nth column and
   no edge border, the underline attribute goes to the right side of
@@ -90,10 +43,6 @@
 
 - List: make it possible to provide a focused-selected and
   non-focused-selected attributes, update drawing routine to use them.
-
-- Think about how to enforce restrictions on what can go in table
-  cells.  Could check growHorizontal and growVertical of things that
-  get added and raise an exception.
 
 - Think about ways to make it more reasonable to write widgets mostly
   or completely in terms of existing ones, rather than having to
@@ -166,9 +115,6 @@
   have a widget set as its focus, yet the widget's internal state
   would not appear focused since it was being manipulated by a
   different focus group.
-
-- Edit: add getter for cursor position, add cursor position change
-  event
 
 Low priority
 ============
