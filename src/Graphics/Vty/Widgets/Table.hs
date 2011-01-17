@@ -83,7 +83,9 @@ import Graphics.Vty.Widgets.Text
     )
 import Graphics.Vty.Widgets.Base
     ( (<++>)
-    , hCentered
+    )
+import Graphics.Vty.Widgets.Centering
+    ( hCentered
     )
 import Graphics.Vty.Widgets.Fills
     ( hFill

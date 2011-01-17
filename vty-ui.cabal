@@ -49,6 +49,7 @@ Library
           Graphics.Vty.Widgets.Alignment
           Graphics.Vty.Widgets.Limits
           Graphics.Vty.Widgets.Fills
+          Graphics.Vty.Widgets.Centering
   Other-Modules:
           Text.Trans.Tokenize
 
