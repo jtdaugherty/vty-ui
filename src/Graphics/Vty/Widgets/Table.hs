@@ -1,4 +1,5 @@
-{-# LANGUAGE ExistentialQuantification, MultiParamTypeClasses, TypeSynonymInstances, FlexibleInstances, DeriveDataTypeable #-}
+{-# LANGUAGE ExistentialQuantification, MultiParamTypeClasses,
+  TypeSynonymInstances, FlexibleInstances, DeriveDataTypeable #-}
 module Graphics.Vty.Widgets.Table
     ( Table
     , TableCell(EmptyCell)
