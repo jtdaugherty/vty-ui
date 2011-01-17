@@ -7,8 +7,9 @@ module Graphics.Vty.Widgets.Table
     , BorderFlag(..)
     , RowLike
     , TableError(..)
+    , ColumnSpec
+    , Alignable(..)
     , Alignment(..)
-    , ColumnSpec(..)
     , (.|.)
     , newTable
     , setDefaultCellAlignment
@@ -16,6 +17,7 @@ module Graphics.Vty.Widgets.Table
     , addRow
     , addHeadingRow
     , addHeadingRow_
+    , column
     )
 where
 
@@ -86,7 +88,8 @@ import Graphics.Vty.Widgets.Base
     )
 import Graphics.Vty.Widgets.Padding
     ( Padding
-    , pad
+    , Paddable(..)
+    , padded
     , padNone
     )
 
@@ -153,11 +156,23 @@ data Table = Table { rows :: [TableRow]
                    , defaultCellPadding :: Padding
                    }
 
+class Alignable a where
+    align :: a -> Alignment -> a
+
 setDefaultCellAlignment :: (MonadIO m) => Widget Table -> Alignment -> m ()
 setDefaultCellAlignment t a = updateWidgetState t $ \s -> s { defaultCellAlignment = a }
 
 setDefaultCellPadding :: (MonadIO m) => Widget Table -> Padding -> m ()
 setDefaultCellPadding t p = updateWidgetState t $ \s -> s { defaultCellPadding = p }
+
+column :: ColumnSize -> ColumnSpec
+column sz = ColumnSpec sz Nothing Nothing
+
+instance Paddable ColumnSpec where
+    pad c p = c { columnPadding = Just p }
+
+instance Alignable ColumnSpec where
+    align c a = c { columnAlignment = Just a }
 
 newTable :: (MonadIO m) =>
             Attr
@@ -389,8 +404,8 @@ addHeadingRow_ tbl attr labels = addHeadingRow tbl attr labels >> return ()
 
 applyCellAlignment :: (MonadIO m) => Alignment -> TableCell -> m TableCell
 applyCellAlignment _ EmptyCell = return EmptyCell
-applyCellAlignment align (TableCell w a p) = do
-  case align of
+applyCellAlignment al (TableCell w a p) = do
+  case al of
     AlignLeft -> return $ TableCell w a p
 
     AlignCenter -> do
@@ -413,7 +428,7 @@ applyCellAlignment align (TableCell w a p) = do
 applyCellPadding :: (MonadIO m) => Padding -> TableCell -> m TableCell
 applyCellPadding _ EmptyCell = return EmptyCell
 applyCellPadding padding (TableCell w a p) = do
-  w' <- pad w padding
+  w' <- padded w padding
   return $ TableCell w' a p
 
 addRow :: (MonadIO m, RowLike a) => Widget Table -> a -> m ()

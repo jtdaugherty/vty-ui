@@ -2,8 +2,9 @@
 module Graphics.Vty.Widgets.Padding
     ( Padded
     , Padding
+    , Paddable(..)
     , (+++)
-    , pad
+    , padded
     , padNone
     , padLeft
     , padRight
@@ -65,6 +66,12 @@ instance Monoid Padding where
 (+++) :: (Monoid a) => a -> a -> a
 (+++) = mappend
 
+class Paddable a where
+    pad :: a -> Padding -> a
+
+instance Paddable Padding where
+    pad p1 p2 = p1 +++ p2
+
 leftPadding :: Padding -> Word
 leftPadding (Padding _ _ _ l) = toEnum l
 
@@ -102,8 +109,8 @@ padTopBottom v = Padding v 0 v 0
 padLeftRight :: Int -> Padding
 padLeftRight v = Padding 0 v 0 v
 
-pad :: (MonadIO m) => Widget a -> Padding -> m (Widget Padded)
-pad ch padding = do
+padded :: (MonadIO m) => Widget a -> Padding -> m (Widget Padded)
+padded ch padding = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = Padded ch padding

@@ -25,8 +25,8 @@ main = do
             \keystrokes edit, <SPC> toggles radio \
             \button, <ESC> quits."
 
-      specs = [ ColumnSpec (Fixed 25) Nothing Nothing
-              , ColumnSpec Auto Nothing (Just $ padAll 1)
+      specs = [ column (Fixed 25)
+              , column Auto `pad` (padAll 1) `align` AlignRight
               ]
 
   table <- newTable borderAttr specs BorderFull
