@@ -84,7 +84,9 @@ import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Base
     ( (<++>)
     , hCentered
-    , hFill
+    )
+import Graphics.Vty.Widgets.Fills
+    ( hFill
     )
 import Graphics.Vty.Widgets.Padding
     ( Padding

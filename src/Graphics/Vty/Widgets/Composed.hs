@@ -17,8 +17,10 @@ import Graphics.Vty.Widgets.Core
     )
 import Graphics.Vty.Widgets.Base
     ( Box
-    , VFill
     , vBox
+    )
+import Graphics.Vty.Widgets.Fills
+    ( VFill
     , vFill
     )
 import Graphics.Vty.Widgets.Limits
