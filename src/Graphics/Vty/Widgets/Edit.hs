@@ -16,6 +16,7 @@ import Control.Monad
     )
 import Control.Monad.Trans
     ( MonadIO
+    , liftIO
     )
 import Graphics.Vty
     ( Attr
@@ -97,7 +98,7 @@ editWidget normAtt focAtt = do
         }
   return wRef
 
-onActivate :: Widget Edit -> (Widget Edit -> IO ()) -> IO ()
+onActivate :: (MonadIO m) => Widget Edit -> (Widget Edit -> IO ()) -> m ()
 onActivate wRef handler = do
   oldHandler <- activateHandler <~~ wRef
 
@@ -108,7 +109,7 @@ onActivate wRef handler = do
 
   updateWidgetState wRef $ \s -> s { activateHandler = combinedHandler }
 
-onChange :: Widget Edit -> (Widget Edit -> String -> IO ()) -> IO ()
+onChange :: (MonadIO m) => Widget Edit -> (Widget Edit -> String -> IO ()) -> m ()
 onChange wRef handler = do
   oldHandler <- changeHandler <~~ wRef
 
@@ -119,7 +120,7 @@ onChange wRef handler = do
 
   updateWidgetState wRef $ \s -> s { changeHandler = combinedHandler }
 
-onCursorMove :: Widget Edit -> (Widget Edit -> Int -> IO ()) -> IO ()
+onCursorMove :: (MonadIO m) => Widget Edit -> (Widget Edit -> Int -> IO ()) -> m ()
 onCursorMove wRef handler = do
   oldHandler <- cursorMoveHandler <~~ wRef
 
@@ -130,16 +131,17 @@ onCursorMove wRef handler = do
 
   updateWidgetState wRef $ \s -> s { cursorMoveHandler = combinedHandler }
 
-getEditText :: Widget Edit -> IO String
+getEditText :: (MonadIO m) => Widget Edit -> m String
 getEditText = (currentText <~~)
 
-setEditText :: Widget Edit -> String -> IO ()
+setEditText :: (MonadIO m) => Widget Edit -> String -> m ()
 setEditText wRef str = do
   updateWidgetState wRef $ \s -> s { currentText = str }
-  gotoBeginning wRef
-  notifyChangeHandler wRef
+  liftIO $ do
+    gotoBeginning wRef
+    notifyChangeHandler wRef
 
-setEditCursorPosition :: Widget Edit -> Int -> IO ()
+setEditCursorPosition :: (MonadIO m) => Widget Edit -> Int -> m ()
 setEditCursorPosition wRef pos = do
   oldPos <- getEditCursorPosition wRef
   str <- getEditText wRef
@@ -155,9 +157,9 @@ setEditCursorPosition wRef pos = do
          updateWidgetState wRef $ \s ->
              s { cursorPosition = newPos
                }
-         notifyCursorMoveHandler wRef
+         liftIO $ notifyCursorMoveHandler wRef
 
-getEditCursorPosition :: Widget Edit -> IO Int
+getEditCursorPosition :: (MonadIO m) => Widget Edit -> m Int
 getEditCursorPosition = (cursorPosition <~~)
 
 setDisplayWidth :: Widget Edit -> Int -> IO ()
