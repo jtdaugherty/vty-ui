@@ -1,9 +1,9 @@
 module Graphics.Vty.Widgets.Box
     ( Box
-    , hBox
-    , vBox
     , (<-->)
     , (<++>)
+    , hBox
+    , vBox
     , setBoxSpacing
     )
 where
@@ -52,6 +52,33 @@ data Orientation = Horizontal | Vertical
                    deriving (Eq, Show)
 
 data Box a b = Box Orientation Int (Widget a) (Widget b)
+
+-- |Create a horizontal box layout widget containing two widgets side
+-- by side.  Space consumed by the box will depend on its contents and
+-- the available space.
+hBox :: (MonadIO m) => Widget a -> Widget b -> m (Widget (Box a b))
+hBox = box Horizontal 0
+
+-- |Create a vertical box layout widget containing two widgets.  Space
+-- consumed by the box will depend on its contents and the available
+-- space.
+vBox :: (MonadIO m) => Widget a -> Widget b -> m (Widget (Box a b))
+vBox = box Vertical 0
+
+(<-->) :: (MonadIO m) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
+(<-->) act1 act2 = do
+  ch1 <- act1
+  ch2 <- act2
+  vBox ch1 ch2
+
+(<++>) :: (MonadIO m) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
+(<++>) act1 act2 = do
+  ch1 <- act1
+  ch2 <- act2
+  hBox ch1 ch2
+
+infixl 2 <-->
+infixl 2 <++>
 
 -- |A box layout widget capable of containing two 'Widget's
 -- horizontally or vertically.  See 'hBox' and 'vBox'.  Boxes lay out
@@ -185,30 +212,3 @@ renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim
                                      in char_fill def_attr ' ' w (toEnum spacing)
 
   return $ cat [img1, spacer, img2]
-
--- |Create a horizontal box layout widget containing two widgets side
--- by side.  Space consumed by the box will depend on its contents and
--- the available space.
-hBox :: (MonadIO m) => Widget a -> Widget b -> m (Widget (Box a b))
-hBox = box Horizontal 0
-
--- |Create a vertical box layout widget containing two widgets.  Space
--- consumed by the box will depend on its contents and the available
--- space.
-vBox :: (MonadIO m) => Widget a -> Widget b -> m (Widget (Box a b))
-vBox = box Vertical 0
-
-(<-->) :: (MonadIO m) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
-(<-->) act1 act2 = do
-  ch1 <- act1
-  ch2 <- act2
-  vBox ch1 ch2
-
-(<++>) :: (MonadIO m) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
-(<++>) act1 act2 = do
-  ch1 <- act1
-  ch2 <- act2
-  hBox ch1 ch2
-
-infixl 2 <-->
-infixl 2 <++>
