@@ -280,9 +280,9 @@ listWidget list = do
               st <- getState this
               pos <- getPhysicalPosition this
               sz <- getPhysicalSize this
-              return $ Just (pos
-                             `withWidth` (region_width pos + region_width sz - 1)
-                             `withHeight` (region_height pos + (toEnum $ selectedIndex st - scrollTopIndex st)))
+              let newCol = max 0 (region_width pos + region_width sz - 1)
+                  newRow = region_height pos + toEnum (max 0 $ selectedIndex st - scrollTopIndex st)
+              return $ Just (pos `withWidth` newCol `withHeight` newRow)
 
         , draw =
             \this sz mAttr -> do
