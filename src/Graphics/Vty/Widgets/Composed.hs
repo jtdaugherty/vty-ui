@@ -15,7 +15,7 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( Widget
     )
-import Graphics.Vty.Widgets.Base
+import Graphics.Vty.Widgets.Box
     ( Box
     , vBox
     )

@@ -45,7 +45,7 @@ import Graphics.Vty.Widgets.Core
     , withHeight
     , setPhysicalPosition
     )
-import Graphics.Vty.Widgets.Base
+import Graphics.Vty.Widgets.Box
     ( hBox
     )
 import Graphics.Vty.Widgets.Text

@@ -81,7 +81,7 @@ import Graphics.Vty.Widgets.Text
     ( FormattedText
     , simpleText
     )
-import Graphics.Vty.Widgets.Base
+import Graphics.Vty.Widgets.Box
     ( (<++>)
     )
 import Graphics.Vty.Widgets.Centering
