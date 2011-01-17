@@ -39,11 +39,12 @@ data EventLoopError = NoFocusGroup
 
 instance Exception EventLoopError
 
-runUi :: Vty -> Widget a -> IO ()
+runUi :: (MonadIO m) => Vty -> Widget a -> m ()
 runUi vty uiWidget =
-    runUi' vty uiWidget `finally` do
-      reserve_display $ terminal vty
-      shutdown vty
+    liftIO $ do
+      runUi' vty uiWidget `finally` do
+               reserve_display $ terminal vty
+               shutdown vty
 
 runUi' :: Vty -> Widget a -> IO ()
 runUi' vty uiWidget = do
@@ -52,18 +53,18 @@ runUi' vty uiWidget = do
 
   let Just fg = mFg
 
-  evt <- liftIO $ do
-           sz <- display_bounds $ terminal vty
-           img <- renderAndPosition uiWidget (DisplayRegion 0 0) sz Nothing
-           update vty $ pic_for_image img
+  sz <- display_bounds $ terminal vty
+  img <- renderAndPosition uiWidget (DisplayRegion 0 0) sz Nothing
+  update vty $ pic_for_image img
 
-           mPos <- getCursorPosition fg
-           case mPos of
-             Just (DisplayRegion w h) -> do
-                                  show_cursor $ terminal vty
-                                  set_cursor_pos (terminal vty) w h
-             Nothing -> hide_cursor $ terminal vty
-           next_event vty
+  mPos <- getCursorPosition fg
+  case mPos of
+    Just (DisplayRegion w h) -> do
+                        show_cursor $ terminal vty
+                        set_cursor_pos (terminal vty) w h
+    Nothing -> hide_cursor $ terminal vty
+
+  evt <- next_event vty
 
   case evt of
     (EvKey k mods) -> handleKeyEvent fg k mods >> return ()
