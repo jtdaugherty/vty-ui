@@ -16,6 +16,7 @@ module Graphics.Vty.Widgets.Table
     , addHeadingRow
     , addHeadingRow_
     , column
+    , customCell
     )
 where
 
@@ -129,6 +130,14 @@ instance Paddable ColumnSpec where
 instance Alignable ColumnSpec where
     align c a = c { columnAlignment = Just a }
 
+instance Paddable TableCell where
+    pad (TableCell w a _) p = TableCell w a (Just p)
+    pad EmptyCell _ = EmptyCell
+
+instance Alignable TableCell where
+    align (TableCell w _ p) a = TableCell w (Just a) p
+    align EmptyCell _ = EmptyCell
+
 class RowLike a where
     mkRow :: a -> TableRow
 
@@ -153,6 +162,8 @@ instance (RowLike a) => RowLike [a] where
       (TableRow cs) = mkRow a
       (TableRow ds) = mkRow b
 
+infixl 2 .|.
+
 data Table = Table { rows :: [TableRow]
                    , numColumns :: Int
                    , columnSpecs :: [ColumnSpec]
@@ -161,6 +172,9 @@ data Table = Table { rows :: [TableRow]
                    , defaultCellAlignment :: Alignment
                    , defaultCellPadding :: Padding
                    }
+
+customCell :: Widget a -> TableCell
+customCell w = TableCell w Nothing Nothing
 
 setDefaultCellAlignment :: (MonadIO m) => Widget Table -> Alignment -> m ()
 setDefaultCellAlignment t a = updateWidgetState t $ \s -> s { defaultCellAlignment = a }
