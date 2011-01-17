@@ -86,8 +86,6 @@ updateFooterText st _ t = setText (theFooter2 st) titleAttr ("[" ++ t ++ "]")
 
 main :: IO ()
 main = do
-  vty <- mkVty
-
   st <- mkAppState
 
   ui1 <- buildUi1 st
@@ -165,4 +163,4 @@ main = do
   updateFooterNums st (theList st)
 
   -- Enter the event loop.
-  runUi vty (uis st)
+  runUi (uis st)

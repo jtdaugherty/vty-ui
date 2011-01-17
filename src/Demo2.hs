@@ -87,8 +87,6 @@ main = do
   setCheckboxChecked r1
   setCheckboxChecked r3
 
-  vty <- mkVty
-
   fg <- newFocusGroup
   fg `onKeyPressed` \_ k _ -> do
          case k of
@@ -110,4 +108,4 @@ main = do
   setFocusGroup ui fg
 
   -- Enter the event loop.
-  runUi vty ui
+  runUi ui

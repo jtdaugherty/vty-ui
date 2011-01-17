@@ -39,9 +39,10 @@ data EventLoopError = NoFocusGroup
 
 instance Exception EventLoopError
 
-runUi :: (MonadIO m) => Vty -> Widget a -> m ()
-runUi vty uiWidget =
+runUi :: (MonadIO m) => Widget a -> m ()
+runUi uiWidget =
     liftIO $ do
+      vty <- mkVty
       runUi' vty uiWidget `finally` do
                reserve_display $ terminal vty
                shutdown vty
