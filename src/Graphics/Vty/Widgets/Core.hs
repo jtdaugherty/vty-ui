@@ -136,8 +136,8 @@ data WidgetImpl a = WidgetImpl {
 
     , keyEventHandler :: Widget a -> Key -> [Modifier] -> IO Bool
 
-    , gainFocus :: Widget a -> IO ()
-    , loseFocus :: Widget a -> IO ()
+    , gainFocusHandler :: Widget a -> IO ()
+    , loseFocusHandler :: Widget a -> IO ()
     , focused :: Bool
     , focusGroup :: Widget a -> IO (Maybe (Widget FocusGroup))
 
@@ -208,9 +208,9 @@ newWidget =
                                    , keyEventHandler = \_ _ _ -> return False
                                    , physicalSize = DisplayRegion 0 0
                                    , physicalPosition = DisplayRegion 0 0
-                                   , gainFocus =
+                                   , gainFocusHandler =
                                        \this -> updateWidget this $ \w -> w { focused = True }
-                                   , loseFocus =
+                                   , loseFocusHandler =
                                        \this -> updateWidget this $ \w -> w { focused = False }
                                    , focused = False
                                    , cursorInfo = const $ return Nothing
@@ -242,25 +242,25 @@ onKeyPressed wRef handler = do
 
 focus :: (MonadIO m) => Widget a -> m ()
 focus wRef = do
-  act <- gainFocus <~ wRef
+  act <- gainFocusHandler <~ wRef
   liftIO $ act wRef
 
 unfocus :: (MonadIO m) => Widget a -> m ()
 unfocus wRef = do
-  act <- loseFocus <~ wRef
+  act <- loseFocusHandler <~ wRef
   liftIO $ act wRef
 
 onGainFocus :: (MonadIO m) => Widget a -> (Widget a -> IO ()) -> m ()
 onGainFocus wRef handler = do
-  oldHandler <- gainFocus <~ wRef
+  oldHandler <- gainFocusHandler <~ wRef
   let combinedHandler = \w -> oldHandler w >> handler w
-  updateWidget wRef $ \w -> w { gainFocus = combinedHandler }
+  updateWidget wRef $ \w -> w { gainFocusHandler = combinedHandler }
 
 onLoseFocus :: (MonadIO m) => Widget a -> (Widget a -> IO ()) -> m ()
 onLoseFocus wRef handler = do
-  oldHandler <- loseFocus <~ wRef
+  oldHandler <- loseFocusHandler <~ wRef
   let combinedHandler = \w -> oldHandler w >> handler w
-  updateWidget wRef $ \w -> w { loseFocus = combinedHandler }
+  updateWidget wRef $ \w -> w { loseFocusHandler = combinedHandler }
 
 (<~) :: (MonadIO m) => (WidgetImpl a -> b) -> Widget a -> m b
 (<~) f wRef = (return . f) =<< (liftIO $ readIORef wRef)
