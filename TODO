@@ -116,6 +116,8 @@
   would not appear focused since it was being manipulated by a
   different focus group.
 
+- Textarea support (generalize edit widget first?)
+
 Low priority
 ============
 
