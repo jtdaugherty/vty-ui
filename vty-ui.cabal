@@ -47,6 +47,7 @@ Library
           Graphics.Vty.Widgets.CheckBox
           Graphics.Vty.Widgets.Padding
           Graphics.Vty.Widgets.Alignment
+          Graphics.Vty.Widgets.Limits
   Other-Modules:
           Text.Trans.Tokenize
 

@@ -18,10 +18,12 @@ import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Base
     ( Box
     , VFill
-    , VLimit
-    , HLimit
     , vBox
     , vFill
+    )
+import Graphics.Vty.Widgets.Limits
+    ( VLimit
+    , HLimit
     , vLimit
     , hLimit
     )
