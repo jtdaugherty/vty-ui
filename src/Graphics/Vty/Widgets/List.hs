@@ -86,6 +86,7 @@ import Graphics.Vty.Widgets.Core
     , getPhysicalSize
     , withWidth
     , withHeight
+    , growVertical
     )
 import Graphics.Vty.Widgets.Text
     ( FormattedText
@@ -94,6 +95,7 @@ import Graphics.Vty.Widgets.Text
 
 data ListError = BadItemIndex Int
                | ResizeError
+               | BadListWidgetSizePolicy
                  deriving (Show, Typeable)
 
 instance Exception ListError
@@ -199,6 +201,9 @@ addToList list key = do
 
   makeWidget <- itemConstructor <~~ list
   w <- liftIO $ makeWidget key
+
+  v <- growVertical w
+  when (v) $ throw BadListWidgetSizePolicy
 
   h <- case numItems of
          0 -> do

@@ -103,7 +103,7 @@ import Graphics.Vty.Widgets.Alignment
 
 data TableError = ColumnCountMismatch
                 | CellImageTooBig
-                | BadWidgetSizePolicy Int
+                | BadTableWidgetSizePolicy Int
                   deriving (Show, Typeable)
 
 instance Exception TableError
@@ -458,7 +458,7 @@ addRow t row = do
                    EmptyCell -> return ()
                    TableCell w _ _ -> do
                           v <- growVertical w
-                          when (v) $ throw $ BadWidgetSizePolicy i
+                          when (v) $ throw $ BadTableWidgetSizePolicy i
 
                  -- Apply cell properties to the widget in this cell.
                  alignment <- getCellAlignment t (i - 1) c
