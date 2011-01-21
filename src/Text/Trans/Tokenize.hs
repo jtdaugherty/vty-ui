@@ -91,14 +91,26 @@ isWhitespace _ = False
 
 -- |Given a list of tokens, truncate the list so that its underlying
 -- string representation does not exceed the specified column width.
--- Note that this does not truncate /within/ a token; it merely
--- returns the largest sublist of tokens that has the required length.
 truncLine :: Int -> [Token a] -> [Token a]
-truncLine width ts = take (length $ head passing) ts
+truncLine width ts =
+    -- If we are returning all tokens, we didn't have to do any
+    -- truncation.  But if we *did* have to truncate, return exactly
+    -- 'width' characters' worth of tokens by constructing a new final
+    -- token with the same attribute data.
+    if length tokens == length ts
+                     then tokens
+                     else tokens ++ [lastToken]
     where
       lengths = map (length . tokenString) ts
       cases = reverse $ inits lengths
-      passing = dropWhile ((> width) . sum) cases
+      remaining = dropWhile ((> width) . sum) cases
+      tokens = take (length $ head remaining) ts
+      truncLength = sum $ head remaining
+
+      lastTokenBasis = ts !! (length tokens)
+      lastToken = lastTokenBasis {
+                    tokenString = take (width - truncLength) (tokenString lastTokenBasis)
+                  }
 
 -- |Given a list of tokens without Newlines, (potentially) wrap the
 -- list to the specified column width.
