@@ -21,26 +21,27 @@ color = highlight (compile (BS8.pack "<.*>") []) (bright_green `on` black)
 
 main :: IO ()
 main = do
-  let msg = "<TAB> switches edit fields, ordinary \
-            \keystrokes edit, <SPC> toggles radio \
-            \button, <ESC> quits."
+  let msg = "- <TAB> switches input elements\n\n\
+            \- ordinary keystrokes edit\n\n\
+            \- <SPC> toggles radio buttons and checkboxes\n\n\
+            \- <ESC> quits"
 
-      specs = [ column (Fixed 25)
-              , column Auto `pad` (padAll 1) `align` AlignRight
-              ]
+      columns = [ column (Fixed 25) `pad` (padAll 1) `align` AlignRight
+                , column Auto `pad` (padAll 1)
+                ]
 
-  table <- newTable borderAttr specs BorderFull
+  table <- newTable borderAttr columns BorderFull
 
   tw <- textWidget (wrap &.& color) $ prepareText msgAttr msg
   mainBox <- (return table) <--> (return tw)
 
-  setBoxSpacing mainBox 2
+  setBoxSpacing mainBox 1
 
   ui <- centered =<< hLimit 70 mainBox
 
-  r1 <- newCheckbox "Cb 1" bodyAttr focusAttr
-  r2 <- newCheckbox "Cb 2" bodyAttr focusAttr
-  r3 <- newCheckbox "Cb 3 (no radio)" bodyAttr focusAttr
+  r1 <- newCheckbox "Cake" bodyAttr focusAttr
+  r2 <- newCheckbox "Death" bodyAttr focusAttr
+  r3 <- newCheckbox "Checkbox" bodyAttr focusAttr
   radioHeader <- simpleText headerAttr ""
   r3Header <- simpleText headerAttr ""
 
@@ -56,28 +57,29 @@ main = do
 
   lst <- listWidget $ mkList bodyAttr focusAttr (simpleText bodyAttr)
 
-  selector <- vLimit 2 lst
+  selector <- vLimit 3 lst
   listHeader <- simpleText bodyAttr ""
 
-  addHeadingRow_ table bodyAttr ["Foo", "Bar"]
-  addRow table $ radioHeader .|. r1
-  addRow table $ EmptyCell .|. r2
+  rs <- (return r1) <--> (return r2)
+
+  addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
+  addRow table $ (radioHeader .|.) rs
   addRow table $ r3Header .|. r3
   addRow table $ edit1Header .|. edit1
   addRow table $ edit2Header .|. edit2
-  addRow table $ listHeader .|. selector
+  addRow table $ customCell listHeader `align` AlignLeft .|. customCell selector `pad` padNone
 
   r1 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader headerAttr "radio 1 checked"
+      when v $ setText radioHeader bodyAttr "CAKE!!"
 
   r2 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader headerAttr "radio 2 checked"
+      when v $ setText radioHeader bodyAttr "death..."
 
   r3 `onCheckboxChange` \_ v ->
-      setText r3Header headerAttr $ if v then "checked" else "unchecked"
+      setText r3Header bodyAttr $ if v then "checked" else "unchecked"
 
-  edit1 `onChange` \_ s -> setText edit1Header headerAttr s
-  edit2 `onChange` \_ s -> setText edit2Header headerAttr s
+  edit1 `onChange` \_ s -> setText edit1Header bodyAttr s
+  edit2 `onChange` \_ s -> setText edit2Header bodyAttr s
 
   lst `onSelectionChange` \_ _ k _ ->
       setText listHeader bodyAttr $ "You selected: " ++ k
