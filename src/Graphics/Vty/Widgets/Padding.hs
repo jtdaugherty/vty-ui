@@ -137,15 +137,16 @@ padded ch padding = do
                   -- settings.
                   let constrained = sz `withWidth` (region_width sz - (leftPadding p + rightPadding p))
                                     `withHeight` (region_height sz - (topPadding p + bottomPadding p))
+                      attr = maybe def_attr id mAttr
 
                   -- Render child.
                   img <- render child constrained mAttr
 
                   -- Create padding images.
-                  let leftImg = char_fill def_attr ' ' (leftPadding p) (image_height img)
-                      rightImg = char_fill def_attr ' ' (rightPadding p) (image_height img)
-                      topImg = char_fill def_attr ' ' (image_width img + leftPadding p + rightPadding p) (topPadding p)
-                      bottomImg = char_fill def_attr ' ' (image_width img + leftPadding p + rightPadding p) (bottomPadding p)
+                  let leftImg = char_fill attr ' ' (leftPadding p) (image_height img)
+                      rightImg = char_fill attr ' ' (rightPadding p) (image_height img)
+                      topImg = char_fill attr ' ' (image_width img + leftPadding p + rightPadding p) (topPadding p)
+                      bottomImg = char_fill attr ' ' (image_width img + leftPadding p + rightPadding p) (bottomPadding p)
 
                   return $ topImg <-> (leftImg <|> img <|> rightImg) <-> bottomImg
 
