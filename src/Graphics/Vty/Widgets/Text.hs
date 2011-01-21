@@ -18,6 +18,7 @@ module Graphics.Vty.Widgets.Text
     -- *Formatting
     , (&.&)
     , highlight
+    , nullFormatter
     , wrap
     )
 where
