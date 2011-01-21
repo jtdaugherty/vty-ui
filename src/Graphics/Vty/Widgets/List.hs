@@ -296,7 +296,7 @@ listWidget list = do
               -- Resize the list based on the available space and the
               -- height of each item.
               when (h > 0) $
-                   resize ((fromEnum $ region_height sz) `div` h) this
+                   resize (max 1 ((fromEnum $ region_height sz) `div` h)) this
 
               listData <- getState this
               renderListWidget listData sz mAttr
@@ -325,9 +325,11 @@ renderListWidget list s mAttr = do
                             then mAttr
                             else (Just $ normalAttr list)
         img <- render w s $ Just att
-        let img' = img <|> char_fill att ' '
+
+        let actualHeight = min (region_height s) (toEnum $ itemHeight list)
+            img' = img <|> char_fill att ' '
                    (region_width s - image_width img)
-                   (toEnum $ itemHeight list)
+                   actualHeight
         imgs <- renderVisible ws
         return (img':imgs)
 
