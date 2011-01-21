@@ -203,12 +203,13 @@ renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim
                                   images <- renderOrdered second first
                                   return $ reverse images
 
-  let spacer = case spacing of
+  let spAttr = maybe def_attr id mAttr
+      spacer = case spacing of
                  0 -> empty_image
                  _ -> case orientation of
                          Horizontal -> let h = max (image_height img1) (image_height img2)
-                                       in char_fill def_attr ' ' (toEnum spacing) h
+                                       in char_fill spAttr ' ' (toEnum spacing) h
                          Vertical -> let w = max (image_width img1) (image_width img2)
-                                     in char_fill def_attr ' ' w (toEnum spacing)
+                                     in char_fill spAttr ' ' w (toEnum spacing)
 
   return $ cat [img1, spacer, img2]
