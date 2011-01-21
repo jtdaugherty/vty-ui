@@ -39,7 +39,11 @@ data Token a = Whitespace { tokenString :: String
              | Token { tokenString :: String
                      , tokenAnnotation :: a
                      }
-               deriving (Show, Eq)
+               deriving (Eq)
+
+instance (Show a) => Show (Token a) where
+    show (Whitespace s _) = "{" ++ s ++ "}"
+    show (Token s _) = "<" ++ s ++ ">"
 
 -- |General splitter function; given a list and a predicate, split the
 -- list into sublists wherever the predicate matches, discarding the
