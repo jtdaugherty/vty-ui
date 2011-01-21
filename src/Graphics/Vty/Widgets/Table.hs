@@ -219,9 +219,9 @@ newTable attr specs borderSty = do
 
               rowImgs <- mapM (\(TableRow r) -> renderRow this sz r mAttr) rs
 
-              rowBorder <- mkRowBorder this sz
-              topBottomBorder <- mkTopBottomBorder this sz
-              sideBorder <- mkSideBorder this
+              rowBorder <- mkRowBorder this sz mAttr
+              topBottomBorder <- mkTopBottomBorder this sz mAttr
+              sideBorder <- mkSideBorder this mAttr
 
               let body = vert_cat $ intersperse rowBorder rowImgs
                   withTBBorders = vert_cat [topBottomBorder, body, topBottomBorder]
@@ -297,60 +297,62 @@ getCellPadding t columnNumber _ = do
     Nothing -> defaultCellPadding <~~ t
     Just p -> return p
 
-mkRowBorder :: Widget Table -> DisplayRegion -> IO Image
-mkRowBorder t sz = do
+mkRowBorder :: Widget Table -> DisplayRegion -> Maybe Attr -> IO Image
+mkRowBorder t sz mAttr = do
   bs <- borderStyle <~~ t
 
   if not $ rowBorders bs then
       return empty_image else
-      mkRowBorder_ t sz
+      mkRowBorder_ t sz mAttr
 
 -- Make a row border that matches the width of each row but does not
 -- include outermost edge characters.
-mkRowBorder_ :: Widget Table -> DisplayRegion -> IO Image
-mkRowBorder_ t sz = do
+mkRowBorder_ :: Widget Table -> DisplayRegion -> Maybe Attr -> IO Image
+mkRowBorder_ t sz mAttr = do
   bs <- borderStyle <~~ t
   bAttr <- borderAttr <~~ t
   specs <- columnSpecs <~~ t
   aw <- autoWidth t sz
 
-  let szs = map columnSize specs
-      intersection = string bAttr "+"
+  let bAttr' = maybe bAttr id mAttr
+      szs = map columnSize specs
+      intersection = string bAttr' "+"
       imgs = (flip map) szs $ \s ->
              case s of
-               Fixed n -> char_fill bAttr '-' n 1
-               Auto -> char_fill bAttr '-' aw 1
+               Fixed n -> char_fill bAttr' '-' n 1
+               Auto -> char_fill bAttr' '-' aw 1
       imgs' = if colBorders bs
               then intersperse intersection imgs
               else imgs
 
   return $ horiz_cat imgs'
 
-mkTopBottomBorder :: Widget Table -> DisplayRegion -> IO Image
-mkTopBottomBorder t sz = do
+mkTopBottomBorder :: Widget Table -> DisplayRegion -> Maybe Attr -> IO Image
+mkTopBottomBorder t sz mAttr = do
   bs <- borderStyle <~~ t
 
   if edgeBorders bs then
-      mkRowBorder_ t sz else
+      mkRowBorder_ t sz mAttr else
       return empty_image
 
 -- Make vertical side borders for the table, including row border
 -- intersections if necessary.
-mkSideBorder :: Widget Table -> IO Image
-mkSideBorder t = do
+mkSideBorder :: Widget Table -> Maybe Attr -> IO Image
+mkSideBorder t mAttr = do
   bs <- borderStyle <~~ t
 
   if edgeBorders bs then
-      mkSideBorder_ t else
+      mkSideBorder_ t mAttr else
       return empty_image
 
-mkSideBorder_ :: Widget Table -> IO Image
-mkSideBorder_ t = do
+mkSideBorder_ :: Widget Table -> Maybe Attr -> IO Image
+mkSideBorder_ t mAttr = do
   bs <- borderStyle <~~ t
   bAttr <- borderAttr <~~ t
   rs <- rows <~~ t
 
-  let intersection = string bAttr "+"
+  let intersection = string bAttr' "+"
+      bAttr' = maybe bAttr id mAttr
 
   rowHeights <- forM rs $ \(TableRow row) -> do
                     hs <- forM row $ \cell ->
@@ -359,7 +361,7 @@ mkSideBorder_ t = do
                             EmptyCell -> return 1
                     return $ maximum hs
 
-  let borderImgs = (flip map) rowHeights $ \h -> char_fill bAttr '|' 1 h
+  let borderImgs = (flip map) rowHeights $ \h -> char_fill bAttr' '|' 1 h
       withIntersections = if rowBorders bs
                           then intersperse intersection borderImgs
                           else borderImgs
@@ -516,16 +518,17 @@ renderRow tbl sz cells mAttr = do
             -- cell.
             case compare (image_width img) (region_width cellSz) of
               EQ -> return img
-              -- XXX probably want a different attribute here, AND
-              -- mAttr if it's set
-              LT -> return $ img <|> char_fill def_attr ' '
-                                     (region_width cellSz - image_width img)
-                                     (max (image_height img) 1)
+              LT -> do
+                let att = maybe def_attr id mAttr
+                return $ img <|> char_fill att ' '
+                           (region_width cellSz - image_width img)
+                           (max (image_height img) 1)
               GT -> throw CellImageTooBig
 
   -- If we need to draw borders in between columns, do that.
-  let withBorders = case colBorders borderSty of
+  let bAttr' = maybe bAttr id mAttr
+      withBorders = case colBorders borderSty of
                       False -> cellImgs
-                      True -> intersperse (char_fill bAttr '|' 1 (rowHeight cellImgs)) cellImgs
+                      True -> intersperse (char_fill bAttr' '|' 1 (rowHeight cellImgs)) cellImgs
 
   return $ horiz_cat withBorders
