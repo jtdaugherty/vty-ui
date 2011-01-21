@@ -77,8 +77,8 @@ vBox = box Vertical 0
   ch2 <- act2
   hBox ch1 ch2
 
-infixl 2 <-->
-infixl 2 <++>
+infixl 3 <-->
+infixl 3 <++>
 
 -- |A box layout widget capable of containing two 'Widget's
 -- horizontally or vertically.  See 'hBox' and 'vBox'.  Boxes lay out
