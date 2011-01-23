@@ -37,6 +37,7 @@ import Graphics.Vty.Widgets.Core
     , handleKeyEvent
     , growHorizontal
     , growVertical
+    , onKeyPressed
     )
 
 data HLimit a = HLimit Int (Widget a)
@@ -50,11 +51,6 @@ hLimit maxWidth child = do
         , getGrowHorizontal = return False
         , getGrowVertical = growVertical child
 
-        , keyEventHandler =
-            \this key mods -> do
-              HLimit _ ch <- getState this
-              handleKeyEvent ch key mods
-
         , draw = \this s mAttr -> do
                    HLimit width ch <- getState this
                    let region = s `withWidth` fromIntegral (min (toEnum width) (region_width s))
@@ -66,6 +62,7 @@ hLimit maxWidth child = do
               HLimit _ ch <- getState this
               setPhysicalPosition ch pos
         }
+  wRef `onKeyPressed` \_ key mods -> handleKeyEvent child key mods
   return wRef
 
 data VLimit a = VLimit Int (Widget a)
@@ -79,11 +76,6 @@ vLimit maxHeight child = do
         , getGrowVertical = return False
         , getGrowHorizontal = growHorizontal child
 
-        , keyEventHandler =
-            \this key mods -> do
-              VLimit _ ch <- getState this
-              handleKeyEvent ch key mods
-
         , draw = \this s mAttr -> do
                    VLimit height ch <- getState this
                    let region = s `withHeight` fromIntegral (min (toEnum height) (region_height s))
@@ -95,6 +87,7 @@ vLimit maxHeight child = do
               VLimit _ ch <- getState this
               setPhysicalPosition ch pos
         }
+  wRef `onKeyPressed` \_ key mods -> handleKeyEvent child key mods
   return wRef
 
 setVLimit :: (MonadIO m) => Widget (VLimit a) -> Int -> m ()

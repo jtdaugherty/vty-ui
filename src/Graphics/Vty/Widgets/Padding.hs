@@ -48,6 +48,7 @@ import Graphics.Vty.Widgets.Core
     , withHeight
     , render
     , setPhysicalPosition
+    , onKeyPressed
     )
 
 -- Top, right, bottom, left.
@@ -115,11 +116,6 @@ padded ch padding = do
         , getGrowVertical = growVertical ch
         , getGrowHorizontal = growHorizontal ch
 
-        , keyEventHandler =
-            \this key mods -> do
-              Padded child _ <- getState this
-              handleKeyEvent child key mods
-
         , draw =
             \this sz mAttr ->
                 do
@@ -155,4 +151,6 @@ padded ch padding = do
               setPhysicalPosition child newPos
 
         }
+
+  wRef `onKeyPressed` \_ key mods -> handleKeyEvent ch key mods
   return wRef

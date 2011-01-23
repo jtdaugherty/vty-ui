@@ -39,6 +39,7 @@ import Graphics.Vty.Widgets.Core
     , render
     , handleKeyEvent
     , getState
+    , onKeyPressed
     )
 
 -- Ultimately we'd want support for "stacks" to provide things like
@@ -92,15 +93,6 @@ newCollection = do
                        let e = entries st !! i
                        entryFocusGroup e
 
-        , keyEventHandler =
-            \this key mods -> do
-              st <- getState this
-              case currentEntryNum st of
-                (-1) -> return False
-                i -> do
-                       let e = entries st !! i
-                       entryHandleKeyEvent e key mods
-
         , draw = \this size mAttr -> do
                    st <- getState this
                    case currentEntryNum st of
@@ -119,6 +111,16 @@ newCollection = do
                   let e = entries st !! i
                   positionEntry e pos
         }
+
+  wRef `onKeyPressed`
+           \this key mods -> do
+                  st <- getState this
+                  case currentEntryNum st of
+                    (-1) -> return False
+                    i -> do
+                      let e = entries st !! i
+                      entryHandleKeyEvent e key mods
+
   return wRef
 
 addToCollection :: (MonadIO m) => Widget Collection -> Widget a -> m (m ())
