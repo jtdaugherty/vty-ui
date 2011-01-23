@@ -37,6 +37,7 @@ import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , HasNormalAttr(..)
+    , HasFocusAttr(..)
     , (<~)
     , (<~~)
     , getPhysicalPosition
@@ -50,7 +51,7 @@ import Graphics.Vty.Widgets.Core
 data Edit = Edit { currentText :: String
                  , cursorPosition :: Int
                  , normalAttr :: Maybe Attr
-                 , focusAttr :: Attr
+                 , focusAttr :: Maybe Attr
                  , displayStart :: Int
                  , displayWidth :: Int
                  , activateHandler :: Widget Edit -> IO ()
@@ -62,14 +63,18 @@ instance HasNormalAttr (Widget Edit) where
     setNormalAttribute wRef a =
         updateWidgetState wRef $ \s -> s { normalAttr = Just a }
 
-editWidget :: (MonadIO m) => Attr -> m (Widget Edit)
-editWidget focAtt = do
+instance HasFocusAttr (Widget Edit) where
+    setFocusAttribute wRef a =
+        updateWidgetState wRef $ \s -> s { focusAttr = Just a }
+
+editWidget :: (MonadIO m) => m (Widget Edit)
+editWidget = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = Edit { currentText = ""
                        , cursorPosition = 0
                        , normalAttr = Nothing
-                       , focusAttr = focAtt
+                       , focusAttr = Nothing
                        , displayStart = 0
                        , displayWidth = 0
                        , activateHandler = const $ return ()
@@ -91,19 +96,21 @@ editWidget focAtt = do
                   return Nothing
 
         , draw =
-            \this size normAttr mAttr -> do
+            \this size normAttr focAttr mAttr -> do
               setDisplayWidth this (fromEnum $ region_width size)
               st <- getState this
 
               let truncated = take (displayWidth st)
                               (drop (displayStart st) (currentText st))
 
-                  attr = head $ catMaybes [mAttr, normalAttr st, Just normAttr]
+                  nAttr = head $ catMaybes [mAttr, normalAttr st, Just normAttr]
 
               isFocused <- focused <~ this
-              let fAttr = (if isFocused then focusAttr st else attr) `with_style` underline
-              return $ string fAttr truncated
-                         <|> char_fill fAttr ' ' (region_width size - (toEnum $ length truncated)) 1
+              let attr = (if isFocused then fAttr else nAttr) `with_style` underline
+                  fAttr = head $ catMaybes [ focusAttr st, Just focAttr ]
+
+              return $ string attr truncated
+                         <|> char_fill attr ' ' (region_width size - (toEnum $ length truncated)) 1
 
         , keyEventHandler = editKeyEvent
         }

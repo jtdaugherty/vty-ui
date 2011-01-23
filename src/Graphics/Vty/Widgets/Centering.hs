@@ -52,9 +52,9 @@ hCentered ch = do
             HCentered child <- ask
             growVertical child
 
-        , draw = \this s normAttr mAttr -> do
+        , draw = \this s normAttr focAttr mAttr -> do
                    HCentered child <- getState this
-                   img <- render child s normAttr mAttr
+                   img <- render child s normAttr focAttr mAttr
 
                    -- XXX def_attr can be wrong
                    let attr' = maybe normAttr id mAttr
@@ -88,9 +88,9 @@ vCentered ch = do
         , getGrowVertical = return True
         , getGrowHorizontal = growHorizontal ch
 
-        , draw = \this s normAttr mAttr -> do
+        , draw = \this s normAttr focAttr mAttr -> do
                    VCentered child <- getState this
-                   img <- render child s normAttr mAttr
+                   img <- render child s normAttr focAttr mAttr
 
                    -- XXX def_attr can be wrong
                    let attr' = maybe normAttr id mAttr

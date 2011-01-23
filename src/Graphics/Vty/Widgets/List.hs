@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable, FlexibleInstances, TypeSynonymInstances #-}
 -- |This module provides a 'List' widget for rendering a list of
 -- arbitrary widgets.  A 'List' has the following features:
 --
@@ -76,6 +76,7 @@ import Graphics.Vty.Widgets.Core
     , Widget
     , (<~)
     , (<~~)
+    , HasNormalAttr(..)
     , render
     , newWidget
     , updateWidget
@@ -126,6 +127,10 @@ data List a b = List { normalAttr :: Maybe Attr
                      , itemConstructor :: a -> IO (Widget b)
                      -- ^Function to construct new items
                      }
+
+instance HasNormalAttr (Widget (List a b)) where
+    setNormalAttribute wRef a =
+        updateWidgetState wRef $ \s -> s { normalAttr = Just a }
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
@@ -212,7 +217,7 @@ addToList list key = do
            -- the result, assuming that all list widgets will have the
            -- same size.  If you violate this, you'll have interesting
            -- results!
-           img <- render w (DisplayRegion 100 100) def_attr Nothing
+           img <- render w (DisplayRegion 100 100) def_attr def_attr Nothing
            return $ fromEnum $ image_height img
          _ -> itemHeight <~~ list
 
@@ -288,7 +293,7 @@ listWidget list = do
               return $ Just (pos `withWidth` newCol `withHeight` newRow)
 
         , draw =
-            \this sz normAttr mAttr -> do
+            \this sz normAttr focAttr mAttr -> do
               h <- itemHeight <~~ this
 
               -- Resize the list based on the available space and the
@@ -297,7 +302,7 @@ listWidget list = do
                    resize (max 1 ((fromEnum $ region_height sz) `div` h)) this
 
               listData <- getState this
-              renderListWidget listData sz normAttr mAttr
+              renderListWidget listData sz normAttr focAttr mAttr
 
         -- XXX!!! define setPosition to set position of visible
         -- widgets in list
@@ -311,8 +316,8 @@ listKeyEvent w KPageUp _ = pageUp w >> return True
 listKeyEvent w KPageDown _ = pageDown w >> return True
 listKeyEvent _ _ _ = return False
 
-renderListWidget :: List a b -> DisplayRegion -> Attr -> Maybe Attr -> IO Image
-renderListWidget list s normAttr mAttr = do
+renderListWidget :: List a b -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> IO Image
+renderListWidget list s normAttr focAttr mAttr = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
 
       renderVisible [] = return []
@@ -323,7 +328,7 @@ renderListWidget list s normAttr mAttr = do
                                         , normalAttr list
                                         , Just normAttr
                                         ]
-        img <- render w s normAttr $ Just att
+        img <- render w s normAttr focAttr $ Just att
 
         let actualHeight = min (region_height s) (toEnum $ itemHeight list)
             img' = img <|> char_fill att ' '

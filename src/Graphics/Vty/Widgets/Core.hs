@@ -127,7 +127,7 @@ data WidgetImpl a = WidgetImpl {
     -- |Render the widget with the given dimensions.  The result
     -- /must/ not be larger than the specified dimensions, but may be
     -- smaller.
-    , draw :: Widget a -> DisplayRegion -> Attr -> Maybe Attr -> IO Image
+    , draw :: Widget a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> IO Image
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
@@ -190,18 +190,18 @@ growVertical w = do
   st <- state <~ w
   liftIO $ runReaderT act st
 
-render :: (MonadIO m) => Widget a -> DisplayRegion -> Attr -> Maybe Attr -> m Image
-render wRef sz normAttr overrideAttr =
+render :: (MonadIO m) => Widget a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> m Image
+render wRef sz normAttr focAttr overrideAttr =
     liftIO $ do
       impl <- readIORef wRef
-      img <- draw impl wRef sz normAttr overrideAttr
+      img <- draw impl wRef sz normAttr focAttr overrideAttr
       setPhysicalSize wRef $ DisplayRegion (image_width img) (image_height img)
       return img
 
 renderAndPosition :: (MonadIO m) => Widget a -> DisplayRegion -> DisplayRegion
-                  -> Attr -> Maybe Attr -> m Image
-renderAndPosition wRef pos sz normAttr mAttr = do
-  img <- render wRef sz normAttr mAttr
+                  -> Attr -> Attr -> Maybe Attr -> m Image
+renderAndPosition wRef pos sz normAttr focAttr mAttr = do
+  img <- render wRef sz normAttr focAttr mAttr
   -- Position post-processing depends on the sizes being correct!
   setPhysicalPosition wRef pos
   return img
@@ -335,7 +335,7 @@ newFocusEntry chRef = do
         , getGrowVertical = growVertical chRef
 
         , draw =
-            \_ sz mAttr -> render chRef sz mAttr
+            \_ sz normAttr focAttr mAttr -> render chRef sz normAttr focAttr mAttr
 
         , setPosition =
             \this pos -> do
@@ -377,7 +377,7 @@ newFocusGroup = do
                        handleKeyEvent e key mods
 
         -- Should never be rendered.
-        , draw = \_ _ _ _ -> return empty_image
+        , draw = \_ _ _ _ _ -> return empty_image
         }
   return wRef
 

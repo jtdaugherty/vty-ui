@@ -214,10 +214,10 @@ newTable attr specs borderSty = do
         , getGrowVertical = return False
 
         , draw =
-            \this sz normAttr mAttr -> do
+            \this sz normAttr focAttr mAttr -> do
               rs <- rows <~~ this
 
-              rowImgs <- mapM (\(TableRow r) -> renderRow this sz r normAttr mAttr) rs
+              rowImgs <- mapM (\(TableRow r) -> renderRow this sz r normAttr focAttr mAttr) rs
 
               rowBorder <- mkRowBorder this sz mAttr
               topBottomBorder <- mkTopBottomBorder this sz mAttr
@@ -472,11 +472,12 @@ addRow t row = do
   updateWidgetState t $ \s ->
       s { rows = rows s ++ [TableRow cells] }
 
-renderCell :: DisplayRegion -> TableCell -> Attr -> Maybe Attr -> IO Image
-renderCell region EmptyCell normAttr mAttr = do
+renderCell :: DisplayRegion -> TableCell -> Attr -> Attr -> Maybe Attr -> IO Image
+renderCell region EmptyCell normAttr focAttr mAttr = do
   w <- simpleText def_attr ""
-  render w region normAttr mAttr
-renderCell region (TableCell w _ _) normAttr mAttr = render w region normAttr mAttr
+  render w region normAttr focAttr mAttr
+renderCell region (TableCell w _ _) normAttr focAttr mAttr =
+    render w region normAttr focAttr mAttr
 
 colBorders :: BorderStyle -> Bool
 colBorders (BorderPartial fs) = Columns `elem` fs
@@ -496,8 +497,9 @@ rowBorders _ = False
 rowHeight :: [Image] -> Word
 rowHeight = maximum . map image_height
 
-renderRow :: Widget Table -> DisplayRegion -> [TableCell] -> Attr -> Maybe Attr -> IO Image
-renderRow tbl sz cells normAttr mAttr = do
+renderRow :: Widget Table -> DisplayRegion -> [TableCell] -> Attr -> Attr
+          -> Maybe Attr -> IO Image
+renderRow tbl sz cells normAttr focAttr mAttr = do
   specs <- columnSpecs <~~ tbl
   borderSty <- borderStyle <~~ tbl
   bAttr <- borderAttr <~~ tbl
@@ -513,7 +515,7 @@ renderRow tbl sz cells normAttr mAttr = do
                               Fixed n -> toEnum n
                               Auto -> aw
 
-            img <- renderCell cellSz cellW normAttr mAttr
+            img <- renderCell cellSz cellW normAttr focAttr mAttr
             -- Right-pad the image if it isn't big enough to fill the
             -- cell.
             case compare (image_width img) (region_width cellSz) of

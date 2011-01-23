@@ -43,6 +43,7 @@ import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , HasNormalAttr(..)
+    , HasFocusAttr(..)
     , (<~)
     , (<~~)
     , getState
@@ -95,22 +96,26 @@ instance HasNormalAttr (Widget CheckBox) where
     setNormalAttribute wRef a =
         updateWidgetState wRef $ \s -> s { normalAttr = Just a }
 
+instance HasFocusAttr (Widget CheckBox) where
+    setFocusAttribute wRef a =
+        updateWidgetState wRef $ \s -> s { focusedAttr = Just a }
+
 data CheckBox = CheckBox { isChecked :: Bool
                          , normalAttr :: Maybe Attr
-                         , focusedAttr :: Attr
+                         , focusedAttr :: Maybe Attr
                          , checkedChar :: Char
                          , checkboxLabel :: String
                          , checkboxChangeHandler :: Widget CheckBox -> Bool -> IO ()
                          , radioGroup :: Maybe RadioGroup
                          }
 
-newCheckbox :: (MonadIO m) => String -> Attr -> m (Widget CheckBox)
-newCheckbox label focAttr = do
+newCheckbox :: (MonadIO m) => String -> m (Widget CheckBox)
+newCheckbox label = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = CheckBox { isChecked = False
                            , normalAttr = Nothing
-                           , focusedAttr = focAttr
+                           , focusedAttr = Nothing
                            , checkedChar = 'x'
                            , checkboxLabel = label
                            , checkboxChangeHandler = \_ _ -> return ()
@@ -123,13 +128,13 @@ newCheckbox label focAttr = do
 
         , keyEventHandler = radioKeyEvent
         , draw =
-            \this sz normAttr mAttr -> do
+            \this sz normAttr focAttr mAttr -> do
               f <- focused <~ this
               st <- getState this
 
               let attr = head $ catMaybes [ mAttr, normalAttr st, Just normAttr ]
                   fAttr = if f
-                          then focusedAttr st
+                          then head $ catMaybes [ focusedAttr st, Just focAttr ]
                           else attr
 
                   ch = if isChecked st then checkedChar st else ' '

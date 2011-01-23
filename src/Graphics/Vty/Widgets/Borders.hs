@@ -63,7 +63,7 @@ hBorderWith ch att = do
       w { state = HBorder att ch
         , getGrowVertical = return False
         , getGrowHorizontal = return True
-        , draw = \this s _ mAttr -> do
+        , draw = \this s _ _ mAttr -> do
                    HBorder attr _ <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) 1
@@ -85,7 +85,7 @@ vBorderWith ch att = do
       w { state = VBorder att ch
         , getGrowHorizontal = return False
         , getGrowVertical = return True
-        , draw = \this s _ mAttr -> do
+        , draw = \this s _ _ mAttr -> do
                    VBorder attr _ <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch 1 (region_height s)
@@ -110,9 +110,9 @@ bordered att child = do
               handleKeyEvent ch key mods
 
         , draw =
-            \this s normAttr mAttr -> do
+            \this s normAttr focAttr mAttr -> do
               st <- getState this
-              drawBordered st s normAttr mAttr
+              drawBordered st s normAttr focAttr mAttr
 
         , setPosition =
             \this pos -> do
@@ -125,8 +125,8 @@ bordered att child = do
         }
   return wRef
 
-drawBordered :: Bordered a -> DisplayRegion -> Attr -> Maybe Attr -> IO Image
-drawBordered this s normAttr mAttr = do
+drawBordered :: Bordered a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> IO Image
+drawBordered this s normAttr focAttr mAttr = do
   let Bordered attr child = this
       attr' = maybe attr id mAttr
 
@@ -135,7 +135,7 @@ drawBordered this s normAttr mAttr = do
   -- used by the (expanding) borders.
   let constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
 
-  childImage <- render child constrained normAttr mAttr
+  childImage <- render child constrained normAttr focAttr mAttr
 
   let adjusted = DisplayRegion (image_width childImage + 2)
                  (image_height childImage)
@@ -143,10 +143,10 @@ drawBordered this s normAttr mAttr = do
 
   hb <- hBorder attr'
   topWidget <- hBox corner =<< hBox hb corner
-  topBottom <- render topWidget adjusted normAttr mAttr
+  topBottom <- render topWidget adjusted normAttr focAttr mAttr
 
   vb <- vBorder attr'
-  leftRight <- render vb adjusted normAttr mAttr
+  leftRight <- render vb adjusted normAttr focAttr mAttr
 
   let middle = horiz_cat [leftRight, childImage, leftRight]
 

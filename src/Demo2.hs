@@ -39,9 +39,9 @@ main = do
 
   ui <- centered =<< hLimit 70 mainBox
 
-  r1 <- newCheckbox "Cake" focusAttr
-  r2 <- newCheckbox "Death" focusAttr
-  r3 <- newCheckbox "Checkbox" focusAttr
+  r1 <- newCheckbox "Cake"
+  r2 <- newCheckbox "Death"
+  r3 <- newCheckbox "Checkbox"
   radioHeader <- simpleText headerAttr ""
   r3Header <- simpleText headerAttr ""
 
@@ -49,8 +49,8 @@ main = do
   addToRadioGroup rg r1
   addToRadioGroup rg r2
 
-  edit1 <- editWidget focusAttr
-  edit2 <- editWidget focusAttr
+  edit1 <- editWidget
+  edit2 <- editWidget
 
   edit1Header <- simpleText headerAttr ""
   edit2Header <- simpleText headerAttr ""
@@ -110,4 +110,4 @@ main = do
   setFocusGroup ui fg
 
   -- Enter the event loop.
-  runUi ui (yellow `on` blue)
+  runUi ui (yellow `on` blue) focusAttr

@@ -20,7 +20,7 @@ data AppState =
 -- Visual attributes.
 titleAttr = bright_white `on` blue
 editAttr = white `on` black
-editFocusAttr = bright_green `on` black
+focusAttr = black `on` green
 boxAttr = bright_yellow `on` black
 bodyAttr = bright_green `on` black
 selAttr = black `on` yellow
@@ -51,7 +51,7 @@ mkAppState = do
   b <- textWidget wrap $ prepareText bodyAttr ""
   f1 <- simpleText titleAttr ""
   f2 <- simpleText titleAttr "[]"
-  e <- editWidget editFocusAttr
+  e <- editWidget
   ll <- vLimit 5 lw
 
   c <- newCollection
@@ -163,4 +163,4 @@ main = do
   updateFooterNums st (theList st)
 
   -- Enter the event loop.
-  runUi (uis st) bodyAttr
+  runUi (uis st) bodyAttr focusAttr

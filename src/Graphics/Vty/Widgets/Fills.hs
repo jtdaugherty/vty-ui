@@ -34,7 +34,7 @@ vFill att c = do
       w { state = VFill att c
         , getGrowHorizontal = return False
         , getGrowVertical = return True
-        , draw = \this s _ mAttr -> do
+        , draw = \this s _ _ mAttr -> do
                    VFill attr ch <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) (region_height s)
@@ -52,7 +52,7 @@ hFill att c h = do
       w { state = HFill att c h
         , getGrowHorizontal = return True
         , getGrowVertical = return False
-        , draw = \this s _ mAttr -> do
+        , draw = \this s _ _ mAttr -> do
                    HFill attr ch height <- getState this
                    let attr' = maybe attr id mAttr
                    return $ char_fill attr' ch (region_width s) (toEnum height)
