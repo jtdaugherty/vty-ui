@@ -13,6 +13,7 @@ module Graphics.Vty.Widgets.Table
     , newTable
     , setDefaultCellAlignment
     , setDefaultCellPadding
+    , setBorderAttr
     , addRow
     , addHeadingRow
     , addHeadingRow_
@@ -181,7 +182,7 @@ data Table = Table { rows :: [TableRow]
                    , numColumns :: Int
                    , columnSpecs :: [ColumnSpec]
                    , borderStyle :: BorderStyle
-                   , borderAttr :: Attr
+                   , borderAttr :: Maybe Attr
                    , defaultCellAlignment :: Alignment
                    , defaultCellPadding :: Padding
                    , tableNormalAttr :: Maybe Attr
@@ -213,22 +214,24 @@ setDefaultCellAlignment t a = updateWidgetState t $ \s -> s { defaultCellAlignme
 setDefaultCellPadding :: (MonadIO m) => Widget Table -> Padding -> m ()
 setDefaultCellPadding t p = updateWidgetState t $ \s -> s { defaultCellPadding = p }
 
+setBorderAttr :: (MonadIO m) => Widget Table -> Attr -> m ()
+setBorderAttr t a = updateWidgetState t $ \s -> s { borderAttr = Just a }
+
 column :: ColumnSize -> ColumnSpec
 column sz = ColumnSpec sz Nothing Nothing
 
 newTable :: (MonadIO m) =>
-            Attr
-         -> [ColumnSpec]
+            [ColumnSpec]
          -> BorderStyle
          -> m (Widget Table)
-newTable attr specs borderSty = do
+newTable specs borderSty = do
   t <- newWidget
   updateWidget t $ \w ->
       w { state = Table { rows = []
                         , columnSpecs = specs
                         , borderStyle = borderSty
                         , numColumns = length specs
-                        , borderAttr = attr
+                        , borderAttr = Nothing
                         , defaultCellAlignment = AlignLeft
                         , defaultCellPadding = padNone
                         , tableNormalAttr = Nothing
@@ -339,8 +342,12 @@ mkRowBorder_ t sz ctx = do
   bAttr <- borderAttr <~~ t
   specs <- columnSpecs <~~ t
   aw <- autoWidth t sz
+  tableNA <- tableNormalAttr <~~ t
 
-  let Just bAttr' = overrideAttr ctx `alt` Just bAttr
+  let Just bAttr' = overrideAttr ctx
+                    `alt` bAttr
+                    `alt` tableNA
+                    `alt` (Just $ normalAttr ctx)
       szs = map columnSize specs
       intersection = string bAttr' "+"
       imgs = (flip map) szs $ \s ->
@@ -375,10 +382,14 @@ mkSideBorder_ :: Widget Table -> RenderContext -> IO Image
 mkSideBorder_ t ctx = do
   bs <- borderStyle <~~ t
   bAttr <- borderAttr <~~ t
+  tableNA <- tableNormalAttr <~~ t
   rs <- rows <~~ t
 
   let intersection = string bAttr' "+"
-      Just bAttr' = overrideAttr ctx `alt` Just bAttr
+      Just bAttr' = overrideAttr ctx
+                    `alt` bAttr
+                    `alt` tableNA
+                    `alt` (Just $ normalAttr ctx)
 
   rowHeights <- forM rs $ \(TableRow row) -> do
                     hs <- forM row $ \cell ->
@@ -561,7 +572,10 @@ renderRow tbl sz cells ctx = do
                              img <-> char_fill att ' ' (image_width img) (maxHeight - image_height img)
 
   -- If we need to draw borders in between columns, do that.
-  let Just bAttr' = overrideAttr ctx `alt` Just bAttr
+  let Just bAttr' = overrideAttr ctx
+                    `alt` bAttr
+                    `alt` tableNA
+                    `alt` (Just $ normalAttr ctx)
       withBorders = case colBorders borderSty of
                       False -> cellImgsBottomPadded
                       True -> intersperse (char_fill bAttr' '|' 1 maxHeight) cellImgsBottomPadded

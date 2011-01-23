@@ -31,8 +31,9 @@ main = do
                 , column Auto `pad` (padAll 1)
                 ]
 
-  table <- newTable (yellow `on` blue) columns BorderFull
+  table <- newTable columns BorderFull
   setNormalAttribute table (white `on` blue)
+  setBorderAttr table (green `on` blue)
 
   tw <- textWidget (wrap &.& color) $ prepareText msgAttr msg
   mainBox <- (return table) <--> (return tw)
