@@ -13,8 +13,8 @@ fg = white
 bg = black
 
 focAttr = black `on` yellow
-bodyAttr = blue `on` bg
-headerAttr = bright_yellow `on` bg
+bodyAttr = white `on` blue
+headerAttr = bright_yellow `on` blue
 msgAttr = blue `on` bg
 
 color :: Formatter
