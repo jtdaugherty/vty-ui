@@ -294,6 +294,8 @@ listWidget list = do
 
         , draw =
             \this sz normAttr focAttr mAttr -> do
+              -- Get the item height *before* a potential resize, then
+              -- get the list state below, after the resize.
               h <- itemHeight <~~ this
 
               -- Resize the list based on the available space and the
