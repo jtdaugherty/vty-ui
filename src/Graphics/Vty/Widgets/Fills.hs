@@ -32,8 +32,8 @@ vFill att c = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = VFill att c
-        , getGrowHorizontal = return False
-        , getGrowVertical = return True
+        , getGrowHorizontal = const $ return False
+        , getGrowVertical = const $ return True
         , draw = \this s _ _ mAttr -> do
                    VFill attr ch <- getState this
                    let attr' = maybe attr id mAttr
@@ -50,8 +50,8 @@ hFill att c h = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = HFill att c h
-        , getGrowHorizontal = return True
-        , getGrowVertical = return False
+        , getGrowHorizontal = const $ return True
+        , getGrowVertical = const $ return False
         , draw = \this s _ _ mAttr -> do
                    HFill attr ch height <- getState this
                    let attr' = maybe attr id mAttr

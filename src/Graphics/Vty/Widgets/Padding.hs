@@ -122,8 +122,8 @@ padded ch padding = do
   updateWidget wRef $ \w ->
       w { state = Padded ch padding Nothing
 
-        , getGrowVertical = growVertical ch
-        , getGrowHorizontal = growHorizontal ch
+        , getGrowVertical = const $ growVertical ch
+        , getGrowHorizontal = const $ growHorizontal ch
 
         , draw =
             \this sz normAttr focAttr mAttr ->

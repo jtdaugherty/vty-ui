@@ -61,8 +61,8 @@ hBorderWith ch att = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = HBorder att ch
-        , getGrowVertical = return False
-        , getGrowHorizontal = return True
+        , getGrowVertical = const $ return False
+        , getGrowHorizontal = const $ return True
         , draw = \this s _ _ mAttr -> do
                    HBorder attr _ <- getState this
                    let attr' = maybe attr id mAttr
@@ -83,8 +83,8 @@ vBorderWith ch att = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = VBorder att ch
-        , getGrowHorizontal = return False
-        , getGrowVertical = return True
+        , getGrowHorizontal = const $ return False
+        , getGrowVertical = const $ return True
         , draw = \this s _ _ mAttr -> do
                    VBorder attr _ <- getState this
                    let attr' = maybe attr id mAttr
@@ -101,8 +101,8 @@ bordered att child = do
   updateWidget wRef $ \w ->
       w { state = Bordered att child
 
-        , getGrowVertical = growVertical child
-        , getGrowHorizontal = growHorizontal child
+        , getGrowVertical = const $ growVertical child
+        , getGrowHorizontal = const $ growHorizontal child
 
         , keyEventHandler =
             \this key mods -> do

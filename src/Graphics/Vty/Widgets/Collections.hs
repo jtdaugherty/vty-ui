@@ -15,9 +15,6 @@ import Control.Monad.Trans
     ( MonadIO
     , liftIO
     )
-import Control.Monad.Reader
-    ( ask
-    )
 import Control.Exception
     ( Exception
     , throw
@@ -93,16 +90,14 @@ newCollection = do
                              }
         -- XXX technically this should defer to whichever entry is
         -- current!
-        , getGrowHorizontal = do
-            st <- ask
+        , getGrowHorizontal = \st -> do
             case currentEntryNum st of
               (-1) -> throw EmptyCollection
               i -> do
                 let e = entries st !! i
                 liftIO $ entryGrowHorizontal e
 
-        , getGrowVertical = do
-            st <- ask
+        , getGrowVertical = \st -> do
             case currentEntryNum st of
               (-1) -> throw EmptyCollection
               i -> do

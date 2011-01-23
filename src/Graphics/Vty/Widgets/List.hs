@@ -276,8 +276,8 @@ listWidget list = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = list
-        , getGrowHorizontal = return False
-        , getGrowVertical = return True
+        , getGrowHorizontal = const $ return False
+        , getGrowVertical = const $ return True
 
         -- XXX it might be crazy, but we could even pass events we
         -- don't handle onto the currently selected widget!

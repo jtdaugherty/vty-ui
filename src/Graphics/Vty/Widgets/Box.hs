@@ -13,9 +13,6 @@ import Control.Monad.Trans
     ( MonadIO
     , liftIO
     )
-import Control.Monad.Reader
-    ( ask
-    )
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
@@ -99,14 +96,12 @@ box o spacing a b = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = Box o spacing a b
-        , getGrowHorizontal = do
-            Box _ _ ch1 ch2 <- ask
+        , getGrowHorizontal = \(Box _ _ ch1 ch2) -> do
             h1 <- growHorizontal ch1
             h2 <- growHorizontal ch2
             return $ h1 || h2
 
-        , getGrowVertical = do
-            Box _ _ ch1 ch2 <- ask
+        , getGrowVertical = \(Box _ _ ch1 ch2) -> do
             v1 <- growVertical ch1
             v2 <- growVertical ch2
             return $ v1 || v2

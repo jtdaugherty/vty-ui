@@ -48,8 +48,8 @@ hLimit maxWidth child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = HLimit maxWidth child
-        , getGrowHorizontal = return False
-        , getGrowVertical = growVertical child
+        , getGrowHorizontal = const $ return False
+        , getGrowVertical = const $ growVertical child
 
         , draw = \this s normAttr focAttr mAttr -> do
                    HLimit width ch <- getState this
@@ -73,8 +73,8 @@ vLimit maxHeight child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = VLimit maxHeight child
-        , getGrowVertical = return False
-        , getGrowHorizontal = growHorizontal child
+        , getGrowVertical = const $ return False
+        , getGrowHorizontal = const $ growHorizontal child
 
         , draw = \this s normAttr focAttr mAttr -> do
                    VLimit height ch <- getState this

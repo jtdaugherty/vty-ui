@@ -44,9 +44,6 @@ import Control.Monad
 import Control.Monad.Trans
     ( MonadIO
     )
-import Control.Monad.Reader
-    ( ask
-    )
 import Graphics.Vty
     ( Image
     , Attr
@@ -203,11 +200,10 @@ newTable attr specs borderSty = do
                         , defaultCellPadding = padNone
                         }
 
-        , getGrowHorizontal = do
-            st <- ask
+        , getGrowHorizontal = \st -> do
             return $ any (== Auto) (map columnSize $ columnSpecs st)
 
-        , getGrowVertical = return False
+        , getGrowVertical = const $ return False
 
         , draw =
             \this sz normAttr focAttr mAttr -> do

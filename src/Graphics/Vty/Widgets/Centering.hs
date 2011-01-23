@@ -11,9 +11,6 @@ import GHC.Word ( Word )
 import Control.Monad.Trans
     ( MonadIO
     )
-import Control.Monad.Reader
-    ( ask
-    )
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
@@ -46,11 +43,9 @@ hCentered ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = HCentered ch
-        , getGrowHorizontal = return True
+        , getGrowHorizontal = const $ return True
 
-        , getGrowVertical = do
-            HCentered child <- ask
-            growVertical child
+        , getGrowVertical = \(HCentered child) -> growVertical child
 
         , draw = \this s normAttr focAttr mAttr -> do
                    HCentered child <- getState this
@@ -85,8 +80,8 @@ vCentered ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = VCentered ch
-        , getGrowVertical = return True
-        , getGrowHorizontal = growHorizontal ch
+        , getGrowVertical = const $ return True
+        , getGrowHorizontal = const $ growHorizontal ch
 
         , draw = \this s normAttr focAttr mAttr -> do
                    VCentered child <- getState this

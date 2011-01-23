@@ -65,10 +65,6 @@ import Control.Applicative
 import Control.Monad
     ( when
     )
-import Control.Monad.Reader
-    ( ReaderT
-    , runReaderT
-    )
 import Control.Monad.Trans
     ( MonadIO
     , liftIO
@@ -131,11 +127,11 @@ data WidgetImpl a = WidgetImpl {
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
-    , getGrowHorizontal :: ReaderT a IO Bool
+    , getGrowHorizontal :: a -> IO Bool
 
     -- |Will this widget expand to take advantage of available
     -- vertical space?
-    , getGrowVertical :: ReaderT a IO Bool
+    , getGrowVertical :: a -> IO Bool
 
     , physicalSize :: DisplayRegion
     , physicalPosition :: DisplayRegion
@@ -182,13 +178,13 @@ growHorizontal :: (MonadIO m) => Widget a -> m Bool
 growHorizontal w = do
   act <- getGrowHorizontal <~ w
   st <- state <~ w
-  liftIO $ runReaderT act st
+  liftIO $ act st
 
 growVertical :: (MonadIO m) => Widget a -> m Bool
 growVertical w = do
   act <- getGrowVertical <~ w
   st <- state <~ w
-  liftIO $ runReaderT act st
+  liftIO $ act st
 
 render :: (MonadIO m) => Widget a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> m Image
 render wRef sz normAttr focAttr overrideAttr =
@@ -226,8 +222,8 @@ newWidget :: (MonadIO m) => m (Widget a)
 newWidget =
     liftIO $ newIORef $ WidgetImpl { state = undefined
                                    , draw = undefined
-                                   , getGrowVertical = return False
-                                   , getGrowHorizontal = return False
+                                   , getGrowVertical = const $ return False
+                                   , getGrowHorizontal = const $ return False
                                    , keyEventHandler = \_ _ _ -> return False
                                    , physicalSize = DisplayRegion 0 0
                                    , physicalPosition = DisplayRegion 0 0
@@ -331,8 +327,8 @@ newFocusEntry chRef = do
   updateWidget wRef $ \w ->
       w { state = FocusEntry chRef
 
-        , getGrowHorizontal = growHorizontal chRef
-        , getGrowVertical = growVertical chRef
+        , getGrowHorizontal = const $ growHorizontal chRef
+        , getGrowVertical = const $ growVertical chRef
 
         , draw =
             \_ sz normAttr focAttr mAttr -> render chRef sz normAttr focAttr mAttr
@@ -357,8 +353,8 @@ newFocusGroup = do
       w { state = FocusGroup { entries = []
                              , currentEntryNum = -1
                              }
-        , getGrowHorizontal = return False
-        , getGrowVertical = return False
+        , getGrowHorizontal = const $ return False
+        , getGrowVertical = const $ return False
         , keyEventHandler =
             \this key mods -> do
               st <- getState this
