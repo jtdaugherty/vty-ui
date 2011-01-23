@@ -13,7 +13,6 @@ module Graphics.Vty.Widgets.Table
     , newTable
     , setDefaultCellAlignment
     , setDefaultCellPadding
-    , setBorderAttr
     , addRow
     , addHeadingRow
     , addHeadingRow_
@@ -95,6 +94,9 @@ import Graphics.Vty.Widgets.Alignment
     ( Alignable(..)
     , Alignment(..)
     , rightAligned
+    )
+import Graphics.Vty.Widgets.Borders
+    ( HasBorderAttr(..)
     )
 import Graphics.Vty.Widgets.Util
 
@@ -192,6 +194,10 @@ instance HasNormalAttr (Widget Table) where
     setNormalAttribute wRef a =
         updateWidgetState wRef $ \t -> t { tableNormalAttr = Just a }
 
+instance HasBorderAttr (Widget Table) where
+    setBorderAttribute t a =
+        updateWidgetState t $ \s -> s { borderAttr = Just a }
+
 instance Show Table where
     show t = concat [ "Table { "
                     , "rows = <", show $ length $ rows t, " rows>"
@@ -213,9 +219,6 @@ setDefaultCellAlignment t a = updateWidgetState t $ \s -> s { defaultCellAlignme
 
 setDefaultCellPadding :: (MonadIO m) => Widget Table -> Padding -> m ()
 setDefaultCellPadding t p = updateWidgetState t $ \s -> s { defaultCellPadding = p }
-
-setBorderAttr :: (MonadIO m) => Widget Table -> Attr -> m ()
-setBorderAttr t a = updateWidgetState t $ \s -> s { borderAttr = Just a }
 
 column :: ColumnSize -> ColumnSpec
 column sz = ColumnSpec sz Nothing Nothing

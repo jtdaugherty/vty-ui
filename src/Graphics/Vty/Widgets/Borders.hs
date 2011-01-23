@@ -1,8 +1,9 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExistentialQuantification, TypeSynonymInstances, FlexibleInstances #-}
 -- |This module provides visual borders to be placed between and
 -- around widgets.
 module Graphics.Vty.Widgets.Borders
-    ( Bordered
+    ( HasBorderAttr(..)
+    , Bordered
     , HBorder
     , VBorder
     , vBorder
@@ -10,6 +11,7 @@ module Graphics.Vty.Widgets.Borders
     , vBorderWith
     , hBorderWith
     , bordered
+    , withBorderAttribute
     )
 where
 
@@ -34,6 +36,7 @@ import Graphics.Vty.Widgets.Core
     , RenderContext(..)
     , newWidget
     , updateWidget
+    , updateWidgetState
     , growVertical
     , growHorizontal
     , render
@@ -51,53 +54,71 @@ import Graphics.Vty.Widgets.Text
     )
 import Graphics.Vty.Widgets.Util
 
-data HBorder = HBorder Attr Char
+class HasBorderAttr a where
+    setBorderAttribute :: (MonadIO m) => a -> Attr -> m ()
+
+data HBorder = HBorder (Maybe Attr) Char
                deriving (Show)
 
+instance HasBorderAttr (Widget HBorder) where
+    setBorderAttribute t a =
+        updateWidgetState t $ \(HBorder _ ch) -> HBorder (Just a) ch
+
+withBorderAttribute :: (MonadIO m, HasBorderAttr a) => Attr -> a -> m a
+withBorderAttribute att w = setBorderAttribute w att >> return w
+
 -- |Create a single-row horizontal border.
-hBorder :: (MonadIO m) => Attr -> m (Widget HBorder)
+hBorder :: (MonadIO m) => m (Widget HBorder)
 hBorder = hBorderWith '-'
 
 -- |Create a single-row horizontal border using the specified
 -- attribute and character.
-hBorderWith :: (MonadIO m) => Char -> Attr -> m (Widget HBorder)
-hBorderWith ch att = do
+hBorderWith :: (MonadIO m) => Char -> m (Widget HBorder)
+hBorderWith ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = HBorder att ch
+      w { state = HBorder Nothing ch
         , getGrowVertical = const $ return False
         , getGrowHorizontal = const $ return True
         , draw = \this s ctx -> do
                    HBorder attr _ <- getState this
-                   let Just attr' = overrideAttr ctx `alt` Just attr
+                   let Just attr' = overrideAttr ctx
+                                    `alt` attr
+                                    `alt` (Just $ normalAttr ctx)
                    return $ char_fill attr' ch (region_width s) 1
         }
   return wRef
 
-data VBorder = VBorder Attr Char
+data VBorder = VBorder (Maybe Attr) Char
                deriving (Show)
 
+instance HasBorderAttr (Widget VBorder) where
+    setBorderAttribute t a =
+        updateWidgetState t $ \(VBorder _ ch) -> VBorder (Just a) ch
+
 -- |Create a single-column vertical border.
-vBorder :: (MonadIO m) => Attr -> m (Widget VBorder)
+vBorder :: (MonadIO m) => m (Widget VBorder)
 vBorder = vBorderWith '|'
 
 -- |Create a single-column vertical border using the specified
 -- attribute and character.
-vBorderWith :: (MonadIO m) => Char -> Attr -> m (Widget VBorder)
-vBorderWith ch att = do
+vBorderWith :: (MonadIO m) => Char -> m (Widget VBorder)
+vBorderWith ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = VBorder att ch
+      w { state = VBorder Nothing ch
         , getGrowHorizontal = const $ return False
         , getGrowVertical = const $ return True
         , draw = \this s ctx -> do
                    VBorder attr _ <- getState this
-                   let Just attr' = overrideAttr ctx `alt` Just attr
+                   let Just attr' = overrideAttr ctx
+                                    `alt` attr
+                                    `alt` (Just $ normalAttr ctx)
                    return $ char_fill attr' ch 1 (region_height s)
         }
   return wRef
 
-data Bordered a = (Show a) => Bordered Attr (Widget a)
+data Bordered a = (Show a) => Bordered (Maybe Attr) (Widget a)
 
 instance Show (Bordered a) where
     show (Bordered attr _) = concat [ "Bordered { attr = "
@@ -105,12 +126,16 @@ instance Show (Bordered a) where
                                     , ", ... }"
                                     ]
 
+instance HasBorderAttr (Widget (Bordered a)) where
+    setBorderAttribute t a =
+        updateWidgetState t $ \(Bordered _ ch) -> Bordered (Just a) ch
+
 -- |Wrap a widget in a bordering box using the specified attribute.
-bordered :: (MonadIO m, Show a) => Attr -> Widget a -> m (Widget (Bordered a))
-bordered att child = do
+bordered :: (MonadIO m, Show a) => Widget a -> m (Widget (Bordered a))
+bordered child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Bordered att child
+      w { state = Bordered Nothing child
 
         , getGrowVertical = const $ growVertical child
         , getGrowHorizontal = const $ growHorizontal child
@@ -140,7 +165,9 @@ drawBordered :: (Show a) =>
                 Bordered a -> DisplayRegion -> RenderContext -> IO Image
 drawBordered this s ctx = do
   let Bordered attr child = this
-      Just attr' = overrideAttr ctx `alt` Just attr
+      Just attr' = overrideAttr ctx
+                   `alt` attr
+                   `alt` (Just $ normalAttr ctx)
 
   -- Render the contained widget with enough room to draw borders.
   -- Then, use the size of the rendered widget to constrain the space
@@ -153,11 +180,15 @@ drawBordered this s ctx = do
                  (image_height childImage)
   corner <- simpleText attr' "+"
 
-  hb <- hBorder attr'
+  hb <- hBorder
+  setBorderAttribute hb attr'
+
   topWidget <- hBox corner =<< hBox hb corner
   topBottom <- render topWidget adjusted ctx
 
-  vb <- vBorder attr'
+  vb <- vBorder
+  setBorderAttribute vb attr'
+
   leftRight <- render vb adjusted ctx
 
   let middle = horiz_cat [leftRight, childImage, leftRight]

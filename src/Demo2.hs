@@ -33,7 +33,7 @@ main = do
 
   table <- newTable columns BorderFull
   setNormalAttribute table (white `on` blue)
-  setBorderAttr table (green `on` blue)
+  setBorderAttribute table (green `on` blue)
 
   tw <- textWidget (wrap &.& color) $ prepareText msgAttr msg
   mainBox <- (return table) <--> (return tw)

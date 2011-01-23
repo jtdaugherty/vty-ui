@@ -28,20 +28,20 @@ hlAttr1 = red `on` black
 hlAttr2 = yellow `on` black
 
 uiCore appst w = do
-  (hBorder titleAttr)
+  (hBorder >>= withBorderAttribute titleAttr)
       <--> w
-      <--> (hBorder titleAttr)
+      <--> (hBorder >>= withBorderAttribute titleAttr)
       <--> (return $ theEdit appst)
       <--> ((return $ theFooter1 appst)
             <++> (return $ theFooter2 appst)
-            <++> hBorder titleAttr)
+            <++> (hBorder >>= withBorderAttribute titleAttr))
 
 buildUi1 appst = do
   uiCore appst (return $ theList appst)
 
 buildUi2 appst =
     uiCore appst ((return $ theListLimit appst)
-                  <--> (hBorder titleAttr)
+                  <--> (hBorder >>= withBorderAttribute titleAttr)
                   <--> (bottomPadded (theBody appst) bodyAttr))
 
 -- Construct the application state using the message map.
