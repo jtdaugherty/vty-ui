@@ -13,6 +13,10 @@ import Data.Typeable
     )
 import Control.Monad.Trans
     ( MonadIO
+    , liftIO
+    )
+import Control.Monad.Reader
+    ( ask
     )
 import Control.Exception
     ( Exception
@@ -40,6 +44,8 @@ import Graphics.Vty.Widgets.Core
     , handleKeyEvent
     , getState
     , onKeyPressed
+    , growHorizontal
+    , growVertical
     )
 
 -- Ultimately we'd want support for "stacks" to provide things like
@@ -72,6 +78,12 @@ entryHandleKeyEvent (Entry w) k mods = handleKeyEvent w k mods
 entryFocusGroup :: Entry -> IO (Maybe (Widget FocusGroup))
 entryFocusGroup (Entry w) = getFocusGroup w
 
+entryGrowHorizontal :: Entry -> IO Bool
+entryGrowHorizontal (Entry w) = growHorizontal w
+
+entryGrowVertical :: Entry -> IO Bool
+entryGrowVertical (Entry w) = growVertical w
+
 newCollection :: (MonadIO m) => m (Widget Collection)
 newCollection = do
   wRef <- newWidget
@@ -81,8 +93,21 @@ newCollection = do
                              }
         -- XXX technically this should defer to whichever entry is
         -- current!
-        , getGrowHorizontal = return True
-        , getGrowVertical = return True
+        , getGrowHorizontal = do
+            st <- ask
+            case currentEntryNum st of
+              (-1) -> return False
+              i -> do
+                let e = entries st !! i
+                liftIO $ entryGrowHorizontal e
+
+        , getGrowVertical = do
+            st <- ask
+            case currentEntryNum st of
+              (-1) -> return False
+              i -> do
+                let e = entries st !! i
+                liftIO $ entryGrowVertical e
 
         , focusGroup =
             \this -> do
