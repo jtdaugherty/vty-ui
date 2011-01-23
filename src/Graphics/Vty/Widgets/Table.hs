@@ -82,14 +82,8 @@ import Graphics.Vty.Widgets.Text
     ( FormattedText
     , simpleText
     )
-import Graphics.Vty.Widgets.Box
-    ( (<++>)
-    )
 import Graphics.Vty.Widgets.Centering
     ( hCentered
-    )
-import Graphics.Vty.Widgets.Fills
-    ( hFill
     )
 import Graphics.Vty.Widgets.Padding
     ( Padding
@@ -100,6 +94,7 @@ import Graphics.Vty.Widgets.Padding
 import Graphics.Vty.Widgets.Alignment
     ( Alignable(..)
     , Alignment(..)
+    , rightAligned
     )
 
 data TableError = ColumnCountMismatch
@@ -440,7 +435,7 @@ applyCellAlignment al (TableCell w a p) = do
       grow <- growHorizontal w
       case grow of
         False -> do
-                  w' <- hFill def_attr ' ' 1 <++> (return w)
+                  w' <- rightAligned w
                   return $ TableCell w' a p
         True -> return $ TableCell w a p
 
