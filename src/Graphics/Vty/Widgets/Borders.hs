@@ -34,6 +34,7 @@ import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
     , RenderContext(..)
+    , withNormalAttribute
     , newWidget
     , updateWidget
     , updateWidgetState
@@ -178,7 +179,7 @@ drawBordered this s ctx = do
 
   let adjusted = DisplayRegion (image_width childImage + 2)
                  (image_height childImage)
-  corner <- simpleText attr' "+"
+  corner <- simpleText "+" >>= withNormalAttribute attr'
 
   hb <- hBorder
   setBorderAttribute hb attr'

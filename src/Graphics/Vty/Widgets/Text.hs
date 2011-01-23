@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 -- |This module provides functionality for rendering 'String's as
 -- 'Widget's, including functionality to make structural and/or visual
 -- changes at rendering time.  To get started, turn your ordinary
@@ -11,7 +12,6 @@ module Graphics.Vty.Widgets.Text
     , setText
     -- *Text Preparation
     , prepareText
-    , resetText
     -- *Constructing Widgets
     , simpleText
     , textWidget
@@ -44,7 +44,8 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
-    , RenderContext(overrideAttr)
+    , RenderContext(..)
+    , HasNormalAttr(..)
     , newWidget
     , updateWidget
     , updateWidgetState
@@ -81,10 +82,10 @@ nullFormatter = const id
 
 -- |'Text' represents a 'String' that can be manipulated with
 -- 'Formatter's at rendering time.
-data Text = Text { defaultAttr :: Attr
+data Text = Text { defaultAttr :: Maybe Attr
                  -- ^The default attribute for all tokens in this text
                  -- object.
-                 , tokens :: [[Token Attr]]
+                 , tokens :: [[Token (Maybe Attr)]]
                  -- ^The tokens of the underlying text stream.
                  }
             deriving (Show)
@@ -100,21 +101,21 @@ instance Show FormattedText where
                                       , ", formatter = ... }"
                                       ]
 
-resetText :: Text -> Text
-resetText t =
-    t { tokens = map (map (`withAnnotation` (defaultAttr t))) $ tokens t }
+instance HasNormalAttr (Widget FormattedText) where
+    setNormalAttribute t a =
+        updateWidgetState t $ \s -> s { text = (text s) { defaultAttr = Just a } }
 
 -- |Prepare a string for rendering and assign it the specified default
 -- attribute.
-prepareText :: Attr -> String -> Text
+prepareText :: Maybe Attr -> String -> Text
 prepareText att s = Text { defaultAttr = att
                          , tokens = tokenize s att
                          }
 
 -- |Construct a Widget directly from an attribute and a String.  This
 -- is recommended if you don't need to use a 'Formatter'.
-simpleText :: (MonadIO m) => Attr -> String -> m (Widget FormattedText)
-simpleText a s = textWidget nullFormatter $ prepareText a s
+simpleText :: (MonadIO m) => String -> m (Widget FormattedText)
+simpleText s = textWidget nullFormatter $ prepareText Nothing s
 
 -- |A formatter for wrapping text into the available space.  This
 -- formatter will insert line breaks where appropriate so if you want
@@ -132,7 +133,7 @@ wrap sz t = t { tokens = newTokens }
 -- non-whitespace tokens in the text stream.
 highlight :: Regex -> Attr -> Formatter
 highlight regex attr =
-    \_ t -> t { tokens = map (map (annotate (matchesRegex regex) attr)) $ tokens t }
+    \_ t -> t { tokens = map (map (annotate (matchesRegex regex) (Just attr))) $ tokens t }
 
 -- |Possibly annotate a token with the specified annotation value if
 -- the predicate matches; otherwise, return the input token unchanged.
@@ -162,9 +163,10 @@ textWidget format t = do
         }
   return wRef
 
-setText :: (MonadIO m) => Widget FormattedText -> Attr -> String -> m ()
-setText wRef attr s =
-    updateWidgetState wRef $ \st -> st { text = prepareText attr s }
+setText :: (MonadIO m) => Widget FormattedText -> String -> m ()
+setText wRef s = do
+  updateWidgetState wRef $ \st ->
+      st { text = prepareText (defaultAttr $ text st) s }
 
 -- |Low-level text-rendering routine.
 renderText :: Text -> Formatter -> DisplayRegion -> RenderContext -> Image
@@ -177,8 +179,13 @@ renderText t format sz ctx =
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
-      Just attr' = overrideAttr ctx `alt` (Just $ defaultAttr newText)
-      tokenAttr tok = fromJust $ overrideAttr ctx `alt` (Just $ tokenAnnotation tok)
+      Just attr' = overrideAttr ctx
+                   `alt` (defaultAttr newText)
+                   `alt` (Just $ normalAttr ctx)
+      tokenAttr tok = fromJust $ overrideAttr ctx
+                                 `alt` (tokenAnnotation tok)
+                                 `alt` (defaultAttr t)
+                                 `alt` (Just $ normalAttr ctx)
 
       lineImgs = map mkLineImg ls
       ls = map truncateLine $ tokens newText

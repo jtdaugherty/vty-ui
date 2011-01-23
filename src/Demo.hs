@@ -48,9 +48,9 @@ buildUi2 appst =
 mkAppState :: IO AppState
 mkAppState = do
   lw <- mkSimpleList selAttr []
-  b <- textWidget wrap $ prepareText bodyAttr ""
-  f1 <- simpleText titleAttr ""
-  f2 <- simpleText titleAttr "[]"
+  b <- textWidget wrap $ prepareText Nothing ""
+  f1 <- simpleText "" >>= withNormalAttribute titleAttr
+  f2 <- simpleText "[]" >>= withNormalAttribute titleAttr
   e <- editWidget
   ll <- vLimit 5 lw
 
@@ -68,7 +68,7 @@ mkAppState = do
 updateBody :: AppState -> Int -> IO ()
 updateBody st i = do
   let msg = "This is the text for list entry " ++ (show $ i + 1)
-  setText (theBody st) bodyAttr msg
+  setText (theBody st) msg
 
 updateFooterNums :: AppState -> Widget (List a b) -> IO ()
 updateFooterNums st w = do
@@ -79,10 +79,10 @@ updateFooterNums st w = do
               Just (i, _) ->
                   "-" ++ (show $ i + 1) ++ "/" ++
                           (show sz) ++ "-"
-  setText (theFooter1 st) titleAttr msg
+  setText (theFooter1 st) msg
 
 updateFooterText :: AppState -> Widget Edit -> String -> IO ()
-updateFooterText st _ t = setText (theFooter2 st) titleAttr ("[" ++ t ++ "]")
+updateFooterText st _ t = setText (theFooter2 st) ("[" ++ t ++ "]")
 
 main :: IO ()
 main = do

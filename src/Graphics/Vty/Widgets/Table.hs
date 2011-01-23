@@ -57,7 +57,6 @@ import Graphics.Vty
     , char_fill
     , vert_cat
     , horiz_cat
-    , def_attr
     , empty_image
     , string
     )
@@ -67,6 +66,7 @@ import Graphics.Vty.Widgets.Core
     , RenderContext(..)
     , HasNormalAttr(..)
     , (<~~)
+    , withNormalAttribute
     , render
     , newWidget
     , updateWidget
@@ -453,7 +453,7 @@ autoWidth t sz = do
 
 addHeadingRow :: (MonadIO m) => Widget Table -> Attr -> [String] -> m [Widget FormattedText]
 addHeadingRow tbl attr labels = do
-  ws <- mapM (simpleText attr) labels
+  ws <- mapM (\s -> simpleText s >>= withNormalAttribute attr) labels
   addRow tbl ws
   return ws
 
@@ -514,7 +514,7 @@ addRow t row = do
 
 renderCell :: DisplayRegion -> TableCell -> RenderContext -> IO Image
 renderCell region EmptyCell ctx = do
-  w <- simpleText def_attr ""
+  w <- simpleText ""
   render w region ctx
 renderCell region (TableCell w _ _) ctx =
     render w region ctx

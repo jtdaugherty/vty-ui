@@ -367,7 +367,7 @@ mkSimpleList :: (MonadIO m) =>
              -> [String] -- ^The list items
              -> m (Widget (List String FormattedText))
 mkSimpleList selAttr labels = do
-  list <- listWidget $ mkList selAttr (simpleText def_attr)
+  list <- listWidget $ mkList selAttr simpleText
   mapM_ (addToList list) labels
   return list
 

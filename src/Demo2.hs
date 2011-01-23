@@ -14,7 +14,7 @@ bg = black
 
 focAttr = black `on` yellow
 bodyAttr = white `on` blue
-headerAttr = bright_yellow `on` blue
+headerAttr = bright_green `on` blue
 msgAttr = blue `on` bg
 
 color :: Formatter
@@ -35,7 +35,7 @@ main = do
            withNormalAttribute (white `on` blue) >>=
            withBorderAttribute (green `on` blue)
 
-  tw <- textWidget (wrap &.& color) $ prepareText msgAttr msg
+  tw <- (textWidget (wrap &.& color) $ prepareText Nothing msg) >>= withNormalAttribute msgAttr
   mainBox <- (return table) <--> (return tw)
 
   setBoxSpacing mainBox 1
@@ -45,8 +45,8 @@ main = do
   r1 <- newCheckbox "Cake"
   r2 <- newCheckbox "Death"
   r3 <- newCheckbox "Checkbox"
-  radioHeader <- simpleText headerAttr ""
-  r3Header <- simpleText headerAttr ""
+  radioHeader <- simpleText "" >>= withNormalAttribute headerAttr
+  r3Header <- simpleText "" >>= withNormalAttribute headerAttr
 
   rg <- newRadioGroup
   addToRadioGroup rg r1
@@ -55,13 +55,13 @@ main = do
   edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- editWidget
 
-  edit1Header <- simpleText headerAttr ""
-  edit2Header <- simpleText headerAttr ""
+  edit1Header <- simpleText "" >>= withNormalAttribute headerAttr
+  edit2Header <- simpleText "" >>= withNormalAttribute headerAttr
 
-  lst <- listWidget $ mkList focAttr (simpleText bodyAttr)
+  lst <- listWidget $ mkList focAttr simpleText
 
   selector <- vLimit 3 lst
-  listHeader <- simpleText bodyAttr ""
+  listHeader <- simpleText ""
 
   rs <- (return r1) <--> (return r2)
 
@@ -73,19 +73,19 @@ main = do
   addRow table $ customCell listHeader `align` AlignLeft .|. customCell selector `pad` padNone
 
   r1 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader bodyAttr "CAKE!!"
+      when v $ setText radioHeader "CAKE!!"
 
   r2 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader bodyAttr "death..."
+      when v $ setText radioHeader "death..."
 
   r3 `onCheckboxChange` \_ v ->
-      setText r3Header bodyAttr $ if v then "checked" else "unchecked"
+      setText r3Header $ if v then "checked" else "unchecked"
 
-  edit1 `onChange` \_ s -> setText edit1Header bodyAttr s
-  edit2 `onChange` \_ s -> setText edit2Header bodyAttr s
+  edit1 `onChange` \_ s -> setText edit1Header s
+  edit2 `onChange` \_ s -> setText edit2Header s
 
   lst `onSelectionChange` \_ _ k _ ->
-      setText listHeader bodyAttr $ "You selected: " ++ k
+      setText listHeader $ "You selected: " ++ k
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
