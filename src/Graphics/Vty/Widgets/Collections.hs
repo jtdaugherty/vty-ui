@@ -96,7 +96,7 @@ newCollection = do
         , getGrowHorizontal = do
             st <- ask
             case currentEntryNum st of
-              (-1) -> return False
+              (-1) -> throw EmptyCollection
               i -> do
                 let e = entries st !! i
                 liftIO $ entryGrowHorizontal e
@@ -104,7 +104,7 @@ newCollection = do
         , getGrowVertical = do
             st <- ask
             case currentEntryNum st of
-              (-1) -> return False
+              (-1) -> throw EmptyCollection
               i -> do
                 let e = entries st !! i
                 liftIO $ entryGrowVertical e
