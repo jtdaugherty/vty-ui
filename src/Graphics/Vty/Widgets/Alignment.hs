@@ -30,13 +30,17 @@ import Graphics.Vty.Widgets.Core
     )
 
 data Alignment = AlignCenter | AlignLeft | AlignRight
+                 deriving (Show)
 
 class Alignable a where
     align :: a -> Alignment -> a
 
-data RightAligned = forall a. RightAligned (Widget a)
+data RightAligned = forall a. (Show a) => RightAligned (Widget a)
 
-rightAligned :: (MonadIO m) => Widget a -> m (Widget RightAligned)
+instance Show RightAligned where
+    show _ = "RightAligned { ... }"
+
+rightAligned :: (MonadIO m, Show a) => Widget a -> m (Widget RightAligned)
 rightAligned chRef = do
   wRef <- newWidget
   updateWidget wRef $ \w ->

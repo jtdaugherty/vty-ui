@@ -109,6 +109,16 @@ data CheckBox = CheckBox { isChecked :: Bool
                          , radioGroup :: Maybe RadioGroup
                          }
 
+instance Show CheckBox where
+    show cb = concat [ "CheckBox { "
+                     , "isChecked = ", show $ isChecked cb
+                     , ", normalAttr = ", show $ normalAttr cb
+                     , ", focusedAttr = ", show $ focusedAttr cb
+                     , ", checkedChar = ", show $ checkedChar cb
+                     , ", checkboxLabel = ", show $ checkboxLabel cb
+                     , " }"
+                     ]
+
 newCheckbox :: (MonadIO m) => String -> m (Widget CheckBox)
 newCheckbox label = do
   wRef <- newWidget

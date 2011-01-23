@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 module Graphics.Vty.Widgets.Centering
     ( HCentered
     , VCentered
@@ -36,9 +37,12 @@ import Graphics.Vty
     , horiz_cat
     )
 
-data HCentered a = HCentered (Widget a)
+data HCentered a = (Show a) => HCentered (Widget a)
 
-hCentered :: (MonadIO m) => Widget a -> m (Widget (HCentered a))
+instance Show (HCentered a) where
+    show (HCentered _) = "HCentered { ... }"
+
+hCentered :: (MonadIO m, Show a) => Widget a -> m (Widget (HCentered a))
 hCentered ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
@@ -73,9 +77,12 @@ hCentered ch = do
         }
   return wRef
 
-data VCentered a = VCentered (Widget a)
+data VCentered a = (Show a) => VCentered (Widget a)
 
-vCentered :: (MonadIO m) => Widget a -> m (Widget (VCentered a))
+instance Show (VCentered a) where
+    show (VCentered _) = "VCentered { ... }"
+
+vCentered :: (MonadIO m, Show a) => Widget a -> m (Widget (VCentered a))
 vCentered ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
@@ -109,7 +116,7 @@ vCentered ch = do
         }
   return wRef
 
-centered :: (MonadIO m) => Widget a -> m (Widget (VCentered (HCentered a)))
+centered :: (MonadIO m, Show a) => Widget a -> m (Widget (VCentered (HCentered a)))
 centered wRef = vCentered =<< hCentered wRef
 
 centered_halves :: (DisplayRegion -> Word) -> DisplayRegion -> Word -> (Word, Word)

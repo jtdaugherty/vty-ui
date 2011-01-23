@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 module Graphics.Vty.Widgets.Limits
     ( VLimit
     , HLimit
@@ -40,10 +41,13 @@ import Graphics.Vty.Widgets.Core
     , onKeyPressed
     )
 
-data HLimit a = HLimit Int (Widget a)
+data HLimit a = (Show a) => HLimit Int (Widget a)
+
+instance Show (HLimit a) where
+    show (HLimit i _) = "HLimit { width = " ++ show i ++ ", ... }"
 
 -- |Impose a maximum horizontal size, in columns, on a 'Widget'.
-hLimit :: (MonadIO m) => Int -> Widget a -> m (Widget (HLimit a))
+hLimit :: (MonadIO m, Show a) => Int -> Widget a -> m (Widget (HLimit a))
 hLimit maxWidth child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
@@ -65,10 +69,13 @@ hLimit maxWidth child = do
   wRef `onKeyPressed` \_ key mods -> handleKeyEvent child key mods
   return wRef
 
-data VLimit a = VLimit Int (Widget a)
+data VLimit a = (Show a) => VLimit Int (Widget a)
+
+instance Show (VLimit a) where
+    show (VLimit i _) = "VLimit { height = " ++ show i ++ ", ... }"
 
 -- |Impose a maximum horizontal size, in columns, on a 'Widget'.
-vLimit :: (MonadIO m) => Int -> Widget a -> m (Widget (VLimit a))
+vLimit :: (MonadIO m, Show a) => Int -> Widget a -> m (Widget (VLimit a))
 vLimit maxHeight child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->

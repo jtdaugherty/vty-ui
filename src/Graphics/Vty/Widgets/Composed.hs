@@ -31,19 +31,19 @@ import Graphics.Vty.Widgets.Limits
     )
 
 -- |Add expanding bottom padding to a widget.
-bottomPadded :: (MonadIO m) => Widget a -> Attr -> m (Widget (Box a VFill))
+bottomPadded :: (MonadIO m, Show a) => Widget a -> Attr -> m (Widget (Box a VFill))
 bottomPadded w attr = do
   f <- vFill attr ' '
   vBox w f
 
 -- |Add expanding top padding to a widget.
-topPadded :: (MonadIO m) => Widget a -> Attr -> m (Widget (Box VFill a))
+topPadded :: (MonadIO m, Show a) => Widget a -> Attr -> m (Widget (Box VFill a))
 topPadded w attr = do
   f <- vFill attr ' '
   vBox f w
 
 -- |Impose a maximum size (width, height) on a widget.
-boxLimit :: (MonadIO m) =>
+boxLimit :: (MonadIO m, Show a) =>
             Int -- ^Maximum width in columns
          -> Int -- ^Maximum height in rows
          -> Widget a

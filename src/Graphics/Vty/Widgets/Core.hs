@@ -81,6 +81,8 @@ import Graphics.Vty
     , Modifier(..)
     , image_width
     , image_height
+    , region_width
+    , region_height
     , empty_image
     )
 
@@ -89,6 +91,11 @@ class HasNormalAttr a where
 
 class HasFocusAttr a where
     setFocusAttribute :: (MonadIO m) => a -> Attr -> m ()
+
+data RenderError = ImageTooBig String DisplayRegion DisplayRegion
+                   deriving (Show, Typeable)
+
+instance Exception RenderError where
 
 -- |The type of user interface widgets.  A 'Widget' provides several
 -- properties:
@@ -186,15 +193,18 @@ growVertical w = do
   st <- state <~ w
   liftIO $ act st
 
-render :: (MonadIO m) => Widget a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> m Image
+render :: (MonadIO m, Show a) => Widget a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> m Image
 render wRef sz normAttr focAttr overrideAttr =
     liftIO $ do
       impl <- readIORef wRef
       img <- draw impl wRef sz normAttr focAttr overrideAttr
+      let imgsz =  DisplayRegion (image_width img) (image_height img)
+      when (image_width img > region_width sz ||
+            image_height img > region_height sz) $ throw $ ImageTooBig (show impl) sz imgsz
       setPhysicalSize wRef $ DisplayRegion (image_width img) (image_height img)
       return img
 
-renderAndPosition :: (MonadIO m) => Widget a -> DisplayRegion -> DisplayRegion
+renderAndPosition :: (MonadIO m, Show a) => Widget a -> DisplayRegion -> DisplayRegion
                   -> Attr -> Attr -> Maybe Attr -> m Image
 renderAndPosition wRef pos sz normAttr focAttr mAttr = do
   img <- render wRef sz normAttr focAttr mAttr
@@ -319,7 +329,7 @@ data FocusGroup = FocusGroup { entries :: [Widget FocusEntry]
                              , currentEntryNum :: Int
                              }
 
-newFocusEntry :: (MonadIO m) =>
+newFocusEntry :: (MonadIO m, Show a) =>
                  Widget a
               -> m (Widget FocusEntry)
 newFocusEntry chRef = do
@@ -391,7 +401,7 @@ currentEntry wRef = do
   when (i == -1) $ throw FocusGroupEmpty
   return (es !! i)
 
-addToFocusGroup :: (MonadIO m) => Widget FocusGroup -> Widget a -> m (Widget FocusEntry)
+addToFocusGroup :: (MonadIO m, Show a) => Widget FocusGroup -> Widget a -> m (Widget FocusEntry)
 addToFocusGroup cRef wRef = do
   eRef <- newFocusEntry wRef
   updateWidgetState cRef $ \s -> s { entries = (entries s) ++ [eRef] }

@@ -128,6 +128,18 @@ data List a b = List { normalAttr :: Maybe Attr
                      -- ^Function to construct new items
                      }
 
+instance Show (List a b) where
+    show lst = concat [ "List { "
+                      , "normalAttr = ", show $ normalAttr lst
+                      , ", selectedAttr = ", show $ selectedAttr lst
+                      , ", selectedIndex = ", show $ selectedIndex lst
+                      , ", scrollTopIndex = ", show $ scrollTopIndex lst
+                      , ", scrollWindowSize = ", show $ scrollWindowSize lst
+                      , ", listItems = <", show $ length $ listItems lst, " items>"
+                      , ", itemHeight = ", show $ itemHeight lst
+                      , " }"
+                      ]
+
 instance HasNormalAttr (Widget (List a b)) where
     setNormalAttribute wRef a =
         updateWidgetState wRef $ \s -> s { normalAttr = Just a }
@@ -198,7 +210,7 @@ removeFromList list pos = do
   -- Return the removed item.
   return (label, w)
 
-addToList :: (MonadIO m) => Widget (List a b) -> a -> m ()
+addToList :: (MonadIO m, Show b) => Widget (List a b) -> a -> m ()
 addToList list key = do
   numItems <- (length . listItems) <~~ list
 
@@ -271,7 +283,7 @@ onItemRemoved wRef handler = do
 
   updateWidgetState wRef $ \s -> s { itemRemoveHandler = combinedHandler }
 
-listWidget :: (MonadIO m) => List a b -> m (Widget (List a b))
+listWidget :: (MonadIO m, Show b) => List a b -> m (Widget (List a b))
 listWidget list = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
@@ -318,7 +330,8 @@ listKeyEvent w KPageUp _ = pageUp w >> return True
 listKeyEvent w KPageDown _ = pageDown w >> return True
 listKeyEvent _ _ _ = return False
 
-renderListWidget :: List a b -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> IO Image
+renderListWidget :: (Show b) =>
+                    List a b -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> IO Image
 renderListWidget list s normAttr focAttr mAttr = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
 

@@ -58,8 +58,18 @@ import Graphics.Vty.Widgets.Core
 
 -- Top, right, bottom, left.
 data Padding = Padding Int Int Int Int
+               deriving (Show)
 
-data Padded = forall a. Padded (Widget a) Padding (Maybe Attr)
+data Padded = forall a. (Show a) => Padded (Widget a) Padding (Maybe Attr)
+
+instance Show Padded where
+    show (Padded _ p mAttr) = concat [ "Padded { "
+                                     , "padding = "
+                                     , show p
+                                     , ", paddingAttr = "
+                                     , show mAttr
+                                     , ", ... }"
+                                     ]
 
 instance Monoid Padding where
     mempty = Padding 0 0 0 0
@@ -116,7 +126,7 @@ padTopBottom v = Padding v 0 v 0
 padLeftRight :: Int -> Padding
 padLeftRight v = Padding 0 v 0 v
 
-padded :: (MonadIO m) => Widget a -> Padding -> m (Widget Padded)
+padded :: (MonadIO m, Show a) => Widget a -> Padding -> m (Widget Padded)
 padded ch padding = do
   wRef <- newWidget
   updateWidget wRef $ \w ->

@@ -24,6 +24,7 @@ import Graphics.Vty.Widgets.Core
     )
 
 data VFill = VFill Attr Char
+             deriving (Show)
 
 -- |A vertical fill widget.  Fills all available space with the
 -- specified character and attribute.
@@ -42,6 +43,7 @@ vFill att c = do
   return wRef
 
 data HFill = HFill Attr Char Int
+             deriving (Show)
 
 -- |A horizontal fill widget.  Fills the available horizontal space,
 -- one row high, using the specified character and attribute.

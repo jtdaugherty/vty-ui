@@ -84,11 +84,18 @@ data Text = Text { defaultAttr :: Attr
                  , tokens :: [[Token Attr]]
                  -- ^The tokens of the underlying text stream.
                  }
+            deriving (Show)
 
 data FormattedText =
     FormattedText { text :: Text
                   , formatter :: Formatter
                   }
+
+instance Show FormattedText where
+    show (FormattedText t _) = concat [ "FormattedText { "
+                                      , "text = ", show t
+                                      , ", formatter = ... }"
+                                      ]
 
 resetText :: Text -> Text
 resetText t =

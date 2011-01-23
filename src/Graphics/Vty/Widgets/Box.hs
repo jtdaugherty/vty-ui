@@ -49,25 +49,31 @@ data Orientation = Horizontal | Vertical
 
 data Box a b = Box Orientation Int (Widget a) (Widget b)
 
+instance Show (Box a b) where
+    show (Box sp orientation _ _) = concat [ "Box { spacing = ", show sp
+                                           , ", orientation = ", show orientation
+                                           , " }"
+                                           ]
+
 -- |Create a horizontal box layout widget containing two widgets side
 -- by side.  Space consumed by the box will depend on its contents and
 -- the available space.
-hBox :: (MonadIO m) => Widget a -> Widget b -> m (Widget (Box a b))
+hBox :: (MonadIO m, Show a, Show b) => Widget a -> Widget b -> m (Widget (Box a b))
 hBox = box Horizontal 0
 
 -- |Create a vertical box layout widget containing two widgets.  Space
 -- consumed by the box will depend on its contents and the available
 -- space.
-vBox :: (MonadIO m) => Widget a -> Widget b -> m (Widget (Box a b))
+vBox :: (MonadIO m, Show a, Show b) => Widget a -> Widget b -> m (Widget (Box a b))
 vBox = box Vertical 0
 
-(<-->) :: (MonadIO m) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
+(<-->) :: (MonadIO m, Show a, Show b) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
 (<-->) act1 act2 = do
   ch1 <- act1
   ch2 <- act2
   vBox ch1 ch2
 
-(<++>) :: (MonadIO m) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
+(<++>) :: (MonadIO m, Show a, Show b) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
 (<++>) act1 act2 = do
   ch1 <- act1
   ch2 <- act2
@@ -91,7 +97,8 @@ infixl 3 <++>
 -- * Otherwise, both children are rendered in top-to-bottom or
 --   left-to-right order and the resulting container uses only as much
 --   space as its children combined
-box :: (MonadIO m) => Orientation -> Int -> Widget a -> Widget b -> m (Widget (Box a b))
+box :: (MonadIO m, Show a, Show b) =>
+       Orientation -> Int -> Widget a -> Widget b -> m (Widget (Box a b))
 box o spacing a b = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
@@ -149,7 +156,8 @@ setBoxSpacing wRef spacing =
 -- of functions, but mostly those are to query and update the correct
 -- dimensions on regions and images as they are manipulated by the
 -- layout algorithm.
-renderBox :: DisplayRegion
+renderBox :: (Show a, Show b) =>
+             DisplayRegion
           -> Attr
           -> Attr
           -> Maybe Attr

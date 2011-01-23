@@ -101,8 +101,19 @@ data TableError = ColumnCountMismatch
 
 instance Exception TableError
 
-data TableCell = forall a. TableCell (Widget a) (Maybe Alignment) (Maybe Padding)
+data TableCell = forall a. (Show a) => TableCell (Widget a) (Maybe Alignment) (Maybe Padding)
                | EmptyCell
+
+instance Show TableCell where
+    show EmptyCell = "EmptyCell"
+    show (TableCell _ mAl mPad) = concat [ "TableCell { "
+                                         , "alignment = "
+                                         , show mAl
+                                         , ", padding = "
+                                         , show mPad
+                                         , ", ... "
+                                         , "}"
+                                         ]
 
 data TableRow = TableRow [TableCell]
 
@@ -121,6 +132,7 @@ data ColumnSpec = ColumnSpec { columnSize :: ColumnSize
                              , columnAlignment :: Maybe Alignment
                              , columnPadding :: Maybe Padding
                              }
+                  deriving (Show)
 
 instance Paddable ColumnSpec where
     pad c p = c { columnPadding = Just p }
@@ -145,7 +157,7 @@ instance RowLike TableRow where
 instance RowLike TableCell where
     mkRow c = TableRow [c]
 
-instance RowLike (Widget a) where
+instance (Show a) => RowLike (Widget a) where
     mkRow w = TableRow [TableCell w Nothing Nothing]
 
 instance (RowLike a) => RowLike [a] where
@@ -171,7 +183,19 @@ data Table = Table { rows :: [TableRow]
                    , defaultCellPadding :: Padding
                    }
 
-customCell :: Widget a -> TableCell
+instance Show Table where
+    show t = concat [ "Table { "
+                    , "rows = <", show $ length $ rows t, " rows>"
+                    , ", numColumns = ", show $ numColumns t
+                    , ", columnSpecs = ", show $ columnSpecs t
+                    , ", borderStyle = ", show $ borderStyle t
+                    , ", borderAttr = ", show $ borderAttr t
+                    , ", defaultCellAlignment = ", show $ defaultCellAlignment t
+                    , ", defaultCellPadding = ", show $ defaultCellPadding t
+                    , " }"
+                    ]
+
+customCell :: (Show a) => Widget a -> TableCell
 customCell w = TableCell w Nothing Nothing
 
 setDefaultCellAlignment :: (MonadIO m) => Widget Table -> Alignment -> m ()

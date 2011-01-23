@@ -1,3 +1,4 @@
+{-# LANGUAGE ExistentialQuantification #-}
 -- |This module provides visual borders to be placed between and
 -- around widgets.
 module Graphics.Vty.Widgets.Borders
@@ -49,6 +50,7 @@ import Graphics.Vty.Widgets.Text
     )
 
 data HBorder = HBorder Attr Char
+               deriving (Show)
 
 -- |Create a single-row horizontal border.
 hBorder :: (MonadIO m) => Attr -> m (Widget HBorder)
@@ -71,6 +73,7 @@ hBorderWith ch att = do
   return wRef
 
 data VBorder = VBorder Attr Char
+               deriving (Show)
 
 -- |Create a single-column vertical border.
 vBorder :: (MonadIO m) => Attr -> m (Widget VBorder)
@@ -92,10 +95,16 @@ vBorderWith ch att = do
         }
   return wRef
 
-data Bordered a = Bordered Attr (Widget a)
+data Bordered a = (Show a) => Bordered Attr (Widget a)
+
+instance Show (Bordered a) where
+    show (Bordered attr _) = concat [ "Bordered { attr = "
+                                    , show attr
+                                    , ", ... }"
+                                    ]
 
 -- |Wrap a widget in a bordering box using the specified attribute.
-bordered :: (MonadIO m) => Attr -> Widget a -> m (Widget (Bordered a))
+bordered :: (MonadIO m, Show a) => Attr -> Widget a -> m (Widget (Bordered a))
 bordered att child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
@@ -125,7 +134,8 @@ bordered att child = do
         }
   return wRef
 
-drawBordered :: Bordered a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> IO Image
+drawBordered :: (Show a) =>
+                Bordered a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> IO Image
 drawBordered this s normAttr focAttr mAttr = do
   let Bordered attr child = this
       attr' = maybe attr id mAttr

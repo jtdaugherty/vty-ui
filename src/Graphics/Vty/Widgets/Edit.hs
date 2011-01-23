@@ -59,6 +59,17 @@ data Edit = Edit { currentText :: String
                  , cursorMoveHandler :: Widget Edit -> Int -> IO ()
                  }
 
+instance Show Edit where
+    show e = concat [ "Edit { "
+                    , "currentText = ", show $ currentText e
+                    , ", cursorPosition = ", show $ cursorPosition e
+                    , ", normalAttr = ", show $ normalAttr e
+                    , ", focusAttr = ", show $ focusAttr e
+                    , ", displayStart = ", show $ displayStart e
+                    , ", displayWidth = ", show $ displayWidth e
+                    , " }"
+                    ]
+
 instance HasNormalAttr (Widget Edit) where
     setNormalAttribute wRef a =
         updateWidgetState wRef $ \s -> s { normalAttr = Just a }

@@ -56,12 +56,19 @@ data CollectionError = EmptyCollection
 
 instance Exception CollectionError
 
-data Entry = forall a. Entry (Widget a)
+data Entry = forall a. (Show a) => Entry (Widget a)
 
 data Collection =
     Collection { entries :: [Entry]
                , currentEntryNum :: Int
                }
+
+instance Show Collection where
+    show (Collection es num) = concat [ "Collection { "
+                                      , "entries = <", show $ length es, "entries>"
+                                      , ", currentEntryNum = ", show num
+                                      , " }"
+                                      ]
 
 renderEntry :: (MonadIO m) => Entry -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> m Image
 renderEntry (Entry w) = render w
@@ -143,7 +150,7 @@ newCollection = do
 
   return wRef
 
-addToCollection :: (MonadIO m) => Widget Collection -> Widget a -> m (m ())
+addToCollection :: (MonadIO m, Show a) => Widget Collection -> Widget a -> m (m ())
 addToCollection cRef wRef = do
   i <- (length . entries) <~~ cRef
   updateWidgetState cRef $ \st ->
