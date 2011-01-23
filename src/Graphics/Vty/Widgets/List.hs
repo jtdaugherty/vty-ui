@@ -44,9 +44,6 @@ where
 import Data.Typeable
     ( Typeable
     )
-import Data.Maybe
-    ( catMaybes
-    )
 import Control.Exception
     ( Exception
     , throw
@@ -93,6 +90,7 @@ import Graphics.Vty.Widgets.Text
     ( FormattedText
     , simpleText
     )
+import Graphics.Vty.Widgets.Util
 
 data ListError = BadItemIndex Int
                | ResizeError
@@ -334,10 +332,9 @@ listKeyEvent _ _ _ = return False
 renderListWidget :: (Show b) => List a b -> DisplayRegion -> RenderContext -> IO Image
 renderListWidget list s ctx = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
-      defaultAttr = head $ catMaybes [ overrideAttr ctx
-                                     , listNormalAttr list
-                                     , Just $ normalAttr ctx
-                                     ]
+      Just defaultAttr = overrideAttr ctx
+                         `alt` listNormalAttr list
+                         `alt` (Just $ normalAttr ctx)
 
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do

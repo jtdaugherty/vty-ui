@@ -52,11 +52,11 @@ module Graphics.Vty.Widgets.Core
 where
 
 import GHC.Word ( Word )
+import Data.Maybe
+    ( fromJust
+    )
 import Data.Typeable
     ( Typeable
-    )
-import Data.Maybe
-    ( catMaybes
     )
 import Data.IORef
     ( IORef
@@ -92,6 +92,7 @@ import Graphics.Vty
     , region_height
     , empty_image
     )
+import Graphics.Vty.Widgets.Util
 
 class HasNormalAttr a where
     setNormalAttribute :: (MonadIO m) => a -> Attr -> m ()
@@ -110,9 +111,7 @@ data RenderContext = RenderContext { normalAttr :: Attr
                                    }
 
 getNormalAttr :: RenderContext -> Attr
-getNormalAttr ctx = head $ catMaybes [ overrideAttr ctx
-                                     , Just $ normalAttr ctx
-                                     ]
+getNormalAttr ctx = fromJust $ overrideAttr ctx `alt` (Just $ normalAttr ctx)
 
 defaultContext :: RenderContext
 defaultContext = RenderContext def_attr def_attr Nothing

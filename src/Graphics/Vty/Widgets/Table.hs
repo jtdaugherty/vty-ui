@@ -27,9 +27,6 @@ import Data.Typeable
 import Data.Word
     ( Word
     )
-import Data.Maybe
-    ( catMaybes
-    )
 import Data.List
     ( intersperse
     )
@@ -98,6 +95,7 @@ import Graphics.Vty.Widgets.Alignment
     , Alignment(..)
     , rightAligned
     )
+import Graphics.Vty.Widgets.Util
 
 data TableError = ColumnCountMismatch
                 | CellImageTooBig
@@ -335,7 +333,7 @@ mkRowBorder_ t sz ctx = do
   specs <- columnSpecs <~~ t
   aw <- autoWidth t sz
 
-  let bAttr' = head $ catMaybes [ overrideAttr ctx, Just bAttr ]
+  let Just bAttr' = overrideAttr ctx `alt` Just bAttr
       szs = map columnSize specs
       intersection = string bAttr' "+"
       imgs = (flip map) szs $ \s ->
@@ -373,7 +371,7 @@ mkSideBorder_ t ctx = do
   rs <- rows <~~ t
 
   let intersection = string bAttr' "+"
-      bAttr' = head $ catMaybes [ overrideAttr ctx, Just bAttr ]
+      Just bAttr' = overrideAttr ctx `alt` Just bAttr
 
   rowHeights <- forM rs $ \(TableRow row) -> do
                     hs <- forM row $ \cell ->
@@ -552,7 +550,7 @@ renderRow tbl sz cells ctx = do
                              img <-> char_fill att ' ' (image_width img) (maxHeight - image_height img)
 
   -- If we need to draw borders in between columns, do that.
-  let bAttr' = head $ catMaybes [ overrideAttr ctx, Just bAttr ]
+  let Just bAttr' = overrideAttr ctx `alt` Just bAttr
       withBorders = case colBorders borderSty of
                       False -> cellImgsBottomPadded
                       True -> intersperse (char_fill bAttr' '|' 1 maxHeight) cellImgsBottomPadded

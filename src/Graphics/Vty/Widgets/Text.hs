@@ -28,7 +28,7 @@ import Control.Monad.Trans
     )
 import Data.Maybe
     ( isJust
-    , catMaybes
+    , fromJust
     )
 import Graphics.Vty
     ( Attr
@@ -62,6 +62,7 @@ import Text.Regex.PCRE.Light.Char8
     , match
     , exec_anchored
     )
+import Graphics.Vty.Widgets.Util
 
 -- |A formatter makes changes to text at rendering time.
 --
@@ -176,8 +177,8 @@ renderText t format sz ctx =
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
-      attr' = head $ catMaybes [ overrideAttr ctx, Just $ defaultAttr newText ]
-      tokenAttr tok = head $ catMaybes [ overrideAttr ctx, Just $ tokenAnnotation tok ]
+      Just attr' = overrideAttr ctx `alt` (Just $ defaultAttr newText)
+      tokenAttr tok = fromJust $ overrideAttr ctx `alt` (Just $ tokenAnnotation tok)
 
       lineImgs = map mkLineImg ls
       ls = map truncateLine $ tokens newText

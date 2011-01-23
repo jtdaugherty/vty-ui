@@ -23,7 +23,6 @@ import Data.IORef
 import Data.Maybe
     ( isJust
     , fromJust
-    , catMaybes
     )
 import Control.Monad
     ( when
@@ -54,6 +53,7 @@ import Graphics.Vty.Widgets.Core
     , getPhysicalPosition
     , withWidth
     )
+import Graphics.Vty.Widgets.Util
 
 data RadioGroupData = RadioGroupData { currentlySelected :: Maybe (Widget CheckBox)
                                      }
@@ -143,15 +143,14 @@ newCheckbox label = do
               f <- focused <~ this
               st <- getState this
 
-              let attr = head $ catMaybes [ overrideAttr ctx
-                                          , cbNormalAttr st
-                                          , Just $ normalAttr ctx
-                                          ]
-                  fAttr = if f
-                          then head $ catMaybes [ cbFocusedAttr st
-                                                , Just $ focusAttr ctx
-                                                ]
-                          else attr
+              let attr = overrideAttr ctx
+                         `alt` cbNormalAttr st
+                         `alt` (Just $ normalAttr ctx)
+
+                  Just fAttr = if f
+                               then cbFocusedAttr st
+                                        `alt` (Just $ focusAttr ctx)
+                               else attr
 
                   ch = if isChecked st then checkedChar st else ' '
 

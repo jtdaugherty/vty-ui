@@ -6,9 +6,6 @@ module Graphics.Vty.Widgets.Fills
     )
 where
 
-import Data.Maybe
-    ( catMaybes
-    )
 import Control.Monad.Trans
     ( MonadIO
     )
@@ -26,6 +23,7 @@ import Graphics.Vty.Widgets.Core
     , updateWidget
     , getState
     )
+import Graphics.Vty.Widgets.Util
 
 data VFill = VFill Attr Char
              deriving (Show)
@@ -41,10 +39,9 @@ vFill att c = do
         , getGrowVertical = const $ return True
         , draw = \this s ctx -> do
                    VFill attr ch <- getState this
-                   let attr' = head $ catMaybes [ overrideAttr ctx
-                                                , Just attr
-                                                , Just $ normalAttr ctx
-                                                ]
+                   let Just attr' = overrideAttr ctx
+                                    `alt` Just attr
+                                    `alt` (Just $ normalAttr ctx)
                    return $ char_fill attr' ch (region_width s) (region_height s)
         }
   return wRef
@@ -63,10 +60,9 @@ hFill att c h = do
         , getGrowVertical = const $ return False
         , draw = \this s ctx -> do
                    HFill attr ch height <- getState this
-                   let attr' = head $ catMaybes [ overrideAttr ctx
-                                                , Just attr
-                                                , Just $ normalAttr ctx
-                                                ]
+                   let Just attr' = overrideAttr ctx
+                                    `alt` Just attr
+                                    `alt` (Just $ normalAttr ctx)
                    return $ char_fill attr' ch (region_width s) (toEnum height)
         }
   return wRef

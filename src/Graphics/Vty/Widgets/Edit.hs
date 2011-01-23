@@ -12,9 +12,6 @@ module Graphics.Vty.Widgets.Edit
     )
 where
 
-import Data.Maybe
-    ( catMaybes
-    )
 import Control.Monad
     ( when
     )
@@ -48,6 +45,7 @@ import Graphics.Vty.Widgets.Core
     , newWidget
     , getState
     )
+import Graphics.Vty.Widgets.Util
 
 data Edit = Edit { currentText :: String
                  , cursorPosition :: Int
@@ -115,14 +113,13 @@ editWidget = do
               let truncated = take (displayWidth st)
                               (drop (displayStart st) (currentText st))
 
-                  nAttr = head $ catMaybes [ overrideAttr ctx
-                                           , editNormalAttr st
-                                           , Just $ normalAttr ctx
-                                           ]
+                  Just nAttr = overrideAttr ctx
+                               `alt` editNormalAttr st
+                               `alt` (Just $ normalAttr ctx)
 
               isFocused <- focused <~ this
               let attr = (if isFocused then fAttr else nAttr) `with_style` underline
-                  fAttr = head $ catMaybes [ editFocusAttr st, Just $ focusAttr ctx ]
+                  Just fAttr = editFocusAttr st `alt` (Just $ focusAttr ctx)
 
               return $ string attr truncated
                          <|> char_fill attr ' ' (region_width size - (toEnum $ length truncated)) 1

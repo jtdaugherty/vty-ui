@@ -19,9 +19,6 @@ where
 import Data.Word
     ( Word
     )
-import Data.Maybe
-    ( catMaybes
-    )
 import Data.Monoid
     ( Monoid(..)
     )
@@ -56,6 +53,7 @@ import Graphics.Vty.Widgets.Core
     , setPhysicalPosition
     , onKeyPressed
     )
+import Graphics.Vty.Widgets.Util
 
 -- Top, right, bottom, left.
 data Padding = Padding Int Int Int Int
@@ -145,13 +143,9 @@ padded ch padding = do
                   -- settings.
                   let constrained = sz `withWidth` (region_width sz - (leftPadding p + rightPadding p))
                                     `withHeight` (region_height sz - (topPadding p + bottomPadding p))
-                      -- XXX would be better to set an attribute on
-                      -- the padding instead of falling back to the
-                      -- default
-                      attr = head $ catMaybes [ overrideAttr ctx
-                                              , att
-                                              , Just $ normalAttr ctx
-                                              ]
+                      Just attr = overrideAttr ctx
+                                  `alt` att
+                                  `alt` (Just $ normalAttr ctx)
 
                   -- Render child.
                   img <- render child constrained ctx

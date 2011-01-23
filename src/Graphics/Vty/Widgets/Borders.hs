@@ -16,9 +16,6 @@ where
 import Control.Monad.Trans
     ( MonadIO
     )
-import Data.Maybe
-    ( catMaybes
-    )
 import Graphics.Vty
     ( Attr
     , DisplayRegion(DisplayRegion)
@@ -52,6 +49,7 @@ import Graphics.Vty.Widgets.Box
 import Graphics.Vty.Widgets.Text
     ( simpleText
     )
+import Graphics.Vty.Widgets.Util
 
 data HBorder = HBorder Attr Char
                deriving (Show)
@@ -71,7 +69,7 @@ hBorderWith ch att = do
         , getGrowHorizontal = const $ return True
         , draw = \this s ctx -> do
                    HBorder attr _ <- getState this
-                   let attr' = head $ catMaybes [ overrideAttr ctx, Just attr ]
+                   let Just attr' = overrideAttr ctx `alt` Just attr
                    return $ char_fill attr' ch (region_width s) 1
         }
   return wRef
@@ -94,7 +92,7 @@ vBorderWith ch att = do
         , getGrowVertical = const $ return True
         , draw = \this s ctx -> do
                    VBorder attr _ <- getState this
-                   let attr' = head $ catMaybes [ overrideAttr ctx, Just attr ]
+                   let Just attr' = overrideAttr ctx `alt` Just attr
                    return $ char_fill attr' ch 1 (region_height s)
         }
   return wRef
@@ -142,7 +140,7 @@ drawBordered :: (Show a) =>
                 Bordered a -> DisplayRegion -> RenderContext -> IO Image
 drawBordered this s ctx = do
   let Bordered attr child = this
-      attr' = head $ catMaybes [ overrideAttr ctx, Just attr ]
+      Just attr' = overrideAttr ctx `alt` Just attr
 
   -- Render the contained widget with enough room to draw borders.
   -- Then, use the size of the rendered widget to constrain the space
