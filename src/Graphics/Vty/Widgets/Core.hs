@@ -25,6 +25,8 @@ module Graphics.Vty.Widgets.Core
     , withHeight
     , HasNormalAttr(..)
     , HasFocusAttr(..)
+    , withNormalAttribute
+    , withFocusAttribute
 
     , growVertical
     , growHorizontal
@@ -99,6 +101,12 @@ class HasNormalAttr a where
 
 class HasFocusAttr a where
     setFocusAttribute :: (MonadIO m) => a -> Attr -> m ()
+
+withNormalAttribute :: (MonadIO m, HasNormalAttr a) => Attr -> a -> m a
+withNormalAttribute att w = setNormalAttribute w att >> return w
+
+withFocusAttribute :: (MonadIO m, HasFocusAttr a) => Attr -> a -> m a
+withFocusAttribute att w = setFocusAttribute w att >> return w
 
 data RenderError = ImageTooBig String DisplayRegion DisplayRegion
                    deriving (Show, Typeable)

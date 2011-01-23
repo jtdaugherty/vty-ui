@@ -31,9 +31,9 @@ main = do
                 , column Auto `pad` (padAll 1)
                 ]
 
-  table <- newTable columns BorderFull
-  setNormalAttribute table (white `on` blue)
-  setBorderAttribute table (green `on` blue)
+  table <- newTable columns BorderFull >>=
+           withNormalAttribute (white `on` blue) >>=
+           withBorderAttribute (green `on` blue)
 
   tw <- textWidget (wrap &.& color) $ prepareText msgAttr msg
   mainBox <- (return table) <--> (return tw)
@@ -52,9 +52,7 @@ main = do
   addToRadioGroup rg r1
   addToRadioGroup rg r2
 
-  edit1 <- editWidget
-  setFocusAttribute edit1 (white `on` red)
-
+  edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- editWidget
 
   edit1Header <- simpleText headerAttr ""
