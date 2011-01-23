@@ -446,7 +446,7 @@ notifySelectionHandler wRef = do
   h <- selectionChangeHandler <~~ wRef
   result <- getSelected wRef
   case result of
-    Nothing -> error "notifySelectionHandler: nothing is selected, this is a bug!"
+    Nothing -> return ()
     Just (pos, (k, ch)) -> liftIO $ h wRef pos k ch
 
 notifyItemRemoveHandler :: (MonadIO m) => Widget (List a b) -> Int -> a -> Widget b -> m ()
