@@ -52,6 +52,7 @@ import Graphics.Vty
     , Attr
     , DisplayRegion(..)
     , (<|>)
+    , (<->)
     , region_height
     , region_width
     , image_height
@@ -506,6 +507,7 @@ renderRow tbl sz cells normAttr focAttr mAttr = do
   aw <- autoWidth tbl sz
 
   let sizes = map columnSize specs
+      att = maybe normAttr id mAttr
 
   cellImgs <-
       forM (zip cells sizes) $ \(cellW, sizeSpec) ->
@@ -521,16 +523,19 @@ renderRow tbl sz cells normAttr focAttr mAttr = do
             case compare (image_width img) (region_width cellSz) of
               EQ -> return img
               LT -> do
-                let att = maybe normAttr id mAttr
                 return $ img <|> char_fill att ' '
                            (region_width cellSz - image_width img)
                            (max (image_height img) 1)
               GT -> throw CellImageTooBig
 
+  let maxHeight = rowHeight cellImgs
+      cellImgsBottomPadded = (flip map) cellImgs $ \img ->
+                             img <-> char_fill att ' ' (image_width img) (maxHeight - image_height img)
+
   -- If we need to draw borders in between columns, do that.
   let bAttr' = maybe bAttr id mAttr
       withBorders = case colBorders borderSty of
-                      False -> cellImgs
-                      True -> intersperse (char_fill bAttr' '|' 1 (rowHeight cellImgs)) cellImgs
+                      False -> cellImgsBottomPadded
+                      True -> intersperse (char_fill bAttr' '|' 1 maxHeight) cellImgsBottomPadded
 
   return $ horiz_cat withBorders
