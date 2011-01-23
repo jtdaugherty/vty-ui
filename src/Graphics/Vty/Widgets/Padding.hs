@@ -25,9 +25,6 @@ import Data.Monoid
 import Control.Monad.Trans
     ( MonadIO
     )
-import Control.Monad.Reader
-    ( ask
-    )
 import Graphics.Vty
     ( (<->)
     , (<|>)
@@ -115,13 +112,8 @@ padded ch padding = do
   updateWidget wRef $ \w ->
       w { state = Padded ch padding
 
-        , getGrowVertical = do
-            Padded child _ <- ask
-            growVertical child
-
-        , getGrowHorizontal = do
-            Padded child _ <- ask
-            growHorizontal child
+        , getGrowVertical = growVertical ch
+        , getGrowHorizontal = growHorizontal ch
 
         , keyEventHandler =
             \this key mods -> do

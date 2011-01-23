@@ -87,10 +87,7 @@ vCentered ch = do
   updateWidget wRef $ \w ->
       w { state = VCentered ch
         , getGrowVertical = return True
-
-        , getGrowHorizontal = do
-            VCentered child <- ask
-            growHorizontal child
+        , getGrowHorizontal = growHorizontal ch
 
         , draw = \this s mAttr -> do
                    VCentered child <- getState this

@@ -14,10 +14,6 @@ where
 
 import Control.Monad.Trans
     ( MonadIO
-    , liftIO
-    )
-import Control.Monad.Reader
-    ( ask
     )
 import Graphics.Vty
     ( Attr
@@ -105,13 +101,8 @@ bordered att child = do
   updateWidget wRef $ \w ->
       w { state = Bordered att child
 
-        , getGrowVertical = do
-            Bordered _ ch <- ask
-            liftIO $ growVertical ch
-
-        , getGrowHorizontal = do
-            Bordered _ ch <- ask
-            liftIO $ growHorizontal ch
+        , getGrowVertical = growVertical child
+        , getGrowHorizontal = growHorizontal child
 
         , keyEventHandler =
             \this key mods -> do

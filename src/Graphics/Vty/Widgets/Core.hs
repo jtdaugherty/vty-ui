@@ -66,7 +66,6 @@ import Control.Monad
 import Control.Monad.Reader
     ( ReaderT
     , runReaderT
-    , ask
     )
 import Control.Monad.Trans
     ( MonadIO
@@ -324,18 +323,11 @@ newFocusEntry chRef = do
   updateWidget wRef $ \w ->
       w { state = FocusEntry chRef
 
-        , getGrowHorizontal = do
-            (FocusEntry ch) <- ask
-            growHorizontal ch
-
-        , getGrowVertical = do
-            (FocusEntry ch) <- ask
-            growVertical ch
+        , getGrowHorizontal = growHorizontal chRef
+        , getGrowVertical = growVertical chRef
 
         , draw =
-            \this sz mAttr -> do
-              (FocusEntry ch) <- getState this
-              render ch sz mAttr
+            \_ sz mAttr -> render chRef sz mAttr
 
         , setPosition =
             \this pos -> do

@@ -12,15 +12,11 @@ module Graphics.Vty.Widgets.Limits
     )
 where
 
-import Control.Monad.Reader
-    ( ask
-    )
 import Control.Monad
     ( when
     )
 import Control.Monad.Trans
     ( MonadIO
-    , liftIO
     )
 import Graphics.Vty
     ( region_width
@@ -52,10 +48,7 @@ hLimit maxWidth child = do
   updateWidget wRef $ \w ->
       w { state = HLimit maxWidth child
         , getGrowHorizontal = return False
-
-        , getGrowVertical = do
-            HLimit _ ch <- ask
-            liftIO $ growVertical ch
+        , getGrowVertical = growVertical child
 
         , keyEventHandler =
             \this key mods -> do
@@ -84,9 +77,7 @@ vLimit maxHeight child = do
   updateWidget wRef $ \w ->
       w { state = VLimit maxHeight child
         , getGrowVertical = return False
-        , getGrowHorizontal = do
-            VLimit _ ch <- ask
-            liftIO $ growHorizontal ch
+        , getGrowHorizontal = growHorizontal child
 
         , keyEventHandler =
             \this key mods -> do
