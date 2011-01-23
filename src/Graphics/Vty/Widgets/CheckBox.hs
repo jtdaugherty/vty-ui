@@ -44,6 +44,7 @@ import Graphics.Vty.Widgets.Core
     , WidgetImpl(..)
     , HasNormalAttr(..)
     , HasFocusAttr(..)
+    , RenderContext(..)
     , (<~)
     , (<~~)
     , getState
@@ -94,15 +95,15 @@ radioGroupSetCurrent wRef = do
 
 instance HasNormalAttr (Widget CheckBox) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { normalAttr = Just a }
+        updateWidgetState wRef $ \s -> s { cbNormalAttr = Just a }
 
 instance HasFocusAttr (Widget CheckBox) where
     setFocusAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { focusedAttr = Just a }
+        updateWidgetState wRef $ \s -> s { cbFocusedAttr = Just a }
 
 data CheckBox = CheckBox { isChecked :: Bool
-                         , normalAttr :: Maybe Attr
-                         , focusedAttr :: Maybe Attr
+                         , cbNormalAttr :: Maybe Attr
+                         , cbFocusedAttr :: Maybe Attr
                          , checkedChar :: Char
                          , checkboxLabel :: String
                          , checkboxChangeHandler :: Widget CheckBox -> Bool -> IO ()
@@ -112,8 +113,8 @@ data CheckBox = CheckBox { isChecked :: Bool
 instance Show CheckBox where
     show cb = concat [ "CheckBox { "
                      , "isChecked = ", show $ isChecked cb
-                     , ", normalAttr = ", show $ normalAttr cb
-                     , ", focusedAttr = ", show $ focusedAttr cb
+                     , ", cbNormalAttr = ", show $ cbNormalAttr cb
+                     , ", cbFocusedAttr = ", show $ cbFocusedAttr cb
                      , ", checkedChar = ", show $ checkedChar cb
                      , ", checkboxLabel = ", show $ checkboxLabel cb
                      , " }"
@@ -124,8 +125,8 @@ newCheckbox label = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = CheckBox { isChecked = False
-                           , normalAttr = Nothing
-                           , focusedAttr = Nothing
+                           , cbNormalAttr = Nothing
+                           , cbFocusedAttr = Nothing
                            , checkedChar = 'x'
                            , checkboxLabel = label
                            , checkboxChangeHandler = \_ _ -> return ()
@@ -138,13 +139,18 @@ newCheckbox label = do
 
         , keyEventHandler = radioKeyEvent
         , draw =
-            \this sz normAttr focAttr mAttr -> do
+            \this sz ctx -> do
               f <- focused <~ this
               st <- getState this
 
-              let attr = head $ catMaybes [ mAttr, normalAttr st, Just normAttr ]
+              let attr = head $ catMaybes [ overrideAttr ctx
+                                          , cbNormalAttr st
+                                          , Just $ normalAttr ctx
+                                          ]
                   fAttr = if f
-                          then head $ catMaybes [ focusedAttr st, Just focAttr ]
+                          then head $ catMaybes [ cbFocusedAttr st
+                                                , Just $ focusAttr ctx
+                                                ]
                           else attr
 
                   ch = if isChecked st then checkedChar st else ' '

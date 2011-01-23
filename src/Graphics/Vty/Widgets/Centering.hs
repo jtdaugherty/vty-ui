@@ -15,6 +15,7 @@ import Control.Monad.Trans
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
+    , getNormalAttr
     , newWidget
     , updateWidget
     , render
@@ -51,12 +52,12 @@ hCentered ch = do
 
         , getGrowVertical = \(HCentered child) -> growVertical child
 
-        , draw = \this s normAttr focAttr mAttr -> do
+        , draw = \this s ctx -> do
                    HCentered child <- getState this
-                   img <- render child s normAttr focAttr mAttr
+                   img <- render child s ctx
 
                    -- XXX def_attr can be wrong
-                   let attr' = maybe normAttr id mAttr
+                   let attr' = getNormalAttr ctx
                        (half, half') = centered_halves region_width s (image_width img)
 
                    return $ if half > 0
@@ -90,12 +91,12 @@ vCentered ch = do
         , getGrowVertical = const $ return True
         , getGrowHorizontal = const $ growHorizontal ch
 
-        , draw = \this s normAttr focAttr mAttr -> do
+        , draw = \this s ctx -> do
                    VCentered child <- getState this
-                   img <- render child s normAttr focAttr mAttr
+                   img <- render child s ctx
 
                    -- XXX def_attr can be wrong
-                   let attr' = maybe normAttr id mAttr
+                   let attr' = getNormalAttr ctx
                        (half, half') = centered_halves region_height s (image_height img)
 
                    return $ if half > 0

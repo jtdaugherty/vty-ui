@@ -4,6 +4,9 @@
 module Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
+    , RenderContext(..)
+    , getNormalAttr
+    , defaultContext
     , renderAndPosition
     , render
     , updateWidget
@@ -52,6 +55,9 @@ import GHC.Word ( Word )
 import Data.Typeable
     ( Typeable
     )
+import Data.Maybe
+    ( catMaybes
+    )
 import Data.IORef
     ( IORef
     , newIORef
@@ -79,6 +85,7 @@ import Graphics.Vty
     , Attr
     , Key(..)
     , Modifier(..)
+    , def_attr
     , image_width
     , image_height
     , region_width
@@ -96,6 +103,19 @@ data RenderError = ImageTooBig String DisplayRegion DisplayRegion
                    deriving (Show, Typeable)
 
 instance Exception RenderError where
+
+data RenderContext = RenderContext { normalAttr :: Attr
+                                   , focusAttr :: Attr
+                                   , overrideAttr :: Maybe Attr
+                                   }
+
+getNormalAttr :: RenderContext -> Attr
+getNormalAttr ctx = head $ catMaybes [ overrideAttr ctx
+                                     , Just $ normalAttr ctx
+                                     ]
+
+defaultContext :: RenderContext
+defaultContext = RenderContext def_attr def_attr Nothing
 
 -- |The type of user interface widgets.  A 'Widget' provides several
 -- properties:
@@ -130,7 +150,7 @@ data WidgetImpl a = WidgetImpl {
     -- |Render the widget with the given dimensions.  The result
     -- /must/ not be larger than the specified dimensions, but may be
     -- smaller.
-    , draw :: Widget a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> IO Image
+    , draw :: Widget a -> DisplayRegion -> RenderContext -> IO Image
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
@@ -193,11 +213,11 @@ growVertical w = do
   st <- state <~ w
   liftIO $ act st
 
-render :: (MonadIO m, Show a) => Widget a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> m Image
-render wRef sz normAttr focAttr overrideAttr =
+render :: (MonadIO m, Show a) => Widget a -> DisplayRegion -> RenderContext -> m Image
+render wRef sz ctx =
     liftIO $ do
       impl <- readIORef wRef
-      img <- draw impl wRef sz normAttr focAttr overrideAttr
+      img <- draw impl wRef sz ctx
       let imgsz =  DisplayRegion (image_width img) (image_height img)
       when (image_width img > region_width sz ||
             image_height img > region_height sz) $ throw $ ImageTooBig (show impl) sz imgsz
@@ -205,9 +225,9 @@ render wRef sz normAttr focAttr overrideAttr =
       return img
 
 renderAndPosition :: (MonadIO m, Show a) => Widget a -> DisplayRegion -> DisplayRegion
-                  -> Attr -> Attr -> Maybe Attr -> m Image
-renderAndPosition wRef pos sz normAttr focAttr mAttr = do
-  img <- render wRef sz normAttr focAttr mAttr
+                  -> RenderContext -> m Image
+renderAndPosition wRef pos sz ctx = do
+  img <- render wRef sz ctx
   -- Position post-processing depends on the sizes being correct!
   setPhysicalPosition wRef pos
   return img
@@ -341,7 +361,7 @@ newFocusEntry chRef = do
         , getGrowVertical = const $ growVertical chRef
 
         , draw =
-            \_ sz normAttr focAttr mAttr -> render chRef sz normAttr focAttr mAttr
+            \_ sz ctx -> render chRef sz ctx
 
         , setPosition =
             \this pos -> do
@@ -383,7 +403,7 @@ newFocusGroup = do
                        handleKeyEvent e key mods
 
         -- Should never be rendered.
-        , draw = \_ _ _ _ _ -> return empty_image
+        , draw = \_ _ _ -> return empty_image
         }
   return wRef
 

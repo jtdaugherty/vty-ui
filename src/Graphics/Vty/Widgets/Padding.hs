@@ -42,6 +42,7 @@ import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , HasNormalAttr(..)
+    , RenderContext(..)
     , newWidget
     , updateWidget
     , updateWidgetState
@@ -136,7 +137,7 @@ padded ch padding = do
         , getGrowHorizontal = const $ growHorizontal ch
 
         , draw =
-            \this sz normAttr focAttr mAttr ->
+            \this sz ctx ->
                 do
                   Padded child p att <- getState this
 
@@ -147,10 +148,13 @@ padded ch padding = do
                       -- XXX would be better to set an attribute on
                       -- the padding instead of falling back to the
                       -- default
-                      attr = head $ catMaybes [ mAttr, att, Just normAttr ]
+                      attr = head $ catMaybes [ overrideAttr ctx
+                                              , att
+                                              , Just $ normalAttr ctx
+                                              ]
 
                   -- Render child.
-                  img <- render child constrained normAttr focAttr mAttr
+                  img <- render child constrained ctx
 
                   -- Create padding images.
                   let leftImg = char_fill attr ' ' (leftPadding p) (image_height img)

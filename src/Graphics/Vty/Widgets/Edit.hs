@@ -38,6 +38,7 @@ import Graphics.Vty.Widgets.Core
     , WidgetImpl(..)
     , HasNormalAttr(..)
     , HasFocusAttr(..)
+    , RenderContext(..)
     , (<~)
     , (<~~)
     , getPhysicalPosition
@@ -50,8 +51,8 @@ import Graphics.Vty.Widgets.Core
 
 data Edit = Edit { currentText :: String
                  , cursorPosition :: Int
-                 , normalAttr :: Maybe Attr
-                 , focusAttr :: Maybe Attr
+                 , editNormalAttr :: Maybe Attr
+                 , editFocusAttr :: Maybe Attr
                  , displayStart :: Int
                  , displayWidth :: Int
                  , activateHandler :: Widget Edit -> IO ()
@@ -63,8 +64,8 @@ instance Show Edit where
     show e = concat [ "Edit { "
                     , "currentText = ", show $ currentText e
                     , ", cursorPosition = ", show $ cursorPosition e
-                    , ", normalAttr = ", show $ normalAttr e
-                    , ", focusAttr = ", show $ focusAttr e
+                    , ", editNormalAttr = ", show $ editNormalAttr e
+                    , ", editFocusAttr = ", show $ editFocusAttr e
                     , ", displayStart = ", show $ displayStart e
                     , ", displayWidth = ", show $ displayWidth e
                     , " }"
@@ -72,11 +73,11 @@ instance Show Edit where
 
 instance HasNormalAttr (Widget Edit) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { normalAttr = Just a }
+        updateWidgetState wRef $ \s -> s { editNormalAttr = Just a }
 
 instance HasFocusAttr (Widget Edit) where
     setFocusAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { focusAttr = Just a }
+        updateWidgetState wRef $ \s -> s { editFocusAttr = Just a }
 
 editWidget :: (MonadIO m) => m (Widget Edit)
 editWidget = do
@@ -84,8 +85,8 @@ editWidget = do
   updateWidget wRef $ \w ->
       w { state = Edit { currentText = ""
                        , cursorPosition = 0
-                       , normalAttr = Nothing
-                       , focusAttr = Nothing
+                       , editNormalAttr = Nothing
+                       , editFocusAttr = Nothing
                        , displayStart = 0
                        , displayWidth = 0
                        , activateHandler = const $ return ()
@@ -107,18 +108,21 @@ editWidget = do
                   return Nothing
 
         , draw =
-            \this size normAttr focAttr mAttr -> do
+            \this size ctx -> do
               setDisplayWidth this (fromEnum $ region_width size)
               st <- getState this
 
               let truncated = take (displayWidth st)
                               (drop (displayStart st) (currentText st))
 
-                  nAttr = head $ catMaybes [mAttr, normalAttr st, Just normAttr]
+                  nAttr = head $ catMaybes [ overrideAttr ctx
+                                           , editNormalAttr st
+                                           , Just $ normalAttr ctx
+                                           ]
 
               isFocused <- focused <~ this
               let attr = (if isFocused then fAttr else nAttr) `with_style` underline
-                  fAttr = head $ catMaybes [ focusAttr st, Just focAttr ]
+                  fAttr = head $ catMaybes [ editFocusAttr st, Just $ focusAttr ctx ]
 
               return $ string attr truncated
                          <|> char_fill attr ' ' (region_width size - (toEnum $ length truncated)) 1

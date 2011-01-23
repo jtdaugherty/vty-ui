@@ -21,7 +21,6 @@ import Control.Exception
     )
 import Graphics.Vty
     ( DisplayRegion
-    , Attr
     , Image
     , Key
     , Modifier
@@ -30,6 +29,7 @@ import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , FocusGroup
+    , RenderContext
     , (<~)
     , (<~~)
     , getFocusGroup
@@ -70,7 +70,7 @@ instance Show Collection where
                                       , " }"
                                       ]
 
-renderEntry :: (MonadIO m) => Entry -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> m Image
+renderEntry :: (MonadIO m) => Entry -> DisplayRegion -> RenderContext -> m Image
 renderEntry (Entry w) = render w
 
 positionEntry :: Entry -> DisplayRegion -> IO ()
@@ -120,13 +120,13 @@ newCollection = do
                        let e = entries st !! i
                        entryFocusGroup e
 
-        , draw = \this size normAttr focAttr mAttr -> do
+        , draw = \this size ctx -> do
                    st <- getState this
                    case currentEntryNum st of
                      (-1) -> throw EmptyCollection
                      i -> do
                        let e = entries st !! i
-                       renderEntry e size normAttr focAttr mAttr
+                       renderEntry e size ctx
 
         , setPosition =
             \this pos -> do

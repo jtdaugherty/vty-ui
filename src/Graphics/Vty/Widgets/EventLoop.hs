@@ -28,6 +28,7 @@ import Control.Exception
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( Widget
+    , RenderContext
     , renderAndPosition
     , handleKeyEvent
     , getFocusGroup
@@ -39,23 +40,23 @@ data EventLoopError = NoFocusGroup
 
 instance Exception EventLoopError
 
-runUi :: (MonadIO m, Show a) => Widget a -> Attr -> Attr -> m ()
-runUi uiWidget normalAttr focusAttr =
+runUi :: (MonadIO m, Show a) => Widget a -> RenderContext -> m ()
+runUi uiWidget ctx =
     liftIO $ do
       vty <- mkVty
-      runUi' vty uiWidget normalAttr focusAttr `finally` do
+      runUi' vty uiWidget ctx `finally` do
                reserve_display $ terminal vty
                shutdown vty
 
-runUi' :: (Show a) => Vty -> Widget a -> Attr -> Attr -> IO ()
-runUi' vty uiWidget normalAttr focusAttr = do
+runUi' :: (Show a) => Vty -> Widget a -> RenderContext -> IO ()
+runUi' vty uiWidget ctx = do
   mFg <- getFocusGroup uiWidget
   when (isNothing mFg) $ throw NoFocusGroup
 
   let Just fg = mFg
 
   sz <- display_bounds $ terminal vty
-  img <- renderAndPosition uiWidget (DisplayRegion 0 0) sz normalAttr focusAttr Nothing
+  img <- renderAndPosition uiWidget (DisplayRegion 0 0) sz ctx
   update vty $ pic_for_image img
 
   mPos <- getCursorPosition fg
@@ -71,4 +72,4 @@ runUi' vty uiWidget normalAttr focusAttr = do
     (EvKey k mods) -> handleKeyEvent fg k mods >> return ()
     _ -> return ()
 
-  runUi' vty uiWidget normalAttr focusAttr
+  runUi' vty uiWidget ctx

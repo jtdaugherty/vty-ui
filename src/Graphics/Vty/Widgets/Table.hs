@@ -27,6 +27,9 @@ import Data.Typeable
 import Data.Word
     ( Word
     )
+import Data.Maybe
+    ( catMaybes
+    )
 import Data.List
     ( intersperse
     )
@@ -64,6 +67,8 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
+    , RenderContext(..)
+    , getNormalAttr
     , (<~~)
     , render
     , newWidget
@@ -230,14 +235,14 @@ newTable attr specs borderSty = do
         , getGrowVertical = const $ return False
 
         , draw =
-            \this sz normAttr focAttr mAttr -> do
+            \this sz ctx -> do
               rs <- rows <~~ this
 
-              rowImgs <- mapM (\(TableRow r) -> renderRow this sz r normAttr focAttr mAttr) rs
+              rowImgs <- mapM (\(TableRow r) -> renderRow this sz r ctx) rs
 
-              rowBorder <- mkRowBorder this sz mAttr
-              topBottomBorder <- mkTopBottomBorder this sz mAttr
-              sideBorder <- mkSideBorder this mAttr
+              rowBorder <- mkRowBorder this sz ctx
+              topBottomBorder <- mkTopBottomBorder this sz ctx
+              sideBorder <- mkSideBorder this ctx
 
               let body = vert_cat $ intersperse rowBorder rowImgs
                   withTBBorders = vert_cat [topBottomBorder, body, topBottomBorder]
@@ -313,24 +318,24 @@ getCellPadding t columnNumber _ = do
     Nothing -> defaultCellPadding <~~ t
     Just p -> return p
 
-mkRowBorder :: Widget Table -> DisplayRegion -> Maybe Attr -> IO Image
-mkRowBorder t sz mAttr = do
+mkRowBorder :: Widget Table -> DisplayRegion -> RenderContext -> IO Image
+mkRowBorder t sz ctx = do
   bs <- borderStyle <~~ t
 
   if not $ rowBorders bs then
       return empty_image else
-      mkRowBorder_ t sz mAttr
+      mkRowBorder_ t sz ctx
 
 -- Make a row border that matches the width of each row but does not
 -- include outermost edge characters.
-mkRowBorder_ :: Widget Table -> DisplayRegion -> Maybe Attr -> IO Image
-mkRowBorder_ t sz mAttr = do
+mkRowBorder_ :: Widget Table -> DisplayRegion -> RenderContext -> IO Image
+mkRowBorder_ t sz ctx = do
   bs <- borderStyle <~~ t
   bAttr <- borderAttr <~~ t
   specs <- columnSpecs <~~ t
   aw <- autoWidth t sz
 
-  let bAttr' = maybe bAttr id mAttr
+  let bAttr' = head $ catMaybes [ overrideAttr ctx, Just bAttr ]
       szs = map columnSize specs
       intersection = string bAttr' "+"
       imgs = (flip map) szs $ \s ->
@@ -343,32 +348,32 @@ mkRowBorder_ t sz mAttr = do
 
   return $ horiz_cat imgs'
 
-mkTopBottomBorder :: Widget Table -> DisplayRegion -> Maybe Attr -> IO Image
-mkTopBottomBorder t sz mAttr = do
+mkTopBottomBorder :: Widget Table -> DisplayRegion -> RenderContext -> IO Image
+mkTopBottomBorder t sz ctx = do
   bs <- borderStyle <~~ t
 
   if edgeBorders bs then
-      mkRowBorder_ t sz mAttr else
+      mkRowBorder_ t sz ctx else
       return empty_image
 
 -- Make vertical side borders for the table, including row border
 -- intersections if necessary.
-mkSideBorder :: Widget Table -> Maybe Attr -> IO Image
-mkSideBorder t mAttr = do
+mkSideBorder :: Widget Table -> RenderContext -> IO Image
+mkSideBorder t ctx = do
   bs <- borderStyle <~~ t
 
   if edgeBorders bs then
-      mkSideBorder_ t mAttr else
+      mkSideBorder_ t ctx else
       return empty_image
 
-mkSideBorder_ :: Widget Table -> Maybe Attr -> IO Image
-mkSideBorder_ t mAttr = do
+mkSideBorder_ :: Widget Table -> RenderContext -> IO Image
+mkSideBorder_ t ctx = do
   bs <- borderStyle <~~ t
   bAttr <- borderAttr <~~ t
   rs <- rows <~~ t
 
   let intersection = string bAttr' "+"
-      bAttr' = maybe bAttr id mAttr
+      bAttr' = head $ catMaybes [ overrideAttr ctx, Just bAttr ]
 
   rowHeights <- forM rs $ \(TableRow row) -> do
                     hs <- forM row $ \cell ->
@@ -488,12 +493,12 @@ addRow t row = do
   updateWidgetState t $ \s ->
       s { rows = rows s ++ [TableRow cells] }
 
-renderCell :: DisplayRegion -> TableCell -> Attr -> Attr -> Maybe Attr -> IO Image
-renderCell region EmptyCell normAttr focAttr mAttr = do
+renderCell :: DisplayRegion -> TableCell -> RenderContext -> IO Image
+renderCell region EmptyCell ctx = do
   w <- simpleText def_attr ""
-  render w region normAttr focAttr mAttr
-renderCell region (TableCell w _ _) normAttr focAttr mAttr =
-    render w region normAttr focAttr mAttr
+  render w region ctx
+renderCell region (TableCell w _ _) ctx =
+    render w region ctx
 
 colBorders :: BorderStyle -> Bool
 colBorders (BorderPartial fs) = Columns `elem` fs
@@ -513,16 +518,15 @@ rowBorders _ = False
 rowHeight :: [Image] -> Word
 rowHeight = maximum . map image_height
 
-renderRow :: Widget Table -> DisplayRegion -> [TableCell] -> Attr -> Attr
-          -> Maybe Attr -> IO Image
-renderRow tbl sz cells normAttr focAttr mAttr = do
+renderRow :: Widget Table -> DisplayRegion -> [TableCell] -> RenderContext -> IO Image
+renderRow tbl sz cells ctx = do
   specs <- columnSpecs <~~ tbl
   borderSty <- borderStyle <~~ tbl
   bAttr <- borderAttr <~~ tbl
   aw <- autoWidth tbl sz
 
   let sizes = map columnSize specs
-      att = maybe normAttr id mAttr
+      att = getNormalAttr ctx
 
   cellImgs <-
       forM (zip cells sizes) $ \(cellW, sizeSpec) ->
@@ -532,7 +536,7 @@ renderRow tbl sz cells normAttr focAttr mAttr = do
                               Fixed n -> toEnum n
                               Auto -> aw
 
-            img <- renderCell cellSz cellW normAttr focAttr mAttr
+            img <- renderCell cellSz cellW ctx
             -- Right-pad the image if it isn't big enough to fill the
             -- cell.
             case compare (image_width img) (region_width cellSz) of
@@ -548,7 +552,7 @@ renderRow tbl sz cells normAttr focAttr mAttr = do
                              img <-> char_fill att ' ' (image_width img) (maxHeight - image_height img)
 
   -- If we need to draw borders in between columns, do that.
-  let bAttr' = maybe bAttr id mAttr
+  let bAttr' = head $ catMaybes [ overrideAttr ctx, Just bAttr ]
       withBorders = case colBorders borderSty of
                       False -> cellImgsBottomPadded
                       True -> intersperse (char_fill bAttr' '|' 1 maxHeight) cellImgsBottomPadded

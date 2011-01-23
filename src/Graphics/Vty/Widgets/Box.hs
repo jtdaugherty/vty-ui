@@ -16,6 +16,8 @@ import Control.Monad.Trans
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
+    , RenderContext
+    , getNormalAttr
     , newWidget
     , updateWidget
     , render
@@ -31,7 +33,6 @@ import Graphics.Vty.Widgets.Core
     )
 import Graphics.Vty
     ( DisplayRegion
-    , Attr
     , Image
     , char_fill
     , region_width
@@ -120,15 +121,15 @@ box o spacing a b = do
               if handled then return True else
                   handleKeyEvent ch2 key mods
 
-        , draw = \this s normAttr focAttr mAttr -> do
+        , draw = \this s ctx -> do
                    st@(Box orientation _ _ _) <- getState this
 
                    case orientation of
                      Vertical ->
-                         renderBox s normAttr focAttr mAttr st growVertical growVertical region_height
+                         renderBox s ctx st growVertical growVertical region_height
                                    image_height withHeight
                      Horizontal ->
-                         renderBox s normAttr focAttr mAttr st growHorizontal growHorizontal region_width
+                         renderBox s ctx st growHorizontal growHorizontal region_width
                                    image_width withWidth
 
         , setPosition =
@@ -158,9 +159,7 @@ setBoxSpacing wRef spacing =
 -- layout algorithm.
 renderBox :: (Show a, Show b) =>
              DisplayRegion
-          -> Attr
-          -> Attr
-          -> Maybe Attr
+          -> RenderContext
           -> Box a b
           -> (Widget a -> IO Bool) -- growth comparison function
           -> (Widget b -> IO Bool) -- growth comparison function
@@ -168,17 +167,17 @@ renderBox :: (Show a, Show b) =>
           -> (Image -> Word) -- image dimension fetch function
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
           -> IO Image
-renderBox s normAttr focAttr mAttr this growFirst growSecond regDimension renderDimension withDim = do
+renderBox s ctx this growFirst growSecond regDimension renderDimension withDim = do
   let Box orientation spacing first second = this
       actualSpace = s `withDim` (max (regDimension s - toEnum spacing) 0)
 
       renderOrdered a b = do
-        a_img <- render a actualSpace normAttr focAttr mAttr
+        a_img <- render a actualSpace ctx
 
         let remaining = regDimension actualSpace - renderDimension a_img
             s' = actualSpace `withDim` remaining
 
-        b_img <- render b s' normAttr focAttr mAttr
+        b_img <- render b s' ctx
 
         return $ if renderDimension a_img >= regDimension actualSpace
                  then [a_img, empty_image]
@@ -189,8 +188,8 @@ renderBox s normAttr focAttr mAttr this growFirst growSecond regDimension render
             half' = if regDimension actualSpace `mod` 2 == 0
                     then half
                     else half `withDim` (regDimension half + 1)
-        first_img <- render first half normAttr focAttr mAttr
-        second_img <- render second half' normAttr focAttr mAttr
+        first_img <- render first half ctx
+        second_img <- render second half' ctx
         return [first_img, second_img]
 
       cat = case orientation of
@@ -207,7 +206,7 @@ renderBox s normAttr focAttr mAttr this growFirst growSecond regDimension render
                                   images <- renderOrdered second first
                                   return $ reverse images
 
-  let spAttr = maybe normAttr id mAttr
+  let spAttr = getNormalAttr ctx
       spacer = case spacing of
                  0 -> empty_image
                  _ -> case orientation of

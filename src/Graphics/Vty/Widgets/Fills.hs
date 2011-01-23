@@ -6,6 +6,9 @@ module Graphics.Vty.Widgets.Fills
     )
 where
 
+import Data.Maybe
+    ( catMaybes
+    )
 import Control.Monad.Trans
     ( MonadIO
     )
@@ -18,6 +21,7 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
+    , RenderContext(..)
     , newWidget
     , updateWidget
     , getState
@@ -35,9 +39,12 @@ vFill att c = do
       w { state = VFill att c
         , getGrowHorizontal = const $ return False
         , getGrowVertical = const $ return True
-        , draw = \this s _ _ mAttr -> do
+        , draw = \this s ctx -> do
                    VFill attr ch <- getState this
-                   let attr' = maybe attr id mAttr
+                   let attr' = head $ catMaybes [ overrideAttr ctx
+                                                , Just attr
+                                                , Just $ normalAttr ctx
+                                                ]
                    return $ char_fill attr' ch (region_width s) (region_height s)
         }
   return wRef
@@ -54,9 +61,12 @@ hFill att c h = do
       w { state = HFill att c h
         , getGrowHorizontal = const $ return True
         , getGrowVertical = const $ return False
-        , draw = \this s _ _ mAttr -> do
+        , draw = \this s ctx -> do
                    HFill attr ch height <- getState this
-                   let attr' = maybe attr id mAttr
+                   let attr' = head $ catMaybes [ overrideAttr ctx
+                                                , Just attr
+                                                , Just $ normalAttr ctx
+                                                ]
                    return $ char_fill attr' ch (region_width s) (toEnum height)
         }
   return wRef

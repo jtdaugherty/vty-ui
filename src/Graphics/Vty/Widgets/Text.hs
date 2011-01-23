@@ -28,6 +28,7 @@ import Control.Monad.Trans
     )
 import Data.Maybe
     ( isJust
+    , catMaybes
     )
 import Graphics.Vty
     ( Attr
@@ -43,6 +44,7 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
+    , RenderContext(overrideAttr)
     , newWidget
     , updateWidget
     , updateWidgetState
@@ -153,9 +155,9 @@ textWidget format t = do
         , getGrowHorizontal = const $ return False
         , getGrowVertical = const $ return False
         , draw =
-            \this size _ _ mAttr -> do
+            \this size ctx -> do
               ft <- getState this
-              return $ renderText (text ft) (formatter ft) size mAttr
+              return $ renderText (text ft) (formatter ft) size ctx
         }
   return wRef
 
@@ -164,8 +166,8 @@ setText wRef attr s =
     updateWidgetState wRef $ \st -> st { text = prepareText attr s }
 
 -- |Low-level text-rendering routine.
-renderText :: Text -> Formatter -> DisplayRegion -> Maybe Attr -> Image
-renderText t format sz mAttr =
+renderText :: Text -> Formatter -> DisplayRegion -> RenderContext -> Image
+renderText t format sz ctx =
     if region_height sz == 0
     then nullImg
          else if null ls || all null ls
@@ -174,8 +176,8 @@ renderText t format sz mAttr =
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
-      attr' = maybe (defaultAttr newText) id mAttr
-      tokenAttr tok = maybe (tokenAnnotation tok) id mAttr
+      attr' = head $ catMaybes [ overrideAttr ctx, Just $ defaultAttr newText ]
+      tokenAttr tok = head $ catMaybes [ overrideAttr ctx, Just $ tokenAnnotation tok ]
 
       lineImgs = map mkLineImg ls
       ls = map truncateLine $ tokens newText

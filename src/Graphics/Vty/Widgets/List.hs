@@ -77,6 +77,7 @@ import Graphics.Vty.Widgets.Core
     , (<~)
     , (<~~)
     , HasNormalAttr(..)
+    , RenderContext(..)
     , render
     , newWidget
     , updateWidget
@@ -109,7 +110,7 @@ type ListItem a b = (a, Widget b)
 -- refer to the visible representations of the list contents, and the
 -- /widget type/ @b@, the type of widgets used to represent the list
 -- visually.
-data List a b = List { normalAttr :: Maybe Attr
+data List a b = List { listNormalAttr :: Maybe Attr
                      , selectedAttr :: Attr
                      , selectedIndex :: Int
                      -- ^The currently selected list index.
@@ -130,7 +131,7 @@ data List a b = List { normalAttr :: Maybe Attr
 
 instance Show (List a b) where
     show lst = concat [ "List { "
-                      , "normalAttr = ", show $ normalAttr lst
+                      , "listNormalAttr = ", show $ listNormalAttr lst
                       , ", selectedAttr = ", show $ selectedAttr lst
                       , ", selectedIndex = ", show $ selectedIndex lst
                       , ", scrollTopIndex = ", show $ scrollTopIndex lst
@@ -142,7 +143,7 @@ instance Show (List a b) where
 
 instance HasNormalAttr (Widget (List a b)) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { normalAttr = Just a }
+        updateWidgetState wRef $ \s -> s { listNormalAttr = Just a }
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
@@ -150,7 +151,7 @@ mkList :: Attr -- ^The attribute of the selected item
        -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
        -> List a b
 mkList selAttr f =
-    List { normalAttr = Nothing
+    List { listNormalAttr = Nothing
          , selectedAttr = selAttr
          , selectedIndex = -1
          , scrollTopIndex = 0
@@ -229,7 +230,7 @@ addToList list key = do
            -- the result, assuming that all list widgets will have the
            -- same size.  If you violate this, you'll have interesting
            -- results!
-           img <- render w (DisplayRegion 100 100) def_attr def_attr Nothing
+           img <- render w (DisplayRegion 100 100) $ RenderContext def_attr def_attr Nothing
            return $ fromEnum $ image_height img
          _ -> itemHeight <~~ list
 
@@ -305,7 +306,7 @@ listWidget list = do
               return $ Just (pos `withWidth` newCol `withHeight` newRow)
 
         , draw =
-            \this sz normAttr focAttr mAttr -> do
+            \this sz ctx -> do
               -- Get the item height *before* a potential resize, then
               -- get the list state below, after the resize.
               h <- itemHeight <~~ this
@@ -316,7 +317,7 @@ listWidget list = do
                    resize (max 1 ((fromEnum $ region_height sz) `div` h)) this
 
               listData <- getState this
-              renderListWidget listData sz normAttr focAttr mAttr
+              renderListWidget listData sz ctx
 
         -- XXX!!! define setPosition to set position of visible
         -- widgets in list
@@ -330,20 +331,20 @@ listKeyEvent w KPageUp _ = pageUp w >> return True
 listKeyEvent w KPageDown _ = pageDown w >> return True
 listKeyEvent _ _ _ = return False
 
-renderListWidget :: (Show b) =>
-                    List a b -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> IO Image
-renderListWidget list s normAttr focAttr mAttr = do
+renderListWidget :: (Show b) => List a b -> DisplayRegion -> RenderContext -> IO Image
+renderListWidget list s ctx = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
+      defaultAttr = head $ catMaybes [ overrideAttr ctx
+                                     , listNormalAttr list
+                                     , Just $ normalAttr ctx
+                                     ]
 
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
         let att = if sel
                   then (selectedAttr list)
-                  else head $ catMaybes [ mAttr
-                                        , normalAttr list
-                                        , Just normAttr
-                                        ]
-        img <- render w s normAttr focAttr $ Just att
+                  else defaultAttr
+        img <- render w s $ ctx { overrideAttr = Just att }
 
         let actualHeight = min (region_height s) (toEnum $ itemHeight list)
             img' = img <|> char_fill att ' '
@@ -353,11 +354,10 @@ renderListWidget list s normAttr focAttr mAttr = do
         return (img':imgs)
 
   -- XXX this is probably incorrect for widgets with height > 1
-  let filler = char_fill attr ' ' (region_width s) fill_height
+  let filler = char_fill defaultAttr ' ' (region_width s) fill_height
       fill_height = if scrollWindowSize list == 0
                     then region_height s
                     else toEnum $ scrollWindowSize list - length items
-      attr = head $ catMaybes [ mAttr, normalAttr list, Just normAttr ]
 
   visible_imgs <- renderVisible items
 

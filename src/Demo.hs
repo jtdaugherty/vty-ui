@@ -20,7 +20,7 @@ data AppState =
 -- Visual attributes.
 titleAttr = bright_white `on` blue
 editAttr = white `on` black
-focusAttr = black `on` green
+focAttr = black `on` green
 boxAttr = bright_yellow `on` black
 bodyAttr = bright_green `on` black
 selAttr = black `on` yellow
@@ -163,4 +163,6 @@ main = do
   updateFooterNums st (theList st)
 
   -- Enter the event loop.
-  runUi (uis st) bodyAttr focusAttr
+  runUi (uis st) $ defaultContext { normalAttr = bodyAttr
+                                  , focusAttr = focAttr
+                                  }

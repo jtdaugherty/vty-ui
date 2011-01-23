@@ -9,10 +9,11 @@ import Graphics.Vty.Widgets.All
 import qualified Data.ByteString.Char8 as BS8
 
 -- Visual attributes.
---bg = blue
-bg = white
-borderAttr = black `on` bg
-focusAttr = black `on` yellow
+fg = white
+bg = black
+
+borderAttr = yellow `on` bg
+focAttr = black `on` yellow
 bodyAttr = blue `on` bg
 headerAttr = bright_yellow `on` bg
 msgAttr = blue `on` bg
@@ -58,7 +59,7 @@ main = do
   edit1Header <- simpleText headerAttr ""
   edit2Header <- simpleText headerAttr ""
 
-  lst <- listWidget $ mkList focusAttr (simpleText bodyAttr)
+  lst <- listWidget $ mkList focAttr (simpleText bodyAttr)
 
   selector <- vLimit 3 lst
   listHeader <- simpleText bodyAttr ""
@@ -92,8 +93,8 @@ main = do
   setCheckboxChecked r1
   setCheckboxChecked r3
 
-  fg <- newFocusGroup
-  fg `onKeyPressed` \_ k _ -> do
+  fgr <- newFocusGroup
+  fgr `onKeyPressed` \_ k _ -> do
          case k of
            KEsc -> exitSuccess
            _ -> return False
@@ -104,13 +105,15 @@ main = do
   addToList lst "Stuff"
   addToList lst "Things"
 
-  addToFocusGroup fg r1
-  addToFocusGroup fg r2
-  addToFocusGroup fg r3
-  addToFocusGroup fg edit1
-  addToFocusGroup fg edit2
-  addToFocusGroup fg lst
-  setFocusGroup ui fg
+  addToFocusGroup fgr r1
+  addToFocusGroup fgr r2
+  addToFocusGroup fgr r3
+  addToFocusGroup fgr edit1
+  addToFocusGroup fgr edit2
+  addToFocusGroup fgr lst
+  setFocusGroup ui fgr
 
   -- Enter the event loop.
-  runUi ui (black `on` white) focusAttr
+  runUi ui $ defaultContext { focusAttr = focAttr
+                            , normalAttr = fg `on` bg
+                            }

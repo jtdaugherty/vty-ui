@@ -22,6 +22,7 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
+    , getNormalAttr
     , render
     , newWidget
     , updateWidget
@@ -48,12 +49,12 @@ rightAligned chRef = do
         , getGrowVertical = const $ growVertical chRef
         , state = RightAligned chRef
         , draw =
-            \this sz normAttr focAttr mAttr ->
+            \this sz ctx ->
                 do
                   RightAligned ch <- getState this
-                  img <- render ch sz normAttr focAttr mAttr
+                  img <- render ch sz ctx
                   let diff = region_width sz - image_width img
-                      att = maybe normAttr id mAttr
+                      att = getNormalAttr ctx
                       fill = if diff > 0
                              then char_fill att ' ' diff (image_height img)
                              else empty_image

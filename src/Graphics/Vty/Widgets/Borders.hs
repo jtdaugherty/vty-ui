@@ -16,6 +16,9 @@ where
 import Control.Monad.Trans
     ( MonadIO
     )
+import Data.Maybe
+    ( catMaybes
+    )
 import Graphics.Vty
     ( Attr
     , DisplayRegion(DisplayRegion)
@@ -31,6 +34,7 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
+    , RenderContext(..)
     , newWidget
     , updateWidget
     , growVertical
@@ -65,9 +69,9 @@ hBorderWith ch att = do
       w { state = HBorder att ch
         , getGrowVertical = const $ return False
         , getGrowHorizontal = const $ return True
-        , draw = \this s _ _ mAttr -> do
+        , draw = \this s ctx -> do
                    HBorder attr _ <- getState this
-                   let attr' = maybe attr id mAttr
+                   let attr' = head $ catMaybes [ overrideAttr ctx, Just attr ]
                    return $ char_fill attr' ch (region_width s) 1
         }
   return wRef
@@ -88,9 +92,9 @@ vBorderWith ch att = do
       w { state = VBorder att ch
         , getGrowHorizontal = const $ return False
         , getGrowVertical = const $ return True
-        , draw = \this s _ _ mAttr -> do
+        , draw = \this s ctx -> do
                    VBorder attr _ <- getState this
-                   let attr' = maybe attr id mAttr
+                   let attr' = head $ catMaybes [ overrideAttr ctx, Just attr ]
                    return $ char_fill attr' ch 1 (region_height s)
         }
   return wRef
@@ -119,9 +123,9 @@ bordered att child = do
               handleKeyEvent ch key mods
 
         , draw =
-            \this s normAttr focAttr mAttr -> do
+            \this s ctx -> do
               st <- getState this
-              drawBordered st s normAttr focAttr mAttr
+              drawBordered st s ctx
 
         , setPosition =
             \this pos -> do
@@ -135,17 +139,17 @@ bordered att child = do
   return wRef
 
 drawBordered :: (Show a) =>
-                Bordered a -> DisplayRegion -> Attr -> Attr -> Maybe Attr -> IO Image
-drawBordered this s normAttr focAttr mAttr = do
+                Bordered a -> DisplayRegion -> RenderContext -> IO Image
+drawBordered this s ctx = do
   let Bordered attr child = this
-      attr' = maybe attr id mAttr
+      attr' = head $ catMaybes [ overrideAttr ctx, Just attr ]
 
   -- Render the contained widget with enough room to draw borders.
   -- Then, use the size of the rendered widget to constrain the space
   -- used by the (expanding) borders.
   let constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
 
-  childImage <- render child constrained normAttr focAttr mAttr
+  childImage <- render child constrained ctx
 
   let adjusted = DisplayRegion (image_width childImage + 2)
                  (image_height childImage)
@@ -153,10 +157,10 @@ drawBordered this s normAttr focAttr mAttr = do
 
   hb <- hBorder attr'
   topWidget <- hBox corner =<< hBox hb corner
-  topBottom <- render topWidget adjusted normAttr focAttr mAttr
+  topBottom <- render topWidget adjusted ctx
 
   vb <- vBorder attr'
-  leftRight <- render vb adjusted normAttr focAttr mAttr
+  leftRight <- render vb adjusted ctx
 
   let middle = horiz_cat [leftRight, childImage, leftRight]
 
