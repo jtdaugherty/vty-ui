@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification #-}
+{-# LANGUAGE ExistentialQuantification, FlexibleInstances, TypeSynonymInstances #-}
 module Graphics.Vty.Widgets.Padding
     ( Padded
     , Padding
@@ -19,6 +19,9 @@ where
 import Data.Word
     ( Word
     )
+import Data.Maybe
+    ( catMaybes
+    )
 import Data.Monoid
     ( Monoid(..)
     )
@@ -26,7 +29,8 @@ import Control.Monad.Trans
     ( MonadIO
     )
 import Graphics.Vty
-    ( (<->)
+    ( Attr
+    , (<->)
     , (<|>)
     , char_fill
     , image_width
@@ -37,8 +41,10 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
+    , HasNormalAttr(..)
     , newWidget
     , updateWidget
+    , updateWidgetState
     , growVertical
     , growHorizontal
     , handleKeyEvent
@@ -53,7 +59,7 @@ import Graphics.Vty.Widgets.Core
 -- Top, right, bottom, left.
 data Padding = Padding Int Int Int Int
 
-data Padded = forall a. Padded (Widget a) Padding
+data Padded = forall a. Padded (Widget a) Padding (Maybe Attr)
 
 instance Monoid Padding where
     mempty = Padding 0 0 0 0
@@ -68,6 +74,10 @@ class Paddable a where
 
 instance Paddable Padding where
     pad p1 p2 = p1 +++ p2
+
+instance HasNormalAttr (Widget Padded) where
+    setNormalAttribute wRef a =
+        updateWidgetState wRef $ \(Padded w p _) -> Padded w p $ Just a
 
 leftPadding :: Padding -> Word
 leftPadding (Padding _ _ _ l) = toEnum l
@@ -110,7 +120,7 @@ padded :: (MonadIO m) => Widget a -> Padding -> m (Widget Padded)
 padded ch padding = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Padded ch padding
+      w { state = Padded ch padding Nothing
 
         , getGrowVertical = growVertical ch
         , getGrowHorizontal = growHorizontal ch
@@ -118,7 +128,7 @@ padded ch padding = do
         , draw =
             \this sz normAttr focAttr mAttr ->
                 do
-                  Padded child p <- getState this
+                  Padded child p att <- getState this
 
                   -- Compute constrained space based on padding
                   -- settings.
@@ -127,7 +137,7 @@ padded ch padding = do
                       -- XXX would be better to set an attribute on
                       -- the padding instead of falling back to the
                       -- default
-                      attr = maybe normAttr id mAttr
+                      attr = head $ catMaybes [ mAttr, att, Just normAttr ]
 
                   -- Render child.
                   img <- render child constrained normAttr focAttr mAttr
@@ -142,7 +152,7 @@ padded ch padding = do
 
         , setPosition =
             \this pos -> do
-              Padded child p <- getState this
+              Padded child p _ <- getState this
 
               -- Considering left and top padding, adjust position and
               -- set on child.
