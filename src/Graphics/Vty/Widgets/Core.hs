@@ -20,6 +20,7 @@ module Graphics.Vty.Widgets.Core
     -- ** Miscellaneous
     , withWidth
     , withHeight
+    , HasNormalAttr(..)
 
     , growVertical
     , growHorizontal
@@ -85,6 +86,9 @@ import Graphics.Vty
     , image_height
     , empty_image
     )
+
+class HasNormalAttr a where
+    setNormalAttribute :: (MonadIO m) => a -> Attr -> m ()
 
 -- |The type of user interface widgets.  A 'Widget' provides several
 -- properties:

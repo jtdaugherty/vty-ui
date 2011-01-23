@@ -45,8 +45,7 @@ import Data.Typeable
     ( Typeable
     )
 import Data.Maybe
-    ( isJust
-    , fromJust
+    ( catMaybes
     )
 import Control.Exception
     ( Exception
@@ -109,7 +108,7 @@ type ListItem a b = (a, Widget b)
 -- refer to the visible representations of the list contents, and the
 -- /widget type/ @b@, the type of widgets used to represent the list
 -- visually.
-data List a b = List { normalAttr :: Attr
+data List a b = List { normalAttr :: Maybe Attr
                      , selectedAttr :: Attr
                      , selectedIndex :: Int
                      -- ^The currently selected list index.
@@ -130,12 +129,11 @@ data List a b = List { normalAttr :: Attr
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
-mkList :: Attr -- ^The attribute of normal, non-selected items
-       -> Attr -- ^The attribute of the selected item
+mkList :: Attr -- ^The attribute of the selected item
        -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
        -> List a b
-mkList normAttr selAttr f =
-    List { normalAttr = normAttr
+mkList selAttr f =
+    List { normalAttr = Nothing
          , selectedAttr = selAttr
          , selectedIndex = -1
          , scrollTopIndex = 0
@@ -319,11 +317,12 @@ renderListWidget list s defAttr mAttr = do
 
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
-        let Just att = if sel
-                       then (Just $ selectedAttr list)
-                       else if isJust mAttr
-                            then mAttr
-                            else (Just $ normalAttr list)
+        let att = if sel
+                  then (selectedAttr list)
+                  else head $ catMaybes [ mAttr
+                                        , normalAttr list
+                                        , Just defAttr
+                                        ]
         img <- render w s defAttr $ Just att
 
         let actualHeight = min (region_height s) (toEnum $ itemHeight list)
@@ -338,7 +337,7 @@ renderListWidget list s defAttr mAttr = do
       fill_height = if scrollWindowSize list == 0
                     then region_height s
                     else toEnum $ scrollWindowSize list - length items
-      attr = if isJust mAttr then fromJust mAttr else normalAttr list
+      attr = head $ catMaybes [ mAttr, normalAttr list, Just defAttr ]
 
   visible_imgs <- renderVisible items
 
@@ -347,12 +346,11 @@ renderListWidget list s defAttr mAttr = do
 -- |A convenience function to create a new list using 'String's as the
 -- internal identifiers and 'Text' widgets to represent those strings.
 mkSimpleList :: (MonadIO m) =>
-                Attr -- ^The attribute of normal, non-selected items
-             -> Attr -- ^The attribute of the selected item
+                Attr -- ^The attribute of the selected item
              -> [String] -- ^The list items
              -> m (Widget (List String FormattedText))
-mkSimpleList normAttr selAttr labels = do
-  list <- listWidget $ mkList normAttr selAttr (simpleText def_attr)
+mkSimpleList selAttr labels = do
+  list <- listWidget $ mkList selAttr (simpleText def_attr)
   mapM_ (addToList list) labels
   return list
 

@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Graphics.Vty.Widgets.Edit
     ( Edit
     , editWidget
@@ -11,6 +12,9 @@ module Graphics.Vty.Widgets.Edit
     )
 where
 
+import Data.Maybe
+    ( catMaybes
+    )
 import Control.Monad
     ( when
     )
@@ -32,6 +36,7 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
+    , HasNormalAttr(..)
     , (<~)
     , (<~~)
     , getPhysicalPosition
@@ -44,7 +49,7 @@ import Graphics.Vty.Widgets.Core
 
 data Edit = Edit { currentText :: String
                  , cursorPosition :: Int
-                 , normalAttr :: Attr
+                 , normalAttr :: Maybe Attr
                  , focusAttr :: Attr
                  , displayStart :: Int
                  , displayWidth :: Int
@@ -53,13 +58,17 @@ data Edit = Edit { currentText :: String
                  , cursorMoveHandler :: Widget Edit -> Int -> IO ()
                  }
 
-editWidget :: (MonadIO m) => Attr -> Attr -> m (Widget Edit)
-editWidget normAtt focAtt = do
+instance HasNormalAttr (Widget Edit) where
+    setNormalAttribute wRef a =
+        updateWidgetState wRef $ \s -> s { normalAttr = Just a }
+
+editWidget :: (MonadIO m) => Attr -> m (Widget Edit)
+editWidget focAtt = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = Edit { currentText = ""
                        , cursorPosition = 0
-                       , normalAttr = normAtt
+                       , normalAttr = Nothing
                        , focusAttr = focAtt
                        , displayStart = 0
                        , displayWidth = 0
@@ -82,14 +91,14 @@ editWidget normAtt focAtt = do
                   return Nothing
 
         , draw =
-            \this size _ mAttr -> do
+            \this size defAttr mAttr -> do
               setDisplayWidth this (fromEnum $ region_width size)
               st <- getState this
 
               let truncated = take (displayWidth st)
                               (drop (displayStart st) (currentText st))
 
-                  attr = maybe (normalAttr st) id mAttr
+                  attr = head $ catMaybes [mAttr, normalAttr st, Just defAttr]
 
               isFocused <- focused <~ this
               let fAttr = (if isFocused then focusAttr st else attr) `with_style` underline

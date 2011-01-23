@@ -11,7 +11,7 @@ import qualified Data.ByteString.Char8 as BS8
 -- Visual attributes.
 borderAttr = blue `on` black
 editAttr = white `on` black
-focusAttr = bright_yellow `on` blue
+focusAttr = black `on` yellow
 bodyAttr = white `on` black
 headerAttr = bright_yellow `on` black
 msgAttr = bright_white `on` black
@@ -39,9 +39,9 @@ main = do
 
   ui <- centered =<< hLimit 70 mainBox
 
-  r1 <- newCheckbox "Cake" bodyAttr focusAttr
-  r2 <- newCheckbox "Death" bodyAttr focusAttr
-  r3 <- newCheckbox "Checkbox" bodyAttr focusAttr
+  r1 <- newCheckbox "Cake" focusAttr
+  r2 <- newCheckbox "Death" focusAttr
+  r3 <- newCheckbox "Checkbox" focusAttr
   radioHeader <- simpleText headerAttr ""
   r3Header <- simpleText headerAttr ""
 
@@ -49,13 +49,13 @@ main = do
   addToRadioGroup rg r1
   addToRadioGroup rg r2
 
-  edit1 <- editWidget editAttr focusAttr
-  edit1Header <- simpleText headerAttr ""
+  edit1 <- editWidget focusAttr
+  edit2 <- editWidget focusAttr
 
-  edit2 <- editWidget editAttr focusAttr
+  edit1Header <- simpleText headerAttr ""
   edit2Header <- simpleText headerAttr ""
 
-  lst <- listWidget $ mkList bodyAttr focusAttr (simpleText bodyAttr)
+  lst <- listWidget $ mkList focusAttr (simpleText bodyAttr)
 
   selector <- vLimit 3 lst
   listHeader <- simpleText bodyAttr ""

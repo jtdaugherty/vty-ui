@@ -47,11 +47,11 @@ buildUi2 appst =
 -- Construct the application state using the message map.
 mkAppState :: IO AppState
 mkAppState = do
-  lw <- mkSimpleList bodyAttr selAttr []
+  lw <- mkSimpleList selAttr []
   b <- textWidget wrap $ prepareText bodyAttr ""
   f1 <- simpleText titleAttr ""
   f2 <- simpleText titleAttr "[]"
-  e <- editWidget editAttr editFocusAttr
+  e <- editWidget editFocusAttr
   ll <- vLimit 5 lw
 
   c <- newCollection

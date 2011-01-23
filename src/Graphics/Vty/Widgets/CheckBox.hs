@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Graphics.Vty.Widgets.CheckBox
     ( CheckBox
     , RadioGroup
@@ -22,6 +23,7 @@ import Data.IORef
 import Data.Maybe
     ( isJust
     , fromJust
+    , catMaybes
     )
 import Control.Monad
     ( when
@@ -40,6 +42,7 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
+    , HasNormalAttr(..)
     , (<~)
     , (<~~)
     , getState
@@ -88,8 +91,12 @@ radioGroupSetCurrent wRef = do
          liftIO $ writeIORef rg $ rgData { currentlySelected = Just wRef }
          setChecked__ wRef True
 
+instance HasNormalAttr (Widget CheckBox) where
+    setNormalAttribute wRef a =
+        updateWidgetState wRef $ \s -> s { normalAttr = Just a }
+
 data CheckBox = CheckBox { isChecked :: Bool
-                         , normalAttr :: Attr
+                         , normalAttr :: Maybe Attr
                          , focusedAttr :: Attr
                          , checkedChar :: Char
                          , checkboxLabel :: String
@@ -97,12 +104,12 @@ data CheckBox = CheckBox { isChecked :: Bool
                          , radioGroup :: Maybe RadioGroup
                          }
 
-newCheckbox :: (MonadIO m) => String -> Attr -> Attr -> m (Widget CheckBox)
-newCheckbox label normAttr focAttr = do
+newCheckbox :: (MonadIO m) => String -> Attr -> m (Widget CheckBox)
+newCheckbox label focAttr = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = CheckBox { isChecked = False
-                           , normalAttr = normAttr
+                           , normalAttr = Nothing
                            , focusedAttr = focAttr
                            , checkedChar = 'x'
                            , checkboxLabel = label
@@ -116,20 +123,20 @@ newCheckbox label normAttr focAttr = do
 
         , keyEventHandler = radioKeyEvent
         , draw =
-            \this sz _ mAttr -> do
+            \this sz defAttr mAttr -> do
               f <- focused <~ this
               st <- getState this
 
-              let attr = if isJust mAttr
-                         then fromJust mAttr
-                         else if f
-                              then focusedAttr st
-                              else normalAttr st
+              let attr = head $ catMaybes [ mAttr, normalAttr st, Just defAttr ]
+                  fAttr = if f
+                          then focusedAttr st
+                          else attr
+
                   ch = if isChecked st then checkedChar st else ' '
 
                   s = ['[', ch, ']', ' '] ++ (checkboxLabel st)
 
-              return $ string attr $ take (fromEnum $ region_width sz) s
+              return $ string fAttr $ take (fromEnum $ region_width sz) s
         }
   return wRef
 
