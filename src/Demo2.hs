@@ -9,15 +9,15 @@ import Graphics.Vty.Widgets.All
 import qualified Data.ByteString.Char8 as BS8
 
 -- Visual attributes.
-borderAttr = blue `on` black
-editAttr = white `on` black
+bg = blue
+borderAttr = white `on` bg
 focusAttr = black `on` yellow
-bodyAttr = white `on` black
-headerAttr = bright_yellow `on` black
-msgAttr = bright_white `on` black
+bodyAttr = white `on` bg
+headerAttr = bright_yellow `on` bg
+msgAttr = bright_white `on` bg
 
 color :: Formatter
-color = highlight (compile (BS8.pack "<.*>") []) (bright_green `on` black)
+color = highlight (compile (BS8.pack "<.*>") []) (bright_green `on` bg)
 
 main :: IO ()
 main = do
@@ -50,6 +50,8 @@ main = do
   addToRadioGroup rg r2
 
   edit1 <- editWidget
+  setFocusAttribute edit1 (white `on` red)
+
   edit2 <- editWidget
 
   edit1Header <- simpleText headerAttr ""
