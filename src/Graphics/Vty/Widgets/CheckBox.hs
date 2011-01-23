@@ -116,7 +116,7 @@ newCheckbox label normAttr focAttr = do
 
         , keyEventHandler = radioKeyEvent
         , draw =
-            \this sz mAttr -> do
+            \this sz _ mAttr -> do
               f <- focused <~ this
               st <- getState this
 

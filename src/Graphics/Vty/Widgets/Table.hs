@@ -214,10 +214,10 @@ newTable attr specs borderSty = do
         , getGrowVertical = return False
 
         , draw =
-            \this sz mAttr -> do
+            \this sz defAttr mAttr -> do
               rs <- rows <~~ this
 
-              rowImgs <- mapM (\(TableRow r) -> renderRow this sz r mAttr) rs
+              rowImgs <- mapM (\(TableRow r) -> renderRow this sz r defAttr mAttr) rs
 
               rowBorder <- mkRowBorder this sz mAttr
               topBottomBorder <- mkTopBottomBorder this sz mAttr
@@ -472,11 +472,11 @@ addRow t row = do
   updateWidgetState t $ \s ->
       s { rows = rows s ++ [TableRow cells] }
 
-renderCell :: DisplayRegion -> TableCell -> Maybe Attr -> IO Image
-renderCell region EmptyCell mAttr = do
+renderCell :: DisplayRegion -> TableCell -> Attr -> Maybe Attr -> IO Image
+renderCell region EmptyCell defAttr mAttr = do
   w <- simpleText def_attr ""
-  render w region mAttr
-renderCell region (TableCell w _ _) mAttr = render w region mAttr
+  render w region defAttr mAttr
+renderCell region (TableCell w _ _) defAttr mAttr = render w region defAttr mAttr
 
 colBorders :: BorderStyle -> Bool
 colBorders (BorderPartial fs) = Columns `elem` fs
@@ -496,8 +496,8 @@ rowBorders _ = False
 rowHeight :: [Image] -> Word
 rowHeight = maximum . map image_height
 
-renderRow :: Widget Table -> DisplayRegion -> [TableCell] -> Maybe Attr -> IO Image
-renderRow tbl sz cells mAttr = do
+renderRow :: Widget Table -> DisplayRegion -> [TableCell] -> Attr -> Maybe Attr -> IO Image
+renderRow tbl sz cells defAttr mAttr = do
   specs <- columnSpecs <~~ tbl
   borderSty <- borderStyle <~~ tbl
   bAttr <- borderAttr <~~ tbl
@@ -513,13 +513,13 @@ renderRow tbl sz cells mAttr = do
                               Fixed n -> toEnum n
                               Auto -> aw
 
-            img <- renderCell cellSz cellW mAttr
+            img <- renderCell cellSz cellW defAttr mAttr
             -- Right-pad the image if it isn't big enough to fill the
             -- cell.
             case compare (image_width img) (region_width cellSz) of
               EQ -> return img
               LT -> do
-                let att = maybe def_attr id mAttr
+                let att = maybe defAttr id mAttr
                 return $ img <|> char_fill att ' '
                            (region_width cellSz - image_width img)
                            (max (image_height img) 1)

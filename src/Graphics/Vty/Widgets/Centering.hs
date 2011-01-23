@@ -37,7 +37,6 @@ import Graphics.Vty
     , image_height
     , vert_cat
     , horiz_cat
-    , def_attr
     )
 
 data HCentered a = HCentered (Widget a)
@@ -53,12 +52,12 @@ hCentered ch = do
             HCentered child <- ask
             growVertical child
 
-        , draw = \this s mAttr -> do
+        , draw = \this s defAttr mAttr -> do
                    HCentered child <- getState this
-                   img <- render child s mAttr
+                   img <- render child s defAttr mAttr
 
                    -- XXX def_attr can be wrong
-                   let attr' = maybe def_attr id mAttr
+                   let attr' = maybe defAttr id mAttr
                        (half, half') = centered_halves region_width s (image_width img)
 
                    return $ if half > 0
@@ -89,12 +88,12 @@ vCentered ch = do
         , getGrowVertical = return True
         , getGrowHorizontal = growHorizontal ch
 
-        , draw = \this s mAttr -> do
+        , draw = \this s defAttr mAttr -> do
                    VCentered child <- getState this
-                   img <- render child s mAttr
+                   img <- render child s defAttr mAttr
 
                    -- XXX def_attr can be wrong
-                   let attr' = maybe def_attr id mAttr
+                   let attr' = maybe defAttr id mAttr
                        (half, half') = centered_halves region_height s (image_height img)
 
                    return $ if half > 0

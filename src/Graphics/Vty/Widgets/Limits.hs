@@ -51,10 +51,10 @@ hLimit maxWidth child = do
         , getGrowHorizontal = return False
         , getGrowVertical = growVertical child
 
-        , draw = \this s mAttr -> do
+        , draw = \this s defAttr mAttr -> do
                    HLimit width ch <- getState this
                    let region = s `withWidth` fromIntegral (min (toEnum width) (region_width s))
-                   render ch region mAttr
+                   render ch region defAttr mAttr
 
         , setPosition =
             \this pos -> do
@@ -76,10 +76,10 @@ vLimit maxHeight child = do
         , getGrowVertical = return False
         , getGrowHorizontal = growHorizontal child
 
-        , draw = \this s mAttr -> do
+        , draw = \this s defAttr mAttr -> do
                    VLimit height ch <- getState this
                    let region = s `withHeight` fromIntegral (min (toEnum height) (region_height s))
-                   render ch region mAttr
+                   render ch region defAttr mAttr
 
         , setPosition =
             \this pos -> do

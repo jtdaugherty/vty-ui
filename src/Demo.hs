@@ -163,4 +163,4 @@ main = do
   updateFooterNums st (theList st)
 
   -- Enter the event loop.
-  runUi (uis st)
+  runUi (uis st) bodyAttr

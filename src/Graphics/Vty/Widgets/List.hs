@@ -214,7 +214,7 @@ addToList list key = do
            -- the result, assuming that all list widgets will have the
            -- same size.  If you violate this, you'll have interesting
            -- results!
-           img <- render w (DisplayRegion 100 100) Nothing
+           img <- render w (DisplayRegion 100 100) def_attr Nothing
            return $ fromEnum $ image_height img
          _ -> itemHeight <~~ list
 
@@ -290,7 +290,7 @@ listWidget list = do
               return $ Just (pos `withWidth` newCol `withHeight` newRow)
 
         , draw =
-            \this sz mAttr -> do
+            \this sz defAttr mAttr -> do
               h <- itemHeight <~~ this
 
               -- Resize the list based on the available space and the
@@ -299,7 +299,7 @@ listWidget list = do
                    resize (max 1 ((fromEnum $ region_height sz) `div` h)) this
 
               listData <- getState this
-              renderListWidget listData sz mAttr
+              renderListWidget listData sz defAttr mAttr
 
         -- XXX!!! define setPosition to set position of visible
         -- widgets in list
@@ -313,8 +313,8 @@ listKeyEvent w KPageUp _ = pageUp w >> return True
 listKeyEvent w KPageDown _ = pageDown w >> return True
 listKeyEvent _ _ _ = return False
 
-renderListWidget :: List a b -> DisplayRegion -> Maybe Attr -> IO Image
-renderListWidget list s mAttr = do
+renderListWidget :: List a b -> DisplayRegion -> Attr -> Maybe Attr -> IO Image
+renderListWidget list s defAttr mAttr = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
 
       renderVisible [] = return []
@@ -324,7 +324,7 @@ renderListWidget list s mAttr = do
                        else if isJust mAttr
                             then mAttr
                             else (Just $ normalAttr list)
-        img <- render w s $ Just att
+        img <- render w s defAttr $ Just att
 
         let actualHeight = min (region_height s) (toEnum $ itemHeight list)
             img' = img <|> char_fill att ' '

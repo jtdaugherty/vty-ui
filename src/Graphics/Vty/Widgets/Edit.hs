@@ -82,7 +82,7 @@ editWidget normAtt focAtt = do
                   return Nothing
 
         , draw =
-            \this size mAttr -> do
+            \this size _ mAttr -> do
               setDisplayWidth this (fromEnum $ region_width size)
               st <- getState this
 

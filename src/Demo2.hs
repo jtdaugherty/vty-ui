@@ -110,4 +110,4 @@ main = do
   setFocusGroup ui fg
 
   -- Enter the event loop.
-  runUi ui
+  runUi ui (yellow `on` blue)

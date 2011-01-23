@@ -29,7 +29,6 @@ import Graphics.Vty
     ( (<->)
     , (<|>)
     , char_fill
-    , def_attr
     , image_width
     , image_height
     , region_width
@@ -117,7 +116,7 @@ padded ch padding = do
         , getGrowHorizontal = growHorizontal ch
 
         , draw =
-            \this sz mAttr ->
+            \this sz defAttr mAttr ->
                 do
                   Padded child p <- getState this
 
@@ -125,10 +124,13 @@ padded ch padding = do
                   -- settings.
                   let constrained = sz `withWidth` (region_width sz - (leftPadding p + rightPadding p))
                                     `withHeight` (region_height sz - (topPadding p + bottomPadding p))
-                      attr = maybe def_attr id mAttr
+                      -- XXX would be better to set an attribute on
+                      -- the padding instead of falling back to the
+                      -- default
+                      attr = maybe defAttr id mAttr
 
                   -- Render child.
-                  img <- render child constrained mAttr
+                  img <- render child constrained defAttr mAttr
 
                   -- Create padding images.
                   let leftImg = char_fill attr ' ' (leftPadding p) (image_height img)

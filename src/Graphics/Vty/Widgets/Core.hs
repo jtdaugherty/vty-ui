@@ -119,7 +119,7 @@ data WidgetImpl a = WidgetImpl {
     -- |Render the widget with the given dimensions.  The result
     -- /must/ not be larger than the specified dimensions, but may be
     -- smaller.
-    , draw :: Widget a -> DisplayRegion -> Maybe Attr -> IO Image
+    , draw :: Widget a -> DisplayRegion -> Attr -> Maybe Attr -> IO Image
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
@@ -182,18 +182,18 @@ growVertical w = do
   st <- state <~ w
   liftIO $ runReaderT act st
 
-render :: (MonadIO m) => Widget a -> DisplayRegion -> Maybe Attr -> m Image
-render wRef sz overrideAttr =
+render :: (MonadIO m) => Widget a -> DisplayRegion -> Attr -> Maybe Attr -> m Image
+render wRef sz defAttr overrideAttr =
     liftIO $ do
       impl <- readIORef wRef
-      img <- draw impl wRef sz overrideAttr
+      img <- draw impl wRef sz defAttr overrideAttr
       setPhysicalSize wRef $ DisplayRegion (image_width img) (image_height img)
       return img
 
 renderAndPosition :: (MonadIO m) => Widget a -> DisplayRegion -> DisplayRegion
-                  -> Maybe Attr -> m Image
-renderAndPosition wRef pos sz mAttr = do
-  img <- render wRef sz mAttr
+                  -> Attr -> Maybe Attr -> m Image
+renderAndPosition wRef pos sz defAttr mAttr = do
+  img <- render wRef sz defAttr mAttr
   -- Position post-processing depends on the sizes being correct!
   setPhysicalPosition wRef pos
   return img
@@ -369,7 +369,7 @@ newFocusGroup = do
                        handleKeyEvent e key mods
 
         -- Should never be rendered.
-        , draw = \_ _ _ -> return empty_image
+        , draw = \_ _ _ _ -> return empty_image
         }
   return wRef
 

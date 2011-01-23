@@ -60,7 +60,7 @@ data Collection =
                , currentEntryNum :: Int
                }
 
-renderEntry :: (MonadIO m) => Entry -> DisplayRegion -> Maybe Attr -> m Image
+renderEntry :: (MonadIO m) => Entry -> DisplayRegion -> Attr -> Maybe Attr -> m Image
 renderEntry (Entry w) = render w
 
 positionEntry :: Entry -> DisplayRegion -> IO ()
@@ -93,13 +93,13 @@ newCollection = do
                        let e = entries st !! i
                        entryFocusGroup e
 
-        , draw = \this size mAttr -> do
+        , draw = \this size defAttr mAttr -> do
                    st <- getState this
                    case currentEntryNum st of
                      (-1) -> throw EmptyCollection
                      i -> do
                        let e = entries st !! i
-                       renderEntry e size mAttr
+                       renderEntry e size defAttr mAttr
 
         , setPosition =
             \this pos -> do

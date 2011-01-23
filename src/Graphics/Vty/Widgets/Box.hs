@@ -43,7 +43,6 @@ import Graphics.Vty
     , image_height
     , vert_cat
     , horiz_cat
-    , def_attr
     , empty_image
     )
 
@@ -119,15 +118,15 @@ box o spacing a b = do
               if handled then return True else
                   handleKeyEvent ch2 key mods
 
-        , draw = \this s mAttr -> do
+        , draw = \this s defAttr mAttr -> do
                    st@(Box orientation _ _ _) <- getState this
 
                    case orientation of
                      Vertical ->
-                         renderBox s mAttr st growVertical growVertical region_height
+                         renderBox s defAttr mAttr st growVertical growVertical region_height
                                    image_height withHeight
                      Horizontal ->
-                         renderBox s mAttr st growHorizontal growHorizontal region_width
+                         renderBox s defAttr mAttr st growHorizontal growHorizontal region_width
                                    image_width withWidth
 
         , setPosition =
@@ -156,6 +155,7 @@ setBoxSpacing wRef spacing =
 -- dimensions on regions and images as they are manipulated by the
 -- layout algorithm.
 renderBox :: DisplayRegion
+          -> Attr
           -> Maybe Attr
           -> Box a b
           -> (Widget a -> IO Bool) -- growth comparison function
@@ -164,17 +164,17 @@ renderBox :: DisplayRegion
           -> (Image -> Word) -- image dimension fetch function
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
           -> IO Image
-renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim = do
+renderBox s defAttr mAttr this growFirst growSecond regDimension renderDimension withDim = do
   let Box orientation spacing first second = this
       actualSpace = s `withDim` (max (regDimension s - toEnum spacing) 0)
 
       renderOrdered a b = do
-        a_img <- render a actualSpace mAttr
+        a_img <- render a actualSpace defAttr mAttr
 
         let remaining = regDimension actualSpace - renderDimension a_img
             s' = actualSpace `withDim` remaining
 
-        b_img <- render b s' mAttr
+        b_img <- render b s' defAttr mAttr
 
         return $ if renderDimension a_img >= regDimension actualSpace
                  then [a_img, empty_image]
@@ -185,8 +185,8 @@ renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim
             half' = if regDimension actualSpace `mod` 2 == 0
                     then half
                     else half `withDim` (regDimension half + 1)
-        first_img <- render first half mAttr
-        second_img <- render second half' mAttr
+        first_img <- render first half defAttr mAttr
+        second_img <- render second half' defAttr mAttr
         return [first_img, second_img]
 
       cat = case orientation of
@@ -203,7 +203,7 @@ renderBox s mAttr this growFirst growSecond regDimension renderDimension withDim
                                   images <- renderOrdered second first
                                   return $ reverse images
 
-  let spAttr = maybe def_attr id mAttr
+  let spAttr = maybe defAttr id mAttr
       spacer = case spacing of
                  0 -> empty_image
                  _ -> case orientation of
