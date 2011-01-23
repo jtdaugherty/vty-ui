@@ -9,12 +9,13 @@ import Graphics.Vty.Widgets.All
 import qualified Data.ByteString.Char8 as BS8
 
 -- Visual attributes.
-bg = blue
-borderAttr = white `on` bg
+--bg = blue
+bg = white
+borderAttr = black `on` bg
 focusAttr = black `on` yellow
-bodyAttr = white `on` bg
+bodyAttr = blue `on` bg
 headerAttr = bright_yellow `on` bg
-msgAttr = bright_white `on` bg
+msgAttr = blue `on` bg
 
 color :: Formatter
 color = highlight (compile (BS8.pack "<.*>") []) (bright_green `on` bg)
@@ -112,4 +113,4 @@ main = do
   setFocusGroup ui fg
 
   -- Enter the event loop.
-  runUi ui (yellow `on` blue) focusAttr
+  runUi ui (black `on` white) focusAttr
