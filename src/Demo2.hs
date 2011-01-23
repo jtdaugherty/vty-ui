@@ -12,7 +12,6 @@ import qualified Data.ByteString.Char8 as BS8
 fg = white
 bg = black
 
-borderAttr = yellow `on` bg
 focAttr = black `on` yellow
 bodyAttr = blue `on` bg
 headerAttr = bright_yellow `on` bg
@@ -32,7 +31,8 @@ main = do
                 , column Auto `pad` (padAll 1)
                 ]
 
-  table <- newTable borderAttr columns BorderFull
+  table <- newTable (yellow `on` blue) columns BorderFull
+  setNormalAttribute table (white `on` blue)
 
   tw <- textWidget (wrap &.& color) $ prepareText msgAttr msg
   mainBox <- (return table) <--> (return tw)

@@ -65,7 +65,7 @@ import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , RenderContext(..)
-    , getNormalAttr
+    , HasNormalAttr(..)
     , (<~~)
     , render
     , newWidget
@@ -184,7 +184,12 @@ data Table = Table { rows :: [TableRow]
                    , borderAttr :: Attr
                    , defaultCellAlignment :: Alignment
                    , defaultCellPadding :: Padding
+                   , tableNormalAttr :: Maybe Attr
                    }
+
+instance HasNormalAttr (Widget Table) where
+    setNormalAttribute wRef a =
+        updateWidgetState wRef $ \t -> t { tableNormalAttr = Just a }
 
 instance Show Table where
     show t = concat [ "Table { "
@@ -193,6 +198,7 @@ instance Show Table where
                     , ", columnSpecs = ", show $ columnSpecs t
                     , ", borderStyle = ", show $ borderStyle t
                     , ", borderAttr = ", show $ borderAttr t
+                    , ", tableNormalAttr = ", show $ tableNormalAttr t
                     , ", defaultCellAlignment = ", show $ defaultCellAlignment t
                     , ", defaultCellPadding = ", show $ defaultCellPadding t
                     , " }"
@@ -225,6 +231,7 @@ newTable attr specs borderSty = do
                         , borderAttr = attr
                         , defaultCellAlignment = AlignLeft
                         , defaultCellPadding = padNone
+                        , tableNormalAttr = Nothing
                         }
 
         , getGrowHorizontal = \st -> do
@@ -522,9 +529,13 @@ renderRow tbl sz cells ctx = do
   borderSty <- borderStyle <~~ tbl
   bAttr <- borderAttr <~~ tbl
   aw <- autoWidth tbl sz
+  tableNA <- tableNormalAttr <~~ tbl
 
   let sizes = map columnSize specs
-      att = getNormalAttr ctx
+      Just att = overrideAttr ctx
+                 `alt` tableNA
+                 `alt` (Just $ normalAttr ctx)
+      Just newDefault = tableNA `alt` (Just $ normalAttr ctx)
 
   cellImgs <-
       forM (zip cells sizes) $ \(cellW, sizeSpec) ->
@@ -534,7 +545,7 @@ renderRow tbl sz cells ctx = do
                               Fixed n -> toEnum n
                               Auto -> aw
 
-            img <- renderCell cellSz cellW ctx
+            img <- renderCell cellSz cellW $ ctx { normalAttr = newDefault }
             -- Right-pad the image if it isn't big enough to fill the
             -- cell.
             case compare (image_width img) (region_width cellSz) of
