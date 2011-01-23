@@ -21,6 +21,7 @@ module Graphics.Vty.Widgets.Core
     , withWidth
     , withHeight
     , HasNormalAttr(..)
+    , HasFocusAttr(..)
 
     , growVertical
     , growHorizontal
@@ -89,6 +90,9 @@ import Graphics.Vty
 
 class HasNormalAttr a where
     setNormalAttribute :: (MonadIO m) => a -> Attr -> m ()
+
+class HasFocusAttr a where
+    setFocusAttribute :: (MonadIO m) => a -> Attr -> m ()
 
 -- |The type of user interface widgets.  A 'Widget' provides several
 -- properties:
@@ -187,17 +191,17 @@ growVertical w = do
   liftIO $ runReaderT act st
 
 render :: (MonadIO m) => Widget a -> DisplayRegion -> Attr -> Maybe Attr -> m Image
-render wRef sz defAttr overrideAttr =
+render wRef sz normAttr overrideAttr =
     liftIO $ do
       impl <- readIORef wRef
-      img <- draw impl wRef sz defAttr overrideAttr
+      img <- draw impl wRef sz normAttr overrideAttr
       setPhysicalSize wRef $ DisplayRegion (image_width img) (image_height img)
       return img
 
 renderAndPosition :: (MonadIO m) => Widget a -> DisplayRegion -> DisplayRegion
                   -> Attr -> Maybe Attr -> m Image
-renderAndPosition wRef pos sz defAttr mAttr = do
-  img <- render wRef sz defAttr mAttr
+renderAndPosition wRef pos sz normAttr mAttr = do
+  img <- render wRef sz normAttr mAttr
   -- Position post-processing depends on the sizes being correct!
   setPhysicalPosition wRef pos
   return img

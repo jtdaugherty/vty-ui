@@ -110,9 +110,9 @@ bordered att child = do
               handleKeyEvent ch key mods
 
         , draw =
-            \this s defAttr mAttr -> do
+            \this s normAttr mAttr -> do
               st <- getState this
-              drawBordered st s defAttr mAttr
+              drawBordered st s normAttr mAttr
 
         , setPosition =
             \this pos -> do
@@ -126,7 +126,7 @@ bordered att child = do
   return wRef
 
 drawBordered :: Bordered a -> DisplayRegion -> Attr -> Maybe Attr -> IO Image
-drawBordered this s defAttr mAttr = do
+drawBordered this s normAttr mAttr = do
   let Bordered attr child = this
       attr' = maybe attr id mAttr
 
@@ -135,7 +135,7 @@ drawBordered this s defAttr mAttr = do
   -- used by the (expanding) borders.
   let constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
 
-  childImage <- render child constrained defAttr mAttr
+  childImage <- render child constrained normAttr mAttr
 
   let adjusted = DisplayRegion (image_width childImage + 2)
                  (image_height childImage)
@@ -143,10 +143,10 @@ drawBordered this s defAttr mAttr = do
 
   hb <- hBorder attr'
   topWidget <- hBox corner =<< hBox hb corner
-  topBottom <- render topWidget adjusted defAttr mAttr
+  topBottom <- render topWidget adjusted normAttr mAttr
 
   vb <- vBorder attr'
-  leftRight <- render vb adjusted defAttr mAttr
+  leftRight <- render vb adjusted normAttr mAttr
 
   let middle = horiz_cat [leftRight, childImage, leftRight]
 

@@ -93,13 +93,13 @@ newCollection = do
                        let e = entries st !! i
                        entryFocusGroup e
 
-        , draw = \this size defAttr mAttr -> do
+        , draw = \this size normAttr mAttr -> do
                    st <- getState this
                    case currentEntryNum st of
                      (-1) -> throw EmptyCollection
                      i -> do
                        let e = entries st !! i
-                       renderEntry e size defAttr mAttr
+                       renderEntry e size normAttr mAttr
 
         , setPosition =
             \this pos -> do

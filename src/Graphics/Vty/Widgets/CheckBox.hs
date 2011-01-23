@@ -123,11 +123,11 @@ newCheckbox label focAttr = do
 
         , keyEventHandler = radioKeyEvent
         , draw =
-            \this sz defAttr mAttr -> do
+            \this sz normAttr mAttr -> do
               f <- focused <~ this
               st <- getState this
 
-              let attr = head $ catMaybes [ mAttr, normalAttr st, Just defAttr ]
+              let attr = head $ catMaybes [ mAttr, normalAttr st, Just normAttr ]
                   fAttr = if f
                           then focusedAttr st
                           else attr

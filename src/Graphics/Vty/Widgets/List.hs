@@ -288,7 +288,7 @@ listWidget list = do
               return $ Just (pos `withWidth` newCol `withHeight` newRow)
 
         , draw =
-            \this sz defAttr mAttr -> do
+            \this sz normAttr mAttr -> do
               h <- itemHeight <~~ this
 
               -- Resize the list based on the available space and the
@@ -297,7 +297,7 @@ listWidget list = do
                    resize (max 1 ((fromEnum $ region_height sz) `div` h)) this
 
               listData <- getState this
-              renderListWidget listData sz defAttr mAttr
+              renderListWidget listData sz normAttr mAttr
 
         -- XXX!!! define setPosition to set position of visible
         -- widgets in list
@@ -312,7 +312,7 @@ listKeyEvent w KPageDown _ = pageDown w >> return True
 listKeyEvent _ _ _ = return False
 
 renderListWidget :: List a b -> DisplayRegion -> Attr -> Maybe Attr -> IO Image
-renderListWidget list s defAttr mAttr = do
+renderListWidget list s normAttr mAttr = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
 
       renderVisible [] = return []
@@ -321,9 +321,9 @@ renderListWidget list s defAttr mAttr = do
                   then (selectedAttr list)
                   else head $ catMaybes [ mAttr
                                         , normalAttr list
-                                        , Just defAttr
+                                        , Just normAttr
                                         ]
-        img <- render w s defAttr $ Just att
+        img <- render w s normAttr $ Just att
 
         let actualHeight = min (region_height s) (toEnum $ itemHeight list)
             img' = img <|> char_fill att ' '
@@ -337,7 +337,7 @@ renderListWidget list s defAttr mAttr = do
       fill_height = if scrollWindowSize list == 0
                     then region_height s
                     else toEnum $ scrollWindowSize list - length items
-      attr = head $ catMaybes [ mAttr, normalAttr list, Just defAttr ]
+      attr = head $ catMaybes [ mAttr, normalAttr list, Just normAttr ]
 
   visible_imgs <- renderVisible items
 

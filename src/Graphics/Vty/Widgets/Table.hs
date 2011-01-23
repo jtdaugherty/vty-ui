@@ -214,10 +214,10 @@ newTable attr specs borderSty = do
         , getGrowVertical = return False
 
         , draw =
-            \this sz defAttr mAttr -> do
+            \this sz normAttr mAttr -> do
               rs <- rows <~~ this
 
-              rowImgs <- mapM (\(TableRow r) -> renderRow this sz r defAttr mAttr) rs
+              rowImgs <- mapM (\(TableRow r) -> renderRow this sz r normAttr mAttr) rs
 
               rowBorder <- mkRowBorder this sz mAttr
               topBottomBorder <- mkTopBottomBorder this sz mAttr
@@ -473,10 +473,10 @@ addRow t row = do
       s { rows = rows s ++ [TableRow cells] }
 
 renderCell :: DisplayRegion -> TableCell -> Attr -> Maybe Attr -> IO Image
-renderCell region EmptyCell defAttr mAttr = do
+renderCell region EmptyCell normAttr mAttr = do
   w <- simpleText def_attr ""
-  render w region defAttr mAttr
-renderCell region (TableCell w _ _) defAttr mAttr = render w region defAttr mAttr
+  render w region normAttr mAttr
+renderCell region (TableCell w _ _) normAttr mAttr = render w region normAttr mAttr
 
 colBorders :: BorderStyle -> Bool
 colBorders (BorderPartial fs) = Columns `elem` fs
@@ -497,7 +497,7 @@ rowHeight :: [Image] -> Word
 rowHeight = maximum . map image_height
 
 renderRow :: Widget Table -> DisplayRegion -> [TableCell] -> Attr -> Maybe Attr -> IO Image
-renderRow tbl sz cells defAttr mAttr = do
+renderRow tbl sz cells normAttr mAttr = do
   specs <- columnSpecs <~~ tbl
   borderSty <- borderStyle <~~ tbl
   bAttr <- borderAttr <~~ tbl
@@ -513,13 +513,13 @@ renderRow tbl sz cells defAttr mAttr = do
                               Fixed n -> toEnum n
                               Auto -> aw
 
-            img <- renderCell cellSz cellW defAttr mAttr
+            img <- renderCell cellSz cellW normAttr mAttr
             -- Right-pad the image if it isn't big enough to fill the
             -- cell.
             case compare (image_width img) (region_width cellSz) of
               EQ -> return img
               LT -> do
-                let att = maybe defAttr id mAttr
+                let att = maybe normAttr id mAttr
                 return $ img <|> char_fill att ' '
                            (region_width cellSz - image_width img)
                            (max (image_height img) 1)

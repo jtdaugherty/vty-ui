@@ -116,7 +116,7 @@ padded ch padding = do
         , getGrowHorizontal = growHorizontal ch
 
         , draw =
-            \this sz defAttr mAttr ->
+            \this sz normAttr mAttr ->
                 do
                   Padded child p <- getState this
 
@@ -127,10 +127,10 @@ padded ch padding = do
                       -- XXX would be better to set an attribute on
                       -- the padding instead of falling back to the
                       -- default
-                      attr = maybe defAttr id mAttr
+                      attr = maybe normAttr id mAttr
 
                   -- Render child.
-                  img <- render child constrained defAttr mAttr
+                  img <- render child constrained normAttr mAttr
 
                   -- Create padding images.
                   let leftImg = char_fill attr ' ' (leftPadding p) (image_height img)

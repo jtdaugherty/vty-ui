@@ -91,14 +91,14 @@ editWidget focAtt = do
                   return Nothing
 
         , draw =
-            \this size defAttr mAttr -> do
+            \this size normAttr mAttr -> do
               setDisplayWidth this (fromEnum $ region_width size)
               st <- getState this
 
               let truncated = take (displayWidth st)
                               (drop (displayStart st) (currentText st))
 
-                  attr = head $ catMaybes [mAttr, normalAttr st, Just defAttr]
+                  attr = head $ catMaybes [mAttr, normalAttr st, Just normAttr]
 
               isFocused <- focused <~ this
               let fAttr = (if isFocused then focusAttr st else attr) `with_style` underline
