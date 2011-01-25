@@ -5,6 +5,7 @@ module Graphics.Vty.Widgets.Box
     , hBox
     , vBox
     , setBoxSpacing
+    , withBoxSpacing
     )
 where
 
@@ -150,6 +151,11 @@ box o spacing a b = do
 setBoxSpacing :: (MonadIO m) => Widget (Box a b) -> Int -> m ()
 setBoxSpacing wRef spacing =
     updateWidgetState wRef $ \(Box o _ a b) -> Box o spacing a b
+
+withBoxSpacing :: (MonadIO m) => Int -> Widget (Box a b) -> m (Widget (Box a b))
+withBoxSpacing spacing wRef = do
+  setBoxSpacing wRef spacing
+  return wRef
 
 -- Box layout rendering implementation. This is generalized over the
 -- two dimensions in which box layout can be performed; it takes lot

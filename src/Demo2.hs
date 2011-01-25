@@ -35,9 +35,7 @@ main = do
            withBorderAttribute (fgColor green)
 
   tw <- (textWidget (wrap &.& color) msg) >>= withNormalAttribute msgAttr
-  mainBox <- (return table) <--> (return tw)
-
-  setBoxSpacing mainBox 1
+  mainBox <- (return table) <--> (return tw) >>= withBoxSpacing 1
 
   ui <- centered =<< hLimit 70 mainBox
 
