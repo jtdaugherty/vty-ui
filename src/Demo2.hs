@@ -65,7 +65,7 @@ main = do
   rs <- (return r1) <--> (return r2)
 
   addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
-  addRow table $ (radioHeader .|.) rs
+  addRow table $ radioHeader .|. rs
   addRow table $ r3Header .|. r3
   addRow table $ edit1Header .|. edit1
   addRow table $ edit2Header .|. edit2
@@ -97,11 +97,12 @@ main = do
            KEsc -> exitSuccess
            _ -> return False
 
-  addToList lst "Foo"
-  addToList lst "Bar"
-  addToList lst "Baz"
-  addToList lst "Stuff"
-  addToList lst "Things"
+  mapM_ (addToList lst) [ "Foo"
+                        , "Bar"
+                        , "Baz"
+                        , "Stuff"
+                        , "Things"
+                        ]
 
   addToFocusGroup fgr r1
   addToFocusGroup fgr r2
