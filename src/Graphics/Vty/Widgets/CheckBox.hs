@@ -96,11 +96,11 @@ radioGroupSetCurrent wRef = do
 
 instance HasNormalAttr (Widget CheckBox) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { cbNormalAttr = a }
+        updateWidgetState wRef $ \s -> s { cbNormalAttr = mergeAttr a $ cbNormalAttr s }
 
 instance HasFocusAttr (Widget CheckBox) where
     setFocusAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { cbFocusedAttr = a }
+        updateWidgetState wRef $ \s -> s { cbFocusedAttr = mergeAttr a $ cbFocusedAttr s }
 
 data CheckBox = CheckBox { isChecked :: Bool
                          , cbNormalAttr :: Attr

@@ -72,11 +72,11 @@ instance Show Edit where
 
 instance HasNormalAttr (Widget Edit) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { editNormalAttr = a }
+        updateWidgetState wRef $ \s -> s { editNormalAttr = mergeAttr a $ editNormalAttr s }
 
 instance HasFocusAttr (Widget Edit) where
     setFocusAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { editFocusAttr = a }
+        updateWidgetState wRef $ \s -> s { editFocusAttr = mergeAttr a $ editFocusAttr s }
 
 editWidget :: (MonadIO m) => m (Widget Edit)
 editWidget = do

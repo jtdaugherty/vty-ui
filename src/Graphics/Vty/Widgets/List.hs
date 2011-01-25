@@ -141,7 +141,7 @@ instance Show (List a b) where
 
 instance HasNormalAttr (Widget (List a b)) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { listNormalAttr = a }
+        updateWidgetState wRef $ \s -> s { listNormalAttr = mergeAttr a $ listNormalAttr s }
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.

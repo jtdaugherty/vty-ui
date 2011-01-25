@@ -193,11 +193,11 @@ data Table = Table { rows :: [TableRow]
 
 instance HasNormalAttr (Widget Table) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \t -> t { tableNormalAttr = a }
+        updateWidgetState wRef $ \t -> t { tableNormalAttr = mergeAttr a $ tableNormalAttr t }
 
 instance HasBorderAttr (Widget Table) where
     setBorderAttribute t a =
-        updateWidgetState t $ \s -> s { borderAttr = a }
+        updateWidgetState t $ \s -> s { borderAttr = mergeAttr a $ borderAttr s }
 
 instance Show Table where
     show t = concat [ "Table { "

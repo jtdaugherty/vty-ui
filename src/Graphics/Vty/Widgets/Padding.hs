@@ -87,7 +87,7 @@ instance Paddable Padding where
 
 instance HasNormalAttr (Widget Padded) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \(Padded w p _) -> Padded w p a
+        updateWidgetState wRef $ \(Padded w p a') -> Padded w p (mergeAttr a a')
 
 leftPadding :: Padding -> Word
 leftPadding (Padding _ _ _ l) = toEnum l

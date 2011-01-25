@@ -64,7 +64,7 @@ data HBorder = HBorder Attr Char
 
 instance HasBorderAttr (Widget HBorder) where
     setBorderAttribute t a =
-        updateWidgetState t $ \(HBorder _ ch) -> HBorder a ch
+        updateWidgetState t $ \(HBorder a' ch) -> HBorder (mergeAttr a a') ch
 
 withBorderAttribute :: (MonadIO m, HasBorderAttr a) => Attr -> a -> m a
 withBorderAttribute att w = setBorderAttribute w att >> return w
@@ -97,7 +97,7 @@ data VBorder = VBorder Attr Char
 
 instance HasBorderAttr (Widget VBorder) where
     setBorderAttribute t a =
-        updateWidgetState t $ \(VBorder _ ch) -> VBorder a ch
+        updateWidgetState t $ \(VBorder a' ch) -> VBorder (mergeAttr a a') ch
 
 -- |Create a single-column vertical border.
 vBorder :: (MonadIO m) => m (Widget VBorder)
@@ -132,7 +132,7 @@ instance Show (Bordered a) where
 
 instance HasBorderAttr (Widget (Bordered a)) where
     setBorderAttribute t a =
-        updateWidgetState t $ \(Bordered _ ch) -> Bordered a ch
+        updateWidgetState t $ \(Bordered a' ch) -> Bordered (mergeAttr a a') ch
 
 -- |Wrap a widget in a bordering box using the specified attribute.
 bordered :: (MonadIO m, Show a) => Widget a -> m (Widget (Bordered a))

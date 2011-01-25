@@ -102,7 +102,7 @@ instance Show FormattedText where
 
 instance HasNormalAttr (Widget FormattedText) where
     setNormalAttribute t a =
-        updateWidgetState t $ \s -> s { text = (text s) { defaultAttr = a } }
+        updateWidgetState t $ \s -> s { text = (text s) { defaultAttr = mergeAttr a $ defaultAttr $ text s } }
 
 -- |Prepare a string for rendering and assign it the specified default
 -- attribute.

@@ -34,7 +34,7 @@ data VFill = VFill Attr Char
 
 instance HasNormalAttr (Widget VFill) where
     setNormalAttribute w a =
-        updateWidgetState w $ \(VFill _ ch) -> VFill a ch
+        updateWidgetState w $ \(VFill a' ch) -> VFill (mergeAttr a a') ch
 
 -- |A vertical fill widget.  Fills all available space with the
 -- specified character and attribute.
@@ -60,7 +60,7 @@ data HFill = HFill Attr Char Int
 
 instance HasNormalAttr (Widget HFill) where
     setNormalAttribute w a =
-        updateWidgetState w $ \(HFill _ ch i) -> HFill a ch i
+        updateWidgetState w $ \(HFill a' ch i) -> HFill (mergeAttr a a') ch i
 
 -- |A horizontal fill widget.  Fills the available horizontal space,
 -- one row high, using the specified character and attribute.
