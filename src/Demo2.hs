@@ -39,15 +39,17 @@ main = do
 
   ui <- centered =<< hLimit 70 mainBox
 
-  r1 <- newCheckbox "Cake"
-  r2 <- newCheckbox "Death"
-  r3 <- newCheckbox "Checkbox"
+  r1 <- newCheckbox "ASCII"
+  r2 <- newCheckbox "Unicode"
+  r3 <- newCheckbox "Unicode Rounded"
+  r4 <- newCheckbox "Unicode Bold"
   radioHeader <- simpleText "" >>= withNormalAttribute headerAttr
-  r3Header <- simpleText "" >>= withNormalAttribute headerAttr
 
   rg <- newRadioGroup
   addToRadioGroup rg r1
   addToRadioGroup rg r2
+  addToRadioGroup rg r3
+  addToRadioGroup rg r4
 
   edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- editWidget
@@ -60,23 +62,25 @@ main = do
   selector <- vLimit 3 lst
   listHeader <- simpleText ""
 
-  rs <- (return r1) <--> (return r2)
+  rs <- (return r1) <--> (return r2) <--> (return r3) <--> (return r4)
 
   addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
   addRow table $ radioHeader .|. rs
-  addRow table $ r3Header .|. r3
   addRow table $ edit1Header .|. edit1
   addRow table $ edit2Header .|. edit2
   addRow table $ customCell listHeader `align` AlignLeft .|. customCell selector `pad` padNone
 
   r1 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader "CAKE!!" >> setTableBorderSkin table asciiSkin
+      when v $ setText radioHeader "ASCII" >> setTableBorderSkin table asciiSkin
 
   r2 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader "death..." >> setTableBorderSkin table unicodeSkin
+      when v $ setText radioHeader "Unicode" >> setTableBorderSkin table unicodeSkin
 
   r3 `onCheckboxChange` \_ v ->
-      setText r3Header $ if v then "checked" else "unchecked"
+      when v $ setText radioHeader "Unicode Rounded" >> setTableBorderSkin table unicodeRoundedSkin
+
+  r4 `onCheckboxChange` \_ v ->
+      when v $ setText radioHeader "Unicode Bold" >> setTableBorderSkin table unicodeBoldSkin
 
   edit1 `onChange` \_ s -> setText edit1Header s
   edit2 `onChange` \_ s -> setText edit2Header s
@@ -86,8 +90,7 @@ main = do
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
-  setCheckboxChecked r1
-  setCheckboxChecked r3
+  setCheckboxChecked r2
 
   fgr <- newFocusGroup
   fgr `onKeyPressed` \_ k _ -> do
@@ -105,6 +108,7 @@ main = do
   addToFocusGroup fgr r1
   addToFocusGroup fgr r2
   addToFocusGroup fgr r3
+  addToFocusGroup fgr r4
   addToFocusGroup fgr edit1
   addToFocusGroup fgr edit2
   addToFocusGroup fgr lst

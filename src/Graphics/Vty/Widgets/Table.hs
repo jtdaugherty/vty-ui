@@ -14,6 +14,8 @@ module Graphics.Vty.Widgets.Table
     , newTable
     , asciiSkin
     , unicodeSkin
+    , unicodeBoldSkin
+    , unicodeRoundedSkin
     , setTableBorderSkin
     , setDefaultCellAlignment
     , setDefaultCellPadding
@@ -215,18 +217,46 @@ asciiSkin = BorderSkin { skinCornerTL = '+'
                        }
 
 unicodeSkin :: BorderSkin
-unicodeSkin = BorderSkin { skinCornerTL = '┏'
-                         , skinCornerTR = '┓'
-                         , skinCornerBR = '┛'
-                         , skinCornerBL = '┗'
-                         , skinIntersectionFull = '╋'
-                         , skinIntersectionL = '┣'
-                         , skinIntersectionR = '┫'
-                         , skinIntersectionT = '┳'
-                         , skinIntersectionB = '┻'
-                         , skinHorizontal = '━'
-                         , skinVertical = '┃'
+unicodeSkin = BorderSkin { skinCornerTL = '┌'
+                         , skinCornerTR = '┐'
+                         , skinCornerBR = '┘'
+                         , skinCornerBL = '└'
+                         , skinIntersectionFull = '┼'
+                         , skinIntersectionL = '├'
+                         , skinIntersectionR = '┤'
+                         , skinIntersectionT = '┬'
+                         , skinIntersectionB = '┴'
+                         , skinHorizontal = '─'
+                         , skinVertical = '│'
                          }
+
+unicodeBoldSkin :: BorderSkin
+unicodeBoldSkin = BorderSkin { skinCornerTL = '┏'
+                             , skinCornerTR = '┓'
+                             , skinCornerBR = '┛'
+                             , skinCornerBL = '┗'
+                             , skinIntersectionFull = '╋'
+                             , skinIntersectionL = '┣'
+                             , skinIntersectionR = '┫'
+                             , skinIntersectionT = '┳'
+                             , skinIntersectionB = '┻'
+                             , skinHorizontal = '━'
+                             , skinVertical = '┃'
+                             }
+
+unicodeRoundedSkin :: BorderSkin
+unicodeRoundedSkin = BorderSkin { skinCornerTL = '╭'
+                                , skinCornerTR = '╮'
+                                , skinCornerBR = '╯'
+                                , skinCornerBL = '╰'
+                                , skinIntersectionFull = '┼'
+                                , skinIntersectionL = '├'
+                                , skinIntersectionR = '┤'
+                                , skinIntersectionT = '┬'
+                                , skinIntersectionB = '┴'
+                                , skinHorizontal = '─'
+                                , skinVertical = '│'
+                                }
 
 data Table = Table { rows :: [TableRow]
                    , numColumns :: Int
