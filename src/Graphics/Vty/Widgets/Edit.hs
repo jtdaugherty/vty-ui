@@ -84,8 +84,8 @@ editWidget = do
   updateWidget wRef $ \w ->
       w { state = Edit { currentText = ""
                        , cursorPosition = 0
-                       , editNormalAttr = def_attr
-                       , editFocusAttr = def_attr
+                       , editNormalAttr = def_attr `with_style` underline
+                       , editFocusAttr = def_attr `with_style` underline
                        , displayStart = 0
                        , displayWidth = 0
                        , activateHandler = const $ return ()
@@ -120,7 +120,7 @@ editWidget = do
                                      ]
 
               isFocused <- focused <~ this
-              let attr = (if isFocused then fAttr else nAttr) `with_style` underline
+              let attr = if isFocused then fAttr else nAttr
                   fAttr = mergeAttrs [ editFocusAttr st
                                      , focusAttr ctx
                                      ]
