@@ -28,7 +28,6 @@ import Control.Monad.Trans
     )
 import Data.Maybe
     ( isJust
-    , fromJust
     )
 import Graphics.Vty
     ( Attr
@@ -82,10 +81,10 @@ nullFormatter = const id
 
 -- |'Text' represents a 'String' that can be manipulated with
 -- 'Formatter's at rendering time.
-data Text = Text { defaultAttr :: Maybe Attr
+data Text = Text { defaultAttr :: Attr
                  -- ^The default attribute for all tokens in this text
                  -- object.
-                 , tokens :: [[Token (Maybe Attr)]]
+                 , tokens :: [[Token Attr]]
                  -- ^The tokens of the underlying text stream.
                  }
             deriving (Show)
@@ -103,11 +102,11 @@ instance Show FormattedText where
 
 instance HasNormalAttr (Widget FormattedText) where
     setNormalAttribute t a =
-        updateWidgetState t $ \s -> s { text = (text s) { defaultAttr = Just a } }
+        updateWidgetState t $ \s -> s { text = (text s) { defaultAttr = a } }
 
 -- |Prepare a string for rendering and assign it the specified default
 -- attribute.
-prepareText :: Maybe Attr -> String -> Text
+prepareText :: Attr -> String -> Text
 prepareText att s = Text { defaultAttr = att
                          , tokens = tokenize s att
                          }
@@ -115,7 +114,7 @@ prepareText att s = Text { defaultAttr = att
 -- |Construct a Widget directly from an attribute and a String.  This
 -- is recommended if you don't need to use a 'Formatter'.
 simpleText :: (MonadIO m) => String -> m (Widget FormattedText)
-simpleText s = textWidget nullFormatter $ prepareText Nothing s
+simpleText s = textWidget nullFormatter $ prepareText def_attr s
 
 -- |A formatter for wrapping text into the available space.  This
 -- formatter will insert line breaks where appropriate so if you want
@@ -133,7 +132,7 @@ wrap sz t = t { tokens = newTokens }
 -- non-whitespace tokens in the text stream.
 highlight :: Regex -> Attr -> Formatter
 highlight regex attr =
-    \_ t -> t { tokens = map (map (annotate (matchesRegex regex) (Just attr))) $ tokens t }
+    \_ t -> t { tokens = map (map (annotate (matchesRegex regex) attr)) $ tokens t }
 
 -- |Possibly annotate a token with the specified annotation value if
 -- the predicate matches; otherwise, return the input token unchanged.
@@ -179,13 +178,15 @@ renderText t format sz ctx =
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
-      Just attr' = overrideAttr ctx
-                   `alt` (defaultAttr newText)
-                   `alt` (Just $ normalAttr ctx)
-      tokenAttr tok = fromJust $ overrideAttr ctx
-                                 `alt` (tokenAnnotation tok)
-                                 `alt` (defaultAttr t)
-                                 `alt` (Just $ normalAttr ctx)
+      attr' = mergeAttrs [ overrideAttr ctx
+                         , defaultAttr newText
+                         , normalAttr ctx
+                         ]
+      tokenAttr tok = mergeAttrs [ overrideAttr ctx
+                                 , tokenAnnotation tok
+                                 , defaultAttr t
+                                 , normalAttr ctx
+                                 ]
 
       lineImgs = map mkLineImg ls
       ls = map truncateLine $ tokens newText

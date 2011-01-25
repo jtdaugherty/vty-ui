@@ -29,6 +29,7 @@ import Graphics.Vty
     , char_fill
     , with_style
     , underline
+    , def_attr
     )
 import Graphics.Vty.Widgets.Core
     ( Widget
@@ -49,8 +50,8 @@ import Graphics.Vty.Widgets.Util
 
 data Edit = Edit { currentText :: String
                  , cursorPosition :: Int
-                 , editNormalAttr :: Maybe Attr
-                 , editFocusAttr :: Maybe Attr
+                 , editNormalAttr :: Attr
+                 , editFocusAttr :: Attr
                  , displayStart :: Int
                  , displayWidth :: Int
                  , activateHandler :: Widget Edit -> IO ()
@@ -71,11 +72,11 @@ instance Show Edit where
 
 instance HasNormalAttr (Widget Edit) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { editNormalAttr = Just a }
+        updateWidgetState wRef $ \s -> s { editNormalAttr = a }
 
 instance HasFocusAttr (Widget Edit) where
     setFocusAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { editFocusAttr = Just a }
+        updateWidgetState wRef $ \s -> s { editFocusAttr = a }
 
 editWidget :: (MonadIO m) => m (Widget Edit)
 editWidget = do
@@ -83,8 +84,8 @@ editWidget = do
   updateWidget wRef $ \w ->
       w { state = Edit { currentText = ""
                        , cursorPosition = 0
-                       , editNormalAttr = Nothing
-                       , editFocusAttr = Nothing
+                       , editNormalAttr = def_attr
+                       , editFocusAttr = def_attr
                        , displayStart = 0
                        , displayWidth = 0
                        , activateHandler = const $ return ()
@@ -113,13 +114,16 @@ editWidget = do
               let truncated = take (displayWidth st)
                               (drop (displayStart st) (currentText st))
 
-                  Just nAttr = overrideAttr ctx
-                               `alt` editNormalAttr st
-                               `alt` (Just $ normalAttr ctx)
+                  nAttr = mergeAttrs [ overrideAttr ctx
+                                     , editNormalAttr st
+                                     , normalAttr ctx
+                                     ]
 
               isFocused <- focused <~ this
               let attr = (if isFocused then fAttr else nAttr) `with_style` underline
-                  Just fAttr = editFocusAttr st `alt` (Just $ focusAttr ctx)
+                  fAttr = mergeAttrs [ editFocusAttr st
+                                     , focusAttr ctx
+                                     ]
 
               return $ string attr truncated
                          <|> char_fill attr ' ' (region_width size - (toEnum $ length truncated)) 1

@@ -59,6 +59,7 @@ import Graphics.Vty
     , horiz_cat
     , empty_image
     , string
+    , def_attr
     )
 import Graphics.Vty.Widgets.Core
     ( Widget
@@ -184,19 +185,19 @@ data Table = Table { rows :: [TableRow]
                    , numColumns :: Int
                    , columnSpecs :: [ColumnSpec]
                    , borderStyle :: BorderStyle
-                   , borderAttr :: Maybe Attr
+                   , borderAttr :: Attr
                    , defaultCellAlignment :: Alignment
                    , defaultCellPadding :: Padding
-                   , tableNormalAttr :: Maybe Attr
+                   , tableNormalAttr :: Attr
                    }
 
 instance HasNormalAttr (Widget Table) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \t -> t { tableNormalAttr = Just a }
+        updateWidgetState wRef $ \t -> t { tableNormalAttr = a }
 
 instance HasBorderAttr (Widget Table) where
     setBorderAttribute t a =
-        updateWidgetState t $ \s -> s { borderAttr = Just a }
+        updateWidgetState t $ \s -> s { borderAttr = a }
 
 instance Show Table where
     show t = concat [ "Table { "
@@ -234,10 +235,10 @@ newTable specs borderSty = do
                         , columnSpecs = specs
                         , borderStyle = borderSty
                         , numColumns = length specs
-                        , borderAttr = Nothing
+                        , borderAttr = def_attr
                         , defaultCellAlignment = AlignLeft
                         , defaultCellPadding = padNone
-                        , tableNormalAttr = Nothing
+                        , tableNormalAttr = def_attr
                         }
 
         , getGrowHorizontal = \st -> do
@@ -347,10 +348,11 @@ mkRowBorder_ t sz ctx = do
   aw <- autoWidth t sz
   tableNA <- tableNormalAttr <~~ t
 
-  let Just bAttr' = overrideAttr ctx
-                    `alt` bAttr
-                    `alt` tableNA
-                    `alt` (Just $ normalAttr ctx)
+  let bAttr' = mergeAttrs [ overrideAttr ctx
+                          , bAttr
+                          , tableNA
+                          , normalAttr ctx
+                          ]
       szs = map columnSize specs
       intersection = string bAttr' "+"
       imgs = (flip map) szs $ \s ->
@@ -389,10 +391,11 @@ mkSideBorder_ t ctx = do
   rs <- rows <~~ t
 
   let intersection = string bAttr' "+"
-      Just bAttr' = overrideAttr ctx
-                    `alt` bAttr
-                    `alt` tableNA
-                    `alt` (Just $ normalAttr ctx)
+      bAttr' = mergeAttrs [ overrideAttr ctx
+                          , bAttr
+                          , tableNA
+                          , normalAttr ctx
+                          ]
 
   rowHeights <- forM rs $ \(TableRow row) -> do
                     hs <- forM row $ \cell ->
@@ -546,10 +549,13 @@ renderRow tbl sz cells ctx = do
   tableNA <- tableNormalAttr <~~ tbl
 
   let sizes = map columnSize specs
-      Just att = overrideAttr ctx
-                 `alt` tableNA
-                 `alt` (Just $ normalAttr ctx)
-      Just newDefault = tableNA `alt` (Just $ normalAttr ctx)
+      att = mergeAttrs [ overrideAttr ctx
+                       , tableNA
+                       , normalAttr ctx
+                       ]
+      newDefault = mergeAttrs [ tableNA
+                              , normalAttr ctx
+                              ]
 
   cellImgs <-
       forM (zip cells sizes) $ \(cellW, sizeSpec) ->
@@ -575,10 +581,11 @@ renderRow tbl sz cells ctx = do
                              img <-> char_fill att ' ' (image_width img) (maxHeight - image_height img)
 
   -- If we need to draw borders in between columns, do that.
-  let Just bAttr' = overrideAttr ctx
-                    `alt` bAttr
-                    `alt` tableNA
-                    `alt` (Just $ normalAttr ctx)
+  let bAttr' = mergeAttrs [ overrideAttr ctx
+                          , bAttr
+                          , tableNA
+                          , normalAttr ctx
+                          ]
       withBorders = case colBorders borderSty of
                       False -> cellImgsBottomPadded
                       True -> intersperse (char_fill bAttr' '|' 1 maxHeight) cellImgsBottomPadded

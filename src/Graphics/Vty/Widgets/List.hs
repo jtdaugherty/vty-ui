@@ -108,7 +108,7 @@ type ListItem a b = (a, Widget b)
 -- refer to the visible representations of the list contents, and the
 -- /widget type/ @b@, the type of widgets used to represent the list
 -- visually.
-data List a b = List { listNormalAttr :: Maybe Attr
+data List a b = List { listNormalAttr :: Attr
                      , selectedAttr :: Attr
                      , selectedIndex :: Int
                      -- ^The currently selected list index.
@@ -141,7 +141,7 @@ instance Show (List a b) where
 
 instance HasNormalAttr (Widget (List a b)) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { listNormalAttr = Just a }
+        updateWidgetState wRef $ \s -> s { listNormalAttr = a }
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
@@ -149,7 +149,7 @@ mkList :: Attr -- ^The attribute of the selected item
        -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
        -> List a b
 mkList selAttr f =
-    List { listNormalAttr = Nothing
+    List { listNormalAttr = def_attr
          , selectedAttr = selAttr
          , selectedIndex = -1
          , scrollTopIndex = 0
@@ -228,7 +228,7 @@ addToList list key = do
            -- the result, assuming that all list widgets will have the
            -- same size.  If you violate this, you'll have interesting
            -- results!
-           img <- render w (DisplayRegion 100 100) $ RenderContext def_attr def_attr Nothing
+           img <- render w (DisplayRegion 100 100) $ RenderContext def_attr def_attr def_attr
            return $ fromEnum $ image_height img
          _ -> itemHeight <~~ list
 
@@ -332,16 +332,17 @@ listKeyEvent _ _ _ = return False
 renderListWidget :: (Show b) => List a b -> DisplayRegion -> RenderContext -> IO Image
 renderListWidget list s ctx = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
-      Just defaultAttr = overrideAttr ctx
-                         `alt` listNormalAttr list
-                         `alt` (Just $ normalAttr ctx)
+      defaultAttr = mergeAttrs [ overrideAttr ctx
+                               , listNormalAttr list
+                               , normalAttr ctx
+                               ]
 
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
         let att = if sel
                   then (selectedAttr list)
                   else defaultAttr
-        img <- render w s $ ctx { overrideAttr = Just att }
+        img <- render w s $ ctx { overrideAttr = att }
 
         let actualHeight = min (region_height s) (toEnum $ itemHeight list)
             img' = img <|> char_fill att ' '

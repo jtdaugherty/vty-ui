@@ -29,6 +29,7 @@ import Graphics.Vty
     , image_height
     , vert_cat
     , horiz_cat
+    , def_attr
     )
 import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
@@ -58,12 +59,12 @@ import Graphics.Vty.Widgets.Util
 class HasBorderAttr a where
     setBorderAttribute :: (MonadIO m) => a -> Attr -> m ()
 
-data HBorder = HBorder (Maybe Attr) Char
+data HBorder = HBorder Attr Char
                deriving (Show)
 
 instance HasBorderAttr (Widget HBorder) where
     setBorderAttribute t a =
-        updateWidgetState t $ \(HBorder _ ch) -> HBorder (Just a) ch
+        updateWidgetState t $ \(HBorder _ ch) -> HBorder a ch
 
 withBorderAttribute :: (MonadIO m, HasBorderAttr a) => Attr -> a -> m a
 withBorderAttribute att w = setBorderAttribute w att >> return w
@@ -78,24 +79,25 @@ hBorderWith :: (MonadIO m) => Char -> m (Widget HBorder)
 hBorderWith ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = HBorder Nothing ch
+      w { state = HBorder def_attr ch
         , getGrowVertical = const $ return False
         , getGrowHorizontal = const $ return True
         , draw = \this s ctx -> do
                    HBorder attr _ <- getState this
-                   let Just attr' = overrideAttr ctx
-                                    `alt` attr
-                                    `alt` (Just $ normalAttr ctx)
+                   let attr' = mergeAttrs [ overrideAttr ctx
+                                          , attr
+                                          , normalAttr ctx
+                                          ]
                    return $ char_fill attr' ch (region_width s) 1
         }
   return wRef
 
-data VBorder = VBorder (Maybe Attr) Char
+data VBorder = VBorder Attr Char
                deriving (Show)
 
 instance HasBorderAttr (Widget VBorder) where
     setBorderAttribute t a =
-        updateWidgetState t $ \(VBorder _ ch) -> VBorder (Just a) ch
+        updateWidgetState t $ \(VBorder _ ch) -> VBorder a ch
 
 -- |Create a single-column vertical border.
 vBorder :: (MonadIO m) => m (Widget VBorder)
@@ -107,19 +109,20 @@ vBorderWith :: (MonadIO m) => Char -> m (Widget VBorder)
 vBorderWith ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = VBorder Nothing ch
+      w { state = VBorder def_attr ch
         , getGrowHorizontal = const $ return False
         , getGrowVertical = const $ return True
         , draw = \this s ctx -> do
                    VBorder attr _ <- getState this
-                   let Just attr' = overrideAttr ctx
-                                    `alt` attr
-                                    `alt` (Just $ normalAttr ctx)
+                   let attr' = mergeAttrs [ overrideAttr ctx
+                                          , attr
+                                          , normalAttr ctx
+                                          ]
                    return $ char_fill attr' ch 1 (region_height s)
         }
   return wRef
 
-data Bordered a = (Show a) => Bordered (Maybe Attr) (Widget a)
+data Bordered a = (Show a) => Bordered Attr (Widget a)
 
 instance Show (Bordered a) where
     show (Bordered attr _) = concat [ "Bordered { attr = "
@@ -129,14 +132,14 @@ instance Show (Bordered a) where
 
 instance HasBorderAttr (Widget (Bordered a)) where
     setBorderAttribute t a =
-        updateWidgetState t $ \(Bordered _ ch) -> Bordered (Just a) ch
+        updateWidgetState t $ \(Bordered _ ch) -> Bordered a ch
 
 -- |Wrap a widget in a bordering box using the specified attribute.
 bordered :: (MonadIO m, Show a) => Widget a -> m (Widget (Bordered a))
 bordered child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Bordered Nothing child
+      w { state = Bordered def_attr child
 
         , getGrowVertical = const $ growVertical child
         , getGrowHorizontal = const $ growHorizontal child
@@ -166,9 +169,10 @@ drawBordered :: (Show a) =>
                 Bordered a -> DisplayRegion -> RenderContext -> IO Image
 drawBordered this s ctx = do
   let Bordered attr child = this
-      Just attr' = overrideAttr ctx
-                   `alt` attr
-                   `alt` (Just $ normalAttr ctx)
+      attr' = mergeAttrs [ overrideAttr ctx
+                         , attr
+                         , normalAttr ctx
+                         ]
 
   -- Render the contained widget with enough room to draw borders.
   -- Then, use the size of the rendered widget to constrain the space

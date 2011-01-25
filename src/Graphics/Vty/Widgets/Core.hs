@@ -54,9 +54,6 @@ module Graphics.Vty.Widgets.Core
 where
 
 import GHC.Word ( Word )
-import Data.Maybe
-    ( fromJust
-    )
 import Data.Typeable
     ( Typeable
     )
@@ -115,14 +112,14 @@ instance Exception RenderError where
 
 data RenderContext = RenderContext { normalAttr :: Attr
                                    , focusAttr :: Attr
-                                   , overrideAttr :: Maybe Attr
+                                   , overrideAttr :: Attr
                                    }
 
 getNormalAttr :: RenderContext -> Attr
-getNormalAttr ctx = fromJust $ overrideAttr ctx `alt` (Just $ normalAttr ctx)
+getNormalAttr ctx = mergeAttrs [ overrideAttr ctx, normalAttr ctx ]
 
 defaultContext :: RenderContext
-defaultContext = RenderContext def_attr def_attr Nothing
+defaultContext = RenderContext def_attr def_attr def_attr
 
 -- |The type of user interface widgets.  A 'Widget' provides several
 -- properties:

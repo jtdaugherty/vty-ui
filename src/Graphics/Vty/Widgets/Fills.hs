@@ -39,9 +39,10 @@ vFill att c = do
         , getGrowVertical = const $ return True
         , draw = \this s ctx -> do
                    VFill attr ch <- getState this
-                   let Just attr' = overrideAttr ctx
-                                    `alt` Just attr
-                                    `alt` (Just $ normalAttr ctx)
+                   let attr' = mergeAttrs [ overrideAttr ctx
+                                          , attr
+                                          , normalAttr ctx
+                                          ]
                    return $ char_fill attr' ch (region_width s) (region_height s)
         }
   return wRef
@@ -60,9 +61,10 @@ hFill att c h = do
         , getGrowVertical = const $ return False
         , draw = \this s ctx -> do
                    HFill attr ch height <- getState this
-                   let Just attr' = overrideAttr ctx
-                                    `alt` Just attr
-                                    `alt` (Just $ normalAttr ctx)
+                   let attr' = mergeAttrs [ overrideAttr ctx
+                                          , attr
+                                          , normalAttr ctx
+                                          ]
                    return $ char_fill attr' ch (region_width s) (toEnum height)
         }
   return wRef

@@ -37,6 +37,7 @@ import Graphics.Vty
     , Modifier
     , string
     , region_width
+    , def_attr
     )
 import Graphics.Vty.Widgets.Core
     ( Widget
@@ -95,15 +96,15 @@ radioGroupSetCurrent wRef = do
 
 instance HasNormalAttr (Widget CheckBox) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { cbNormalAttr = Just a }
+        updateWidgetState wRef $ \s -> s { cbNormalAttr = a }
 
 instance HasFocusAttr (Widget CheckBox) where
     setFocusAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { cbFocusedAttr = Just a }
+        updateWidgetState wRef $ \s -> s { cbFocusedAttr = a }
 
 data CheckBox = CheckBox { isChecked :: Bool
-                         , cbNormalAttr :: Maybe Attr
-                         , cbFocusedAttr :: Maybe Attr
+                         , cbNormalAttr :: Attr
+                         , cbFocusedAttr :: Attr
                          , checkedChar :: Char
                          , checkboxLabel :: String
                          , checkboxChangeHandler :: Widget CheckBox -> Bool -> IO ()
@@ -125,8 +126,8 @@ newCheckbox label = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = CheckBox { isChecked = False
-                           , cbNormalAttr = Nothing
-                           , cbFocusedAttr = Nothing
+                           , cbNormalAttr = def_attr
+                           , cbFocusedAttr = def_attr
                            , checkedChar = 'x'
                            , checkboxLabel = label
                            , checkboxChangeHandler = \_ _ -> return ()
@@ -143,14 +144,16 @@ newCheckbox label = do
               f <- focused <~ this
               st <- getState this
 
-              let attr = overrideAttr ctx
-                         `alt` cbNormalAttr st
-                         `alt` (Just $ normalAttr ctx)
+              let attr = mergeAttrs [ overrideAttr ctx
+                                    , cbNormalAttr st
+                                    , normalAttr ctx
+                                    ]
 
-                  Just fAttr = if f
-                               then cbFocusedAttr st
-                                        `alt` (Just $ focusAttr ctx)
-                               else attr
+                  fAttr = if f
+                          then mergeAttrs [ cbFocusedAttr st
+                                          , focusAttr ctx
+                                          ]
+                          else attr
 
                   ch = if isChecked st then checkedChar st else ' '
 

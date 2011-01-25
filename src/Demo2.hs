@@ -13,12 +13,11 @@ fg = white
 bg = black
 
 focAttr = black `on` yellow
-bodyAttr = white `on` blue
-headerAttr = bright_green `on` blue
-msgAttr = blue `on` bg
+headerAttr = fgColor bright_green
+msgAttr = fgColor blue
 
 color :: Formatter
-color = highlight (compile (BS8.pack "<.*>") []) (bright_green `on` bg)
+color = highlight (compile (BS8.pack "<.*>") []) (fgColor bright_green)
 
 main :: IO ()
 main = do
@@ -32,10 +31,10 @@ main = do
                 ]
 
   table <- newTable columns BorderFull >>=
-           withNormalAttribute (white `on` blue) >>=
-           withBorderAttribute (green `on` blue)
+           withNormalAttribute (bgColor blue) >>=
+           withBorderAttribute (fgColor green)
 
-  tw <- (textWidget (wrap &.& color) $ prepareText Nothing msg) >>= withNormalAttribute msgAttr
+  tw <- (textWidget (wrap &.& color) $ prepareText def_attr msg) >>= withNormalAttribute msgAttr
   mainBox <- (return table) <--> (return tw)
 
   setBoxSpacing mainBox 1

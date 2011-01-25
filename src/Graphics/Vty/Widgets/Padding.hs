@@ -34,6 +34,7 @@ import Graphics.Vty
     , image_height
     , region_width
     , region_height
+    , def_attr
     )
 import Graphics.Vty.Widgets.Core
     ( Widget
@@ -59,7 +60,7 @@ import Graphics.Vty.Widgets.Util
 data Padding = Padding Int Int Int Int
                deriving (Show)
 
-data Padded = forall a. (Show a) => Padded (Widget a) Padding (Maybe Attr)
+data Padded = forall a. (Show a) => Padded (Widget a) Padding Attr
 
 instance Show Padded where
     show (Padded _ p mAttr) = concat [ "Padded { "
@@ -86,7 +87,7 @@ instance Paddable Padding where
 
 instance HasNormalAttr (Widget Padded) where
     setNormalAttribute wRef a =
-        updateWidgetState wRef $ \(Padded w p _) -> Padded w p $ Just a
+        updateWidgetState wRef $ \(Padded w p _) -> Padded w p a
 
 leftPadding :: Padding -> Word
 leftPadding (Padding _ _ _ l) = toEnum l
@@ -129,7 +130,7 @@ padded :: (MonadIO m, Show a) => Widget a -> Padding -> m (Widget Padded)
 padded ch padding = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Padded ch padding Nothing
+      w { state = Padded ch padding def_attr
 
         , getGrowVertical = const $ growVertical ch
         , getGrowHorizontal = const $ growHorizontal ch
@@ -143,9 +144,10 @@ padded ch padding = do
                   -- settings.
                   let constrained = sz `withWidth` (region_width sz - (leftPadding p + rightPadding p))
                                     `withHeight` (region_height sz - (topPadding p + bottomPadding p))
-                      Just attr = overrideAttr ctx
-                                  `alt` att
-                                  `alt` (Just $ normalAttr ctx)
+                      attr = mergeAttrs [ overrideAttr ctx
+                                        , att
+                                        , normalAttr ctx
+                                        ]
 
                   -- Render child.
                   img <- render child constrained ctx
