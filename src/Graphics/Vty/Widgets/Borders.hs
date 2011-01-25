@@ -8,8 +8,6 @@ module Graphics.Vty.Widgets.Borders
     , VBorder
     , vBorder
     , hBorder
-    , vBorderWith
-    , hBorderWith
     , bordered
     , withBorderAttribute
     )
@@ -55,70 +53,63 @@ import Graphics.Vty.Widgets.Text
     ( simpleText
     )
 import Graphics.Vty.Widgets.Util
+import Graphics.Vty.Widgets.Skins
 
 class HasBorderAttr a where
     setBorderAttribute :: (MonadIO m) => a -> Attr -> m ()
 
-data HBorder = HBorder Attr Char
+data HBorder = HBorder Attr
                deriving (Show)
 
 instance HasBorderAttr (Widget HBorder) where
     setBorderAttribute t a =
-        updateWidgetState t $ \(HBorder a' ch) -> HBorder (mergeAttr a a') ch
+        updateWidgetState t $ \(HBorder a') -> HBorder (mergeAttr a a')
 
 withBorderAttribute :: (MonadIO m, HasBorderAttr a) => Attr -> a -> m a
 withBorderAttribute att w = setBorderAttribute w att >> return w
 
--- |Create a single-row horizontal border.
-hBorder :: (MonadIO m) => m (Widget HBorder)
-hBorder = hBorderWith '-'
-
 -- |Create a single-row horizontal border using the specified
 -- attribute and character.
-hBorderWith :: (MonadIO m) => Char -> m (Widget HBorder)
-hBorderWith ch = do
+hBorder :: (MonadIO m) => m (Widget HBorder)
+hBorder = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = HBorder def_attr ch
+      w { state = HBorder def_attr
         , getGrowVertical = const $ return False
         , getGrowHorizontal = const $ return True
         , draw = \this s ctx -> do
-                   HBorder attr _ <- getState this
+                   HBorder attr <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx
                                           , attr
                                           , normalAttr ctx
                                           ]
-                   return $ char_fill attr' ch (region_width s) 1
+                   return $ char_fill attr' (skinHorizontal $ skin ctx) (region_width s) 1
         }
   return wRef
 
-data VBorder = VBorder Attr Char
+data VBorder = VBorder Attr
                deriving (Show)
 
 instance HasBorderAttr (Widget VBorder) where
     setBorderAttribute t a =
-        updateWidgetState t $ \(VBorder a' ch) -> VBorder (mergeAttr a a') ch
-
--- |Create a single-column vertical border.
-vBorder :: (MonadIO m) => m (Widget VBorder)
-vBorder = vBorderWith '|'
+        updateWidgetState t $ \(VBorder a') -> VBorder (mergeAttr a a')
 
 -- |Create a single-column vertical border using the specified
 -- attribute and character.
-vBorderWith :: (MonadIO m) => Char -> m (Widget VBorder)
-vBorderWith ch = do
+vBorder :: (MonadIO m) => m (Widget VBorder)
+vBorder = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = VBorder def_attr ch
+      w { state = VBorder def_attr
         , getGrowHorizontal = const $ return False
         , getGrowVertical = const $ return True
         , draw = \this s ctx -> do
-                   VBorder attr _ <- getState this
+                   VBorder attr <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx
                                           , attr
                                           , normalAttr ctx
                                           ]
-                   return $ char_fill attr' ch 1 (region_height s)
+                   return $ char_fill attr' (skinVertical $ skin ctx) 1 (region_height s)
         }
   return wRef
 
