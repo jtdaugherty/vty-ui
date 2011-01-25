@@ -67,10 +67,10 @@ main = do
   addRow table $ listHeader .|. customCell selector `pad` padNone
 
   r1 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader "Cake"
+      when v $ setText radioHeader "Cake, please."
 
   r2 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader "Death"
+      when v $ setText radioHeader "Death, please."
 
   edit1 `onChange` \_ s -> setText edit1Header s
   edit2 `onChange` \_ s -> setText edit2Header s
@@ -80,7 +80,7 @@ main = do
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
-  setCheckboxChecked r2
+  setCheckboxChecked r1
 
   fgr <- newFocusGroup
   fgr `onKeyPressed` \_ k _ -> do
