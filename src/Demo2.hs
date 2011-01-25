@@ -26,7 +26,7 @@ main = do
             \- <SPC> toggles radio buttons and checkboxes\n\n\
             \- <ESC> quits"
 
-      columns = [ column (Fixed 25) `pad` (padAll 1) `align` AlignRight
+      columns = [ column (Fixed 25) `pad` (padAll 1)
                 , column Auto `pad` (padAll 1)
                 ]
 
@@ -64,7 +64,7 @@ main = do
   addRow table $ radioHeader .|. rs
   addRow table $ edit1Header .|. edit1
   addRow table $ edit2Header .|. edit2
-  addRow table $ customCell listHeader `align` AlignLeft .|. customCell selector `pad` padNone
+  addRow table $ listHeader .|. customCell selector `pad` padNone
 
   r1 `onCheckboxChange` \_ v ->
       when v $ setText radioHeader "Cake"
@@ -88,11 +88,12 @@ main = do
            KEsc -> exitSuccess
            _ -> return False
 
-  mapM_ (addToList lst) [ "Foo"
-                        , "Bar"
-                        , "Baz"
-                        , "Stuff"
-                        , "Things"
+  mapM_ (addToList lst) [ "Cookies"
+                        , "Cupcakes"
+                        , "Twinkies"
+                        , "M&Ms"
+                        , "Fritos"
+                        , "Cheetos"
                         ]
 
   addToFocusGroup fgr r1
