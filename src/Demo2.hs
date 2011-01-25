@@ -70,10 +70,10 @@ main = do
   addRow table $ customCell listHeader `align` AlignLeft .|. customCell selector `pad` padNone
 
   r1 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader "CAKE!!"
+      when v $ setText radioHeader "CAKE!!" >> setTableBorderSkin table asciiSkin
 
   r2 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader "death..."
+      when v $ setText radioHeader "death..." >> setTableBorderSkin table unicodeSkin
 
   r3 `onCheckboxChange` \_ v ->
       setText r3Header $ if v then "checked" else "unchecked"

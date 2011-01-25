@@ -9,8 +9,12 @@ module Graphics.Vty.Widgets.Table
     , RowLike
     , TableError(..)
     , ColumnSpec
+    , BorderSkin(..)
     , (.|.)
     , newTable
+    , asciiSkin
+    , unicodeSkin
+    , setTableBorderSkin
     , setDefaultCellAlignment
     , setDefaultCellPadding
     , addRow
@@ -181,6 +185,49 @@ instance (RowLike a) => RowLike [a] where
 
 infixl 2 .|.
 
+-- Corners start from top left and go clockwise.  Intersections are:
+-- full, left, right, top, bottom.
+data BorderSkin = BorderSkin { skinCornerTL :: Char
+                             , skinCornerTR :: Char
+                             , skinCornerBR :: Char
+                             , skinCornerBL :: Char
+                             , skinIntersectionFull :: Char
+                             , skinIntersectionL :: Char
+                             , skinIntersectionR :: Char
+                             , skinIntersectionT :: Char
+                             , skinIntersectionB :: Char
+                             , skinHorizontal :: Char
+                             , skinVertical :: Char
+                             }
+
+asciiSkin :: BorderSkin
+asciiSkin = BorderSkin { skinCornerTL = '+'
+                       , skinCornerTR = '+'
+                       , skinCornerBR = '+'
+                       , skinCornerBL = '+'
+                       , skinIntersectionFull = '+'
+                       , skinIntersectionL = '+'
+                       , skinIntersectionR = '+'
+                       , skinIntersectionT = '+'
+                       , skinIntersectionB = '+'
+                       , skinHorizontal = '-'
+                       , skinVertical = '|'
+                       }
+
+unicodeSkin :: BorderSkin
+unicodeSkin = BorderSkin { skinCornerTL = '┏'
+                         , skinCornerTR = '┓'
+                         , skinCornerBR = '┛'
+                         , skinCornerBL = '┗'
+                         , skinIntersectionFull = '╋'
+                         , skinIntersectionL = '┣'
+                         , skinIntersectionR = '┫'
+                         , skinIntersectionT = '┳'
+                         , skinIntersectionB = '┻'
+                         , skinHorizontal = '━'
+                         , skinVertical = '┃'
+                         }
+
 data Table = Table { rows :: [TableRow]
                    , numColumns :: Int
                    , columnSpecs :: [ColumnSpec]
@@ -189,6 +236,7 @@ data Table = Table { rows :: [TableRow]
                    , defaultCellAlignment :: Alignment
                    , defaultCellPadding :: Padding
                    , tableNormalAttr :: Attr
+                   , borderSkin :: BorderSkin
                    }
 
 instance HasNormalAttr (Widget Table) where
@@ -211,6 +259,10 @@ instance Show Table where
                     , ", defaultCellPadding = ", show $ defaultCellPadding t
                     , " }"
                     ]
+
+setTableBorderSkin :: (MonadIO m) => Widget Table -> BorderSkin -> m ()
+setTableBorderSkin wRef sk =
+    updateWidgetState wRef $ \s -> s { borderSkin = sk }
 
 customCell :: (Show a) => Widget a -> TableCell
 customCell w = TableCell w Nothing Nothing
@@ -239,6 +291,7 @@ newTable specs borderSty = do
                         , defaultCellAlignment = AlignLeft
                         , defaultCellPadding = padNone
                         , tableNormalAttr = def_attr
+                        , borderSkin = unicodeSkin
                         }
 
         , getGrowHorizontal = \st -> do
@@ -249,16 +302,19 @@ newTable specs borderSty = do
         , draw =
             \this sz ctx -> do
               rs <- rows <~~ this
+              sk <- borderSkin <~~ this
 
               rowImgs <- mapM (\(TableRow r) -> renderRow this sz r ctx) rs
 
-              rowBorder <- mkRowBorder this sz ctx
-              topBottomBorder <- mkTopBottomBorder this sz ctx
-              sideBorder <- mkSideBorder this ctx
+              rowBorder <- mkRowBorder this sz ctx $ skinIntersectionFull sk
+              topBorder <- mkTopBottomBorder this sz ctx $ skinIntersectionT sk
+              bottomBorder <- mkTopBottomBorder this sz ctx $ skinIntersectionB sk
+              sideBorderL <- mkSideBorder this ctx True
+              sideBorderR <- mkSideBorder this ctx False
 
               let body = vert_cat $ intersperse rowBorder rowImgs
-                  withTBBorders = vert_cat [topBottomBorder, body, topBottomBorder]
-                  withSideBorders = horiz_cat [sideBorder, withTBBorders, sideBorder]
+                  withTBBorders = vert_cat [topBorder, body, bottomBorder]
+                  withSideBorders = horiz_cat [sideBorderL, withTBBorders, sideBorderR]
 
               -- XXX only cat rows until we exceed the available space
               return withSideBorders
@@ -330,23 +386,24 @@ getCellPadding t columnNumber _ = do
     Nothing -> defaultCellPadding <~~ t
     Just p -> return p
 
-mkRowBorder :: Widget Table -> DisplayRegion -> RenderContext -> IO Image
-mkRowBorder t sz ctx = do
+mkRowBorder :: Widget Table -> DisplayRegion -> RenderContext -> Char -> IO Image
+mkRowBorder t sz ctx intChar = do
   bs <- borderStyle <~~ t
 
   if not $ rowBorders bs then
       return empty_image else
-      mkRowBorder_ t sz ctx
+      mkRowBorder_ t sz ctx intChar
 
 -- Make a row border that matches the width of each row but does not
 -- include outermost edge characters.
-mkRowBorder_ :: Widget Table -> DisplayRegion -> RenderContext -> IO Image
-mkRowBorder_ t sz ctx = do
+mkRowBorder_ :: Widget Table -> DisplayRegion -> RenderContext -> Char -> IO Image
+mkRowBorder_ t sz ctx intChar = do
   bs <- borderStyle <~~ t
   bAttr <- borderAttr <~~ t
   specs <- columnSpecs <~~ t
   aw <- autoWidth t sz
   tableNA <- tableNormalAttr <~~ t
+  sk <- borderSkin <~~ t
 
   let bAttr' = mergeAttrs [ overrideAttr ctx
                           , bAttr
@@ -354,43 +411,56 @@ mkRowBorder_ t sz ctx = do
                           , normalAttr ctx
                           ]
       szs = map columnSize specs
-      intersection = string bAttr' "+"
+      intersection = string bAttr' [intChar]
       imgs = (flip map) szs $ \s ->
              case s of
-               Fixed n -> char_fill bAttr' '-' n 1
-               Auto -> char_fill bAttr' '-' aw 1
+               Fixed n -> char_fill bAttr' (skinHorizontal sk) n 1
+               Auto -> char_fill bAttr' (skinHorizontal sk) aw 1
       imgs' = if colBorders bs
               then intersperse intersection imgs
               else imgs
 
   return $ horiz_cat imgs'
 
-mkTopBottomBorder :: Widget Table -> DisplayRegion -> RenderContext -> IO Image
-mkTopBottomBorder t sz ctx = do
+mkTopBottomBorder :: Widget Table -> DisplayRegion -> RenderContext -> Char -> IO Image
+mkTopBottomBorder t sz ctx intChar = do
   bs <- borderStyle <~~ t
 
+  -- XXX broken for top/bottom borders
   if edgeBorders bs then
-      mkRowBorder_ t sz ctx else
+      mkRowBorder_ t sz ctx intChar else
       return empty_image
 
 -- Make vertical side borders for the table, including row border
 -- intersections if necessary.
-mkSideBorder :: Widget Table -> RenderContext -> IO Image
-mkSideBorder t ctx = do
+mkSideBorder :: Widget Table -> RenderContext -> Bool -> IO Image
+mkSideBorder t ctx isLeft = do
   bs <- borderStyle <~~ t
 
   if edgeBorders bs then
-      mkSideBorder_ t ctx else
+      mkSideBorder_ t ctx isLeft else
       return empty_image
 
-mkSideBorder_ :: Widget Table -> RenderContext -> IO Image
-mkSideBorder_ t ctx = do
+mkSideBorder_ :: Widget Table -> RenderContext -> Bool -> IO Image
+mkSideBorder_ t ctx isLeft = do
   bs <- borderStyle <~~ t
   bAttr <- borderAttr <~~ t
   tableNA <- tableNormalAttr <~~ t
   rs <- rows <~~ t
+  sk <- borderSkin <~~ t
 
-  let intersection = string bAttr' "+"
+  let intersection = string bAttr' [ if isLeft
+                                     then skinIntersectionL sk
+                                     else skinIntersectionR sk
+                                   ]
+      topCorner = string bAttr' [ if isLeft
+                                  then skinCornerTL sk
+                                  else skinCornerTR sk
+                                ]
+      bottomCorner = string bAttr' [ if isLeft
+                                     then skinCornerBL sk
+                                     else skinCornerBR sk
+                                   ]
       bAttr' = mergeAttrs [ overrideAttr ctx
                           , bAttr
                           , tableNA
@@ -404,12 +474,12 @@ mkSideBorder_ t ctx = do
                             EmptyCell -> return 1
                     return $ maximum hs
 
-  let borderImgs = (flip map) rowHeights $ \h -> char_fill bAttr' '|' 1 h
+  let borderImgs = (flip map) rowHeights $ \h -> char_fill bAttr' (skinVertical sk) 1 h
       withIntersections = if rowBorders bs
                           then intersperse intersection borderImgs
                           else borderImgs
 
-  return $ vert_cat $ intersection : withIntersections ++ [intersection]
+  return $ vert_cat $ topCorner : withIntersections ++ [bottomCorner]
 
 positionRow :: Widget Table -> BorderStyle -> DisplayRegion -> [TableCell] -> IO ()
 positionRow t bs pos cells = do
@@ -547,6 +617,7 @@ renderRow tbl sz cells ctx = do
   bAttr <- borderAttr <~~ tbl
   aw <- autoWidth tbl sz
   tableNA <- tableNormalAttr <~~ tbl
+  sk <- borderSkin <~~ tbl
 
   let sizes = map columnSize specs
       att = mergeAttrs [ overrideAttr ctx
@@ -588,6 +659,6 @@ renderRow tbl sz cells ctx = do
                           ]
       withBorders = case colBorders borderSty of
                       False -> cellImgsBottomPadded
-                      True -> intersperse (char_fill bAttr' '|' 1 maxHeight) cellImgsBottomPadded
+                      True -> intersperse (char_fill bAttr' (skinVertical sk) 1 maxHeight) cellImgsBottomPadded
 
   return $ horiz_cat withBorders
