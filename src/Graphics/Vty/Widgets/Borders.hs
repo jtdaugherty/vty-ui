@@ -164,6 +164,7 @@ drawBordered this s ctx = do
                          , attr
                          , normalAttr ctx
                          ]
+      sk = skin ctx
 
   -- Render the contained widget with enough room to draw borders.
   -- Then, use the size of the rendered widget to constrain the space
@@ -174,13 +175,20 @@ drawBordered this s ctx = do
 
   let adjusted = DisplayRegion (image_width childImage + 2)
                  (image_height childImage)
-  corner <- simpleText "+" >>= withNormalAttribute attr'
+
+  tlCorner <- simpleText [skinCornerTL sk] >>= withNormalAttribute attr'
+  trCorner <- simpleText [skinCornerTR sk] >>= withNormalAttribute attr'
+  blCorner <- simpleText [skinCornerBL sk] >>= withNormalAttribute attr'
+  brCorner <- simpleText [skinCornerBR sk] >>= withNormalAttribute attr'
 
   hb <- hBorder
   setBorderAttribute hb attr'
 
-  topWidget <- hBox corner =<< hBox hb corner
-  topBottom <- render topWidget adjusted ctx
+  topWidget <- hBox tlCorner =<< hBox hb trCorner
+  top <- render topWidget adjusted ctx
+
+  bottomWidget <- hBox blCorner =<< hBox hb brCorner
+  bottom <- render bottomWidget adjusted ctx
 
   vb <- vBorder
   setBorderAttribute vb attr'
@@ -189,4 +197,4 @@ drawBordered this s ctx = do
 
   let middle = horiz_cat [leftRight, childImage, leftRight]
 
-  return $ vert_cat [topBottom, middle, topBottom]
+  return $ vert_cat [top, middle, bottom]
