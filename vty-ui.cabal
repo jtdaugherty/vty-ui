@@ -35,7 +35,6 @@ Library
           Graphics.Vty.Widgets.All
           Graphics.Vty.Widgets.Text
           Graphics.Vty.Widgets.Core
-          Graphics.Vty.Widgets.Composed
           Graphics.Vty.Widgets.Box
           Graphics.Vty.Widgets.List
           Graphics.Vty.Widgets.Borders

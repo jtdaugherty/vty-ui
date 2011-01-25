@@ -4,6 +4,7 @@ module Graphics.Vty.Widgets.Limits
     , HLimit
     , hLimit
     , vLimit
+    , boxLimit
     , setVLimit
     , setHLimit
     , addToVLimit
@@ -126,3 +127,13 @@ getHLimit :: (MonadIO m) => Widget (HLimit a) -> m Int
 getHLimit wRef = do
   (HLimit lim _) <- state <~ wRef
   return lim
+
+-- |Impose a maximum size (width, height) on a widget.
+boxLimit :: (MonadIO m, Show a) =>
+            Int -- ^Maximum width in columns
+         -> Int -- ^Maximum height in rows
+         -> Widget a
+         -> m (Widget (VLimit (HLimit a)))
+boxLimit maxWidth maxHeight w = do
+  ch <- hLimit maxWidth w
+  vLimit maxHeight ch

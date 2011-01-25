@@ -42,7 +42,8 @@ buildUi1 appst = do
 buildUi2 appst =
     uiCore appst ((return $ theListLimit appst)
                   <--> (hBorder >>= withBorderAttribute titleAttr)
-                  <--> (bottomPadded (theBody appst) bodyAttr))
+                  <--> (return $ theBody appst)
+                  <--> (vFill ' '))
 
 -- Construct the application state using the message map.
 mkAppState :: IO AppState
