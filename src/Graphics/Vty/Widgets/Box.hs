@@ -11,7 +11,6 @@ where
 import GHC.Word ( Word )
 import Control.Monad.Trans
     ( MonadIO
-    , liftIO
     )
 import Graphics.Vty.Widgets.Core
     ( Widget
@@ -196,8 +195,8 @@ renderBox s ctx this growFirst growSecond regDimension renderDimension withDim =
               Vertical -> vert_cat
               Horizontal -> horiz_cat
 
-  gf <- liftIO $ growFirst first
-  gs <- liftIO $ growSecond second
+  gf <- growFirst first
+  gs <- growSecond second
 
   [img1, img2] <- case (gf, gs) of
                     (True, True) -> renderHalves
