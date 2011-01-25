@@ -16,6 +16,7 @@ module Graphics.Vty.Widgets.All
     , module Graphics.Vty.Widgets.Limits
     , module Graphics.Vty.Widgets.Fills
     , module Graphics.Vty.Widgets.Centering
+    , module Graphics.Vty.Widgets.Skins
     )
 where
 
@@ -35,3 +36,4 @@ import Graphics.Vty.Widgets.Alignment
 import Graphics.Vty.Widgets.Limits
 import Graphics.Vty.Widgets.Fills
 import Graphics.Vty.Widgets.Centering
+import Graphics.Vty.Widgets.Skins

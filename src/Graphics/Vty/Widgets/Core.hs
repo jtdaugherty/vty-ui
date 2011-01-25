@@ -92,6 +92,7 @@ import Graphics.Vty
     , empty_image
     )
 import Graphics.Vty.Widgets.Util
+import Graphics.Vty.Widgets.Skins
 
 class HasNormalAttr a where
     setNormalAttribute :: (MonadIO m) => a -> Attr -> m ()
@@ -113,13 +114,14 @@ instance Exception RenderError where
 data RenderContext = RenderContext { normalAttr :: Attr
                                    , focusAttr :: Attr
                                    , overrideAttr :: Attr
+                                   , skin :: Skin
                                    }
 
 getNormalAttr :: RenderContext -> Attr
 getNormalAttr ctx = mergeAttrs [ overrideAttr ctx, normalAttr ctx ]
 
 defaultContext :: RenderContext
-defaultContext = RenderContext def_attr def_attr def_attr
+defaultContext = RenderContext def_attr def_attr def_attr unicodeSkin
 
 -- |The type of user interface widgets.  A 'Widget' provides several
 -- properties:

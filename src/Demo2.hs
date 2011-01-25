@@ -39,17 +39,13 @@ main = do
 
   ui <- centered =<< hLimit 70 mainBox
 
-  r1 <- newCheckbox "ASCII"
-  r2 <- newCheckbox "Unicode"
-  r3 <- newCheckbox "Unicode Rounded"
-  r4 <- newCheckbox "Unicode Bold"
+  r1 <- newCheckbox "Cake"
+  r2 <- newCheckbox "Death"
   radioHeader <- simpleText "" >>= withNormalAttribute headerAttr
 
   rg <- newRadioGroup
   addToRadioGroup rg r1
   addToRadioGroup rg r2
-  addToRadioGroup rg r3
-  addToRadioGroup rg r4
 
   edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- editWidget
@@ -62,7 +58,7 @@ main = do
   selector <- vLimit 3 lst
   listHeader <- simpleText ""
 
-  rs <- (return r1) <--> (return r2) <--> (return r3) <--> (return r4)
+  rs <- (return r1) <--> (return r2)
 
   addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
   addRow table $ radioHeader .|. rs
@@ -71,16 +67,10 @@ main = do
   addRow table $ customCell listHeader `align` AlignLeft .|. customCell selector `pad` padNone
 
   r1 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader "ASCII" >> setTableBorderSkin table asciiSkin
+      when v $ setText radioHeader "Cake"
 
   r2 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader "Unicode" >> setTableBorderSkin table unicodeSkin
-
-  r3 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader "Unicode Rounded" >> setTableBorderSkin table unicodeRoundedSkin
-
-  r4 `onCheckboxChange` \_ v ->
-      when v $ setText radioHeader "Unicode Bold" >> setTableBorderSkin table unicodeBoldSkin
+      when v $ setText radioHeader "Death"
 
   edit1 `onChange` \_ s -> setText edit1Header s
   edit2 `onChange` \_ s -> setText edit2Header s
@@ -107,8 +97,6 @@ main = do
 
   addToFocusGroup fgr r1
   addToFocusGroup fgr r2
-  addToFocusGroup fgr r3
-  addToFocusGroup fgr r4
   addToFocusGroup fgr edit1
   addToFocusGroup fgr edit2
   addToFocusGroup fgr lst

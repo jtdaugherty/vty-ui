@@ -85,6 +85,7 @@ import Graphics.Vty.Widgets.Core
     , withWidth
     , withHeight
     , growVertical
+    , defaultContext
     )
 import Graphics.Vty.Widgets.Text
     ( FormattedText
@@ -228,7 +229,7 @@ addToList list key = do
            -- the result, assuming that all list widgets will have the
            -- same size.  If you violate this, you'll have interesting
            -- results!
-           img <- render w (DisplayRegion 100 100) $ RenderContext def_attr def_attr def_attr
+           img <- render w (DisplayRegion 100 100) defaultContext
            return $ fromEnum $ image_height img
          _ -> itemHeight <~~ list
 

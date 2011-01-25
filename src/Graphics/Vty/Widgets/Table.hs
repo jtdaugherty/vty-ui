@@ -9,14 +9,8 @@ module Graphics.Vty.Widgets.Table
     , RowLike
     , TableError(..)
     , ColumnSpec
-    , BorderSkin(..)
     , (.|.)
     , newTable
-    , asciiSkin
-    , unicodeSkin
-    , unicodeBoldSkin
-    , unicodeRoundedSkin
-    , setTableBorderSkin
     , setDefaultCellAlignment
     , setDefaultCellPadding
     , addRow
@@ -105,6 +99,9 @@ import Graphics.Vty.Widgets.Alignment
 import Graphics.Vty.Widgets.Borders
     ( HasBorderAttr(..)
     )
+import Graphics.Vty.Widgets.Skins
+    ( Skin(..)
+    )
 import Graphics.Vty.Widgets.Util
 
 data TableError = ColumnCountMismatch
@@ -187,77 +184,6 @@ instance (RowLike a) => RowLike [a] where
 
 infixl 2 .|.
 
--- Corners start from top left and go clockwise.  Intersections are:
--- full, left, right, top, bottom.
-data BorderSkin = BorderSkin { skinCornerTL :: Char
-                             , skinCornerTR :: Char
-                             , skinCornerBR :: Char
-                             , skinCornerBL :: Char
-                             , skinIntersectionFull :: Char
-                             , skinIntersectionL :: Char
-                             , skinIntersectionR :: Char
-                             , skinIntersectionT :: Char
-                             , skinIntersectionB :: Char
-                             , skinHorizontal :: Char
-                             , skinVertical :: Char
-                             }
-
-asciiSkin :: BorderSkin
-asciiSkin = BorderSkin { skinCornerTL = '+'
-                       , skinCornerTR = '+'
-                       , skinCornerBR = '+'
-                       , skinCornerBL = '+'
-                       , skinIntersectionFull = '+'
-                       , skinIntersectionL = '+'
-                       , skinIntersectionR = '+'
-                       , skinIntersectionT = '+'
-                       , skinIntersectionB = '+'
-                       , skinHorizontal = '-'
-                       , skinVertical = '|'
-                       }
-
-unicodeSkin :: BorderSkin
-unicodeSkin = BorderSkin { skinCornerTL = '┌'
-                         , skinCornerTR = '┐'
-                         , skinCornerBR = '┘'
-                         , skinCornerBL = '└'
-                         , skinIntersectionFull = '┼'
-                         , skinIntersectionL = '├'
-                         , skinIntersectionR = '┤'
-                         , skinIntersectionT = '┬'
-                         , skinIntersectionB = '┴'
-                         , skinHorizontal = '─'
-                         , skinVertical = '│'
-                         }
-
-unicodeBoldSkin :: BorderSkin
-unicodeBoldSkin = BorderSkin { skinCornerTL = '┏'
-                             , skinCornerTR = '┓'
-                             , skinCornerBR = '┛'
-                             , skinCornerBL = '┗'
-                             , skinIntersectionFull = '╋'
-                             , skinIntersectionL = '┣'
-                             , skinIntersectionR = '┫'
-                             , skinIntersectionT = '┳'
-                             , skinIntersectionB = '┻'
-                             , skinHorizontal = '━'
-                             , skinVertical = '┃'
-                             }
-
-unicodeRoundedSkin :: BorderSkin
-unicodeRoundedSkin = BorderSkin { skinCornerTL = '╭'
-                                , skinCornerTR = '╮'
-                                , skinCornerBR = '╯'
-                                , skinCornerBL = '╰'
-                                , skinIntersectionFull = '┼'
-                                , skinIntersectionL = '├'
-                                , skinIntersectionR = '┤'
-                                , skinIntersectionT = '┬'
-                                , skinIntersectionB = '┴'
-                                , skinHorizontal = '─'
-                                , skinVertical = '│'
-                                }
-
 data Table = Table { rows :: [TableRow]
                    , numColumns :: Int
                    , columnSpecs :: [ColumnSpec]
@@ -266,7 +192,6 @@ data Table = Table { rows :: [TableRow]
                    , defaultCellAlignment :: Alignment
                    , defaultCellPadding :: Padding
                    , tableNormalAttr :: Attr
-                   , borderSkin :: BorderSkin
                    }
 
 instance HasNormalAttr (Widget Table) where
@@ -289,10 +214,6 @@ instance Show Table where
                     , ", defaultCellPadding = ", show $ defaultCellPadding t
                     , " }"
                     ]
-
-setTableBorderSkin :: (MonadIO m) => Widget Table -> BorderSkin -> m ()
-setTableBorderSkin wRef sk =
-    updateWidgetState wRef $ \s -> s { borderSkin = sk }
 
 customCell :: (Show a) => Widget a -> TableCell
 customCell w = TableCell w Nothing Nothing
@@ -321,7 +242,6 @@ newTable specs borderSty = do
                         , defaultCellAlignment = AlignLeft
                         , defaultCellPadding = padNone
                         , tableNormalAttr = def_attr
-                        , borderSkin = unicodeSkin
                         }
 
         , getGrowHorizontal = \st -> do
@@ -332,7 +252,7 @@ newTable specs borderSty = do
         , draw =
             \this sz ctx -> do
               rs <- rows <~~ this
-              sk <- borderSkin <~~ this
+              let sk = skin ctx
 
               rowImgs <- mapM (\(TableRow r) -> renderRow this sz r ctx) rs
 
@@ -433,9 +353,9 @@ mkRowBorder_ t sz ctx intChar = do
   specs <- columnSpecs <~~ t
   aw <- autoWidth t sz
   tableNA <- tableNormalAttr <~~ t
-  sk <- borderSkin <~~ t
 
-  let bAttr' = mergeAttrs [ overrideAttr ctx
+  let sk = skin ctx
+      bAttr' = mergeAttrs [ overrideAttr ctx
                           , bAttr
                           , tableNA
                           , normalAttr ctx
@@ -477,9 +397,9 @@ mkSideBorder_ t ctx isLeft = do
   bAttr <- borderAttr <~~ t
   tableNA <- tableNormalAttr <~~ t
   rs <- rows <~~ t
-  sk <- borderSkin <~~ t
 
-  let intersection = string bAttr' [ if isLeft
+  let sk = skin ctx
+      intersection = string bAttr' [ if isLeft
                                      then skinIntersectionL sk
                                      else skinIntersectionR sk
                                    ]
@@ -647,9 +567,9 @@ renderRow tbl sz cells ctx = do
   bAttr <- borderAttr <~~ tbl
   aw <- autoWidth tbl sz
   tableNA <- tableNormalAttr <~~ tbl
-  sk <- borderSkin <~~ tbl
 
-  let sizes = map columnSize specs
+  let sk = skin ctx
+      sizes = map columnSize specs
       att = mergeAttrs [ overrideAttr ctx
                        , tableNA
                        , normalAttr ctx
