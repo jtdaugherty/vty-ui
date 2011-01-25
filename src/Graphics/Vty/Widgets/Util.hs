@@ -2,6 +2,7 @@ module Graphics.Vty.Widgets.Util
     ( on
     , fgColor
     , bgColor
+    , style
     , mergeAttr
     , mergeAttrs
     )
@@ -10,6 +11,7 @@ where
 import Graphics.Vty
     ( Color
     , Attr(..)
+    , Style
     , MaybeDefault(..)
     , def_attr
     , with_style
@@ -25,6 +27,9 @@ fgColor = (def_attr `with_fore_color`)
 
 bgColor :: Color -> Attr
 bgColor = (def_attr `with_back_color`)
+
+style :: Style -> Attr
+style = (def_attr `with_style`)
 
 -- Left-most attribute's fields take precedence.
 mergeAttr :: Attr -> Attr -> Attr
