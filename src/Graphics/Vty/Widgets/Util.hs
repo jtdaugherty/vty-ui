@@ -41,4 +41,4 @@ mergeAttr a b =
     in b3
 
 mergeAttrs :: [Attr] -> Attr
-mergeAttrs attrs = foldl mergeAttr def_attr attrs
+mergeAttrs attrs = foldr mergeAttr def_attr attrs

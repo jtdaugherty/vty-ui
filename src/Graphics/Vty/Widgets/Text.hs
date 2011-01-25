@@ -106,15 +106,15 @@ instance HasNormalAttr (Widget FormattedText) where
 
 -- |Prepare a string for rendering and assign it the specified default
 -- attribute.
-prepareText :: Attr -> String -> Text
-prepareText att s = Text { defaultAttr = att
-                         , tokens = tokenize s att
-                         }
+prepareText :: String -> Text
+prepareText s = Text { defaultAttr = def_attr
+                     , tokens = tokenize s def_attr
+                     }
 
 -- |Construct a Widget directly from an attribute and a String.  This
 -- is recommended if you don't need to use a 'Formatter'.
 simpleText :: (MonadIO m) => String -> m (Widget FormattedText)
-simpleText s = textWidget nullFormatter $ prepareText def_attr s
+simpleText s = textWidget nullFormatter s
 
 -- |A formatter for wrapping text into the available space.  This
 -- formatter will insert line breaks where appropriate so if you want
@@ -146,11 +146,11 @@ matchesRegex r t = isJust $ match r (tokenString t) [exec_anchored]
 -- |Construct a text widget formatted with the specified formatters.
 -- the formatters will be applied in the order given here, so be aware
 -- of how the formatters will modify the text (and affect each other).
-textWidget :: (MonadIO m) => Formatter -> Text -> m (Widget FormattedText)
-textWidget format t = do
+textWidget :: (MonadIO m) => Formatter -> String -> m (Widget FormattedText)
+textWidget format s = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = FormattedText { text = t
+      w { state = FormattedText { text = prepareText s
                                 , formatter = format
                                 }
         , getGrowHorizontal = const $ return False
@@ -165,7 +165,7 @@ textWidget format t = do
 setText :: (MonadIO m) => Widget FormattedText -> String -> m ()
 setText wRef s = do
   updateWidgetState wRef $ \st ->
-      st { text = prepareText (defaultAttr $ text st) s }
+      st { text = (prepareText s) { defaultAttr = defaultAttr $ text st } }
 
 -- |Low-level text-rendering routine.
 renderText :: Text -> Formatter -> DisplayRegion -> RenderContext -> Image
@@ -179,7 +179,7 @@ renderText t format sz ctx =
       -- Truncate the tokens at the specified column and split them up
       -- into lines
       attr' = mergeAttrs [ overrideAttr ctx
-                         , defaultAttr newText
+                         , defaultAttr t
                          , normalAttr ctx
                          ]
       tokenAttr tok = mergeAttrs [ overrideAttr ctx

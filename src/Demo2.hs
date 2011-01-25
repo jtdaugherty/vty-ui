@@ -34,7 +34,7 @@ main = do
            withNormalAttribute (bgColor blue) >>=
            withBorderAttribute (fgColor green)
 
-  tw <- (textWidget (wrap &.& color) $ prepareText def_attr msg) >>= withNormalAttribute msgAttr
+  tw <- (textWidget (wrap &.& color) msg) >>= withNormalAttribute msgAttr
   mainBox <- (return table) <--> (return tw)
 
   setBoxSpacing mainBox 1

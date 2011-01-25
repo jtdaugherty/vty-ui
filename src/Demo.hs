@@ -48,7 +48,7 @@ buildUi2 appst =
 mkAppState :: IO AppState
 mkAppState = do
   lw <- mkSimpleList selAttr []
-  b <- textWidget wrap $ prepareText def_attr ""
+  b <- textWidget wrap ""
   f1 <- simpleText "" >>= withNormalAttribute titleAttr
   f2 <- simpleText "[]" >>= withNormalAttribute titleAttr
   e <- editWidget
