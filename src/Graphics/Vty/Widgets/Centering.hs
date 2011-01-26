@@ -72,7 +72,7 @@ hCentered ch = do
               s <- getPhysicalSize this
               chSz <- getPhysicalSize child
               let (half, _) = centered_halves region_width s (region_width chSz)
-                  chPos = pos `withWidth` (region_width pos + half)
+                  chPos = pos `plusWidth` half
               setPhysicalPosition child chPos
         }
   return wRef
@@ -111,7 +111,7 @@ vCentered ch = do
               s <- getPhysicalSize this
               chSz <- getPhysicalSize child
               let (half, _) = centered_halves region_height s (region_height chSz)
-                  chPos = pos `withHeight` (region_height pos + half)
+                  chPos = pos `plusHeight` half
               setPhysicalPosition child chPos
         }
   return wRef

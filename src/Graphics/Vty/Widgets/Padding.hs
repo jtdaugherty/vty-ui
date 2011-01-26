@@ -172,8 +172,8 @@ padded ch padding = do
               -- Considering left and top padding, adjust position and
               -- set on child.
               let newPos = pos
-                           `withWidth` (region_width pos + leftPadding p)
-                           `withHeight` (region_height pos + topPadding p)
+                           `plusWidth` (leftPadding p)
+                           `plusHeight` (topPadding p)
 
               setPhysicalPosition child newPos
 

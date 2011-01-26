@@ -145,9 +145,7 @@ bordered child = do
             \this pos -> do
               (setPosition w) this pos
               Bordered _ ch <- getState this
-              let chPos = pos
-                          `withWidth` (region_width pos + 1)
-                          `withHeight` (region_height pos + 1)
+              let chPos = pos `plusWidth` 1 `plusHeight` 1
               setPhysicalPosition ch chPos
         }
   return wRef

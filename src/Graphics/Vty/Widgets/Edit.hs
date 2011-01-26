@@ -101,7 +101,7 @@ editWidget = do
               start <- displayStart <~~ this
 
               if f then
-                  return (Just $ pos `withWidth` ((region_width pos) + toEnum (curPos - start))) else
+                  return (Just $ pos `plusWidth` (toEnum (curPos - start))) else
                   return Nothing
 
         , draw =

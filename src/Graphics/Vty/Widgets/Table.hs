@@ -452,7 +452,7 @@ positionRow t bs pos cells = do
       doPositioning width ((szPolicy, cell):ws) =
           do
             case cell of
-              TableCell w _ _ -> setPhysicalPosition w $ pos `withWidth` (region_width pos + width)
+              TableCell w _ _ -> setPhysicalPosition w $ pos `plusWidth` width
               EmptyCell -> return ()
             doPositioning (width + cellWidth szPolicy + offset) ws
 

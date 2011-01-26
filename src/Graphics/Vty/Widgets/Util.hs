@@ -7,6 +7,8 @@ module Graphics.Vty.Widgets.Util
     , mergeAttrs
     , withWidth
     , withHeight
+    , plusWidth
+    , plusHeight
     )
 where
 
@@ -61,3 +63,17 @@ withWidth (DisplayRegion _ h) w = DisplayRegion w h
 -- |Modify the height component of a 'DisplayRegion'.
 withHeight :: DisplayRegion -> Word -> DisplayRegion
 withHeight (DisplayRegion w _) h = DisplayRegion w h
+
+-- |Modify the width component of a 'DisplayRegion'.
+plusWidth :: DisplayRegion -> Word -> DisplayRegion
+plusWidth (DisplayRegion w' h) w =
+    if (fromEnum w' + fromEnum w < 0)
+    then error $ "plusWidth: would overflow on " ++ (show w') ++ " + " ++ (show w)
+    else DisplayRegion (w + w') h
+
+-- |Modify the height component of a 'DisplayRegion'.
+plusHeight :: DisplayRegion -> Word -> DisplayRegion
+plusHeight (DisplayRegion w h') h =
+    if (fromEnum h' + fromEnum h < 0)
+    then error $ "plusHeight: would overflow on " ++ (show h') ++ " + " ++ (show h)
+    else DisplayRegion w (h + h')

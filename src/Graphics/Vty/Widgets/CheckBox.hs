@@ -135,7 +135,7 @@ newCheckbox label = do
         , cursorInfo =
             \this -> do
               pos <- getPhysicalPosition this
-              return $ Just (pos `withWidth` (region_width pos + 1))
+              return $ Just (pos `plusWidth` 1)
 
         , keyEventHandler = radioKeyEvent
         , draw =

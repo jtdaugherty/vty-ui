@@ -139,11 +139,9 @@ box o spacing a b = do
               setPhysicalPosition ch1 pos
               case orientation of
                 Horizontal -> setPhysicalPosition ch2 $
-                              pos `withWidth` ((region_width pos) + (region_width ch1_size) +
-                                                                  toEnum sp)
+                              pos `plusWidth` ((region_width ch1_size) + toEnum sp)
                 Vertical -> setPhysicalPosition ch2 $
-                            pos `withHeight` ((region_height pos) + (region_height ch1_size) +
-                                                                  toEnum sp)
+                            pos `plusHeight` ((region_height ch1_size) + toEnum sp)
         }
   return wRef
 
