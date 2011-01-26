@@ -13,9 +13,9 @@ module Graphics.Vty.Widgets.Core
     , updateWidgetState
     , newWidget
     , getState
-    , getPhysicalSize
-    , setPhysicalPosition
-    , getPhysicalPosition
+    , getCurrentSize
+    , setCurrentPosition
+    , getCurrentPosition
     , showWidget
     , (<~)
     , (<~~)
@@ -153,20 +153,20 @@ data WidgetImpl a = WidgetImpl {
     -- |Render the widget with the given dimensions.  The result
     -- /must/ not be larger than the specified dimensions, but may be
     -- smaller.
-    , draw :: Widget a -> DisplayRegion -> RenderContext -> IO Image
+    , render_ :: Widget a -> DisplayRegion -> RenderContext -> IO Image
 
     -- |Will this widget expand to take advantage of available
     -- horizontal space?
-    , getGrowHorizontal :: a -> IO Bool
+    , growHorizontal_ :: a -> IO Bool
 
     -- |Will this widget expand to take advantage of available
     -- vertical space?
-    , getGrowVertical :: a -> IO Bool
+    , growVertical_ :: a -> IO Bool
 
-    , physicalSize :: DisplayRegion
-    , physicalPosition :: DisplayRegion
+    , currentSize :: DisplayRegion
+    , currentPosition :: DisplayRegion
 
-    , setPosition :: Widget a -> DisplayRegion -> IO ()
+    , setCurrentPosition_ :: Widget a -> DisplayRegion -> IO ()
 
     , keyEventHandler :: Widget a -> Key -> [Modifier] -> IO Bool
 
@@ -186,10 +186,10 @@ showWidget wRef = show <$> (liftIO $ readIORef wRef)
 instance (Show a) => Show (WidgetImpl a) where
     show w = concat $ [ "WidgetImpl { "
                       , show $ state w
-                      , ", physicalSize = "
-                      , show $ physicalSize w
-                      , ", physicalPosition = "
-                      , show $ physicalPosition w
+                      , ", currentSize = "
+                      , show $ currentSize w
+                      , ", currentPosition = "
+                      , show $ currentPosition w
                       , ", focused = "
                       , show $ focused w
                       , " }"
@@ -206,13 +206,13 @@ getFocusGroup wRef = do
 
 growHorizontal :: (MonadIO m) => Widget a -> m Bool
 growHorizontal w = do
-  act <- getGrowHorizontal <~ w
+  act <- growHorizontal_ <~ w
   st <- state <~ w
   liftIO $ act st
 
 growVertical :: (MonadIO m) => Widget a -> m Bool
 growVertical w = do
-  act <- getGrowVertical <~ w
+  act <- growVertical_ <~ w
   st <- state <~ w
   liftIO $ act st
 
@@ -220,11 +220,11 @@ render :: (MonadIO m, Show a) => Widget a -> DisplayRegion -> RenderContext -> m
 render wRef sz ctx =
     liftIO $ do
       impl <- readIORef wRef
-      img <- draw impl wRef sz ctx
+      img <- render_ impl wRef sz ctx
       let imgsz =  DisplayRegion (image_width img) (image_height img)
       when (image_width img > region_width sz ||
             image_height img > region_height sz) $ throw $ ImageTooBig (show impl) sz imgsz
-      setPhysicalSize wRef $ DisplayRegion (image_width img) (image_height img)
+      setCurrentSize wRef $ DisplayRegion (image_width img) (image_height img)
       return img
 
 renderAndPosition :: (MonadIO m, Show a) => Widget a -> DisplayRegion -> DisplayRegion
@@ -232,35 +232,37 @@ renderAndPosition :: (MonadIO m, Show a) => Widget a -> DisplayRegion -> Display
 renderAndPosition wRef pos sz ctx = do
   img <- render wRef sz ctx
   -- Position post-processing depends on the sizes being correct!
-  setPhysicalPosition wRef pos
+  setCurrentPosition wRef pos
   return img
 
-setPhysicalSize :: (MonadIO m) => Widget a -> DisplayRegion -> m ()
-setPhysicalSize wRef newSize =
-    liftIO $ modifyIORef wRef $ \w -> w { physicalSize = newSize }
+setCurrentSize :: (MonadIO m) => Widget a -> DisplayRegion -> m ()
+setCurrentSize wRef newSize =
+    liftIO $ modifyIORef wRef $ \w -> w { currentSize = newSize }
 
-getPhysicalSize :: (MonadIO m) => Widget a -> m DisplayRegion
-getPhysicalSize wRef = (return . physicalSize) =<< (liftIO $ readIORef wRef)
+getCurrentSize :: (MonadIO m) => Widget a -> m DisplayRegion
+getCurrentSize wRef = (return . currentSize) =<< (liftIO $ readIORef wRef)
 
-getPhysicalPosition :: (MonadIO m, Functor m) => Widget a -> m DisplayRegion
-getPhysicalPosition wRef = physicalPosition <$> (liftIO $ readIORef wRef)
+getCurrentPosition :: (MonadIO m, Functor m) => Widget a -> m DisplayRegion
+getCurrentPosition wRef = currentPosition <$> (liftIO $ readIORef wRef)
 
-setPhysicalPosition :: (MonadIO m) => Widget a -> DisplayRegion -> m ()
-setPhysicalPosition wRef pos = do
-  updateWidget wRef $ \w -> w { physicalPosition = pos }
+setCurrentPosition :: (MonadIO m) => Widget a -> DisplayRegion -> m ()
+setCurrentPosition wRef pos = do
+  updateWidget wRef $ \w -> w { currentPosition = pos }
   liftIO $ do
     w <- readIORef wRef
-    (setPosition w) wRef pos
+    (setCurrentPosition_ w) wRef pos
 
 newWidget :: (MonadIO m) => m (Widget a)
 newWidget =
     liftIO $ newIORef $
            WidgetImpl { state = undefined
-                      , draw = undefined
-                      , getGrowVertical = const $ return False
-                      , getGrowHorizontal = const $ return False
-                      , physicalSize = DisplayRegion 0 0
-                      , physicalPosition = DisplayRegion 0 0
+                      , render_ = undefined
+                      , growVertical_ = const $ return False
+                      , growHorizontal_ = const $ return False
+                      , setCurrentPosition_ = \_ _ -> return ()
+                      , focusGroup = const $ return Nothing
+                      , currentSize = DisplayRegion 0 0
+                      , currentPosition = DisplayRegion 0 0
                       , focused = False
                       , gainFocusHandler =
                           \this -> updateWidget this $ \w -> w { focused = True }
@@ -268,8 +270,6 @@ newWidget =
                           \this -> updateWidget this $ \w -> w { focused = False }
                       , keyEventHandler = \_ _ _ -> return False
                       , cursorInfo = const $ return Nothing
-                      , setPosition = \_ _ -> return ()
-                      , focusGroup = const $ return Nothing
                       }
 
 handleKeyEvent :: (MonadIO m) => Widget a -> Key -> [Modifier] -> m Bool
@@ -352,16 +352,16 @@ newFocusEntry chRef = do
   updateWidget wRef $ \w ->
       w { state = FocusEntry chRef
 
-        , getGrowHorizontal = const $ growHorizontal chRef
-        , getGrowVertical = const $ growVertical chRef
+        , growHorizontal_ = const $ growHorizontal chRef
+        , growVertical_ = const $ growVertical chRef
 
-        , draw =
+        , render_ =
             \_ sz ctx -> render chRef sz ctx
 
-        , setPosition =
+        , setCurrentPosition_ =
             \this pos -> do
               (FocusEntry ch) <- getState this
-              setPhysicalPosition ch pos
+              setCurrentPosition ch pos
         }
 
   wRef `onLoseFocus` (const $ unfocus chRef)
@@ -395,7 +395,7 @@ newFocusGroup = do
                        handleKeyEvent e key mods
 
         -- Should never be rendered.
-        , draw = \_ _ _ -> return empty_image
+        , render_ = \_ _ _ -> return empty_image
         }
   return wRef
 

@@ -32,7 +32,7 @@ import Graphics.Vty.Widgets.Core
     , render
     , updateWidget
     , updateWidgetState
-    , setPhysicalPosition
+    , setCurrentPosition
     , getState
     , handleKeyEvent
     , growHorizontal
@@ -51,15 +51,15 @@ hLimit maxWidth child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = HLimit maxWidth child
-        , draw = \this s ctx -> do
+        , render_ = \this s ctx -> do
                    HLimit width ch <- getState this
                    let region = s `withWidth` fromIntegral (min (toEnum width) (region_width s))
                    render ch region ctx
 
-        , setPosition =
+        , setCurrentPosition_ =
             \this pos -> do
               HLimit _ ch <- getState this
-              setPhysicalPosition ch pos
+              setCurrentPosition ch pos
         }
   wRef `onKeyPressed` \_ key mods -> handleKeyEvent child key mods
   return wRef
@@ -75,17 +75,17 @@ vLimit maxHeight child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = VLimit maxHeight child
-        , getGrowHorizontal = const $ growHorizontal child
+        , growHorizontal_ = const $ growHorizontal child
 
-        , draw = \this s ctx -> do
+        , render_ = \this s ctx -> do
                    VLimit height ch <- getState this
                    let region = s `withHeight` fromIntegral (min (toEnum height) (region_height s))
                    render ch region ctx
 
-        , setPosition =
+        , setCurrentPosition_ =
             \this pos -> do
               VLimit _ ch <- getState this
-              setPhysicalPosition ch pos
+              setCurrentPosition ch pos
         }
   wRef `onKeyPressed` \_ key mods -> handleKeyEvent child key mods
   return wRef

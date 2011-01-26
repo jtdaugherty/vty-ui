@@ -42,7 +42,7 @@ import Graphics.Vty.Widgets.Core
     , render
     , handleKeyEvent
     , getState
-    , setPhysicalPosition
+    , setCurrentPosition
     )
 import Graphics.Vty.Widgets.Box
     ( hBox
@@ -73,8 +73,8 @@ hBorder = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = HBorder def_attr
-        , getGrowHorizontal = const $ return True
-        , draw = \this s ctx -> do
+        , growHorizontal_ = const $ return True
+        , render_ = \this s ctx -> do
                    HBorder attr <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx
                                           , attr
@@ -98,8 +98,8 @@ vBorder = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = VBorder def_attr
-        , getGrowVertical = const $ return True
-        , draw = \this s ctx -> do
+        , growVertical_ = const $ return True
+        , render_ = \this s ctx -> do
                    VBorder attr <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx
                                           , attr
@@ -128,24 +128,24 @@ bordered child = do
   updateWidget wRef $ \w ->
       w { state = Bordered def_attr child
 
-        , getGrowVertical = const $ growVertical child
-        , getGrowHorizontal = const $ growHorizontal child
+        , growVertical_ = const $ growVertical child
+        , growHorizontal_ = const $ growHorizontal child
 
         , keyEventHandler =
             \this key mods -> do
               Bordered _ ch <- getState this
               handleKeyEvent ch key mods
 
-        , draw =
+        , render_ =
             \this s ctx -> do
               st <- getState this
               drawBordered st s ctx
 
-        , setPosition =
+        , setCurrentPosition_ =
             \this pos -> do
               Bordered _ ch <- getState this
               let chPos = pos `plusWidth` 1 `plusHeight` 1
-              setPhysicalPosition ch chPos
+              setCurrentPosition ch chPos
         }
   return wRef
 

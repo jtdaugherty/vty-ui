@@ -51,7 +51,7 @@ import Graphics.Vty.Widgets.Core
     , newWidget
     , updateWidget
     , updateWidgetState
-    , getPhysicalPosition
+    , getCurrentPosition
     )
 import Graphics.Vty.Widgets.Util
 
@@ -134,11 +134,11 @@ newCheckbox label = do
                            }
         , cursorInfo =
             \this -> do
-              pos <- getPhysicalPosition this
+              pos <- getCurrentPosition this
               return $ Just (pos `plusWidth` 1)
 
         , keyEventHandler = radioKeyEvent
-        , draw =
+        , render_ =
             \this sz ctx -> do
               f <- focused <~ this
               st <- getState this

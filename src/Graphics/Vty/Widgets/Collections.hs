@@ -34,7 +34,7 @@ import Graphics.Vty.Widgets.Core
     , (<~~)
     , getFocusGroup
     , updateWidgetState
-    , setPhysicalPosition
+    , setCurrentPosition
     , newWidget
     , updateWidget
     , render
@@ -74,7 +74,7 @@ renderEntry :: (MonadIO m) => Entry -> DisplayRegion -> RenderContext -> m Image
 renderEntry (Entry w) = render w
 
 positionEntry :: Entry -> DisplayRegion -> IO ()
-positionEntry (Entry w) = setPhysicalPosition w
+positionEntry (Entry w) = setCurrentPosition w
 
 entryHandleKeyEvent :: (MonadIO m) => Entry -> Key -> [Modifier] -> m Bool
 entryHandleKeyEvent (Entry w) k mods = handleKeyEvent w k mods
@@ -97,14 +97,14 @@ newCollection = do
                              }
         -- XXX technically this should defer to whichever entry is
         -- current!
-        , getGrowHorizontal = \st -> do
+        , growHorizontal_ = \st -> do
             case currentEntryNum st of
               (-1) -> throw EmptyCollection
               i -> do
                 let e = entries st !! i
                 liftIO $ entryGrowHorizontal e
 
-        , getGrowVertical = \st -> do
+        , growVertical_ = \st -> do
             case currentEntryNum st of
               (-1) -> throw EmptyCollection
               i -> do
@@ -120,7 +120,7 @@ newCollection = do
                        let e = entries st !! i
                        entryFocusGroup e
 
-        , draw = \this size ctx -> do
+        , render_ = \this size ctx -> do
                    st <- getState this
                    case currentEntryNum st of
                      (-1) -> throw EmptyCollection
@@ -128,7 +128,7 @@ newCollection = do
                        let e = entries st !! i
                        renderEntry e size ctx
 
-        , setPosition =
+        , setCurrentPosition_ =
             \this pos -> do
               st <- getState this
               case currentEntryNum st of

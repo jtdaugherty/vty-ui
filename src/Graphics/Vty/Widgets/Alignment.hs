@@ -45,10 +45,10 @@ rightAligned :: (MonadIO m, Show a) => Widget a -> m (Widget RightAligned)
 rightAligned chRef = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { getGrowHorizontal = const $ return True
-        , getGrowVertical = const $ growVertical chRef
+      w { growHorizontal_ = const $ return True
+        , growVertical_ = const $ growVertical chRef
         , state = RightAligned chRef
-        , draw =
+        , render_ =
             \this sz ctx ->
                 do
                   RightAligned ch <- getState this

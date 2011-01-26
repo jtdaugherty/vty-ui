@@ -39,7 +39,7 @@ import Graphics.Vty.Widgets.Core
     , RenderContext(..)
     , (<~)
     , (<~~)
-    , getPhysicalPosition
+    , getCurrentPosition
     , updateWidget
     , updateWidgetState
     , newWidget
@@ -92,11 +92,11 @@ editWidget = do
                        , cursorMoveHandler = \_ _ -> return ()
                        }
 
-        , getGrowHorizontal = const $ return True
+        , growHorizontal_ = const $ return True
         , cursorInfo =
             \this -> do
               f <- focused <~ this
-              pos <- getPhysicalPosition this
+              pos <- getCurrentPosition this
               curPos <- cursorPosition <~~ this
               start <- displayStart <~~ this
 
@@ -104,7 +104,7 @@ editWidget = do
                   return (Just $ pos `plusWidth` (toEnum (curPos - start))) else
                   return Nothing
 
-        , draw =
+        , render_ =
             \this size ctx -> do
               setDisplayWidth this (fromEnum $ region_width size)
               st <- getState this

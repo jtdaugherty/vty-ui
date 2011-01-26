@@ -72,8 +72,8 @@ import Graphics.Vty.Widgets.Core
     , newWidget
     , updateWidget
     , updateWidgetState
-    , setPhysicalPosition
-    , getPhysicalSize
+    , setCurrentPosition
+    , getCurrentSize
     , growVertical
     , growHorizontal
     )
@@ -243,10 +243,10 @@ newTable specs borderSty = do
                         , tableNormalAttr = def_attr
                         }
 
-        , getGrowHorizontal = \st -> do
+        , growHorizontal_ = \st -> do
             return $ any (== Auto) (map columnSize $ columnSpecs st)
 
-        , draw =
+        , render_ =
             \this sz ctx -> do
               rs <- rows <~~ this
               let sk = skin ctx
@@ -269,7 +269,7 @@ newTable specs borderSty = do
                   return empty_image else
                   return withSideBorders
 
-        , setPosition =
+        , setCurrentPosition_ =
             \this pos -> do
               bs <- borderStyle <~~ this
               rs <- rows <~~ this
@@ -288,7 +288,7 @@ newTable specs borderSty = do
                       -- Get the maximum cell height
                       cellPhysSizes <- forM row $ \cell ->
                                        case cell of
-                                         TableCell cw _ _ -> getPhysicalSize cw
+                                         TableCell cw _ _ -> getCurrentSize cw
                                          EmptyCell -> return $ DisplayRegion 0 1
 
                       -- Include 1 as a possible height to prevent
@@ -420,7 +420,7 @@ mkSideBorder_ t ctx isLeft = do
   rowHeights <- forM rs $ \(TableRow row) -> do
                     hs <- forM row $ \cell ->
                           case cell of
-                            TableCell cw _ _ -> region_height <$> getPhysicalSize cw
+                            TableCell cw _ _ -> region_height <$> getCurrentSize cw
                             EmptyCell -> return 1
                     return $ maximum hs
 
@@ -436,7 +436,7 @@ positionRow t bs pos cells = do
   -- Position each cell widget based on the base position of the row
   -- (which starts from the origin of the leftmost widget, NOT the
   -- leftmost cell border)
-  oldSize <- getPhysicalSize t
+  oldSize <- getCurrentSize t
   aw <- autoWidth t oldSize
   specs <- columnSpecs <~~ t
 
@@ -452,7 +452,7 @@ positionRow t bs pos cells = do
       doPositioning width ((szPolicy, cell):ws) =
           do
             case cell of
-              TableCell w _ _ -> setPhysicalPosition w $ pos `plusWidth` width
+              TableCell w _ _ -> setCurrentPosition w $ pos `plusWidth` width
               EmptyCell -> return ()
             doPositioning (width + cellWidth szPolicy + offset) ws
 

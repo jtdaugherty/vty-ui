@@ -153,7 +153,7 @@ textWidget format s = do
       w { state = FormattedText { text = prepareText s
                                 , formatter = format
                                 }
-        , draw =
+        , render_ =
             \this size ctx -> do
               ft <- getState this
               return $ renderText (text ft) (formatter ft) size ctx

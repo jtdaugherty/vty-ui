@@ -25,8 +25,8 @@ import Graphics.Vty.Widgets.Core
     , growVertical
     , handleKeyEvent
     , getState
-    , setPhysicalPosition
-    , getPhysicalSize
+    , setCurrentPosition
+    , getCurrentSize
     , updateWidgetState
     )
 import Graphics.Vty
@@ -103,12 +103,12 @@ box o spacing a b = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = Box o spacing a b
-        , getGrowHorizontal = \(Box _ _ ch1 ch2) -> do
+        , growHorizontal_ = \(Box _ _ ch1 ch2) -> do
             h1 <- growHorizontal ch1
             h2 <- growHorizontal ch2
             return $ h1 || h2
 
-        , getGrowVertical = \(Box _ _ ch1 ch2) -> do
+        , growVertical_ = \(Box _ _ ch1 ch2) -> do
             v1 <- growVertical ch1
             v2 <- growVertical ch2
             return $ v1 || v2
@@ -120,26 +120,26 @@ box o spacing a b = do
               if handled then return True else
                   handleKeyEvent ch2 key mods
 
-        , draw = \this s ctx -> do
-                   st@(Box orientation _ _ _) <- getState this
+        , render_ = \this s ctx -> do
+                      st@(Box orientation _ _ _) <- getState this
 
-                   case orientation of
-                     Vertical ->
-                         renderBox s ctx st growVertical growVertical region_height
-                                   image_height withHeight
-                     Horizontal ->
-                         renderBox s ctx st growHorizontal growHorizontal region_width
-                                   image_width withWidth
+                      case orientation of
+                        Vertical ->
+                            renderBox s ctx st growVertical growVertical region_height
+                                      image_height withHeight
+                        Horizontal ->
+                            renderBox s ctx st growHorizontal growHorizontal region_width
+                                      image_width withWidth
 
-        , setPosition =
+        , setCurrentPosition_ =
             \this pos -> do
               Box orientation sp ch1 ch2 <- getState this
-              ch1_size <- getPhysicalSize ch1
-              setPhysicalPosition ch1 pos
+              ch1_size <- getCurrentSize ch1
+              setCurrentPosition ch1 pos
               case orientation of
-                Horizontal -> setPhysicalPosition ch2 $
+                Horizontal -> setCurrentPosition ch2 $
                               pos `plusWidth` ((region_width ch1_size) + toEnum sp)
-                Vertical -> setPhysicalPosition ch2 $
+                Vertical -> setCurrentPosition ch2 $
                             pos `plusHeight` ((region_height ch1_size) + toEnum sp)
         }
   return wRef

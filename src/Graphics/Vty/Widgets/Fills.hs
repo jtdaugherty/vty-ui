@@ -43,8 +43,8 @@ vFill c = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = VFill def_attr c
-        , getGrowVertical = const $ return True
-        , draw = \this s ctx -> do
+        , growVertical_ = const $ return True
+        , render_ = \this s ctx -> do
                    VFill attr ch <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx
                                           , attr
@@ -68,8 +68,8 @@ hFill c h = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = HFill def_attr c h
-        , getGrowHorizontal = const $ return True
-        , draw = \this s ctx -> do
+        , growHorizontal_ = const $ return True
+        , render_ = \this s ctx -> do
                    HFill attr ch height <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx
                                           , attr

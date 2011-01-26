@@ -81,8 +81,8 @@ import Graphics.Vty.Widgets.Core
     , updateWidget
     , updateWidgetState
     , getState
-    , getPhysicalPosition
-    , getPhysicalSize
+    , getCurrentPosition
+    , getCurrentSize
     , growVertical
     , defaultContext
     )
@@ -297,18 +297,18 @@ listWidget list = do
       w { state = list
         , keyEventHandler = listKeyEvent
 
-        , getGrowVertical = const $ return True
+        , growVertical_ = const $ return True
 
         , cursorInfo =
             \this -> do
               st <- getState this
-              pos <- getPhysicalPosition this
-              sz <- getPhysicalSize this
+              pos <- getCurrentPosition this
+              sz <- getCurrentSize this
               let newCol = max 0 (region_width pos + region_width sz - 1)
                   newRow = region_height pos + toEnum (max 0 $ selectedIndex st - scrollTopIndex st)
               return $ Just (pos `withWidth` newCol `withHeight` newRow)
 
-        , draw =
+        , render_ =
             \this sz ctx -> do
               -- Get the item height *before* a potential resize, then
               -- get the list state below, after the resize.
@@ -324,7 +324,7 @@ listWidget list = do
 
               renderListWidget foc listData sz ctx
 
-        -- XXX!!! define setPosition to set position of visible
+        -- XXX!!! define setCurrentPosition to set position of visible
         -- widgets in list
         }
   return wRef

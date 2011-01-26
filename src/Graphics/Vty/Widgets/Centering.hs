@@ -22,8 +22,8 @@ import Graphics.Vty.Widgets.Core
     , growHorizontal
     , growVertical
     , getState
-    , setPhysicalPosition
-    , getPhysicalSize
+    , setCurrentPosition
+    , getCurrentSize
     )
 import Graphics.Vty
     ( DisplayRegion
@@ -47,11 +47,11 @@ hCentered ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = HCentered ch
-        , getGrowHorizontal = const $ return True
+        , growHorizontal_ = const $ return True
 
-        , getGrowVertical = \(HCentered child) -> growVertical child
+        , growVertical_ = \(HCentered child) -> growVertical child
 
-        , draw = \this s ctx -> do
+        , render_ = \this s ctx -> do
                    HCentered child <- getState this
                    img <- render child s ctx
 
@@ -66,14 +66,14 @@ hCentered ch = do
                                            ]
                             else img
 
-        , setPosition =
+        , setCurrentPosition_ =
             \this pos -> do
               HCentered child <- getState this
-              s <- getPhysicalSize this
-              chSz <- getPhysicalSize child
+              s <- getCurrentSize this
+              chSz <- getCurrentSize child
               let (half, _) = centered_halves region_width s (region_width chSz)
                   chPos = pos `plusWidth` half
-              setPhysicalPosition child chPos
+              setCurrentPosition child chPos
         }
   return wRef
 
@@ -87,10 +87,10 @@ vCentered ch = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = VCentered ch
-        , getGrowVertical = const $ return True
-        , getGrowHorizontal = const $ growHorizontal ch
+        , growVertical_ = const $ return True
+        , growHorizontal_ = const $ growHorizontal ch
 
-        , draw = \this s ctx -> do
+        , render_ = \this s ctx -> do
                    VCentered child <- getState this
                    img <- render child s ctx
 
@@ -105,14 +105,14 @@ vCentered ch = do
                                           ]
                             else img
 
-        , setPosition =
+        , setCurrentPosition_ =
             \this pos -> do
               VCentered child <- getState this
-              s <- getPhysicalSize this
-              chSz <- getPhysicalSize child
+              s <- getCurrentSize this
+              chSz <- getCurrentSize child
               let (half, _) = centered_halves region_height s (region_height chSz)
                   chPos = pos `plusHeight` half
-              setPhysicalPosition child chPos
+              setCurrentPosition child chPos
         }
   return wRef
 

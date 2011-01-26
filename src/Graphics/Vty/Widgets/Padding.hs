@@ -50,7 +50,7 @@ import Graphics.Vty.Widgets.Core
     , handleKeyEvent
     , getState
     , render
-    , setPhysicalPosition
+    , setCurrentPosition
     , onKeyPressed
     )
 import Graphics.Vty.Widgets.Util
@@ -131,10 +131,10 @@ padded ch padding = do
   updateWidget wRef $ \w ->
       w { state = Padded ch padding def_attr
 
-        , getGrowVertical = const $ growVertical ch
-        , getGrowHorizontal = const $ growHorizontal ch
+        , growVertical_ = const $ growVertical ch
+        , growHorizontal_ = const $ growHorizontal ch
 
-        , draw =
+        , render_ =
             \this sz ctx ->
                 if (region_width sz < 2) || (region_height sz < 2)
                 then return empty_image
@@ -165,7 +165,7 @@ padded ch padding = do
 
                   return $ topImg <-> (leftImg <|> img <|> rightImg) <-> bottomImg
 
-        , setPosition =
+        , setCurrentPosition_ =
             \this pos -> do
               Padded child p _ <- getState this
 
@@ -175,7 +175,7 @@ padded ch padding = do
                            `plusWidth` (leftPadding p)
                            `plusHeight` (topPadding p)
 
-              setPhysicalPosition child newPos
+              setCurrentPosition child newPos
 
         }
 
