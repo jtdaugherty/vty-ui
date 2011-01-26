@@ -265,7 +265,10 @@ newTable specs borderSty = do
                   withSideBorders = horiz_cat [sideBorderL, withTBBorders, sideBorderR]
 
               -- XXX only cat rows until we exceed the available space
-              return withSideBorders
+              if ((region_width sz < image_width withSideBorders) ||
+                  (region_height sz < image_height withSideBorders)) then
+                  return empty_image else
+                  return withSideBorders
 
         , setPosition =
             \this pos -> do
