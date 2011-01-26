@@ -254,22 +254,23 @@ setPhysicalPosition wRef pos = do
 
 newWidget :: (MonadIO m) => m (Widget a)
 newWidget =
-    liftIO $ newIORef $ WidgetImpl { state = undefined
-                                   , draw = undefined
-                                   , getGrowVertical = const $ return False
-                                   , getGrowHorizontal = const $ return False
-                                   , keyEventHandler = \_ _ _ -> return False
-                                   , physicalSize = DisplayRegion 0 0
-                                   , physicalPosition = DisplayRegion 0 0
-                                   , gainFocusHandler =
-                                       \this -> updateWidget this $ \w -> w { focused = True }
-                                   , loseFocusHandler =
-                                       \this -> updateWidget this $ \w -> w { focused = False }
-                                   , focused = False
-                                   , cursorInfo = const $ return Nothing
-                                   , setPosition = \_ _ -> return ()
-                                   , focusGroup = const $ return Nothing
-                                   }
+    liftIO $ newIORef $
+           WidgetImpl { state = undefined
+                      , draw = undefined
+                      , getGrowVertical = const $ return False
+                      , getGrowHorizontal = const $ return False
+                      , physicalSize = DisplayRegion 0 0
+                      , physicalPosition = DisplayRegion 0 0
+                      , focused = False
+                      , gainFocusHandler =
+                          \this -> updateWidget this $ \w -> w { focused = True }
+                      , loseFocusHandler =
+                          \this -> updateWidget this $ \w -> w { focused = False }
+                      , keyEventHandler = \_ _ _ -> return False
+                      , cursorInfo = const $ return Nothing
+                      , setPosition = \_ _ -> return ()
+                      , focusGroup = const $ return Nothing
+                      }
 
 handleKeyEvent :: (MonadIO m) => Widget a -> Key -> [Modifier] -> m Bool
 handleKeyEvent wRef keyEvent mods = do
