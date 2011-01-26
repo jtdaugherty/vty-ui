@@ -30,8 +30,6 @@ import Graphics.Vty.Widgets.Core
     , (<~)
     , newWidget
     , render
-    , withWidth
-    , withHeight
     , updateWidget
     , updateWidgetState
     , setPhysicalPosition
@@ -40,6 +38,7 @@ import Graphics.Vty.Widgets.Core
     , growHorizontal
     , onKeyPressed
     )
+import Graphics.Vty.Widgets.Util
 
 data HLimit a = (Show a) => HLimit Int (Widget a)
 

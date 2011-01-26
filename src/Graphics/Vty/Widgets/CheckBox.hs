@@ -52,7 +52,6 @@ import Graphics.Vty.Widgets.Core
     , updateWidget
     , updateWidgetState
     , getPhysicalPosition
-    , withWidth
     )
 import Graphics.Vty.Widgets.Util
 

@@ -49,8 +49,6 @@ import Graphics.Vty.Widgets.Core
     , growHorizontal
     , handleKeyEvent
     , getState
-    , withWidth
-    , withHeight
     , render
     , setPhysicalPosition
     , onKeyPressed

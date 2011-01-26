@@ -21,8 +21,6 @@ module Graphics.Vty.Widgets.Core
     , (<~~)
 
     -- ** Miscellaneous
-    , withWidth
-    , withHeight
     , HasNormalAttr(..)
     , HasFocusAttr(..)
     , withNormalAttribute
@@ -53,7 +51,6 @@ module Graphics.Vty.Widgets.Core
     )
 where
 
-import GHC.Word ( Word )
 import Data.Typeable
     ( Typeable
     )
@@ -334,14 +331,6 @@ updateWidgetState wRef f =
     liftIO $ do
       w <- readIORef wRef
       writeIORef wRef $ w { state = f (state w) }
-
--- |Modify the width component of a 'DisplayRegion'.
-withWidth :: DisplayRegion -> Word -> DisplayRegion
-withWidth (DisplayRegion _ h) w = DisplayRegion w h
-
--- |Modify the height component of a 'DisplayRegion'.
-withHeight :: DisplayRegion -> Word -> DisplayRegion
-withHeight (DisplayRegion w _) h = DisplayRegion w h
 
 data FocusGroupError = FocusGroupEmpty
                      | FocusGroupBadIndex Int

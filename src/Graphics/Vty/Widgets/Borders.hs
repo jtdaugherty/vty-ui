@@ -42,8 +42,6 @@ import Graphics.Vty.Widgets.Core
     , render
     , handleKeyEvent
     , getState
-    , withWidth
-    , withHeight
     , setPhysicalPosition
     )
 import Graphics.Vty.Widgets.Box

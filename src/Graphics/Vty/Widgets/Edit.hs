@@ -40,7 +40,6 @@ import Graphics.Vty.Widgets.Core
     , (<~)
     , (<~~)
     , getPhysicalPosition
-    , withWidth
     , updateWidget
     , updateWidgetState
     , newWidget

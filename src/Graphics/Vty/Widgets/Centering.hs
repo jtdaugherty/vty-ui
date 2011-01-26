@@ -19,8 +19,6 @@ import Graphics.Vty.Widgets.Core
     , newWidget
     , updateWidget
     , render
-    , withHeight
-    , withWidth
     , growHorizontal
     , growVertical
     , getState
@@ -37,6 +35,7 @@ import Graphics.Vty
     , vert_cat
     , horiz_cat
     )
+import Graphics.Vty.Widgets.Util
 
 data HCentered a = (Show a) => HCentered (Widget a)
 

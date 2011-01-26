@@ -72,7 +72,6 @@ import Graphics.Vty.Widgets.Core
     , newWidget
     , updateWidget
     , updateWidgetState
-    , withWidth
     , setPhysicalPosition
     , getPhysicalSize
     , growVertical

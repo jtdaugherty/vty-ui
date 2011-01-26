@@ -5,14 +5,20 @@ module Graphics.Vty.Widgets.Util
     , style
     , mergeAttr
     , mergeAttrs
+    , withWidth
+    , withHeight
     )
 where
 
+import Data.Word
+    ( Word
+    )
 import Graphics.Vty
     ( Color
     , Attr(..)
     , Style
     , MaybeDefault(..)
+    , DisplayRegion(..)
     , def_attr
     , with_style
     , with_back_color
@@ -47,3 +53,11 @@ mergeAttr a b =
 
 mergeAttrs :: [Attr] -> Attr
 mergeAttrs attrs = foldr mergeAttr def_attr attrs
+
+-- |Modify the width component of a 'DisplayRegion'.
+withWidth :: DisplayRegion -> Word -> DisplayRegion
+withWidth (DisplayRegion _ h) w = DisplayRegion w h
+
+-- |Modify the height component of a 'DisplayRegion'.
+withHeight :: DisplayRegion -> Word -> DisplayRegion
+withHeight (DisplayRegion w _) h = DisplayRegion w h

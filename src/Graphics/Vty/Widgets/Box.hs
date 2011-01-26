@@ -21,8 +21,6 @@ import Graphics.Vty.Widgets.Core
     , newWidget
     , updateWidget
     , render
-    , withHeight
-    , withWidth
     , growHorizontal
     , growVertical
     , handleKeyEvent
@@ -43,6 +41,7 @@ import Graphics.Vty
     , horiz_cat
     , empty_image
     )
+import Graphics.Vty.Widgets.Util
 
 -- |A simple orientation type.
 data Orientation = Horizontal | Vertical

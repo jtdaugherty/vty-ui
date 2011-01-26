@@ -83,8 +83,6 @@ import Graphics.Vty.Widgets.Core
     , getState
     , getPhysicalPosition
     , getPhysicalSize
-    , withWidth
-    , withHeight
     , growVertical
     , defaultContext
     )
