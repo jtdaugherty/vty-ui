@@ -470,7 +470,8 @@ autoWidth t sz = do
       edgeWidth = if edgeBorders bs then 2 else 0
       colWidth = if colBorders bs then (toEnum $ length sizes - 1) else 0
 
-  return ((region_width sz - toEnum totalFixed - edgeWidth - colWidth) `div` toEnum numAuto)
+  return $ toEnum ((max 0 ((fromEnum $ region_width sz) - totalFixed - edgeWidth - colWidth))
+                   `div` numAuto)
 
 addHeadingRow :: (MonadIO m) => Widget Table -> Attr -> [String] -> m [Widget FormattedText]
 addHeadingRow tbl attr labels = do
