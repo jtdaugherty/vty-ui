@@ -58,7 +58,6 @@ hLimit maxWidth child = do
 
         , setPosition =
             \this pos -> do
-              (setPosition w) this pos
               HLimit _ ch <- getState this
               setPhysicalPosition ch pos
         }
@@ -85,7 +84,6 @@ vLimit maxHeight child = do
 
         , setPosition =
             \this pos -> do
-              (setPosition w) this pos
               VLimit _ ch <- getState this
               setPhysicalPosition ch pos
         }

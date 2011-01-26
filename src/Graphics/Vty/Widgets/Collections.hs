@@ -130,7 +130,6 @@ newCollection = do
 
         , setPosition =
             \this pos -> do
-              (setPosition w) this pos
               st <- getState this
               case currentEntryNum st of
                 (-1) -> throw EmptyCollection

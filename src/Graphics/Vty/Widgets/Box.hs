@@ -133,7 +133,6 @@ box o spacing a b = do
 
         , setPosition =
             \this pos -> do
-              (setPosition w) this pos
               Box orientation sp ch1 ch2 <- getState this
               ch1_size <- getPhysicalSize ch1
               setPhysicalPosition ch1 pos

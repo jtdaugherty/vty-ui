@@ -246,10 +246,11 @@ getPhysicalPosition :: (MonadIO m, Functor m) => Widget a -> m DisplayRegion
 getPhysicalPosition wRef = physicalPosition <$> (liftIO $ readIORef wRef)
 
 setPhysicalPosition :: (MonadIO m) => Widget a -> DisplayRegion -> m ()
-setPhysicalPosition wRef pos =
-    liftIO $ do
-      w <- readIORef wRef
-      (setPosition w) wRef pos
+setPhysicalPosition wRef pos = do
+  updateWidget wRef $ \w -> w { physicalPosition = pos }
+  liftIO $ do
+    w <- readIORef wRef
+    (setPosition w) wRef pos
 
 newWidget :: (MonadIO m) => m (Widget a)
 newWidget =
@@ -266,9 +267,7 @@ newWidget =
                                        \this -> updateWidget this $ \w -> w { focused = False }
                                    , focused = False
                                    , cursorInfo = const $ return Nothing
-                                   , setPosition =
-                                       \this newPos ->
-                                           updateWidget this $ \w -> w { physicalPosition = newPos }
+                                   , setPosition = \_ _ -> return ()
                                    , focusGroup = const $ return Nothing
                                    }
 
@@ -360,7 +359,6 @@ newFocusEntry chRef = do
 
         , setPosition =
             \this pos -> do
-              (setPosition w) this pos
               (FocusEntry ch) <- getState this
               setPhysicalPosition ch pos
         }
