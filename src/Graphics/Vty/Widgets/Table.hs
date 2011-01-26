@@ -247,8 +247,6 @@ newTable specs borderSty = do
         , getGrowHorizontal = \st -> do
             return $ any (== Auto) (map columnSize $ columnSpecs st)
 
-        , getGrowVertical = const $ return False
-
         , draw =
             \this sz ctx -> do
               rs <- rows <~~ this

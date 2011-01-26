@@ -53,9 +53,6 @@ hLimit maxWidth child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = HLimit maxWidth child
-        , getGrowHorizontal = const $ return False
-        , getGrowVertical = const $ growVertical child
-
         , draw = \this s ctx -> do
                    HLimit width ch <- getState this
                    let region = s `withWidth` fromIntegral (min (toEnum width) (region_width s))
@@ -81,7 +78,6 @@ vLimit maxHeight child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = VLimit maxHeight child
-        , getGrowVertical = const $ return False
         , getGrowHorizontal = const $ growHorizontal child
 
         , draw = \this s ctx -> do

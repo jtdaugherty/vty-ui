@@ -288,12 +288,9 @@ listWidget list = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = list
-        , getGrowHorizontal = const $ return False
-        , getGrowVertical = const $ return True
-
-        -- XXX it might be crazy, but we could even pass events we
-        -- don't handle onto the currently selected widget!
         , keyEventHandler = listKeyEvent
+
+        , getGrowVertical = const $ return True
 
         , cursorInfo =
             \this -> do

@@ -94,7 +94,6 @@ editWidget = do
                        }
 
         , getGrowHorizontal = const $ return True
-        , getGrowVertical = const $ return False
         , cursorInfo =
             \this -> do
               f <- focused <~ this

@@ -75,7 +75,6 @@ hBorder = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = HBorder def_attr
-        , getGrowVertical = const $ return False
         , getGrowHorizontal = const $ return True
         , draw = \this s ctx -> do
                    HBorder attr <- getState this
@@ -101,7 +100,6 @@ vBorder = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = VBorder def_attr
-        , getGrowHorizontal = const $ return False
         , getGrowVertical = const $ return True
         , draw = \this s ctx -> do
                    VBorder attr <- getState this

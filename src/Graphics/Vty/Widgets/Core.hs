@@ -389,8 +389,6 @@ newFocusGroup = do
       w { state = FocusGroup { entries = []
                              , currentEntryNum = -1
                              }
-        , getGrowHorizontal = const $ return False
-        , getGrowVertical = const $ return False
         , keyEventHandler =
             \this key mods -> do
               st <- getState this

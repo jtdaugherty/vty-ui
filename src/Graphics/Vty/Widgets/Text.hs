@@ -153,8 +153,6 @@ textWidget format s = do
       w { state = FormattedText { text = prepareText s
                                 , formatter = format
                                 }
-        , getGrowHorizontal = const $ return False
-        , getGrowVertical = const $ return False
         , draw =
             \this size ctx -> do
               ft <- getState this
