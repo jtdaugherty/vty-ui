@@ -35,6 +35,7 @@ import Graphics.Vty
     , region_width
     , region_height
     , def_attr
+    , empty_image
     )
 import Graphics.Vty.Widgets.Core
     ( Widget
@@ -137,13 +138,17 @@ padded ch padding = do
 
         , draw =
             \this sz ctx ->
-                do
+                if (region_width sz < 2) || (region_height sz < 2)
+                then return empty_image
+                else do
                   Padded child p att <- getState this
 
                   -- Compute constrained space based on padding
                   -- settings.
-                  let constrained = sz `withWidth` (region_width sz - (leftPadding p + rightPadding p))
-                                    `withHeight` (region_height sz - (topPadding p + bottomPadding p))
+                  let constrained = sz `withWidth` (toEnum $ max 0 newWidth)
+                                    `withHeight` (toEnum $ max 0 newHeight)
+                      newWidth = (fromEnum $ region_width sz) - fromEnum (leftPadding p + rightPadding p)
+                      newHeight = (fromEnum $ region_height sz) - fromEnum (topPadding p + bottomPadding p)
                       attr = mergeAttrs [ overrideAttr ctx
                                         , att
                                         , normalAttr ctx
@@ -155,8 +160,10 @@ padded ch padding = do
                   -- Create padding images.
                   let leftImg = char_fill attr ' ' (leftPadding p) (image_height img)
                       rightImg = char_fill attr ' ' (rightPadding p) (image_height img)
-                      topImg = char_fill attr ' ' (image_width img + leftPadding p + rightPadding p) (topPadding p)
-                      bottomImg = char_fill attr ' ' (image_width img + leftPadding p + rightPadding p) (bottomPadding p)
+                      topImg = char_fill attr ' ' (image_width img + leftPadding p + rightPadding p)
+                               (topPadding p)
+                      bottomImg = char_fill attr ' ' (image_width img + leftPadding p + rightPadding p)
+                                  (bottomPadding p)
 
                   return $ topImg <-> (leftImg <|> img <|> rightImg) <-> bottomImg
 
