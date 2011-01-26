@@ -590,10 +590,9 @@ renderRow tbl sz cells ctx = do
             -- cell.
             case compare (image_width img) (region_width cellSz) of
               EQ -> return img
-              LT -> do
-                return $ img <|> char_fill att ' '
-                           (region_width cellSz - image_width img)
-                           (max (image_height img) 1)
+              LT -> return $ img <|> char_fill att ' '
+                       (max 0 (region_width cellSz - image_width img))
+                       (max (image_height img) 1)
               GT -> throw CellImageTooBig
 
   let maxHeight = rowHeight cellImgs
