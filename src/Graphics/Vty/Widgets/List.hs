@@ -74,6 +74,7 @@ import Graphics.Vty.Widgets.Core
     , (<~)
     , (<~~)
     , HasNormalAttr(..)
+    , HasFocusAttr(..)
     , RenderContext(..)
     , render
     , newWidget
@@ -110,7 +111,9 @@ type ListItem a b = (a, Widget b)
 -- /widget type/ @b@, the type of widgets used to represent the list
 -- visually.
 data List a b = List { listNormalAttr :: Attr
-                     , selectedAttr :: Attr
+                     , selectedUnfocusedAttr :: Attr
+                     , selectedFocusedAttr :: Attr
+                     -- ^Defaults to the skin's focused attribute.
                      , selectedIndex :: Int
                      -- ^The currently selected list index.
                      , scrollTopIndex :: Int
@@ -131,7 +134,8 @@ data List a b = List { listNormalAttr :: Attr
 instance Show (List a b) where
     show lst = concat [ "List { "
                       , "listNormalAttr = ", show $ listNormalAttr lst
-                      , ", selectedAttr = ", show $ selectedAttr lst
+                      , ", selectedUnfocusedAttr = ", show $ selectedUnfocusedAttr lst
+                      , ", selectedFocusedAttr = ", show $ selectedFocusedAttr lst
                       , ", selectedIndex = ", show $ selectedIndex lst
                       , ", scrollTopIndex = ", show $ scrollTopIndex lst
                       , ", scrollWindowSize = ", show $ scrollWindowSize lst
@@ -144,6 +148,10 @@ instance HasNormalAttr (Widget (List a b)) where
     setNormalAttribute wRef a =
         updateWidgetState wRef $ \s -> s { listNormalAttr = mergeAttr a $ listNormalAttr s }
 
+instance HasFocusAttr (Widget (List a b)) where
+    setFocusAttribute wRef a =
+        updateWidgetState wRef $ \s -> s { selectedFocusedAttr = mergeAttr a $ selectedFocusedAttr s }
+
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
 mkList :: Attr -- ^The attribute of the selected item
@@ -151,7 +159,8 @@ mkList :: Attr -- ^The attribute of the selected item
        -> List a b
 mkList selAttr f =
     List { listNormalAttr = def_attr
-         , selectedAttr = selAttr
+         , selectedUnfocusedAttr = selAttr
+         , selectedFocusedAttr = def_attr
          , selectedIndex = -1
          , scrollTopIndex = 0
          , scrollWindowSize = 0
@@ -313,7 +322,9 @@ listWidget list = do
                    resize (max 1 ((fromEnum $ region_height sz) `div` h)) this
 
               listData <- getState this
-              renderListWidget listData sz ctx
+              foc <- focused <~ this
+
+              renderListWidget foc listData sz ctx
 
         -- XXX!!! define setPosition to set position of visible
         -- widgets in list
@@ -327,8 +338,8 @@ listKeyEvent w KPageUp _ = pageUp w >> return True
 listKeyEvent w KPageDown _ = pageDown w >> return True
 listKeyEvent _ _ _ = return False
 
-renderListWidget :: (Show b) => List a b -> DisplayRegion -> RenderContext -> IO Image
-renderListWidget list s ctx = do
+renderListWidget :: (Show b) => Bool -> List a b -> DisplayRegion -> RenderContext -> IO Image
+renderListWidget foc list s ctx = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
       defaultAttr = mergeAttrs [ overrideAttr ctx
                                , listNormalAttr list
@@ -338,7 +349,13 @@ renderListWidget list s ctx = do
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
         let att = if sel
-                  then (selectedAttr list)
+                  then if foc
+                       then mergeAttrs [ selectedFocusedAttr list
+                                       , focusAttr ctx
+                                       ]
+                       else mergeAttrs [ selectedUnfocusedAttr list
+                                       , defaultAttr
+                                       ]
                   else defaultAttr
         img <- render w s $ ctx { overrideAttr = att }
 

@@ -53,7 +53,7 @@ main = do
   edit1Header <- simpleText "" >>= withNormalAttribute headerAttr
   edit2Header <- simpleText "" >>= withNormalAttribute headerAttr
 
-  lst <- listWidget $ mkList focAttr simpleText
+  lst <- listWidget $ mkList (fgColor bright_green) simpleText
 
   selector <- vLimit 3 lst
   listHeader <- simpleText ""
