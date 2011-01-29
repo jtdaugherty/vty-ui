@@ -370,11 +370,10 @@ renderListWidget foc list s ctx = do
         imgs <- renderVisible ws
         return (img':imgs)
 
-  -- XXX this is probably incorrect for widgets with height > 1
   let filler = char_fill defaultAttr ' ' (region_width s) fill_height
       fill_height = if scrollWindowSize list == 0
                     then region_height s
-                    else toEnum $ scrollWindowSize list - length items
+                    else toEnum $ ((scrollWindowSize list - length items) * itemHeight list)
 
   visible_imgs <- renderVisible items
 
