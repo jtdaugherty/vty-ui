@@ -95,8 +95,6 @@ newCollection = do
       w { state = Collection { entries = []
                              , currentEntryNum = -1
                              }
-        -- XXX technically this should defer to whichever entry is
-        -- current!
         , growHorizontal_ = \st -> do
             case currentEntryNum st of
               (-1) -> throw EmptyCollection
