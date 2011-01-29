@@ -378,7 +378,6 @@ mkTopBottomBorder :: Widget Table -> DisplayRegion -> RenderContext -> Char -> I
 mkTopBottomBorder t sz ctx intChar = do
   bs <- borderStyle <~~ t
 
-  -- XXX broken for top/bottom borders
   if edgeBorders bs then
       mkRowBorder_ t sz ctx intChar else
       return empty_image
@@ -493,7 +492,7 @@ applyCellAlignment al (TableCell w a p) = do
     AlignLeft -> return $ TableCell w a p
 
     AlignCenter -> do
-      -- XXX this check belongs in the centering code...
+      -- This check really belongs in the centering code...
       grow <- growHorizontal w
       case grow of
         False -> do
