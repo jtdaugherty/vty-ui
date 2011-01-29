@@ -50,6 +50,7 @@ import Control.Exception
     )
 import Control.Monad
     ( when
+    , forM_
     )
 import Control.Monad.Trans
     ( MonadIO
@@ -83,6 +84,7 @@ import Graphics.Vty.Widgets.Core
     , getState
     , getCurrentPosition
     , getCurrentSize
+    , setCurrentPosition
     , growVertical
     , defaultContext
     )
@@ -324,8 +326,12 @@ listWidget list = do
 
               renderListWidget foc listData sz ctx
 
-        -- XXX!!! define setCurrentPosition to set position of visible
-        -- widgets in list
+        , setCurrentPosition_ =
+            \this pos -> do
+              ih <- itemHeight <~~ this
+              items <- getVisibleItems this
+              forM_ (zip [0..] items) $ \(i, ((_, iw), _)) ->
+                  setCurrentPosition iw (pos `plusHeight` (toEnum $ i * ih))
         }
   return wRef
 
