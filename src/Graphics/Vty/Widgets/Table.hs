@@ -263,7 +263,8 @@ newTable specs borderSty = do
                   withTBBorders = vert_cat [topBorder, body, bottomBorder]
                   withSideBorders = horiz_cat [sideBorderL, withTBBorders, sideBorderR]
 
-              -- XXX only cat rows until we exceed the available space
+              -- Ideally, we would only display rows that we have room
+              -- to render, but this is a much easier cop-out. :)
               if ((region_width sz < image_width withSideBorders) ||
                   (region_height sz < image_height withSideBorders)) then
                   return empty_image else
@@ -271,44 +272,45 @@ newTable specs borderSty = do
 
         , setCurrentPosition_ =
             \this pos -> do
-              bs <- borderStyle <~~ this
-              rs <- rows <~~ this
+              sz <- getCurrentSize this
+              if region_width sz == 0 || region_height sz == 0 then
+                  return () else
+                  do
+                    bs <- borderStyle <~~ this
+                    rs <- rows <~~ this
 
-              let edgeOffset = if edgeBorders bs
-                               then 1 else 0
+                    let edgeOffset = if edgeBorders bs
+                                     then 1 else 0
+                        positionRows _ [] = return ()
+                        positionRows height ((TableRow row):rest) =
+                          do
+                            -- Compute the position for this row based on
+                            -- border settings
+                            let rowPos = pos `plusWidth` edgeOffset
+                                         `withHeight` height
 
-                  positionRows _ [] = return ()
-                  positionRows height ((TableRow row):rest) =
-                    do
-                      -- Compute the position for this row based on
-                      -- border settings
-                      let rowPos = DisplayRegion (region_width pos + edgeOffset)
-                                   height
+                            -- Get the maximum cell height
+                            cellPhysSizes <- forM row $ \cell ->
+                                             case cell of
+                                               TableCell cw _ _ -> getCurrentSize cw
+                                               EmptyCell -> return $ DisplayRegion 0 1
 
-                      -- Get the maximum cell height
-                      cellPhysSizes <- forM row $ \cell ->
-                                       case cell of
-                                         TableCell cw _ _ -> getCurrentSize cw
-                                         EmptyCell -> return $ DisplayRegion 0 1
+                            -- Include 1 as a possible height to
+                            -- prevent zero-height images from
+                            -- breaking position computations.  This
+                            -- won't hurt in the case where other
+                            -- cells are bigger, since their heights
+                            -- will be chosen instead.
+                            let maxSize = maximum $ 1 : map region_height cellPhysSizes
+                                borderOffset = if rowBorders bs
+                                               then 1 else 0
 
-                      -- Include 1 as a possible height to prevent
-                      -- zero-height images from breaking position
-                      -- computations.  This won't hurt in the case
-                      -- where other cells are bigger, since their
-                      -- heights will be chosen instead.
-                      let maxSize = maximum $ 1 : map region_height cellPhysSizes
-                          borderOffset = if rowBorders bs
-                                         then 1 else 0
+                            -- Position the individual row widgets
+                            -- (again, based on border settings)
+                            positionRow this bs rowPos row
+                            positionRows (height + maxSize + borderOffset) rest
 
-                      -- Position the individual row widgets (again,
-                      -- based on border settings)
-                      positionRow this bs rowPos row
-                      positionRows (height + maxSize + borderOffset) rest
-
-              -- XXX only position rendered rows
-              positionRows (region_height pos + edgeOffset) rs
-
-              return ()
+                    positionRows (region_height pos + edgeOffset) rs
         }
   return t
 
