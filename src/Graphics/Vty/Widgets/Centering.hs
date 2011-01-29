@@ -55,7 +55,6 @@ hCentered ch = do
                    HCentered child <- getState this
                    img <- render child s ctx
 
-                   -- XXX def_attr can be wrong
                    let attr' = getNormalAttr ctx
                        (half, half') = centered_halves region_width s (image_width img)
 
@@ -94,7 +93,6 @@ vCentered ch = do
                    VCentered child <- getState this
                    img <- render child s ctx
 
-                   -- XXX def_attr can be wrong
                    let attr' = getNormalAttr ctx
                        (half, half') = centered_halves region_height s (image_height img)
 
