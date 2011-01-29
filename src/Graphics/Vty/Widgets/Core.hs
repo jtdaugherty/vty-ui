@@ -25,6 +25,7 @@ module Graphics.Vty.Widgets.Core
     , HasFocusAttr(..)
     , withNormalAttribute
     , withFocusAttribute
+    , relayFocusEvents
 
     , growVertical
     , growHorizontal
@@ -34,6 +35,7 @@ module Graphics.Vty.Widgets.Core
     , onKeyPressed
     , onGainFocus
     , onLoseFocus
+    , relayKeyEvents
 
     -- ** Focus management
     , FocusGroup
@@ -277,6 +279,14 @@ handleKeyEvent wRef keyEvent mods = do
   act <- keyEventHandler <~ wRef
   liftIO $ act wRef keyEvent mods
 
+relayKeyEvents :: (MonadIO m) => Widget a -> Widget b -> m ()
+relayKeyEvents a b = a `onKeyPressed` \_ k mods -> handleKeyEvent b k mods
+
+relayFocusEvents :: (MonadIO m) => Widget a -> Widget b -> m ()
+relayFocusEvents a b = do
+  a `onGainFocus` \_ -> focus b
+  a `onLoseFocus` \_ -> unfocus b
+
 onKeyPressed :: (MonadIO m) => Widget a -> (Widget a -> Key -> [Modifier] -> IO Bool) -> m ()
 onKeyPressed wRef handler = do
   -- Create a new handler that calls this one but defers to the old
@@ -366,7 +376,7 @@ newFocusEntry chRef = do
 
   wRef `onLoseFocus` (const $ unfocus chRef)
   wRef `onGainFocus` (const $ focus chRef)
-  wRef `onKeyPressed` (\_ k -> handleKeyEvent chRef k)
+  wRef `relayKeyEvents` chRef
 
   return wRef
 

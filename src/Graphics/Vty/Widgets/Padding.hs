@@ -47,11 +47,11 @@ import Graphics.Vty.Widgets.Core
     , updateWidgetState
     , growVertical
     , growHorizontal
-    , handleKeyEvent
     , getState
     , render
     , setCurrentPosition
-    , onKeyPressed
+    , relayFocusEvents
+    , relayKeyEvents
     )
 import Graphics.Vty.Widgets.Util
 
@@ -179,5 +179,6 @@ padded ch padding = do
 
         }
 
-  wRef `onKeyPressed` \_ key mods -> handleKeyEvent ch key mods
+  wRef `relayKeyEvents` ch
+  wRef `relayFocusEvents` ch
   return wRef

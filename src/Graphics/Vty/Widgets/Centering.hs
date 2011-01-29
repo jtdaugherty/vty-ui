@@ -24,6 +24,8 @@ import Graphics.Vty.Widgets.Core
     , getState
     , setCurrentPosition
     , getCurrentSize
+    , relayKeyEvents
+    , relayFocusEvents
     )
 import Graphics.Vty
     ( DisplayRegion
@@ -74,6 +76,8 @@ hCentered ch = do
                   chPos = pos `plusWidth` half
               setCurrentPosition child chPos
         }
+  wRef `relayKeyEvents` ch
+  wRef `relayFocusEvents` ch
   return wRef
 
 data VCentered a = (Show a) => VCentered (Widget a)
@@ -112,6 +116,8 @@ vCentered ch = do
                   chPos = pos `plusHeight` half
               setCurrentPosition child chPos
         }
+  wRef `relayKeyEvents` ch
+  wRef `relayFocusEvents` ch
   return wRef
 
 centered :: (MonadIO m, Show a) => Widget a -> m (Widget (VCentered (HCentered a)))
