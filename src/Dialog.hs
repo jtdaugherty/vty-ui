@@ -5,7 +5,7 @@ module Main where
 import Control.Monad
 import Control.Monad.Trans
 import System.Exit
-import Graphics.Vty
+import Graphics.Vty hiding (Button)
 import Graphics.Vty.Widgets.All
 
 -- Dialog: message, array of "button" information. Buttons can be
@@ -25,23 +25,40 @@ import Graphics.Vty.Widgets.All
 -- A "button" is a bit of text with left- and right-padding (Padded
 -- Button) which can get focused
 
-button :: (MonadIO m) => String -> IO () -> m (Widget Padded)
-button msg activateHandler = do
+data Button = Button { buttonText :: String
+                     , buttonWidget :: Widget Padded
+                     }
+
+onButtonPressed :: (MonadIO m) => Button -> IO () -> m ()
+onButtonPressed b act = do
+  (buttonWidget b) `onKeyPressed` \_ k _ ->
+      do
+        case k of
+          KEnter -> act >> return False
+          _ -> return False
+
+button :: (MonadIO m) => String -> m Button
+button msg = do
   t <- simpleText msg
   b <- padded t (padLeft 3 `pad` padRight 3)
-  b `onKeyPressed` \_ k _ -> do
-    case k of
-      KEnter -> activateHandler >> return True
-      _ -> return False
-  (return b) >>=
-    withNormalAttribute (white `on` black) >>=
-    withFocusAttribute (blue `on` white)
+  w <- (return b) >>=
+       withNormalAttribute (white `on` black) >>=
+       withFocusAttribute (blue `on` white)
 
-dialog body handler mFg = do
-  okButton <- button "OK" (handler "OK")
-  cancelButton <- button "Cancel" (handler "Cancel")
+  return $ Button msg w
 
-  buttonBox <- (return okButton) <++> (return cancelButton)
+data Dialog = Dialog { okButton :: Button
+                     , cancelButton :: Button
+                     , dialogWidget :: Widget (VCentered (HCentered Padded))
+                     }
+
+dialog :: (MonadIO m, Show a) => Widget a -> Maybe (Widget FocusGroup)
+       -> m Dialog
+dialog body mFg = do
+  okButton <- button "OK"
+  cancelButton <- button "Cancel"
+
+  buttonBox <- (return $ buttonWidget okButton) <++> (return $ buttonWidget cancelButton)
   setBoxSpacing buttonBox 4
 
   b <- (hCentered body) <--> (hCentered buttonBox) >>= withBoxSpacing 1
@@ -51,12 +68,18 @@ dialog body handler mFg = do
           Just g -> return g
           Nothing -> newFocusGroup
 
-  addToFocusGroup fg okButton
-  addToFocusGroup fg cancelButton
+  addToFocusGroup fg $ buttonWidget okButton
+  addToFocusGroup fg $ buttonWidget cancelButton
 
-  c <- centered =<< withPadding (padLeftRight 10) =<< (bordered b2 >>= withNormalAttribute (white `on` blue))
+  c <- centered =<<
+       withPadding (padLeftRight 10) =<<
+       (bordered b2 >>= withNormalAttribute (white `on` blue))
+
   setFocusGroup c fg
-  return c
+  return $ Dialog { okButton = okButton
+                  , cancelButton = cancelButton
+                  , dialogWidget = c
+                  }
 
 main :: IO ()
 main = do
@@ -65,7 +88,14 @@ main = do
   addToFocusGroup fg e
 
   pe <- padded e (padLeftRight 2)
-  d <- dialog pe (const $ return ()) (Just fg)
+  d <- dialog pe (Just fg)
+
+  let done = putStrLn =<< getEditText e
+
+  (okButton d) `onButtonPressed` done
+  e `onActivate` const done
+
+  (cancelButton d) `onButtonPressed` exitSuccess
 
   fg `onKeyPressed` \_ k _ ->
       case k of
@@ -73,4 +103,4 @@ main = do
         KEsc -> exitSuccess
         _ -> return False
 
-  runUi d $ defaultContext { focusAttr = black `on` yellow }
+  runUi (dialogWidget d) $ defaultContext { focusAttr = black `on` yellow }
