@@ -51,6 +51,12 @@ data Dialog = Dialog { okButton :: Button
                      , setDialogTitle :: String -> IO ()
                      }
 
+onDialogAccept :: (MonadIO m) => Dialog -> IO () -> m ()
+onDialogAccept d act = (okButton d) `onButtonPressed` act
+
+onDialogCancel :: (MonadIO m) => Dialog -> IO () -> m ()
+onDialogCancel d act = (cancelButton d) `onButtonPressed` act
+
 dialog :: (MonadIO m, Show a) => Widget a -> String -> Maybe (Widget FocusGroup)
        -> m Dialog
 dialog body title mFg = do
@@ -96,10 +102,10 @@ main = do
 
   let updateTitle = setDialogTitle d =<< getEditText e
 
-  (okButton d) `onButtonPressed` updateTitle
   e `onChange` \_ _ -> updateTitle
 
-  (cancelButton d) `onButtonPressed` exitSuccess
+  d `onDialogAccept` exitSuccess
+  d `onDialogCancel` exitSuccess
 
   fg `onKeyPressed` \_ k _ ->
       case k of
