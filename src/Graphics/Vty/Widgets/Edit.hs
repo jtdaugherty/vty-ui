@@ -20,22 +20,17 @@ import Control.Monad.Trans
     , liftIO
     )
 import Graphics.Vty
-    ( Attr
-    , Key(..)
+    ( Key(..)
     , Modifier(..)
     , (<|>)
     , region_width
     , string
     , char_fill
-    , with_style
     , underline
-    , def_attr
     )
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
-    , HasNormalAttr(..)
-    , HasFocusAttr(..)
     , RenderContext(..)
     , (<~)
     , (<~~)
@@ -44,13 +39,13 @@ import Graphics.Vty.Widgets.Core
     , updateWidgetState
     , newWidget
     , getState
+    , setNormalAttribute
+    , setFocusAttribute
     )
 import Graphics.Vty.Widgets.Util
 
 data Edit = Edit { currentText :: String
                  , cursorPosition :: Int
-                 , editNormalAttr :: Attr
-                 , editFocusAttr :: Attr
                  , displayStart :: Int
                  , displayWidth :: Int
                  , activateHandler :: Widget Edit -> IO ()
@@ -62,20 +57,10 @@ instance Show Edit where
     show e = concat [ "Edit { "
                     , "currentText = ", show $ currentText e
                     , ", cursorPosition = ", show $ cursorPosition e
-                    , ", editNormalAttr = ", show $ editNormalAttr e
-                    , ", editFocusAttr = ", show $ editFocusAttr e
                     , ", displayStart = ", show $ displayStart e
                     , ", displayWidth = ", show $ displayWidth e
                     , " }"
                     ]
-
-instance HasNormalAttr (Widget Edit) where
-    setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { editNormalAttr = mergeAttr a $ editNormalAttr s }
-
-instance HasFocusAttr (Widget Edit) where
-    setFocusAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { editFocusAttr = mergeAttr a $ editFocusAttr s }
 
 editWidget :: (MonadIO m) => m (Widget Edit)
 editWidget = do
@@ -83,8 +68,6 @@ editWidget = do
   updateWidget wRef $ \w ->
       w { state = Edit { currentText = ""
                        , cursorPosition = 0
-                       , editNormalAttr = def_attr `with_style` underline
-                       , editFocusAttr = def_attr `with_style` underline
                        , displayStart = 0
                        , displayWidth = 0
                        , activateHandler = const $ return ()
@@ -113,21 +96,19 @@ editWidget = do
                               (drop (displayStart st) (currentText st))
 
                   nAttr = mergeAttrs [ overrideAttr ctx
-                                     , editNormalAttr st
                                      , normalAttr ctx
                                      ]
 
               isFocused <- focused <~ this
-              let attr = if isFocused then fAttr else nAttr
-                  fAttr = mergeAttrs [ editFocusAttr st
-                                     , focusAttr ctx
-                                     ]
+              let attr = if isFocused then focusAttr ctx else nAttr
 
               return $ string attr truncated
                          <|> char_fill attr ' ' (region_width size - (toEnum $ length truncated)) 1
 
         , keyEventHandler = editKeyEvent
         }
+  setNormalAttribute wRef $ style underline
+  setFocusAttribute wRef $ style underline
   return wRef
 
 onActivate :: (MonadIO m) => Widget Edit -> (Widget Edit -> IO ()) -> m ()

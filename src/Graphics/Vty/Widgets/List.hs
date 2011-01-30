@@ -67,15 +67,12 @@ import Graphics.Vty
     , vert_cat
     , image_height
     , char_fill
-    , def_attr
     )
 import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
     , (<~)
     , (<~~)
-    , HasNormalAttr(..)
-    , HasFocusAttr(..)
     , RenderContext(..)
     , render
     , newWidget
@@ -110,10 +107,7 @@ type ListItem a b = (a, Widget b)
 -- refer to the visible representations of the list contents, and the
 -- /widget type/ @b@, the type of widgets used to represent the list
 -- visually.
-data List a b = List { listNormalAttr :: Attr
-                     , selectedUnfocusedAttr :: Attr
-                     , selectedFocusedAttr :: Attr
-                     -- ^Defaults to the skin's focused attribute.
+data List a b = List { selectedUnfocusedAttr :: Attr
                      , selectedIndex :: Int
                      -- ^The currently selected list index.
                      , scrollTopIndex :: Int
@@ -133,9 +127,7 @@ data List a b = List { listNormalAttr :: Attr
 
 instance Show (List a b) where
     show lst = concat [ "List { "
-                      , "listNormalAttr = ", show $ listNormalAttr lst
-                      , ", selectedUnfocusedAttr = ", show $ selectedUnfocusedAttr lst
-                      , ", selectedFocusedAttr = ", show $ selectedFocusedAttr lst
+                      , "selectedUnfocusedAttr = ", show $ selectedUnfocusedAttr lst
                       , ", selectedIndex = ", show $ selectedIndex lst
                       , ", scrollTopIndex = ", show $ scrollTopIndex lst
                       , ", scrollWindowSize = ", show $ scrollWindowSize lst
@@ -144,23 +136,13 @@ instance Show (List a b) where
                       , " }"
                       ]
 
-instance HasNormalAttr (Widget (List a b)) where
-    setNormalAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { listNormalAttr = mergeAttr a $ listNormalAttr s }
-
-instance HasFocusAttr (Widget (List a b)) where
-    setFocusAttribute wRef a =
-        updateWidgetState wRef $ \s -> s { selectedFocusedAttr = mergeAttr a $ selectedFocusedAttr s }
-
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
 mkList :: Attr -- ^The attribute of the selected item
        -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
        -> List a b
 mkList selAttr f =
-    List { listNormalAttr = def_attr
-         , selectedUnfocusedAttr = selAttr
-         , selectedFocusedAttr = def_attr
+    List { selectedUnfocusedAttr = selAttr
          , selectedIndex = -1
          , scrollTopIndex = 0
          , scrollWindowSize = 0
@@ -346,7 +328,6 @@ renderListWidget :: (Show b) => Bool -> List a b -> DisplayRegion -> RenderConte
 renderListWidget foc list s ctx = do
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
       defaultAttr = mergeAttrs [ overrideAttr ctx
-                               , listNormalAttr list
                                , normalAttr ctx
                                ]
 
@@ -354,9 +335,7 @@ renderListWidget foc list s ctx = do
       renderVisible ((w, sel):ws) = do
         let att = if sel
                   then if foc
-                       then mergeAttrs [ selectedFocusedAttr list
-                                       , focusAttr ctx
-                                       ]
+                       then focusAttr ctx
                        else mergeAttrs [ selectedUnfocusedAttr list
                                        , defaultAttr
                                        ]

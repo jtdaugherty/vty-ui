@@ -26,25 +26,22 @@ import Control.Monad.Trans
     ( MonadIO
     )
 import Graphics.Vty
-    ( Attr
-    , (<->)
+    ( (<->)
     , (<|>)
     , char_fill
     , image_width
     , image_height
     , region_width
     , region_height
-    , def_attr
     , empty_image
     )
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
-    , HasNormalAttr(..)
     , RenderContext(..)
+    , (<~)
     , newWidget
     , updateWidget
-    , updateWidgetState
     , growVertical
     , growHorizontal
     , getState
@@ -59,16 +56,14 @@ import Graphics.Vty.Widgets.Util
 data Padding = Padding Int Int Int Int
                deriving (Show)
 
-data Padded = forall a. (Show a) => Padded (Widget a) Padding Attr
+data Padded = forall a. (Show a) => Padded (Widget a) Padding
 
 instance Show Padded where
-    show (Padded _ p mAttr) = concat [ "Padded { "
-                                     , "padding = "
-                                     , show p
-                                     , ", paddingAttr = "
-                                     , show mAttr
-                                     , ", ... }"
-                                     ]
+    show (Padded _ p) = concat [ "Padded { "
+                               , "padding = "
+                               , show p
+                               , ", ... }"
+                               ]
 
 instance Monoid Padding where
     mempty = Padding 0 0 0 0
@@ -83,10 +78,6 @@ class Paddable a where
 
 instance Paddable Padding where
     pad p1 p2 = p1 +++ p2
-
-instance HasNormalAttr (Widget Padded) where
-    setNormalAttribute wRef a =
-        updateWidgetState wRef $ \(Padded w p a') -> Padded w p (mergeAttr a a')
 
 leftPadding :: Padding -> Word
 leftPadding (Padding _ _ _ l) = toEnum l
@@ -129,7 +120,7 @@ padded :: (MonadIO m, Show a) => Widget a -> Padding -> m (Widget Padded)
 padded ch padding = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Padded ch padding def_attr
+      w { state = Padded ch padding
 
         , growVertical_ = const $ growVertical ch
         , growHorizontal_ = const $ growHorizontal ch
@@ -139,7 +130,8 @@ padded ch padding = do
                 if (region_width sz < 2) || (region_height sz < 2)
                 then return empty_image
                 else do
-                  Padded child p att <- getState this
+                  Padded child p <- getState this
+                  f <- focused <~ this
 
                   -- Compute constrained space based on padding
                   -- settings.
@@ -147,8 +139,7 @@ padded ch padding = do
                                     `withHeight` (toEnum $ max 0 newHeight)
                       newWidth = (fromEnum $ region_width sz) - fromEnum (leftPadding p + rightPadding p)
                       newHeight = (fromEnum $ region_height sz) - fromEnum (topPadding p + bottomPadding p)
-                      attr = mergeAttrs [ overrideAttr ctx
-                                        , att
+                      attr = mergeAttrs [ if f then focusAttr ctx else overrideAttr ctx
                                         , normalAttr ctx
                                         ]
 
@@ -167,7 +158,7 @@ padded ch padding = do
 
         , setCurrentPosition_ =
             \this pos -> do
-              Padded child p _ <- getState this
+              Padded child p <- getState this
 
               -- Considering left and top padding, adjust position and
               -- set on child.

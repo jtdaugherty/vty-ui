@@ -6,7 +6,7 @@
 -- the 'Text' for formatting purposes, use 'prepareText' followed by
 -- 'textWidget'.
 module Graphics.Vty.Widgets.Text
-    ( Text(defaultAttr, tokens)
+    ( Text(tokens)
     , FormattedText
     , Formatter
     , setText
@@ -44,7 +44,7 @@ import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
     , RenderContext(..)
-    , HasNormalAttr(..)
+    , (<~)
     , newWidget
     , updateWidget
     , updateWidgetState
@@ -81,10 +81,7 @@ nullFormatter = const id
 
 -- |'Text' represents a 'String' that can be manipulated with
 -- 'Formatter's at rendering time.
-data Text = Text { defaultAttr :: Attr
-                 -- ^The default attribute for all tokens in this text
-                 -- object.
-                 , tokens :: [[Token Attr]]
+data Text = Text { tokens :: [[Token Attr]]
                  -- ^The tokens of the underlying text stream.
                  }
             deriving (Show)
@@ -100,15 +97,10 @@ instance Show FormattedText where
                                       , ", formatter = ... }"
                                       ]
 
-instance HasNormalAttr (Widget FormattedText) where
-    setNormalAttribute t a =
-        updateWidgetState t $ \s -> s { text = (text s) { defaultAttr = mergeAttr a $ defaultAttr $ text s } }
-
 -- |Prepare a string for rendering and assign it the specified default
 -- attribute.
 prepareText :: String -> Text
-prepareText s = Text { defaultAttr = def_attr
-                     , tokens = tokenize s def_attr
+prepareText s = Text { tokens = tokenize s def_attr
                      }
 
 -- |Construct a Widget directly from an attribute and a String.  This
@@ -156,18 +148,19 @@ textWidget format s = do
         , render_ =
             \this size ctx -> do
               ft <- getState this
-              return $ renderText (text ft) (formatter ft) size ctx
+              f <- focused <~ this
+              return $ renderText (text ft) f (formatter ft) size ctx
         }
   return wRef
 
 setText :: (MonadIO m) => Widget FormattedText -> String -> m ()
 setText wRef s = do
   updateWidgetState wRef $ \st ->
-      st { text = (prepareText s) { defaultAttr = defaultAttr $ text st } }
+      st { text = (prepareText s) }
 
 -- |Low-level text-rendering routine.
-renderText :: Text -> Formatter -> DisplayRegion -> RenderContext -> Image
-renderText t format sz ctx =
+renderText :: Text -> Bool -> Formatter -> DisplayRegion -> RenderContext -> Image
+renderText t foc format sz ctx =
     if region_height sz == 0
     then nullImg
          else if null ls || all null ls
@@ -182,7 +175,6 @@ renderText t format sz ctx =
                          ]
       tokenAttr tok = mergeAttrs [ overrideAttr ctx
                                  , tokenAnnotation tok
-                                 , defaultAttr t
                                  , normalAttr ctx
                                  ]
 

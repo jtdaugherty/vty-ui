@@ -65,7 +65,6 @@ import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , RenderContext(..)
-    , HasNormalAttr(..)
     , (<~~)
     , withNormalAttribute
     , render
@@ -190,12 +189,7 @@ data Table = Table { rows :: [TableRow]
                    , borderAttr :: Attr
                    , defaultCellAlignment :: Alignment
                    , defaultCellPadding :: Padding
-                   , tableNormalAttr :: Attr
                    }
-
-instance HasNormalAttr (Widget Table) where
-    setNormalAttribute wRef a =
-        updateWidgetState wRef $ \t -> t { tableNormalAttr = mergeAttr a $ tableNormalAttr t }
 
 instance HasBorderAttr (Widget Table) where
     setBorderAttribute t a =
@@ -208,7 +202,6 @@ instance Show Table where
                     , ", columnSpecs = ", show $ columnSpecs t
                     , ", borderStyle = ", show $ borderStyle t
                     , ", borderAttr = ", show $ borderAttr t
-                    , ", tableNormalAttr = ", show $ tableNormalAttr t
                     , ", defaultCellAlignment = ", show $ defaultCellAlignment t
                     , ", defaultCellPadding = ", show $ defaultCellPadding t
                     , " }"
@@ -240,7 +233,6 @@ newTable specs borderSty = do
                         , borderAttr = def_attr
                         , defaultCellAlignment = AlignLeft
                         , defaultCellPadding = padNone
-                        , tableNormalAttr = def_attr
                         }
 
         , growHorizontal_ = \st -> do
@@ -354,12 +346,10 @@ mkRowBorder_ t sz ctx intChar = do
   bAttr <- borderAttr <~~ t
   specs <- columnSpecs <~~ t
   aw <- autoWidth t sz
-  tableNA <- tableNormalAttr <~~ t
 
   let sk = skin ctx
       bAttr' = mergeAttrs [ overrideAttr ctx
                           , bAttr
-                          , tableNA
                           , normalAttr ctx
                           ]
       szs = map columnSize specs
@@ -396,7 +386,6 @@ mkSideBorder_ :: Widget Table -> RenderContext -> Bool -> IO Image
 mkSideBorder_ t ctx isLeft = do
   bs <- borderStyle <~~ t
   bAttr <- borderAttr <~~ t
-  tableNA <- tableNormalAttr <~~ t
   rs <- rows <~~ t
 
   let sk = skin ctx
@@ -414,7 +403,6 @@ mkSideBorder_ t ctx isLeft = do
                                    ]
       bAttr' = mergeAttrs [ overrideAttr ctx
                           , bAttr
-                          , tableNA
                           , normalAttr ctx
                           ]
 
@@ -568,17 +556,13 @@ renderRow tbl sz cells ctx = do
   borderSty <- borderStyle <~~ tbl
   bAttr <- borderAttr <~~ tbl
   aw <- autoWidth tbl sz
-  tableNA <- tableNormalAttr <~~ tbl
 
   let sk = skin ctx
       sizes = map columnSize specs
       att = mergeAttrs [ overrideAttr ctx
-                       , tableNA
                        , normalAttr ctx
                        ]
-      newDefault = mergeAttrs [ tableNA
-                              , normalAttr ctx
-                              ]
+      newDefault = normalAttr ctx
 
   cellImgs <-
       forM (zip cells sizes) $ \(cellW, sizeSpec) ->
@@ -605,7 +589,6 @@ renderRow tbl sz cells ctx = do
   -- If we need to draw borders in between columns, do that.
   let bAttr' = mergeAttrs [ overrideAttr ctx
                           , bAttr
-                          , tableNA
                           , normalAttr ctx
                           ]
       withBorders = case colBorders borderSty of

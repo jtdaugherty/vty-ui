@@ -11,30 +11,22 @@ import Control.Monad.Trans
     ( MonadIO
     )
 import Graphics.Vty
-    ( Attr
-    , region_width
+    ( region_width
     , region_height
     , char_fill
-    , def_attr
     )
 import Graphics.Vty.Widgets.Core
     ( Widget
     , WidgetImpl(..)
     , RenderContext(..)
-    , HasNormalAttr(..)
     , newWidget
     , updateWidget
     , getState
-    , updateWidgetState
     )
 import Graphics.Vty.Widgets.Util
 
-data VFill = VFill Attr Char
+data VFill = VFill Char
              deriving (Show)
-
-instance HasNormalAttr (Widget VFill) where
-    setNormalAttribute w a =
-        updateWidgetState w $ \(VFill a' ch) -> VFill (mergeAttr a a') ch
 
 -- |A vertical fill widget.  Fills all available space with the
 -- specified character and attribute.
@@ -42,24 +34,19 @@ vFill :: (MonadIO m) => Char -> m (Widget VFill)
 vFill c = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = VFill def_attr c
+      w { state = VFill c
         , growVertical_ = const $ return True
         , render_ = \this s ctx -> do
-                   VFill attr ch <- getState this
+                   VFill ch <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx
-                                          , attr
                                           , normalAttr ctx
                                           ]
                    return $ char_fill attr' ch (region_width s) (region_height s)
         }
   return wRef
 
-data HFill = HFill Attr Char Int
+data HFill = HFill Char Int
              deriving (Show)
-
-instance HasNormalAttr (Widget HFill) where
-    setNormalAttribute w a =
-        updateWidgetState w $ \(HFill a' ch i) -> HFill (mergeAttr a a') ch i
 
 -- |A horizontal fill widget.  Fills the available horizontal space,
 -- one row high, using the specified character and attribute.
@@ -67,12 +54,11 @@ hFill :: (MonadIO m) => Char -> Int -> m (Widget HFill)
 hFill c h = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = HFill def_attr c h
+      w { state = HFill c h
         , growHorizontal_ = const $ return True
         , render_ = \this s ctx -> do
-                   HFill attr ch height <- getState this
+                   HFill ch height <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx
-                                          , attr
                                           , normalAttr ctx
                                           ]
                    return $ char_fill attr' ch (region_width s) (toEnum height)
