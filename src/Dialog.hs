@@ -101,8 +101,8 @@ dialog body title mFg = do
                    , dialogCancelHandlers = chs
                    }
 
-  okB `onButtonPressed` (const $ fireEvent dlg (return . dialogAcceptHandlers) dlg)
-  cancelB `onButtonPressed` (const $ fireEvent dlg (return . dialogCancelHandlers) dlg)
+  okB `onButtonPressed` (const $ acceptDialog dlg)
+  cancelB `onButtonPressed` (const $ cancelDialog dlg)
 
   return dlg
 
@@ -111,6 +111,12 @@ onDialogAccept = addHandler dialogAcceptHandlers
 
 onDialogCancel :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
 onDialogCancel = addHandler dialogCancelHandlers
+
+acceptDialog :: (MonadIO m) => Dialog -> m ()
+acceptDialog dlg = fireEvent dlg (return . dialogAcceptHandlers) dlg
+
+cancelDialog :: (MonadIO m) => Dialog -> m ()
+cancelDialog dlg = fireEvent dlg (return . dialogCancelHandlers) dlg
 
 main :: IO ()
 main = do
@@ -127,6 +133,7 @@ main = do
   let updateTitle = setDialogTitle d =<< getEditText e
 
   e `onChange` \_ _ -> updateTitle
+  e `onActivate` \_ -> acceptDialog d
 
   d `onDialogAccept` const exitSuccess
   d `onDialogCancel` const exitSuccess
