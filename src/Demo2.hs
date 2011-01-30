@@ -36,8 +36,6 @@ main = do
   tw <- (textWidget (wrap &.& color) msg) >>= withNormalAttribute msgAttr
   mainBox <- vBox table tw >>= withBoxSpacing 1
 
-  ui <- centered =<< hLimit 70 mainBox
-
   r1 <- newCheckbox "Cake"
   r2 <- newCheckbox "Death"
   radioHeader <- simpleText "" >>= withNormalAttribute headerAttr
@@ -51,8 +49,8 @@ main = do
   edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- editWidget
 
-  edit1Header <- simpleText "" >>= withNormalAttribute headerAttr
-  edit2Header <- simpleText "" >>= withNormalAttribute headerAttr
+  edit1Header <- textWidget wrap "" >>= withNormalAttribute headerAttr
+  edit2Header <- textWidget wrap "" >>= withNormalAttribute headerAttr
 
   lst <- listWidget =<< mkList (fgColor bright_green) simpleText
 
@@ -110,6 +108,8 @@ main = do
   addToFocusGroup fgr edit1
   addToFocusGroup fgr edit2
   addToFocusGroup fgr lst
+
+  ui <- centered =<< hLimit 70 mainBox
   setFocusGroup ui fgr
 
   -- Enter the event loop.
