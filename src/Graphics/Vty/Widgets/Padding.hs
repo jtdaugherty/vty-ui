@@ -5,6 +5,7 @@ module Graphics.Vty.Widgets.Padding
     , Paddable(..)
     , (+++)
     , padded
+    , withPadding
     , padNone
     , padLeft
     , padRight
@@ -115,6 +116,9 @@ padTopBottom v = Padding v 0 v 0
 
 padLeftRight :: Int -> Padding
 padLeftRight v = Padding 0 v 0 v
+
+withPadding :: (MonadIO m, Show a) => Padding -> Widget a -> m (Widget Padded)
+withPadding = flip padded
 
 padded :: (MonadIO m, Show a) => Widget a -> Padding -> m (Widget Padded)
 padded ch padding = do
