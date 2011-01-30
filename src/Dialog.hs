@@ -11,16 +11,17 @@ import Graphics.Vty.Widgets.All
 
 data Button = Button { buttonText :: String
                      , buttonWidget :: Widget Padded
+                     , buttonHandlers :: IORef (EventHandlers Button ButtonEvent)
                      }
 
 onButtonPressed :: (MonadIO m) => Button -> IO () -> m ()
-onButtonPressed b act = do
-  (buttonWidget b) `onKeyPressed` \_ k _ ->
-      do
-        case k of
-          KEnter -> act
-          _ -> return ()
-        return False
+onButtonPressed = onEvent ButtonPressed
+
+data ButtonEvent = ButtonPressed
+                   deriving (Eq)
+
+instance EventSource Button ButtonEvent where
+    getEventHandlers = buttonHandlers
 
 button :: (MonadIO m) => String -> m Button
 button msg = do
@@ -29,7 +30,18 @@ button msg = do
        withNormalAttribute (white `on` black) >>=
        withFocusAttribute (blue `on` white)
 
-  return $ Button msg w
+  eRef <- liftIO $ newIORef $ EventHandlers []
+
+  let b = Button msg w eRef
+
+  w `onKeyPressed` \_ k _ ->
+      do
+        case k of
+          KEnter -> dispatchEvent b ButtonPressed
+          _ -> return ()
+        return False
+
+  return b
 
 data EventHandlers w e = EventHandlers { registeredHandlers :: [(e, IO ())]
                                        -- ^Specific event handlers.
