@@ -2,7 +2,6 @@
 module Main where
 
 import System.Exit ( exitSuccess )
-import Control.Monad ( when )
 import Text.Regex.PCRE.Light
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
@@ -62,9 +61,11 @@ main = do
 
   rs <- (return r1) <--> (return r2)
 
+  cbHeader <- simpleText ""
+
   addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
   addRow table $ radioHeader .|. rs
-  addRow table $ emptyCell .|. r3
+  addRow table $ cbHeader .|. r3
   addRow table $ edit1Header .|. edit1
   addRow table $ edit2Header .|. edit2
   addRow table $ listHeader .|. customCell selector `pad` padNone
@@ -72,6 +73,9 @@ main = do
   rg `onRadioChange` \cb -> do
       s <- getCheckboxLabel cb
       setText radioHeader $ s ++ ", please."
+
+  r3 `onCheckboxChange` \v ->
+      setText cbHeader (if v then "checked" else "unchecked")
 
   edit1 `onChange` (setText edit1Header)
   edit2 `onChange` (setText edit2Header)
@@ -84,6 +88,7 @@ main = do
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
   setCheckboxChecked r1
+  setCheckboxChecked r3
 
   fgr <- newFocusGroup
   fgr `onKeyPressed` \_ k _ -> do
