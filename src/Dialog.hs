@@ -3,6 +3,7 @@
 module Main where
 
 import Data.IORef
+import Data.Maybe
 import Control.Monad
 import Control.Monad.Trans
 import System.Exit
@@ -19,7 +20,10 @@ main = do
        >>= withBoxSpacing 1
 
   pe <- padded u (padLeftRight 2)
-  d <- newDialog pe "<enter text>" (Just fg)
+  d <- newDialog pe "<enter text>" (Just fg) >>= withNormalAttribute (white `on` blue)
+
+  c <- centered =<< withPadding (padLeftRight 10) (dialogWidget d)
+  (setFocusGroup c . fromJust) =<< (getFocusGroup $ dialogWidget d)
 
   let updateTitle = setDialogTitle d =<< getEditText e
 
@@ -35,4 +39,4 @@ main = do
         KEsc -> exitSuccess
         _ -> return False
 
-  runUi (dialogWidget d) $ defaultContext { focusAttr = black `on` yellow }
+  runUi c $ defaultContext { focusAttr = black `on` yellow }

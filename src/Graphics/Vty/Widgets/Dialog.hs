@@ -27,7 +27,7 @@ data DialogEvent = DialogAccept
 
 data Dialog = Dialog { okButton :: Button
                      , cancelButton :: Button
-                     , dialogWidget :: Widget (VCentered (HCentered Padded))
+                     , dialogWidget :: Widget (Bordered Padded)
                      , setDialogTitle :: String -> IO ()
                      , dialogAcceptHandlers :: IORef [Handler Dialog]
                      , dialogCancelHandlers :: IORef [Handler Dialog]
@@ -58,16 +58,14 @@ newDialog body title mFg = do
   b2 <- bordered b >>=
         withBorderedLabel title
 
-  c <- centered =<< withPadding (padLeftRight 10) b2
-
-  setFocusGroup c fg
+  setFocusGroup b2 fg
 
   ahs <- mkHandlers
   chs <- mkHandlers
 
   let dlg = Dialog { okButton = okB
                    , cancelButton = cancelB
-                   , dialogWidget = c
+                   , dialogWidget = b2
                    , setDialogTitle = setBorderedLabel b2
                    , dialogAcceptHandlers = ahs
                    , dialogCancelHandlers = chs
