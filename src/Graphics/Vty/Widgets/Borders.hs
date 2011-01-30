@@ -33,6 +33,7 @@ import Graphics.Vty
     , vert_cat
     , horiz_cat
     , def_attr
+    , empty_image
     )
 import Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
@@ -98,6 +99,8 @@ hBorder = do
   return wRef
 
 renderHBorder :: Widget HBorder -> DisplayRegion -> RenderContext -> IO Image
+renderHBorder _ (DisplayRegion 0 _) _ = return empty_image
+renderHBorder _ (DisplayRegion _ 0) _ = return empty_image
 renderHBorder this s ctx = do
   HBorder attr str <- getState this
   let attr' = mergeAttrs [ overrideAttr ctx
