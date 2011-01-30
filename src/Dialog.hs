@@ -1,27 +1,13 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 module Main where
 
+import Data.IORef
+import Control.Monad
 import Control.Monad.Trans
 import System.Exit
 import Graphics.Vty hiding (Button)
 import Graphics.Vty.Widgets.All
-
--- Dialog: message, array of "button" information. Buttons can be
--- tabbed-between and activated, and each one has a handler.
-
--- Another type of dialog would be an edit dialog.  (msg <-->
--- editField)
-
--- General case: dialog embeds any widget, and the dialog
--- automatically adds it to the focus group (at the beginning) if it
--- is focusable.  Don't have a way to determine whether it is
--- focusable; this would be another nice case of a Focusable type
--- class.  But then again, runtime detection of focus support would
--- allow us to make it optional, and embed any widget at all (like
--- text).
-
--- A "button" is a bit of text with left- and right-padding (Padded
--- Button) which can get focused
 
 data Button = Button { buttonText :: String
                      , buttonWidget :: Widget Padded
@@ -45,17 +31,42 @@ button msg = do
 
   return $ Button msg w
 
+data EventHandlers w e = EventHandlers { registeredHandlers :: [(e, IO ())]
+                                       -- ^Specific event handlers.
+                                       -- Might want an "any" event handler list, too.
+                                       }
+
+addEventHandler :: w -> e -> IO () -> EventHandlers w e -> EventHandlers w e
+addEventHandler w e act eh =
+    eh { registeredHandlers = registeredHandlers eh ++ [(e, act)] }
+
+data DialogEvent = DialogAccept
+                 | DialogCancel
+                   deriving (Eq)
+
+class (Eq e) => EventSource w e where
+    getEventHandlers :: w -> IORef (EventHandlers w e)
+
+    onEvent :: (MonadIO m) => e -> w -> IO () -> m ()
+    onEvent ev w act =
+        liftIO $ modifyIORef (getEventHandlers w) $ addEventHandler w ev act
+
+    dispatchEvent :: (MonadIO m) => w -> e -> m ()
+    dispatchEvent w ev = do
+        let eRef = getEventHandlers w
+        eh <- liftIO $ readIORef eRef
+        forM_ (registeredHandlers eh) $ \(e', act) ->
+            if e' == ev then liftIO act else return ()
+
+instance EventSource Dialog DialogEvent where
+    getEventHandlers = dialogHandlers
+
 data Dialog = Dialog { okButton :: Button
                      , cancelButton :: Button
                      , dialogWidget :: Widget (VCentered (HCentered Padded))
                      , setDialogTitle :: String -> IO ()
+                     , dialogHandlers :: IORef (EventHandlers Dialog DialogEvent)
                      }
-
-onDialogAccept :: (MonadIO m) => Dialog -> IO () -> m ()
-onDialogAccept d act = (okButton d) `onButtonPressed` act
-
-onDialogCancel :: (MonadIO m) => Dialog -> IO () -> m ()
-onDialogCancel d act = (cancelButton d) `onButtonPressed` act
 
 dialog :: (MonadIO m, Show a) => Widget a -> String -> Maybe (Widget FocusGroup)
        -> m Dialog
@@ -83,11 +94,25 @@ dialog body title mFg = do
   c <- centered =<< withPadding (padLeftRight 10) b
 
   setFocusGroup c fg
-  return $ Dialog { okButton = okB
-                  , cancelButton = cancelB
-                  , dialogWidget = c
-                  , setDialogTitle = setBorderedLabel b
-                  }
+  eRef <- liftIO $ newIORef $ EventHandlers []
+
+  let dlg = Dialog { okButton = okB
+                   , cancelButton = cancelB
+                   , dialogWidget = c
+                   , setDialogTitle = setBorderedLabel b
+                   , dialogHandlers = eRef
+                   }
+
+  okB `onButtonPressed` dispatchEvent dlg DialogAccept
+  cancelB `onButtonPressed` dispatchEvent dlg DialogCancel
+
+  return dlg
+
+onDialogAccept :: (MonadIO m) => Dialog -> IO () -> m ()
+onDialogAccept = onEvent DialogAccept
+
+onDialogCancel :: (MonadIO m) => Dialog -> IO () -> m ()
+onDialogCancel = onEvent DialogCancel
 
 main :: IO ()
 main = do
