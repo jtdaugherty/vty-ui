@@ -32,14 +32,14 @@ onButtonPressed b act = do
   (buttonWidget b) `onKeyPressed` \_ k _ ->
       do
         case k of
-          KEnter -> act >> return False
-          _ -> return False
+          KEnter -> act
+          _ -> return ()
+        return False
 
 button :: (MonadIO m) => String -> m Button
 button msg = do
-  t <- simpleText msg
-  b <- padded t (padLeft 3 `pad` padRight 3)
-  w <- (return b) >>=
+  w <- simpleText msg >>=
+       withPadding (padLeft 3 `pad` padRight 3) >>=
        withNormalAttribute (white `on` black) >>=
        withFocusAttribute (blue `on` white)
 
