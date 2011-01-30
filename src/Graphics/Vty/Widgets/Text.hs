@@ -169,11 +169,10 @@ renderText t foc format sz ctx =
     where
       -- Truncate the tokens at the specified column and split them up
       -- into lines
-      attr' = mergeAttrs [ overrideAttr ctx
-                         , defaultAttr t
+      attr' = mergeAttrs [ if foc then focusAttr ctx else overrideAttr ctx
                          , normalAttr ctx
                          ]
-      tokenAttr tok = mergeAttrs [ overrideAttr ctx
+      tokenAttr tok = mergeAttrs [ if foc then focusAttr ctx else overrideAttr ctx
                                  , tokenAnnotation tok
                                  , normalAttr ctx
                                  ]
