@@ -48,6 +48,7 @@ button msg = do
 data Dialog = Dialog { okButton :: Button
                      , cancelButton :: Button
                      , dialogWidget :: Widget (VCentered (HCentered Padded))
+                     , setDialogTitle :: String -> IO ()
                      }
 
 dialog :: (MonadIO m, Show a) => Widget a -> String -> Maybe (Widget FocusGroup)
@@ -69,16 +70,17 @@ dialog body title mFg = do
   addToFocusGroup fg $ buttonWidget okB
   addToFocusGroup fg $ buttonWidget cancelB
 
-  c <- centered =<<
-       withPadding (padLeftRight 10) =<<
-       (bordered b2 >>=
-        withBorderedLabel title >>=
-        withNormalAttribute (white `on` blue))
+  b <- bordered b2 >>=
+       withBorderedLabel title >>=
+       withNormalAttribute (white `on` blue)
+
+  c <- centered =<< withPadding (padLeftRight 10) b
 
   setFocusGroup c fg
   return $ Dialog { okButton = okB
                   , cancelButton = cancelB
                   , dialogWidget = c
+                  , setDialogTitle = setBorderedLabel b
                   }
 
 main :: IO ()
@@ -90,12 +92,12 @@ main = do
   u <- (simpleText "Enter some text and press enter.") <--> (return e) >>= withBoxSpacing 1
 
   pe <- padded u (padLeftRight 2)
-  d <- dialog pe "Stuff" (Just fg)
+  d <- dialog pe "<enter text>" (Just fg)
 
-  let done = putStrLn =<< getEditText e
+  let updateTitle = setDialogTitle d =<< getEditText e
 
-  (okButton d) `onButtonPressed` done
-  e `onActivate` const done
+  (okButton d) `onButtonPressed` updateTitle
+  e `onChange` \_ _ -> updateTitle
 
   (cancelButton d) `onButtonPressed` exitSuccess
 
