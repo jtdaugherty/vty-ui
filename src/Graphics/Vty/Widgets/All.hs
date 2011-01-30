@@ -17,6 +17,9 @@ module Graphics.Vty.Widgets.All
     , module Graphics.Vty.Widgets.Fills
     , module Graphics.Vty.Widgets.Centering
     , module Graphics.Vty.Widgets.Skins
+    , module Graphics.Vty.Widgets.Events
+    , module Graphics.Vty.Widgets.Dialog
+    , module Graphics.Vty.Widgets.Button
     )
 where
 
@@ -37,3 +40,6 @@ import Graphics.Vty.Widgets.Limits
 import Graphics.Vty.Widgets.Fills
 import Graphics.Vty.Widgets.Centering
 import Graphics.Vty.Widgets.Skins
+import Graphics.Vty.Widgets.Events
+import Graphics.Vty.Widgets.Dialog
+import Graphics.Vty.Widgets.Button

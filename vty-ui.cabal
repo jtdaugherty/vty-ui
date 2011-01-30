@@ -50,6 +50,9 @@ Library
           Graphics.Vty.Widgets.Fills
           Graphics.Vty.Widgets.Centering
           Graphics.Vty.Widgets.Skins
+          Graphics.Vty.Widgets.Events
+          Graphics.Vty.Widgets.Dialog
+          Graphics.Vty.Widgets.Button
   Other-Modules:
           Text.Trans.Tokenize
 
