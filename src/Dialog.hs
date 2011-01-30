@@ -13,9 +13,10 @@ addEventHandler :: (MonadIO m) => (w -> IORef [h]) -> w -> h -> m ()
 addEventHandler getRef w handler =
     liftIO $ modifyIORef (getRef w) $ \s -> s ++ [handler]
 
-fireEvent :: (MonadIO m) => w -> (w -> IORef [a -> IO ()]) -> a -> m ()
+fireEvent :: (MonadIO m) => w -> (w -> m (IORef [a -> IO ()])) -> a -> m ()
 fireEvent w getRef ev = do
-  handlers <- liftIO $ readIORef $ getRef w
+  r <- getRef w
+  handlers <- liftIO $ readIORef r
   forM_ handlers $ \handler ->
       liftIO $ handler ev
 
@@ -44,7 +45,7 @@ button msg = do
   w `onKeyPressed` \_ k _ ->
       do
         case k of
-          KEnter -> fireEvent b buttonPressedHandlers b
+          KEnter -> fireEvent b (return . buttonPressedHandlers) b
           _ -> return ()
         return False
 
@@ -100,8 +101,8 @@ dialog body title mFg = do
                    , dialogCancelHandlers = chs
                    }
 
-  okB `onButtonPressed` (const $ fireEvent dlg dialogAcceptHandlers dlg)
-  cancelB `onButtonPressed` (const $ fireEvent dlg dialogCancelHandlers dlg)
+  okB `onButtonPressed` (const $ fireEvent dlg (return . dialogAcceptHandlers) dlg)
+  cancelB `onButtonPressed` (const $ fireEvent dlg (return . dialogCancelHandlers) dlg)
 
   return dlg
 
