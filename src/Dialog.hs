@@ -50,9 +50,9 @@ data Dialog = Dialog { okButton :: Button
                      , dialogWidget :: Widget (VCentered (HCentered Padded))
                      }
 
-dialog :: (MonadIO m, Show a) => Widget a -> Maybe (Widget FocusGroup)
+dialog :: (MonadIO m, Show a) => Widget a -> String -> Maybe (Widget FocusGroup)
        -> m Dialog
-dialog body mFg = do
+dialog body title mFg = do
   okB <- button "OK"
   cancelB <- button "Cancel"
 
@@ -71,7 +71,9 @@ dialog body mFg = do
 
   c <- centered =<<
        withPadding (padLeftRight 10) =<<
-       (bordered b2 >>= withNormalAttribute (white `on` blue))
+       (bordered b2 >>=
+        withBorderedLabel title >>=
+        withNormalAttribute (white `on` blue))
 
   setFocusGroup c fg
   return $ Dialog { okButton = okB
@@ -88,7 +90,7 @@ main = do
   u <- (simpleText "Enter some text and press enter.") <--> (return e) >>= withBoxSpacing 1
 
   pe <- padded u (padLeftRight 2)
-  d <- dialog pe (Just fg)
+  d <- dialog pe "Stuff" (Just fg)
 
   let done = putStrLn =<< getEditText e
 
