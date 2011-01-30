@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
-{-# LANGUAGE ExistentialQuantification #-}
 module Main where
 
 import Control.Monad
