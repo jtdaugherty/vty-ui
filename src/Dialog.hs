@@ -132,7 +132,8 @@ main = do
   fg <- newFocusGroup
   addToFocusGroup fg e
 
-  u <- (simpleText "Enter some text and press enter.") <--> (return e) >>= withBoxSpacing 1
+  u <- simpleText "Enter some text and press enter." <--> return e
+       >>= withBoxSpacing 1
 
   pe <- padded u (padLeftRight 2)
   d <- dialog pe "<enter text>" (Just fg)
