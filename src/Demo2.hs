@@ -66,11 +66,10 @@ main = do
   addRow table $ edit2Header .|. edit2
   addRow table $ listHeader .|. customCell selector `pad` padNone
 
-  r1 `onCheckboxChange` \v ->
-      when v $ setText radioHeader "Cake, please."
-
-  r2 `onCheckboxChange` \v ->
-      when v $ setText radioHeader "Death, please."
+  rg `onRadioChange` \cb ->
+      if cb == r1
+      then setText radioHeader "Cake, please."
+      else setText radioHeader "Death, please."
 
   edit1 `onChange` (setText edit1Header)
   edit2 `onChange` (setText edit2Header)

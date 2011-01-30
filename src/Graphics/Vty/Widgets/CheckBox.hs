@@ -4,6 +4,7 @@ module Graphics.Vty.Widgets.CheckBox
     , RadioGroup
     , newCheckbox
     , newRadioGroup
+    , onRadioChange
     , addToRadioGroup
     , toggleChecked
     , setCheckboxUnchecked
@@ -24,12 +25,21 @@ import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
 data RadioGroupData = RadioGroupData { currentlySelected :: Maybe (Widget CheckBox)
+                                     , changeHandlers :: IORef [Handler (Widget CheckBox)]
                                      }
 
 type RadioGroup = IORef RadioGroupData
 
 newRadioGroup :: (MonadIO m) => m RadioGroup
-newRadioGroup = liftIO $ newIORef $ RadioGroupData Nothing
+newRadioGroup = do
+  hs <- mkHandlers
+  liftIO $ newIORef $ RadioGroupData Nothing hs
+
+onRadioChange :: (MonadIO m) => RadioGroup -> (Widget CheckBox -> IO ())
+              -> m ()
+onRadioChange rg act = do
+  rd <- liftIO $ readIORef rg
+  addHandler (return . changeHandlers) rd act
 
 setCheckedChar :: (MonadIO m) => Widget CheckBox -> Char -> m ()
 setCheckedChar wRef ch =
@@ -41,6 +51,11 @@ addToRadioGroup rg wRef = do
   updateWidgetState wRef $ \s -> s { radioGroup = Just rg
                                    }
   setCheckedChar wRef '*'
+
+  wRef `onCheckboxChange` \v ->
+      when v $ do
+        rd <- readIORef rg
+        fireEvent rd (return . changeHandlers) wRef
 
 radioGroupSetCurrent :: (MonadIO m) => Widget CheckBox -> m ()
 radioGroupSetCurrent wRef = do
