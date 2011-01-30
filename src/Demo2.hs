@@ -34,7 +34,7 @@ main = do
            withBorderAttribute (fgColor green)
 
   tw <- (textWidget (wrap &.& color) msg) >>= withNormalAttribute msgAttr
-  mainBox <- (return table) <--> (return tw) >>= withBoxSpacing 1
+  mainBox <- vBox table tw >>= withBoxSpacing 1
 
   ui <- centered =<< hLimit 70 mainBox
 
@@ -59,7 +59,7 @@ main = do
   selector <- vLimit 3 lst
   listHeader <- simpleText ""
 
-  rs <- (return r1) <--> (return r2)
+  rs <- vBox r1 r2
 
   cbHeader <- simpleText ""
 
