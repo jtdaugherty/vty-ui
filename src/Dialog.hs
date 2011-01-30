@@ -2,10 +2,7 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Main where
 
-import Data.IORef
 import Data.Maybe
-import Control.Monad
-import Control.Monad.Trans
 import System.Exit
 import Graphics.Vty hiding (Button)
 import Graphics.Vty.Widgets.All
