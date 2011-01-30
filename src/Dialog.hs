@@ -9,8 +9,8 @@ import System.Exit
 import Graphics.Vty hiding (Button)
 import Graphics.Vty.Widgets.All
 
-addEventHandler :: (MonadIO m) => (w -> IORef [h]) -> w -> h -> m ()
-addEventHandler getRef w handler =
+addHandler :: (MonadIO m) => (w -> IORef [h]) -> w -> h -> m ()
+addHandler getRef w handler =
     liftIO $ modifyIORef (getRef w) $ \s -> s ++ [handler]
 
 fireEvent :: (MonadIO m) => w -> (w -> m (IORef [a -> IO ()])) -> a -> m ()
@@ -29,7 +29,7 @@ data Button = Button { buttonText :: String
                      }
 
 onButtonPressed :: (MonadIO m) => Button -> (Button -> IO ()) -> m ()
-onButtonPressed = addEventHandler buttonPressedHandlers
+onButtonPressed = addHandler buttonPressedHandlers
 
 button :: (MonadIO m) => String -> m Button
 button msg = do
@@ -107,10 +107,10 @@ dialog body title mFg = do
   return dlg
 
 onDialogAccept :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
-onDialogAccept = addEventHandler dialogAcceptHandlers
+onDialogAccept = addHandler dialogAcceptHandlers
 
 onDialogCancel :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
-onDialogCancel = addEventHandler dialogCancelHandlers
+onDialogCancel = addHandler dialogCancelHandlers
 
 main :: IO ()
 main = do
