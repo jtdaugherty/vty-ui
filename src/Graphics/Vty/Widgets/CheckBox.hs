@@ -159,5 +159,5 @@ notifyChangeHandlers wRef = do
 checkboxIsChecked :: (MonadIO m) => Widget CheckBox -> m Bool
 checkboxIsChecked = (isChecked <~~)
 
-onCheckboxChange :: Widget CheckBox -> (Bool -> IO ()) -> IO ()
+onCheckboxChange :: (MonadIO m) => Widget CheckBox -> (Bool -> IO ()) -> m ()
 onCheckboxChange = addHandler (checkboxChangeHandlers <~~)
