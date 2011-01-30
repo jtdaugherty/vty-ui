@@ -9,17 +9,17 @@ import System.Exit
 import Graphics.Vty hiding (Button)
 import Graphics.Vty.Widgets.All
 
-addEventHandler :: (MonadIO m) => (w -> IORef [w -> IO ()]) -> w -> (w -> IO ()) -> m ()
+addEventHandler :: (MonadIO m) => (w -> IORef [h]) -> w -> h -> m ()
 addEventHandler getRef w handler =
     liftIO $ modifyIORef (getRef w) $ \s -> s ++ [handler]
 
-fireEvent :: (MonadIO m) => w -> (w -> IORef [w -> IO ()]) -> m ()
-fireEvent w getRef = do
+fireEvent :: (MonadIO m) => w -> (w -> IORef [a -> IO ()]) -> a -> m ()
+fireEvent w getRef ev = do
   handlers <- liftIO $ readIORef $ getRef w
   forM_ handlers $ \handler ->
-      liftIO $ handler w
+      liftIO $ handler ev
 
-mkHandlers :: (MonadIO m) => m (IORef [w -> IO ()])
+mkHandlers :: (MonadIO m) => m (IORef [a -> IO ()])
 mkHandlers = liftIO $ newIORef []
 
 data Button = Button { buttonText :: String
@@ -44,7 +44,7 @@ button msg = do
   w `onKeyPressed` \_ k _ ->
       do
         case k of
-          KEnter -> fireEvent b buttonPressedHandlers
+          KEnter -> fireEvent b buttonPressedHandlers b
           _ -> return ()
         return False
 
@@ -100,8 +100,8 @@ dialog body title mFg = do
                    , dialogCancelHandlers = chs
                    }
 
-  okB `onButtonPressed` (const $ fireEvent dlg dialogAcceptHandlers)
-  cancelB `onButtonPressed` (const $ fireEvent dlg dialogCancelHandlers)
+  okB `onButtonPressed` (const $ fireEvent dlg dialogAcceptHandlers dlg)
+  cancelB `onButtonPressed` (const $ fireEvent dlg dialogCancelHandlers dlg)
 
   return dlg
 
