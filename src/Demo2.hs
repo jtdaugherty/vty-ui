@@ -47,6 +47,8 @@ main = do
   addToRadioGroup rg r1
   addToRadioGroup rg r2
 
+  r3 <- newCheckbox "Frosting"
+
   edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- editWidget
 
@@ -62,6 +64,7 @@ main = do
 
   addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
   addRow table $ radioHeader .|. rs
+  addRow table $ emptyCell .|. r3
   addRow table $ edit1Header .|. edit1
   addRow table $ edit2Header .|. edit2
   addRow table $ listHeader .|. customCell selector `pad` padNone
@@ -99,6 +102,7 @@ main = do
 
   addToFocusGroup fgr r1
   addToFocusGroup fgr r2
+  addToFocusGroup fgr r3
   addToFocusGroup fgr edit1
   addToFocusGroup fgr edit2
   addToFocusGroup fgr lst
