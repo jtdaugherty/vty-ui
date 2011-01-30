@@ -15,6 +15,9 @@ module Graphics.Vty.Widgets.List
     ( List
     , ListItem
     , ListError(..)
+    , NewItemEvent(..)
+    , RemoveItemEvent(..)
+    , SelectionEvent(..)
     -- ** List creation
     , mkList
     , mkSimpleList
@@ -41,13 +44,15 @@ module Graphics.Vty.Widgets.List
     )
 where
 
+import Data.IORef
 import Data.Typeable
-import Control.Exception
+import Control.Exception hiding (Handler)
 import Control.Monad
 import Control.Monad.Trans
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
+import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
 data ListError = BadItemIndex Int
@@ -60,6 +65,11 @@ instance Exception ListError
 -- |A list item. Each item contains an arbitrary internal identifier
 -- @a@ and a 'Widget' representing it.
 type ListItem a b = (a, Widget b)
+
+data SelectionEvent a b = SelectionOn Int a (Widget b)
+                        | SelectionOff
+data NewItemEvent a b = NewItemEvent Int a (Widget b)
+data RemoveItemEvent a b = RemoveItemEvent Int a (Widget b)
 
 -- |The list widget type.  Lists are parameterized over the /internal/
 -- /identifier type/ @a@, the type of internal identifiers used to
@@ -76,9 +86,9 @@ data List a b = List { selectedUnfocusedAttr :: Attr
                      -- ^The size of the window of visible list items.
                      , listItems :: [ListItem a b]
                      -- ^The items in the list.
-                     , selectionChangeHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
-                     , itemAddHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
-                     , itemRemoveHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
+                     , selectionChangeHandlers :: IORef [Handler (SelectionEvent a b)]
+                     , itemAddHandlers :: IORef [Handler (NewItemEvent a b)]
+                     , itemRemoveHandlers :: IORef [Handler (RemoveItemEvent a b)]
                      , itemHeight :: Int
                      , itemConstructor :: a -> IO (Widget b)
                      -- ^Function to construct new items
@@ -97,21 +107,26 @@ instance Show (List a b) where
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
-mkList :: Attr -- ^The attribute of the selected item
+mkList :: (MonadIO m) =>
+          Attr -- ^The attribute of the selected item
        -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
-       -> List a b
-mkList selAttr f =
-    List { selectedUnfocusedAttr = selAttr
-         , selectedIndex = -1
-         , scrollTopIndex = 0
-         , scrollWindowSize = 0
-         , listItems = []
-         , selectionChangeHandler = \_ _ _ _ -> return ()
-         , itemAddHandler = \_ _ _ _ -> return ()
-         , itemRemoveHandler = \_ _ _ _ -> return ()
-         , itemHeight = 0
-         , itemConstructor = f
-         }
+       -> m (List a b)
+mkList selAttr f = do
+  schs <- mkHandlers
+  iahs <- mkHandlers
+  irhs <- mkHandlers
+
+  return $ List { selectedUnfocusedAttr = selAttr
+                , selectedIndex = -1
+                , scrollTopIndex = 0
+                , scrollWindowSize = 0
+                , listItems = []
+                , selectionChangeHandlers = schs
+                , itemAddHandlers = iahs
+                , itemRemoveHandlers = irhs
+                , itemHeight = 0
+                , itemConstructor = f
+                }
 
 getListSize :: (MonadIO m) => Widget (List a b) -> m Int
 getListSize = ((length . listItems) <~~)
@@ -197,41 +212,17 @@ addToList list key = do
 
 onSelectionChange :: (MonadIO m) =>
                      Widget (List a b)
-                  -> (Widget (List a b) -> Int -> a -> Widget b -> IO ())
+                  -> (SelectionEvent a b -> IO ())
                   -> m ()
-onSelectionChange wRef handler = do
-  oldHandler <- selectionChangeHandler <~~ wRef
-
-  let combinedHandler =
-          \w pos k ch -> do
-            oldHandler w pos k ch
-            handler w pos k ch
-
-  updateWidgetState wRef $ \s -> s { selectionChangeHandler = combinedHandler }
+onSelectionChange = addHandler (selectionChangeHandlers <~~)
 
 onItemAdded :: (MonadIO m) => Widget (List a b)
-            -> (Widget (List a b) -> Int -> a -> Widget b -> IO ()) -> m ()
-onItemAdded wRef handler = do
-  oldHandler <- itemAddHandler <~~ wRef
-
-  let combinedHandler =
-          \w pos k iw -> do
-            oldHandler w pos k iw
-            handler w pos k iw
-
-  updateWidgetState wRef $ \s -> s { itemAddHandler = combinedHandler }
+            -> (NewItemEvent a b -> IO ()) -> m ()
+onItemAdded = addHandler (itemAddHandlers <~~)
 
 onItemRemoved :: (MonadIO m) => Widget (List a b)
-            -> (Widget (List a b) -> Int -> a -> Widget b -> IO ()) -> m ()
-onItemRemoved wRef handler = do
-  oldHandler <- itemRemoveHandler <~~ wRef
-
-  let combinedHandler =
-          \w pos k iw -> do
-            oldHandler w pos k iw
-            handler w pos k iw
-
-  updateWidgetState wRef $ \s -> s { itemRemoveHandler = combinedHandler }
+              -> (RemoveItemEvent a b -> IO ()) -> m ()
+onItemRemoved = addHandler (itemRemoveHandlers <~~)
 
 listWidget :: (MonadIO m, Show b) => List a b -> m (Widget (List a b))
 listWidget list = do
@@ -324,7 +315,7 @@ mkSimpleList :: (MonadIO m) =>
              -> [String] -- ^The list items
              -> m (Widget (List String FormattedText))
 mkSimpleList selAttr labels = do
-  list <- listWidget $ mkList selAttr simpleText
+  list <- listWidget =<< mkList selAttr simpleText
   mapM_ (addToList list) labels
   return list
 
@@ -415,21 +406,20 @@ scrollBy' amount list =
 
 notifySelectionHandler :: (MonadIO m) => Widget (List a b) -> m ()
 notifySelectionHandler wRef = do
-  h <- selectionChangeHandler <~~ wRef
-  result <- getSelected wRef
-  case result of
-    Nothing -> return ()
-    Just (pos, (k, ch)) -> liftIO $ h wRef pos k ch
+  sel <- getSelected wRef
+  case sel of
+    Nothing ->
+        fireEvent wRef (selectionChangeHandlers <~~) SelectionOff
+    Just (pos, (a, b)) ->
+        fireEvent wRef (selectionChangeHandlers <~~) $ SelectionOn pos a b
 
 notifyItemRemoveHandler :: (MonadIO m) => Widget (List a b) -> Int -> a -> Widget b -> m ()
-notifyItemRemoveHandler wRef pos k w = do
-  h <- itemRemoveHandler <~~ wRef
-  liftIO $ h wRef pos k w
+notifyItemRemoveHandler wRef pos k w =
+    fireEvent wRef (itemRemoveHandlers <~~) $ RemoveItemEvent pos k w
 
 notifyItemAddHandler :: (MonadIO m) => Widget (List a b) -> Int -> a -> Widget b -> m ()
-notifyItemAddHandler wRef pos k w = do
-  h <- itemAddHandler <~~ wRef
-  liftIO $ h wRef pos k w
+notifyItemAddHandler wRef pos k w =
+    fireEvent wRef (itemAddHandlers <~~) $ NewItemEvent pos k w
 
 -- |Scroll a list down by one position.
 scrollDown :: (MonadIO m) => Widget (List a b) -> m ()

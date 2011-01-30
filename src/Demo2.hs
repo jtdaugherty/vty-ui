@@ -53,7 +53,7 @@ main = do
   edit1Header <- simpleText "" >>= withNormalAttribute headerAttr
   edit2Header <- simpleText "" >>= withNormalAttribute headerAttr
 
-  lst <- listWidget $ mkList (fgColor bright_green) simpleText
+  lst <- listWidget =<< mkList (fgColor bright_green) simpleText
 
   selector <- vLimit 3 lst
   listHeader <- simpleText ""
@@ -75,8 +75,10 @@ main = do
   edit1 `onChange` (setText edit1Header)
   edit2 `onChange` (setText edit2Header)
 
-  lst `onSelectionChange` \_ _ k _ ->
-      setText listHeader $ "You selected: " ++ k
+  lst `onSelectionChange` \ev ->
+      case ev of
+        SelectionOn _ k _ -> setText listHeader $ "You selected: " ++ k
+        SelectionOff -> return ()
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"

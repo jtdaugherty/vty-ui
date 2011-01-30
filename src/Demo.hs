@@ -110,10 +110,13 @@ main = do
          addToList (theList st) =<< getEditText e
          setEditText e ""
 
-  (theList st) `onSelectionChange` \_ i _ _ -> updateBody st i
-  (theList st) `onSelectionChange` \lst _ _ _ -> updateFooterNums st lst
-  (theList st) `onItemAdded` (\l _ _ _ -> updateFooterNums st l)
-  (theList st) `onItemRemoved` (\l _ _ _ -> updateFooterNums st l)
+  let doBodyUpdate (SelectionOn i _ _) = updateBody st i
+      doBodyUpdate SelectionOff = return ()
+
+  (theList st) `onSelectionChange` doBodyUpdate
+  (theList st) `onSelectionChange` \_ -> updateFooterNums st $ theList st
+  (theList st) `onItemAdded` \_ -> updateFooterNums st $ theList st
+  (theList st) `onItemRemoved` \_ -> updateFooterNums st $ theList st
 
   (theList st) `onKeyPressed` \_ k _ -> do
          case k of
