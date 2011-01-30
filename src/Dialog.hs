@@ -89,8 +89,8 @@ dialog body title mFg = do
   buttonBox <- (return $ buttonWidget okB) <++> (return $ buttonWidget cancelB)
   setBoxSpacing buttonBox 4
 
-  b <- (hCentered body) <--> (hCentered buttonBox) >>= withBoxSpacing 1
-  b2 <- padded b (padTopBottom 1)
+  b <- withPadding (padTopBottom 1) =<<
+       ((hCentered body) <--> (hCentered buttonBox) >>= withBoxSpacing 1)
 
   fg <- case mFg of
           Just g -> return g
@@ -99,11 +99,11 @@ dialog body title mFg = do
   addToFocusGroup fg $ buttonWidget okB
   addToFocusGroup fg $ buttonWidget cancelB
 
-  b3 <- bordered b2 >>=
+  b2 <- bordered b >>=
         withBorderedLabel title >>=
         withNormalAttribute (white `on` blue)
 
-  c <- centered =<< withPadding (padLeftRight 10) b3
+  c <- centered =<< withPadding (padLeftRight 10) b2
 
   setFocusGroup c fg
   eRef <- liftIO $ newIORef $ EventHandlers []
@@ -111,7 +111,7 @@ dialog body title mFg = do
   let dlg = Dialog { okButton = okB
                    , cancelButton = cancelB
                    , dialogWidget = c
-                   , setDialogTitle = setBorderedLabel b3
+                   , setDialogTitle = setBorderedLabel b2
                    , dialogHandlers = eRef
                    }
 
