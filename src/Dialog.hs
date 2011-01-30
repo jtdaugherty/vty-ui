@@ -9,42 +9,26 @@ import System.Exit
 import Graphics.Vty hiding (Button)
 import Graphics.Vty.Widgets.All
 
-data EventHandlers w e = EventHandlers { registeredHandlers :: [(e, IO ())]
-                                       -- ^Specific event handlers.
-                                       -- Might want an "any" event handler list, too.
-                                       }
+addEventHandler :: (MonadIO m) => (w -> IORef [w -> IO ()]) -> w -> (w -> IO ()) -> m ()
+addEventHandler getRef w handler =
+    liftIO $ modifyIORef (getRef w) $ \s -> s ++ [handler]
 
-addEventHandler :: e -> IO () -> EventHandlers w e -> EventHandlers w e
-addEventHandler e act eh =
-    eh { registeredHandlers = registeredHandlers eh ++ [(e, act)] }
+fireEvent :: (MonadIO m) => w -> (w -> IORef [w -> IO ()]) -> m ()
+fireEvent w getRef = do
+  handlers <- liftIO $ readIORef $ getRef w
+  forM_ handlers $ \handler ->
+      liftIO $ handler w
 
-class (Eq e) => EventSource w e where
-    getEventHandlers :: w -> IORef (EventHandlers w e)
-
-    onEvent :: (MonadIO m) => e -> w -> IO () -> m ()
-    onEvent ev w act =
-        liftIO $ modifyIORef (getEventHandlers w) $ addEventHandler ev act
-
-    dispatchEvent :: (MonadIO m) => w -> e -> m ()
-    dispatchEvent w ev = do
-        let eRef = getEventHandlers w
-        eh <- liftIO $ readIORef eRef
-        forM_ (registeredHandlers eh) $ \(e', act) ->
-            if e' == ev then liftIO act else return ()
-
-data ButtonEvent = ButtonPressed
-                   deriving (Eq)
+mkHandlers :: (MonadIO m) => m (IORef [w -> IO ()])
+mkHandlers = liftIO $ newIORef []
 
 data Button = Button { buttonText :: String
                      , buttonWidget :: Widget Padded
-                     , buttonHandlers :: IORef (EventHandlers Button ButtonEvent)
+                     , buttonPressedHandlers :: IORef [Button -> IO ()]
                      }
 
-instance EventSource Button ButtonEvent where
-    getEventHandlers = buttonHandlers
-
-onButtonPressed :: (MonadIO m) => Button -> IO () -> m ()
-onButtonPressed = onEvent ButtonPressed
+onButtonPressed :: (MonadIO m) => Button -> (Button -> IO ()) -> m ()
+onButtonPressed = addEventHandler buttonPressedHandlers
 
 button :: (MonadIO m) => String -> m Button
 button msg = do
@@ -53,14 +37,14 @@ button msg = do
        withNormalAttribute (white `on` black) >>=
        withFocusAttribute (blue `on` white)
 
-  eRef <- liftIO $ newIORef $ EventHandlers []
+  hs <- mkHandlers
 
-  let b = Button msg w eRef
+  let b = Button msg w hs
 
   w `onKeyPressed` \_ k _ ->
       do
         case k of
-          KEnter -> dispatchEvent b ButtonPressed
+          KEnter -> fireEvent b buttonPressedHandlers
           _ -> return ()
         return False
 
@@ -70,14 +54,12 @@ data DialogEvent = DialogAccept
                  | DialogCancel
                    deriving (Eq)
 
-instance EventSource Dialog DialogEvent where
-    getEventHandlers = dialogHandlers
-
 data Dialog = Dialog { okButton :: Button
                      , cancelButton :: Button
                      , dialogWidget :: Widget (VCentered (HCentered Padded))
                      , setDialogTitle :: String -> IO ()
-                     , dialogHandlers :: IORef (EventHandlers Dialog DialogEvent)
+                     , dialogAcceptHandlers :: IORef [Dialog -> IO ()]
+                     , dialogCancelHandlers :: IORef [Dialog -> IO ()]
                      }
 
 dialog :: (MonadIO m, Show a) => Widget a -> String -> Maybe (Widget FocusGroup)
@@ -106,25 +88,28 @@ dialog body title mFg = do
   c <- centered =<< withPadding (padLeftRight 10) b2
 
   setFocusGroup c fg
-  eRef <- liftIO $ newIORef $ EventHandlers []
+
+  ahs <- mkHandlers
+  chs <- mkHandlers
 
   let dlg = Dialog { okButton = okB
                    , cancelButton = cancelB
                    , dialogWidget = c
                    , setDialogTitle = setBorderedLabel b2
-                   , dialogHandlers = eRef
+                   , dialogAcceptHandlers = ahs
+                   , dialogCancelHandlers = chs
                    }
 
-  okB `onButtonPressed` dispatchEvent dlg DialogAccept
-  cancelB `onButtonPressed` dispatchEvent dlg DialogCancel
+  okB `onButtonPressed` (const $ fireEvent dlg dialogAcceptHandlers)
+  cancelB `onButtonPressed` (const $ fireEvent dlg dialogCancelHandlers)
 
   return dlg
 
-onDialogAccept :: (MonadIO m) => Dialog -> IO () -> m ()
-onDialogAccept = onEvent DialogAccept
+onDialogAccept :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
+onDialogAccept = addEventHandler dialogAcceptHandlers
 
-onDialogCancel :: (MonadIO m) => Dialog -> IO () -> m ()
-onDialogCancel = onEvent DialogCancel
+onDialogCancel :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
+onDialogCancel = addEventHandler dialogCancelHandlers
 
 main :: IO ()
 main = do
@@ -142,8 +127,8 @@ main = do
 
   e `onChange` \_ _ -> updateTitle
 
-  d `onDialogAccept` exitSuccess
-  d `onDialogCancel` exitSuccess
+  d `onDialogAccept` const exitSuccess
+  d `onDialogCancel` const exitSuccess
 
   fg `onKeyPressed` \_ k _ ->
       case k of
