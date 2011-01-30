@@ -4,6 +4,7 @@ module Graphics.Vty.Widgets.Button
     , newButton
     , onButtonPressed
     , pressButton
+    , setButtonText
     )
 where
 
@@ -19,6 +20,7 @@ import Graphics.Vty.Widgets.Util
 import Graphics.Vty hiding (Button)
 
 data Button = Button { buttonWidget :: Widget Padded
+                     , buttonText :: Widget FormattedText
                      , buttonPressedHandlers :: IORef [Handler Button]
                      }
 
@@ -28,19 +30,22 @@ onButtonPressed = addHandler buttonPressedHandlers
 pressButton :: (MonadIO m) => Button -> m ()
 pressButton b = fireEvent b (return . buttonPressedHandlers) b
 
--- XXX set button text function
+setButtonText :: (MonadIO m) => Button -> String -> m ()
+setButtonText b s = setText (buttonText b) s
 
 newButton :: (MonadIO m) => String -> m Button
 newButton msg = do
   -- Don't hard-code... use normal attr??
-  w <- simpleText msg >>=
+  t <- simpleText msg
+
+  w <- return t >>=
        withPadding (padLeftRight 3) >>=
        withNormalAttribute (white `on` black) >>=
        withFocusAttribute (blue `on` white)
 
   hs <- mkHandlers
 
-  let b = Button w hs
+  let b = Button w t hs
 
   w `onKeyPressed` \_ k _ ->
       do
