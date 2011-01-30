@@ -374,9 +374,7 @@ data FocusGroup = FocusGroup { entries :: [Widget FocusEntry]
                              , currentEntryNum :: Int
                              }
 
-newFocusEntry :: (MonadIO m, Show a) =>
-                 Widget a
-              -> m (Widget FocusEntry)
+newFocusEntry :: (MonadIO m, Show a) => Widget a -> m (Widget FocusEntry)
 newFocusEntry chRef = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
