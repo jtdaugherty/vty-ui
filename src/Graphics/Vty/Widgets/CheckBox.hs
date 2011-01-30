@@ -12,6 +12,7 @@ module Graphics.Vty.Widgets.CheckBox
     , setCheckedChar
     , onCheckboxChange
     , checkboxIsChecked
+    , getCheckboxLabel
     )
 where
 
@@ -128,6 +129,9 @@ newCheckbox label = do
               return $ string fAttr $ take (fromEnum $ region_width sz) s
         }
   return wRef
+
+getCheckboxLabel :: (MonadIO m) => Widget CheckBox -> m String
+getCheckboxLabel = (checkboxLabel <~~)
 
 radioKeyEvent :: Widget CheckBox -> Key -> [Modifier] -> IO Bool
 radioKeyEvent this (KASCII ' ') [] = toggleChecked this >> return True
