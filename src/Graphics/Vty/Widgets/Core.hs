@@ -1,10 +1,12 @@
-{-# LANGUAGE CPP, ExistentialQuantification, DeriveDataTypeable #-}
+{-# LANGUAGE CPP, ExistentialQuantification, DeriveDataTypeable, TypeSynonymInstances #-}
 -- |This module provides a basic infrastructure for modelling a user
 -- interface widget and converting it to Vty's 'Image' type.
 module Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
     , RenderContext(..)
+    , HasNormalAttr(..)
+    , HasFocusAttr(..)
     , getNormalAttr
     , defaultContext
     , renderAndPosition
@@ -17,8 +19,6 @@ module Graphics.Vty.Widgets.Core
     , setCurrentPosition
     , getCurrentPosition
     , showWidget
-    , setNormalAttribute
-    , setFocusAttribute
     , (<~)
     , (<~~)
 
@@ -93,11 +93,29 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Skins
 
-withNormalAttribute :: (MonadIO m) => Attr -> Widget a -> m (Widget a)
-withNormalAttribute att w = setNormalAttribute w att >> return w
+class HasNormalAttr w where
+    setNormalAttribute :: (MonadIO m) => w -> Attr -> m ()
 
-withFocusAttribute :: (MonadIO m) => Attr -> Widget a -> m (Widget a)
-withFocusAttribute att w = setFocusAttribute w att >> return w
+class HasFocusAttr w where
+    setFocusAttribute :: (MonadIO m) => w -> Attr -> m ()
+
+instance HasNormalAttr (Widget a) where
+    setNormalAttribute wRef a =
+        updateWidget wRef $ \w -> w { normalAttribute = mergeAttr a (normalAttribute w) }
+
+instance HasFocusAttr (Widget a) where
+    setFocusAttribute wRef a =
+        updateWidget wRef $ \w -> w { focusAttribute = mergeAttr a (focusAttribute w) }
+
+withNormalAttribute :: (HasNormalAttr w, MonadIO m) => Attr -> w -> m w
+withNormalAttribute att w = do
+  setNormalAttribute w att
+  return w
+
+withFocusAttribute :: (HasFocusAttr w, MonadIO m) => Attr -> w -> m w
+withFocusAttribute att w = do
+  setFocusAttribute w att
+  return w
 
 data RenderError = ImageTooBig String DisplayRegion DisplayRegion
                    deriving (Show, Typeable)
@@ -177,14 +195,6 @@ data WidgetImpl a = WidgetImpl {
     }
 
 type Widget a = IORef (WidgetImpl a)
-
-setNormalAttribute :: (MonadIO m) => Widget a -> Attr -> m ()
-setNormalAttribute wRef a =
-    updateWidget wRef $ \w -> w { normalAttribute = mergeAttr a (normalAttribute w) }
-
-setFocusAttribute :: (MonadIO m) => Widget a -> Attr -> m ()
-setFocusAttribute wRef a =
-    updateWidget wRef $ \w -> w { focusAttribute = mergeAttr a (focusAttribute w) }
 
 showWidget :: (Functor m, MonadIO m, Show a) => Widget a -> m String
 showWidget wRef = show <$> (liftIO $ readIORef wRef)
