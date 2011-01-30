@@ -2,7 +2,7 @@
   TypeSynonymInstances, FlexibleInstances, DeriveDataTypeable #-}
 module Graphics.Vty.Widgets.Table
     ( Table
-    , TableCell(EmptyCell)
+    , TableCell
     , ColumnSize(..)
     , BorderStyle(..)
     , BorderFlag(..)
@@ -18,6 +18,7 @@ module Graphics.Vty.Widgets.Table
     , addHeadingRow_
     , column
     , customCell
+    , emptyCell
     )
 where
 
@@ -145,6 +146,9 @@ instance Show Table where
 
 customCell :: (Show a) => Widget a -> TableCell
 customCell w = TableCell w Nothing Nothing
+
+emptyCell :: TableCell
+emptyCell = EmptyCell
 
 setDefaultCellAlignment :: (MonadIO m) => Widget Table -> Alignment -> m ()
 setDefaultCellAlignment t a = updateWidgetState t $ \s -> s { defaultCellAlignment = a }
