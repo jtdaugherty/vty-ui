@@ -14,17 +14,19 @@ where
 
 import Control.Monad
 import Control.Monad.Trans
+import Data.IORef
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
+import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
 data Edit = Edit { currentText :: String
                  , cursorPosition :: Int
                  , displayStart :: Int
                  , displayWidth :: Int
-                 , activateHandler :: Widget Edit -> IO ()
-                 , changeHandler :: Widget Edit -> String -> IO ()
-                 , cursorMoveHandler :: Widget Edit -> Int -> IO ()
+                 , activateHandlers :: IORef [Handler (Widget Edit)]
+                 , changeHandlers :: IORef [Handler String]
+                 , cursorMoveHandlers :: IORef [Handler Int]
                  }
 
 instance Show Edit where
@@ -39,14 +41,19 @@ instance Show Edit where
 editWidget :: (MonadIO m) => m (Widget Edit)
 editWidget = do
   wRef <- newWidget
+
+  ahs <- mkHandlers
+  chs <- mkHandlers
+  cmhs <- mkHandlers
+
   updateWidget wRef $ \w ->
       w { state = Edit { currentText = ""
                        , cursorPosition = 0
                        , displayStart = 0
                        , displayWidth = 0
-                       , activateHandler = const $ return ()
-                       , changeHandler = \_ _ -> return ()
-                       , cursorMoveHandler = \_ _ -> return ()
+                       , activateHandlers = ahs
+                       , changeHandlers = chs
+                       , cursorMoveHandlers = cmhs
                        }
 
         , growHorizontal_ = const $ return True
@@ -86,37 +93,26 @@ editWidget = do
   return wRef
 
 onActivate :: (MonadIO m) => Widget Edit -> (Widget Edit -> IO ()) -> m ()
-onActivate wRef handler = do
-  oldHandler <- activateHandler <~~ wRef
+onActivate = addHandler (activateHandlers <~~)
 
-  let combinedHandler =
-          \w -> do
-            oldHandler w
-            handler w
+notifyActivateHandlers :: (MonadIO m) => Widget Edit -> m ()
+notifyActivateHandlers wRef = fireEvent wRef (activateHandlers <~~) wRef
 
-  updateWidgetState wRef $ \s -> s { activateHandler = combinedHandler }
+notifyChangeHandlers :: Widget Edit -> IO ()
+notifyChangeHandlers wRef = do
+  s <- getEditText wRef
+  fireEvent wRef (changeHandlers <~~) s
 
-onChange :: (MonadIO m) => Widget Edit -> (Widget Edit -> String -> IO ()) -> m ()
-onChange wRef handler = do
-  oldHandler <- changeHandler <~~ wRef
+notifyCursorMoveHandlers :: (MonadIO m) => Widget Edit -> m ()
+notifyCursorMoveHandlers wRef = do
+  pos <- getEditCursorPosition wRef
+  fireEvent wRef (cursorMoveHandlers <~~) pos
 
-  let combinedHandler =
-          \w str -> do
-            oldHandler w str
-            handler w str
+onChange :: (MonadIO m) => Widget Edit -> (String -> IO ()) -> m ()
+onChange = addHandler (changeHandlers <~~)
 
-  updateWidgetState wRef $ \s -> s { changeHandler = combinedHandler }
-
-onCursorMove :: (MonadIO m) => Widget Edit -> (Widget Edit -> Int -> IO ()) -> m ()
-onCursorMove wRef handler = do
-  oldHandler <- cursorMoveHandler <~~ wRef
-
-  let combinedHandler =
-          \w pos -> do
-            oldHandler w pos
-            handler w pos
-
-  updateWidgetState wRef $ \s -> s { cursorMoveHandler = combinedHandler }
+onCursorMove :: (MonadIO m) => Widget Edit -> (Int -> IO ()) -> m ()
+onCursorMove = addHandler (cursorMoveHandlers <~~)
 
 getEditText :: (MonadIO m) => Widget Edit -> m String
 getEditText = (currentText <~~)
@@ -126,7 +122,7 @@ setEditText wRef str = do
   updateWidgetState wRef $ \s -> s { currentText = str }
   liftIO $ do
     gotoBeginning wRef
-    notifyChangeHandler wRef
+    notifyChangeHandlers wRef
 
 setEditCursorPosition :: (MonadIO m) => Widget Edit -> Int -> m ()
 setEditCursorPosition wRef pos = do
@@ -144,7 +140,7 @@ setEditCursorPosition wRef pos = do
          updateWidgetState wRef $ \s ->
              s { cursorPosition = newPos
                }
-         liftIO $ notifyCursorMoveHandler wRef
+         liftIO $ notifyCursorMoveHandlers wRef
 
 getEditCursorPosition :: (MonadIO m) => Widget Edit -> m Int
 getEditCursorPosition = (cursorPosition <~~)
@@ -173,7 +169,7 @@ editKeyEvent this k mods = do
     (KASCII ch, []) -> insertChar this ch >> return True
     (KHome, []) -> gotoBeginning this >> return True
     (KEnd, []) -> gotoEnd this >> return True
-    (KEnter, []) -> notifyActivateHandler this >> return True
+    (KEnter, []) -> notifyActivateHandlers this >> return True
     _ -> return False
 
 killToEOL :: Widget Edit -> IO ()
@@ -188,7 +184,7 @@ killToEOL this = do
       s { displayStart = st
         }
 
-  notifyChangeHandler this
+  notifyChangeHandlers this
 
 deletePreviousChar :: Widget Edit -> IO ()
 deletePreviousChar this = do
@@ -196,23 +192,6 @@ deletePreviousChar this = do
   when (pos /= 0) $ do
     moveCursorLeft this
     delCurrentChar this
-
-notifyChangeHandler :: Widget Edit -> IO ()
-notifyChangeHandler wRef = do
-  h <- changeHandler <~~ wRef
-  str <- getEditText wRef
-  h wRef str
-
-notifyCursorMoveHandler :: Widget Edit -> IO ()
-notifyCursorMoveHandler wRef = do
-  h <- cursorMoveHandler <~~ wRef
-  pos <- getEditCursorPosition wRef
-  h wRef pos
-
-notifyActivateHandler :: Widget Edit -> IO ()
-notifyActivateHandler wRef = do
-  h <- activateHandler <~~ wRef
-  h wRef
 
 gotoBeginning :: Widget Edit -> IO ()
 gotoBeginning wRef = do
@@ -244,7 +223,7 @@ moveCursorLeft wRef = do
           s { cursorPosition = p - 1
             , displayStart = newDispStart
             }
-      notifyCursorMoveHandler wRef
+      notifyCursorMoveHandlers wRef
 
 moveCursorRight :: Widget Edit -> IO ()
 moveCursorRight wRef = do
@@ -259,7 +238,7 @@ moveCursorRight wRef = do
              s { cursorPosition = cursorPosition st + 1
                , displayStart = newDispStart
                }
-         notifyCursorMoveHandler wRef
+         notifyCursorMoveHandlers wRef
 
 insertChar :: Widget Edit -> Char -> IO ()
 insertChar wRef ch = do
@@ -273,7 +252,7 @@ insertChar wRef ch = do
             , displayStart = newViewStart
             }
   moveCursorRight wRef
-  notifyChangeHandler wRef
+  notifyChangeHandlers wRef
 
 delCurrentChar :: Widget Edit -> IO ()
 delCurrentChar wRef = do
@@ -282,7 +261,7 @@ delCurrentChar wRef = do
        do
          let newContent = remove (cursorPosition st) (currentText st)
          updateWidgetState wRef $ \s -> s { currentText = newContent }
-         notifyChangeHandler wRef
+         notifyChangeHandlers wRef
 
 remove :: Int -> [a] -> [a]
 remove pos as = (take pos as) ++ (drop (pos + 1) as)
