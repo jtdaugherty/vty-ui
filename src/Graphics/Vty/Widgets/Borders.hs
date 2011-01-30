@@ -93,29 +93,32 @@ hBorder = do
   updateWidget wRef $ \w ->
       w { state = HBorder def_attr ""
         , growHorizontal_ = const $ return True
-        , render_ = \this s ctx -> do
-                   HBorder attr str <- getState this
-                   let attr' = mergeAttrs [ overrideAttr ctx
-                                          , attr
-                                          , normalAttr ctx
-                                          ]
-                   let noTitle = char_fill attr' (skinHorizontal $ skin ctx) (region_width s) 1
-                   case null str of
-                     True -> return noTitle
-                     False -> do
-                       let title = " " ++ str ++ " "
-                       case (toEnum $ length title) > region_width s of
-                         True -> return noTitle
-                         False -> do
-                              let remaining = region_width s - (toEnum $ length title)
-                                  side1 = remaining `div` 2
-                                  side2 = if remaining `mod` 2 == 0 then side1 else side1 + 1
-                              return $ horiz_cat [ char_fill attr' (skinHorizontal $ skin ctx) side1 1
-                                                 , string attr' title
-                                                 , char_fill attr' (skinHorizontal $ skin ctx) side2 1
-                                                 ]
+        , render_ = renderHBorder
         }
   return wRef
+
+renderHBorder :: Widget HBorder -> DisplayRegion -> RenderContext -> IO Image
+renderHBorder this s ctx = do
+  HBorder attr str <- getState this
+  let attr' = mergeAttrs [ overrideAttr ctx
+                         , attr
+                         , normalAttr ctx
+                         ]
+      noTitle = char_fill attr' (skinHorizontal $ skin ctx) (region_width s) 1
+  case null str of
+    True -> return noTitle
+    False -> do
+      let title = " " ++ str ++ " "
+      case (toEnum $ length title) > region_width s of
+        True -> return noTitle
+        False -> do
+                  let remaining = region_width s - (toEnum $ length title)
+                      side1 = remaining `div` 2
+                      side2 = if remaining `mod` 2 == 0 then side1 else side1 + 1
+                  return $ horiz_cat [ char_fill attr' (skinHorizontal $ skin ctx) side1 1
+                                     , string attr' title
+                                     , char_fill attr' (skinHorizontal $ skin ctx) side2 1
+                                     ]
 
 data VBorder = VBorder Attr
                deriving (Show)
