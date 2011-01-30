@@ -13,7 +13,6 @@ import Control.Monad.Trans
     ( MonadIO
     )
 import Data.IORef
-import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Centering
 import Graphics.Vty.Widgets.Button
 import Graphics.Vty.Widgets.Padding
@@ -21,7 +20,6 @@ import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Borders
 import Graphics.Vty.Widgets.Box
 import Graphics.Vty.Widgets.Core
-import Graphics.Vty hiding (Button)
 
 data DialogEvent = DialogAccept
                  | DialogCancel
@@ -34,6 +32,9 @@ data Dialog = Dialog { okButton :: Button
                      , dialogAcceptHandlers :: IORef [Handler Dialog]
                      , dialogCancelHandlers :: IORef [Handler Dialog]
                      }
+
+instance HasNormalAttr Dialog where
+    setNormalAttribute d a = setNormalAttribute (dialogWidget d) a
 
 newDialog :: (MonadIO m, Show a) => Widget a -> String -> Maybe (Widget FocusGroup)
           -> m Dialog
@@ -54,11 +55,8 @@ newDialog body title mFg = do
   addToFocusGroup fg $ buttonWidget okB
   addToFocusGroup fg $ buttonWidget cancelB
 
-  -- XXX don't hard-code attributes in this module; give dialog a
-  -- normal attribute??
   b2 <- bordered b >>=
-        withBorderedLabel title >>=
-        withNormalAttribute (white `on` blue)
+        withBorderedLabel title
 
   c <- centered =<< withPadding (padLeftRight 10) b2
 
