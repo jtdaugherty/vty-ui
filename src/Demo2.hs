@@ -75,7 +75,7 @@ main = do
       setText radioHeader $ s ++ ", please."
 
   r3 `onCheckboxChange` \v ->
-      setText cbHeader (if v then "checked" else "unchecked")
+      setText cbHeader (if v then "with frosting" else "no frosting")
 
   edit1 `onChange` (setText edit1Header)
   edit2 `onChange` (setText edit2Header)
