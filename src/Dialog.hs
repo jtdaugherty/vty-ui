@@ -9,19 +9,42 @@ import System.Exit
 import Graphics.Vty hiding (Button)
 import Graphics.Vty.Widgets.All
 
+data EventHandlers w e = EventHandlers { registeredHandlers :: [(e, IO ())]
+                                       -- ^Specific event handlers.
+                                       -- Might want an "any" event handler list, too.
+                                       }
+
+addEventHandler :: e -> IO () -> EventHandlers w e -> EventHandlers w e
+addEventHandler e act eh =
+    eh { registeredHandlers = registeredHandlers eh ++ [(e, act)] }
+
+class (Eq e) => EventSource w e where
+    getEventHandlers :: w -> IORef (EventHandlers w e)
+
+    onEvent :: (MonadIO m) => e -> w -> IO () -> m ()
+    onEvent ev w act =
+        liftIO $ modifyIORef (getEventHandlers w) $ addEventHandler ev act
+
+    dispatchEvent :: (MonadIO m) => w -> e -> m ()
+    dispatchEvent w ev = do
+        let eRef = getEventHandlers w
+        eh <- liftIO $ readIORef eRef
+        forM_ (registeredHandlers eh) $ \(e', act) ->
+            if e' == ev then liftIO act else return ()
+
+data ButtonEvent = ButtonPressed
+                   deriving (Eq)
+
 data Button = Button { buttonText :: String
                      , buttonWidget :: Widget Padded
                      , buttonHandlers :: IORef (EventHandlers Button ButtonEvent)
                      }
 
-onButtonPressed :: (MonadIO m) => Button -> IO () -> m ()
-onButtonPressed = onEvent ButtonPressed
-
-data ButtonEvent = ButtonPressed
-                   deriving (Eq)
-
 instance EventSource Button ButtonEvent where
     getEventHandlers = buttonHandlers
+
+onButtonPressed :: (MonadIO m) => Button -> IO () -> m ()
+onButtonPressed = onEvent ButtonPressed
 
 button :: (MonadIO m) => String -> m Button
 button msg = do
@@ -43,32 +66,9 @@ button msg = do
 
   return b
 
-data EventHandlers w e = EventHandlers { registeredHandlers :: [(e, IO ())]
-                                       -- ^Specific event handlers.
-                                       -- Might want an "any" event handler list, too.
-                                       }
-
-addEventHandler :: w -> e -> IO () -> EventHandlers w e -> EventHandlers w e
-addEventHandler w e act eh =
-    eh { registeredHandlers = registeredHandlers eh ++ [(e, act)] }
-
 data DialogEvent = DialogAccept
                  | DialogCancel
                    deriving (Eq)
-
-class (Eq e) => EventSource w e where
-    getEventHandlers :: w -> IORef (EventHandlers w e)
-
-    onEvent :: (MonadIO m) => e -> w -> IO () -> m ()
-    onEvent ev w act =
-        liftIO $ modifyIORef (getEventHandlers w) $ addEventHandler w ev act
-
-    dispatchEvent :: (MonadIO m) => w -> e -> m ()
-    dispatchEvent w ev = do
-        let eRef = getEventHandlers w
-        eh <- liftIO $ readIORef eRef
-        forM_ (registeredHandlers eh) $ \(e', act) ->
-            if e' == ev then liftIO act else return ()
 
 instance EventSource Dialog DialogEvent where
     getEventHandlers = dialogHandlers
@@ -99,11 +99,11 @@ dialog body title mFg = do
   addToFocusGroup fg $ buttonWidget okB
   addToFocusGroup fg $ buttonWidget cancelB
 
-  b <- bordered b2 >>=
-       withBorderedLabel title >>=
-       withNormalAttribute (white `on` blue)
+  b3 <- bordered b2 >>=
+        withBorderedLabel title >>=
+        withNormalAttribute (white `on` blue)
 
-  c <- centered =<< withPadding (padLeftRight 10) b
+  c <- centered =<< withPadding (padLeftRight 10) b3
 
   setFocusGroup c fg
   eRef <- liftIO $ newIORef $ EventHandlers []
@@ -111,7 +111,7 @@ dialog body title mFg = do
   let dlg = Dialog { okButton = okB
                    , cancelButton = cancelB
                    , dialogWidget = c
-                   , setDialogTitle = setBorderedLabel b
+                   , setDialogTitle = setBorderedLabel b3
                    , dialogHandlers = eRef
                    }
 
