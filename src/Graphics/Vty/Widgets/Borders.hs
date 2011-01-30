@@ -10,6 +10,10 @@ module Graphics.Vty.Widgets.Borders
     , hBorder
     , bordered
     , withBorderAttribute
+    , withHBorderLabel
+    , withBorderedLabel
+    , setHBorderLabel
+    , setBorderedLabel
     )
 where
 
@@ -20,6 +24,7 @@ import Graphics.Vty
     ( Attr
     , DisplayRegion(DisplayRegion)
     , Image
+    , string
     , char_fill
     , region_height
     , region_width
@@ -56,15 +61,29 @@ import Graphics.Vty.Widgets.Skins
 class HasBorderAttr a where
     setBorderAttribute :: (MonadIO m) => a -> Attr -> m ()
 
-data HBorder = HBorder Attr
+data HBorder = HBorder Attr String
                deriving (Show)
 
 instance HasBorderAttr (Widget HBorder) where
     setBorderAttribute t a =
-        updateWidgetState t $ \(HBorder a') -> HBorder (mergeAttr a a')
+        updateWidgetState t $ \(HBorder a' s) -> HBorder (mergeAttr a a') s
 
 withBorderAttribute :: (MonadIO m, HasBorderAttr a) => Attr -> a -> m a
 withBorderAttribute att w = setBorderAttribute w att >> return w
+
+withHBorderLabel :: (MonadIO m) => String -> Widget HBorder -> m (Widget HBorder)
+withHBorderLabel label w = setHBorderLabel w label >> return w
+
+setHBorderLabel :: (MonadIO m) => Widget HBorder -> String -> m ()
+setHBorderLabel w label =
+    updateWidgetState w $ \(HBorder a _) -> HBorder a label
+
+withBorderedLabel :: (MonadIO m) => String -> Widget (Bordered a) -> m (Widget (Bordered a))
+withBorderedLabel label w = setBorderedLabel w label >> return w
+
+setBorderedLabel :: (MonadIO m) => Widget (Bordered a) -> String -> m ()
+setBorderedLabel w label =
+    updateWidgetState w $ \(Bordered a ch _) -> Bordered a ch label
 
 -- |Create a single-row horizontal border using the specified
 -- attribute and character.
@@ -72,15 +91,29 @@ hBorder :: (MonadIO m) => m (Widget HBorder)
 hBorder = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = HBorder def_attr
+      w { state = HBorder def_attr ""
         , growHorizontal_ = const $ return True
         , render_ = \this s ctx -> do
-                   HBorder attr <- getState this
+                   HBorder attr str <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx
                                           , attr
                                           , normalAttr ctx
                                           ]
-                   return $ char_fill attr' (skinHorizontal $ skin ctx) (region_width s) 1
+                   let noTitle = char_fill attr' (skinHorizontal $ skin ctx) (region_width s) 1
+                   case null str of
+                     True -> return noTitle
+                     False -> do
+                       let title = " " ++ str ++ " "
+                       case (toEnum $ length title) > region_width s of
+                         True -> return noTitle
+                         False -> do
+                              let remaining = region_width s - (toEnum $ length title)
+                                  side1 = remaining `div` 2
+                                  side2 = if remaining `mod` 2 == 0 then side1 else side1 + 1
+                              return $ horiz_cat [ char_fill attr' (skinHorizontal $ skin ctx) side1 1
+                                                 , string attr' title
+                                                 , char_fill attr' (skinHorizontal $ skin ctx) side2 1
+                                                 ]
         }
   return wRef
 
@@ -109,31 +142,33 @@ vBorder = do
         }
   return wRef
 
-data Bordered a = (Show a) => Bordered Attr (Widget a)
+data Bordered a = (Show a) => Bordered Attr (Widget a) String
 
 instance Show (Bordered a) where
-    show (Bordered attr _) = concat [ "Bordered { attr = "
-                                    , show attr
-                                    , ", ... }"
-                                    ]
+    show (Bordered attr _ l) = concat [ "Bordered { attr = "
+                                      , show attr
+                                      , ", label = "
+                                      , show l
+                                      , ", ... }"
+                                      ]
 
 instance HasBorderAttr (Widget (Bordered a)) where
     setBorderAttribute t a =
-        updateWidgetState t $ \(Bordered a' ch) -> Bordered (mergeAttr a a') ch
+        updateWidgetState t $ \(Bordered a' ch s) -> Bordered (mergeAttr a a') ch s
 
 -- |Wrap a widget in a bordering box using the specified attribute.
 bordered :: (MonadIO m, Show a) => Widget a -> m (Widget (Bordered a))
 bordered child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Bordered def_attr child
+      w { state = Bordered def_attr child ""
 
         , growVertical_ = const $ growVertical child
         , growHorizontal_ = const $ growHorizontal child
 
         , keyEventHandler =
             \this key mods -> do
-              Bordered _ ch <- getState this
+              Bordered _ ch _ <- getState this
               handleKeyEvent ch key mods
 
         , render_ =
@@ -143,7 +178,7 @@ bordered child = do
 
         , setCurrentPosition_ =
             \this pos -> do
-              Bordered _ ch <- getState this
+              Bordered _ ch _ <- getState this
               let chPos = pos `plusWidth` 1 `plusHeight` 1
               setCurrentPosition ch chPos
         }
@@ -152,7 +187,7 @@ bordered child = do
 drawBordered :: (Show a) =>
                 Bordered a -> DisplayRegion -> RenderContext -> IO Image
 drawBordered this s ctx = do
-  let Bordered attr child = this
+  let Bordered attr child label = this
       attr' = mergeAttrs [ overrideAttr ctx
                          , attr
                          , normalAttr ctx
@@ -174,13 +209,14 @@ drawBordered this s ctx = do
   blCorner <- simpleText [skinCornerBL sk] >>= withNormalAttribute attr'
   brCorner <- simpleText [skinCornerBR sk] >>= withNormalAttribute attr'
 
-  hb <- hBorder
+  hb <- hBorder >>= withHBorderLabel label
   setBorderAttribute hb attr'
 
   topWidget <- hBox tlCorner =<< hBox hb trCorner
   top <- render topWidget adjusted ctx
 
-  bottomWidget <- hBox blCorner =<< hBox hb brCorner
+  hb2 <- hBorder
+  bottomWidget <- hBox blCorner =<< hBox hb2 brCorner
   bottom <- render bottomWidget adjusted ctx
 
   vb <- vBorder
