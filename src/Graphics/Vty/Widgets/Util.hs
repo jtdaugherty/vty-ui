@@ -13,19 +13,7 @@ module Graphics.Vty.Widgets.Util
 where
 
 import Data.Word
-    ( Word
-    )
 import Graphics.Vty
-    ( Color
-    , Attr(..)
-    , Style
-    , MaybeDefault(..)
-    , DisplayRegion(..)
-    , def_attr
-    , with_style
-    , with_back_color
-    , with_fore_color
-    )
 
 on :: Color -> Color -> Attr
 on a b = def_attr `with_back_color` b `with_fore_color` a

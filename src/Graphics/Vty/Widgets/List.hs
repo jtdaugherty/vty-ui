@@ -42,53 +42,12 @@ module Graphics.Vty.Widgets.List
 where
 
 import Data.Typeable
-    ( Typeable
-    )
 import Control.Exception
-    ( Exception
-    , throw
-    )
 import Control.Monad
-    ( when
-    , forM_
-    )
 import Control.Monad.Trans
-    ( MonadIO
-    , liftIO
-    )
 import Graphics.Vty
-    ( Attr
-    , DisplayRegion(..)
-    , Image
-    , Key(..)
-    , Modifier
-    , (<|>)
-    , image_width
-    , vert_cat
-    , image_height
-    , char_fill
-    )
 import Graphics.Vty.Widgets.Core
-    ( WidgetImpl(..)
-    , Widget
-    , (<~)
-    , (<~~)
-    , RenderContext(..)
-    , render
-    , newWidget
-    , updateWidget
-    , updateWidgetState
-    , getState
-    , getCurrentPosition
-    , getCurrentSize
-    , setCurrentPosition
-    , growVertical
-    , defaultContext
-    )
 import Graphics.Vty.Widgets.Text
-    ( FormattedText
-    , simpleText
-    )
 import Graphics.Vty.Widgets.Util
 
 data ListError = BadItemIndex Int

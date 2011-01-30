@@ -10,8 +10,6 @@ module Graphics.Vty.Widgets.Dialog
 where
 
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Data.IORef
 import Graphics.Vty.Widgets.Centering
 import Graphics.Vty.Widgets.Button

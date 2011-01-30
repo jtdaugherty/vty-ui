@@ -15,29 +15,9 @@ module Graphics.Vty.Widgets.Limits
 where
 
 import Control.Monad
-    ( when
-    )
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Graphics.Vty
-    ( region_width
-    , region_height
-    )
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , WidgetImpl(..)
-    , (<~)
-    , newWidget
-    , render
-    , updateWidget
-    , updateWidgetState
-    , setCurrentPosition
-    , getState
-    , handleKeyEvent
-    , growHorizontal
-    , onKeyPressed
-    )
 import Graphics.Vty.Widgets.Util
 
 data HLimit a = (Show a) => HLimit Int (Widget a)

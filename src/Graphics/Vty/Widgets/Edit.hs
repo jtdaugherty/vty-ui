@@ -13,35 +13,9 @@ module Graphics.Vty.Widgets.Edit
 where
 
 import Control.Monad
-    ( when
-    )
 import Control.Monad.Trans
-    ( MonadIO
-    , liftIO
-    )
 import Graphics.Vty
-    ( Key(..)
-    , Modifier(..)
-    , (<|>)
-    , region_width
-    , string
-    , char_fill
-    , underline
-    )
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , WidgetImpl(..)
-    , RenderContext(..)
-    , (<~)
-    , (<~~)
-    , getCurrentPosition
-    , updateWidget
-    , updateWidgetState
-    , newWidget
-    , getState
-    , setNormalAttribute
-    , setFocusAttribute
-    )
 import Graphics.Vty.Widgets.Util
 
 data Edit = Edit { currentText :: String

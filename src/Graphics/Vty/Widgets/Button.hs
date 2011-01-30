@@ -10,8 +10,6 @@ where
 
 import Data.IORef
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Padding

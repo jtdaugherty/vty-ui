@@ -8,21 +8,8 @@ module Graphics.Vty.Widgets.Fills
 where
 
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Graphics.Vty
-    ( region_width
-    , region_height
-    , char_fill
-    )
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , WidgetImpl(..)
-    , RenderContext(..)
-    , newWidget
-    , updateWidget
-    , getState
-    )
 import Graphics.Vty.Widgets.Util
 
 data VFill = VFill Char

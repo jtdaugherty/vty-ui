@@ -9,41 +9,10 @@ module Graphics.Vty.Widgets.Collections
 where
 
 import Data.Typeable
-    ( Typeable
-    )
 import Control.Monad.Trans
-    ( MonadIO
-    , liftIO
-    )
 import Control.Exception
-    ( Exception
-    , throw
-    )
 import Graphics.Vty
-    ( DisplayRegion
-    , Image
-    , Key
-    , Modifier
-    )
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , WidgetImpl(..)
-    , FocusGroup
-    , RenderContext
-    , (<~)
-    , (<~~)
-    , getFocusGroup
-    , updateWidgetState
-    , setCurrentPosition
-    , newWidget
-    , updateWidget
-    , render
-    , handleKeyEvent
-    , getState
-    , onKeyPressed
-    , growHorizontal
-    , growVertical
-    )
 
 -- Ultimately we'd want support for "stacks" to provide things like
 -- overlaid dialogs, but for now we'll just implement a "collection"

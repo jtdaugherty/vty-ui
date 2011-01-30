@@ -6,34 +6,12 @@ module Graphics.Vty.Widgets.EventLoop
 where
 
 import Data.Typeable
-    ( Typeable
-    )
 import Data.Maybe
-    ( isNothing
-    )
 import Control.Exception
-    ( Exception
-    , throw
-    )
 import Control.Monad
-    ( when
-    )
 import Control.Monad.Trans
-    ( MonadIO
-    , liftIO
-    )
-import Control.Exception
-    ( finally
-    )
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , RenderContext
-    , renderAndPosition
-    , handleKeyEvent
-    , getFocusGroup
-    , getCursorPosition
-    )
 
 data EventLoopError = NoFocusGroup
                       deriving (Show, Typeable)

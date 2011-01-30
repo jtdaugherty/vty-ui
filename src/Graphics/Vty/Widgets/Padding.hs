@@ -18,39 +18,10 @@ module Graphics.Vty.Widgets.Padding
 where
 
 import Data.Word
-    ( Word
-    )
 import Data.Monoid
-    ( Monoid(..)
-    )
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Graphics.Vty
-    ( (<->)
-    , (<|>)
-    , char_fill
-    , image_width
-    , image_height
-    , region_width
-    , region_height
-    , empty_image
-    )
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , WidgetImpl(..)
-    , RenderContext(..)
-    , (<~)
-    , newWidget
-    , updateWidget
-    , growVertical
-    , growHorizontal
-    , getState
-    , render
-    , setCurrentPosition
-    , relayFocusEvents
-    , relayKeyEvents
-    )
 import Graphics.Vty.Widgets.Util
 
 -- Top, right, bottom, left.

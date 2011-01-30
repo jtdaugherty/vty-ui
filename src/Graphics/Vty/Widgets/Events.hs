@@ -7,12 +7,7 @@ module Graphics.Vty.Widgets.Events
 where
 
 import Control.Monad.Trans
-    ( MonadIO
-    , liftIO
-    )
 import Control.Monad
-    ( forM_
-    )
 import Data.IORef
 
 type Handler a = a -> IO ()

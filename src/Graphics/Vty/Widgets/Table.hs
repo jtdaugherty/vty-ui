@@ -22,84 +22,20 @@ module Graphics.Vty.Widgets.Table
 where
 
 import Data.Typeable
-    ( Typeable
-    )
 import Data.Word
-    ( Word
-    )
 import Data.List
-    ( intersperse
-    )
-import Control.Applicative
-    ( (<$>)
-    )
+import Control.Applicative hiding ((<|>))
 import Control.Exception
-    ( Exception
-    , throw
-    )
 import Control.Monad
-    ( when
-    , forM
-    )
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Graphics.Vty
-    ( Image
-    , Attr
-    , DisplayRegion(..)
-    , (<|>)
-    , (<->)
-    , region_height
-    , region_width
-    , image_height
-    , image_width
-    , char_fill
-    , vert_cat
-    , horiz_cat
-    , empty_image
-    , string
-    , def_attr
-    )
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , WidgetImpl(..)
-    , RenderContext(..)
-    , (<~~)
-    , withNormalAttribute
-    , render
-    , newWidget
-    , updateWidget
-    , updateWidgetState
-    , setCurrentPosition
-    , getCurrentSize
-    , growVertical
-    , growHorizontal
-    )
 import Graphics.Vty.Widgets.Text
-    ( FormattedText
-    , simpleText
-    )
 import Graphics.Vty.Widgets.Centering
-    ( hCentered
-    )
 import Graphics.Vty.Widgets.Padding
-    ( Padding
-    , Paddable(..)
-    , padded
-    , padNone
-    )
 import Graphics.Vty.Widgets.Alignment
-    ( Alignable(..)
-    , Alignment(..)
-    , rightAligned
-    )
 import Graphics.Vty.Widgets.Borders
-    ( HasBorderAttr(..)
-    )
 import Graphics.Vty.Widgets.Skins
-    ( Skin(..)
-    )
 import Graphics.Vty.Widgets.Util
 
 data TableError = ColumnCountMismatch

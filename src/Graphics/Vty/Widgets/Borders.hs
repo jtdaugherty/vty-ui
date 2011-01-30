@@ -18,44 +18,10 @@ module Graphics.Vty.Widgets.Borders
 where
 
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Graphics.Vty
-    ( Attr
-    , DisplayRegion(DisplayRegion)
-    , Image
-    , string
-    , char_fill
-    , region_height
-    , region_width
-    , image_width
-    , image_height
-    , vert_cat
-    , horiz_cat
-    , def_attr
-    , empty_image
-    )
 import Graphics.Vty.Widgets.Core
-    ( WidgetImpl(..)
-    , Widget
-    , RenderContext(..)
-    , withNormalAttribute
-    , newWidget
-    , updateWidget
-    , updateWidgetState
-    , growVertical
-    , growHorizontal
-    , render
-    , handleKeyEvent
-    , getState
-    , setCurrentPosition
-    )
 import Graphics.Vty.Widgets.Box
-    ( hBox
-    )
 import Graphics.Vty.Widgets.Text
-    ( simpleText
-    )
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Skins
 

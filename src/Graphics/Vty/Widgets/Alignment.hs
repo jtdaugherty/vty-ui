@@ -8,27 +8,8 @@ module Graphics.Vty.Widgets.Alignment
 where
 
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Graphics.Vty
-    ( DisplayRegion(..)
-    , (<|>)
-    , region_width
-    , image_width
-    , image_height
-    , char_fill
-    , empty_image
-    )
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , WidgetImpl(..)
-    , getNormalAttr
-    , render
-    , newWidget
-    , updateWidget
-    , getState
-    , growVertical
-    )
 
 data Alignment = AlignCenter | AlignLeft | AlignRight
                  deriving (Show)

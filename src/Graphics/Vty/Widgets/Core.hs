@@ -54,42 +54,12 @@ module Graphics.Vty.Widgets.Core
 where
 
 import Data.Typeable
-    ( Typeable
-    )
 import Data.IORef
-    ( IORef
-    , newIORef
-    , readIORef
-    , modifyIORef
-    , writeIORef
-    )
 import Control.Applicative
-    ( (<$>)
-    )
 import Control.Monad
-    ( when
-    )
 import Control.Monad.Trans
-    ( MonadIO
-    , liftIO
-    )
 import Control.Exception
-    ( Exception
-    , throw
-    )
 import Graphics.Vty
-    ( DisplayRegion(DisplayRegion)
-    , Image
-    , Attr
-    , Key(..)
-    , Modifier(..)
-    , def_attr
-    , image_width
-    , image_height
-    , region_width
-    , region_height
-    , empty_image
-    )
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Skins
 

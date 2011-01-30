@@ -15,40 +15,11 @@ module Graphics.Vty.Widgets.CheckBox
 where
 
 import Data.IORef
-    ( IORef
-    , newIORef
-    , readIORef
-    , writeIORef
-    )
 import Data.Maybe
-    ( isJust
-    , fromJust
-    )
 import Control.Monad
-    ( when
-    )
 import Control.Monad.Trans
-    ( MonadIO
-    , liftIO
-    )
 import Graphics.Vty
-    ( Key(..)
-    , Modifier
-    , string
-    , region_width
-    )
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , WidgetImpl(..)
-    , RenderContext(..)
-    , (<~)
-    , (<~~)
-    , getState
-    , newWidget
-    , updateWidget
-    , updateWidgetState
-    , getCurrentPosition
-    )
 import Graphics.Vty.Widgets.Util
 
 data RadioGroupData = RadioGroupData { currentlySelected :: Maybe (Widget CheckBox)

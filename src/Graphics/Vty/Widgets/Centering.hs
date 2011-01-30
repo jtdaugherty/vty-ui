@@ -10,33 +10,8 @@ where
 
 import GHC.Word ( Word )
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , WidgetImpl(..)
-    , getNormalAttr
-    , newWidget
-    , updateWidget
-    , render
-    , growHorizontal
-    , growVertical
-    , getState
-    , setCurrentPosition
-    , getCurrentSize
-    , relayKeyEvents
-    , relayFocusEvents
-    )
 import Graphics.Vty
-    ( DisplayRegion
-    , char_fill
-    , region_width
-    , region_height
-    , image_width
-    , image_height
-    , vert_cat
-    , horiz_cat
-    )
 import Graphics.Vty.Widgets.Util
 
 data HCentered a = (Show a) => HCentered (Widget a)

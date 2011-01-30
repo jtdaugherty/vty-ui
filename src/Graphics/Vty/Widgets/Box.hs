@@ -11,36 +11,8 @@ where
 
 import GHC.Word ( Word )
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Graphics.Vty.Widgets.Core
-    ( Widget
-    , WidgetImpl(..)
-    , RenderContext
-    , getNormalAttr
-    , newWidget
-    , updateWidget
-    , render
-    , growHorizontal
-    , growVertical
-    , handleKeyEvent
-    , getState
-    , setCurrentPosition
-    , getCurrentSize
-    , updateWidgetState
-    )
 import Graphics.Vty
-    ( DisplayRegion
-    , Image
-    , char_fill
-    , region_width
-    , region_height
-    , image_width
-    , image_height
-    , vert_cat
-    , horiz_cat
-    , empty_image
-    )
 import Graphics.Vty.Widgets.Util
 
 -- |A simple orientation type.

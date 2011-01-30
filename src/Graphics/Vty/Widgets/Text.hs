@@ -24,44 +24,11 @@ module Graphics.Vty.Widgets.Text
 where
 
 import Control.Monad.Trans
-    ( MonadIO
-    )
 import Data.Maybe
-    ( isJust
-    )
 import Graphics.Vty
-    ( Attr
-    , DisplayRegion
-    , Image
-    , string
-    , def_attr
-    , horiz_cat
-    , vert_cat
-    , region_width
-    , region_height
-    )
 import Graphics.Vty.Widgets.Core
-    ( WidgetImpl(..)
-    , Widget
-    , RenderContext(..)
-    , (<~)
-    , newWidget
-    , updateWidget
-    , updateWidgetState
-    , getState
-    )
 import Text.Trans.Tokenize
-    ( Token(..)
-    , tokenize
-    , withAnnotation
-    , truncLine
-    , wrapLine
-    )
 import Text.Regex.PCRE.Light.Char8
-    ( Regex
-    , match
-    , exec_anchored
-    )
 import Graphics.Vty.Widgets.Util
 
 -- |A formatter makes changes to text at rendering time.
