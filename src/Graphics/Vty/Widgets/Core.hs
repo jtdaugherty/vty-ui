@@ -190,16 +190,16 @@ showWidget :: (Functor m, MonadIO m, Show a) => Widget a -> m String
 showWidget wRef = show <$> (liftIO $ readIORef wRef)
 
 instance (Show a) => Show (WidgetImpl a) where
-    show w = concat $ [ "WidgetImpl { "
-                      , show $ state w
-                      , ", currentSize = "
-                      , show $ currentSize w
-                      , ", currentPosition = "
-                      , show $ currentPosition w
-                      , ", focused = "
-                      , show $ focused w
-                      , " }"
-                      ]
+    show w = concat [ "WidgetImpl { "
+                    , show $ state w
+                    , ", currentSize = "
+                    , show $ currentSize w
+                    , ", currentPosition = "
+                    , show $ currentPosition w
+                    , ", focused = "
+                    , show $ focused w
+                    , " }"
+                    ]
 
 setFocusGroup :: (MonadIO m) => Widget a -> Widget FocusGroup -> m ()
 setFocusGroup wRef fg =
