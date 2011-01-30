@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 module Graphics.Vty.Widgets.Dialog
-    ( Dialog(okButton, cancelButton, dialogWidget, setDialogTitle)
+    ( Dialog(dialogWidget, setDialogTitle)
     , newDialog
     , onDialogAccept
     , onDialogCancel
@@ -25,9 +25,7 @@ data DialogEvent = DialogAccept
                  | DialogCancel
                    deriving (Eq)
 
-data Dialog = Dialog { okButton :: Button
-                     , cancelButton :: Button
-                     , dialogWidget :: Widget (Bordered Padded)
+data Dialog = Dialog { dialogWidget :: Widget (Bordered Padded)
                      , setDialogTitle :: String -> IO ()
                      , dialogAcceptHandlers :: IORef [Handler Dialog]
                      , dialogCancelHandlers :: IORef [Handler Dialog]
@@ -63,9 +61,7 @@ newDialog body title mFg = do
   ahs <- mkHandlers
   chs <- mkHandlers
 
-  let dlg = Dialog { okButton = okB
-                   , cancelButton = cancelB
-                   , dialogWidget = b2
+  let dlg = Dialog { dialogWidget = b2
                    , setDialogTitle = setBorderedLabel b2
                    , dialogAcceptHandlers = ahs
                    , dialogCancelHandlers = chs
