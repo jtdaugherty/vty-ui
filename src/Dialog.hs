@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 module Main where
 
-import Control.Monad
 import Control.Monad.Trans
 import System.Exit
 import Graphics.Vty hiding (Button)
@@ -54,10 +53,10 @@ data Dialog = Dialog { okButton :: Button
 dialog :: (MonadIO m, Show a) => Widget a -> Maybe (Widget FocusGroup)
        -> m Dialog
 dialog body mFg = do
-  okButton <- button "OK"
-  cancelButton <- button "Cancel"
+  okB <- button "OK"
+  cancelB <- button "Cancel"
 
-  buttonBox <- (return $ buttonWidget okButton) <++> (return $ buttonWidget cancelButton)
+  buttonBox <- (return $ buttonWidget okB) <++> (return $ buttonWidget cancelB)
   setBoxSpacing buttonBox 4
 
   b <- (hCentered body) <--> (hCentered buttonBox) >>= withBoxSpacing 1
@@ -67,16 +66,16 @@ dialog body mFg = do
           Just g -> return g
           Nothing -> newFocusGroup
 
-  addToFocusGroup fg $ buttonWidget okButton
-  addToFocusGroup fg $ buttonWidget cancelButton
+  addToFocusGroup fg $ buttonWidget okB
+  addToFocusGroup fg $ buttonWidget cancelB
 
   c <- centered =<<
        withPadding (padLeftRight 10) =<<
        (bordered b2 >>= withNormalAttribute (white `on` blue))
 
   setFocusGroup c fg
-  return $ Dialog { okButton = okButton
-                  , cancelButton = cancelButton
+  return $ Dialog { okButton = okB
+                  , cancelButton = cancelB
                   , dialogWidget = c
                   }
 
@@ -86,7 +85,9 @@ main = do
   fg <- newFocusGroup
   addToFocusGroup fg e
 
-  pe <- padded e (padLeftRight 2)
+  u <- (simpleText "Enter some text and press enter.") <--> (return e) >>= withBoxSpacing 1
+
+  pe <- padded u (padLeftRight 2)
   d <- dialog pe (Just fg)
 
   let done = putStrLn =<< getEditText e
