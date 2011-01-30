@@ -39,7 +39,7 @@ onButtonPressed b act = do
 button :: (MonadIO m) => String -> m Button
 button msg = do
   w <- simpleText msg >>=
-       withPadding (padLeft 3 `pad` padRight 3) >>=
+       withPadding (padLeftRight 3) >>=
        withNormalAttribute (white `on` black) >>=
        withFocusAttribute (blue `on` white)
 
