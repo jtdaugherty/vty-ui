@@ -394,8 +394,7 @@ newFocusEntry chRef = do
               setCurrentPosition ch pos
         }
 
-  wRef `onLoseFocus` (const $ unfocus chRef)
-  wRef `onGainFocus` (const $ focus chRef)
+  wRef `relayFocusEvents` chRef
   wRef `relayKeyEvents` chRef
 
   return wRef
