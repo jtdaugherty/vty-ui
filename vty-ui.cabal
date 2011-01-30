@@ -86,3 +86,10 @@ Executable vty-ui-demo2
   Build-Depends:
     mtl >= 2.0 && < 2.1,
     bytestring >= 0.9 && < 1.0
+
+Executable vty-ui-dialog
+  Hs-Source-Dirs:  src
+  GHC-Options:     -Wall
+  Main-is:         Dialog.hs
+  Build-Depends:
+    mtl >= 2.0 && < 2.1
