@@ -20,6 +20,7 @@ import Control.Monad
 import Control.Monad.Trans
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
+import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
 data RadioGroupData = RadioGroupData { currentlySelected :: Maybe (Widget CheckBox)
@@ -63,7 +64,7 @@ radioGroupSetCurrent wRef = do
 data CheckBox = CheckBox { isChecked :: Bool
                          , checkedChar :: Char
                          , checkboxLabel :: String
-                         , checkboxChangeHandler :: Widget CheckBox -> Bool -> IO ()
+                         , checkboxChangeHandlers :: IORef [Handler Bool]
                          , radioGroup :: Maybe RadioGroup
                          }
 
@@ -78,11 +79,12 @@ instance Show CheckBox where
 newCheckbox :: (MonadIO m) => String -> m (Widget CheckBox)
 newCheckbox label = do
   wRef <- newWidget
+  cchs <- mkHandlers
   updateWidget wRef $ \w ->
       w { state = CheckBox { isChecked = False
                            , checkedChar = 'x'
                            , checkboxLabel = label
-                           , checkboxChangeHandler = \_ _ -> return ()
+                           , checkboxChangeHandlers = cchs
                            , radioGroup = Nothing
                            }
         , cursorInfo =
@@ -147,24 +149,15 @@ setChecked__ wRef v = do
   when (oldVal /= v) $
        do
          updateWidgetState wRef $ \s -> s { isChecked = v }
-         notifyChangeHandler wRef
+         notifyChangeHandlers wRef
 
-notifyChangeHandler :: (MonadIO m) => Widget CheckBox -> m ()
-notifyChangeHandler wRef = do
-  h <- checkboxChangeHandler <~~ wRef
+notifyChangeHandlers :: (MonadIO m) => Widget CheckBox -> m ()
+notifyChangeHandlers wRef = do
   v <- checkboxIsChecked wRef
-  liftIO $ h wRef v
+  fireEvent wRef (checkboxChangeHandlers <~~) v
 
 checkboxIsChecked :: (MonadIO m) => Widget CheckBox -> m Bool
 checkboxIsChecked = (isChecked <~~)
 
-onCheckboxChange :: Widget CheckBox -> (Widget CheckBox -> Bool -> IO ()) -> IO ()
-onCheckboxChange wRef handler = do
-  oldHandler <- checkboxChangeHandler <~~ wRef
-
-  let combinedHandler =
-          \w v -> do
-            oldHandler w v
-            handler w v
-
-  updateWidgetState wRef $ \s -> s { checkboxChangeHandler = combinedHandler }
+onCheckboxChange :: Widget CheckBox -> (Bool -> IO ()) -> IO ()
+onCheckboxChange = addHandler (checkboxChangeHandlers <~~)
