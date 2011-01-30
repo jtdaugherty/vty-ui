@@ -344,7 +344,7 @@ onLoseFocus wRef handler = do
   let combinedHandler = \w -> oldHandler w >> handler w
   updateWidget wRef $ \w -> w { loseFocusHandler = combinedHandler }
 
-(<~) :: (MonadIO m) => (WidgetImpl a -> b) -> Widget a -> m b
+(<~) :: (MonadIO m) => (a -> b) -> IORef a -> m b
 (<~) f wRef = (return . f) =<< (liftIO $ readIORef wRef)
 
 (<~~) :: (MonadIO m) => (a -> b) -> Widget a -> m b
