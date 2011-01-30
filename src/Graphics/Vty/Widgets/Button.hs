@@ -33,9 +33,14 @@ pressButton b = fireEvent b (return . buttonPressedHandlers) b
 setButtonText :: (MonadIO m) => Button -> String -> m ()
 setButtonText b s = setText (buttonText b) s
 
+instance HasNormalAttr Button where
+    setNormalAttribute b a = setNormalAttribute (buttonWidget b) a
+
+instance HasFocusAttr Button where
+    setFocusAttribute b a = setFocusAttribute (buttonWidget b) a
+
 newButton :: (MonadIO m) => String -> m Button
 newButton msg = do
-  -- Don't hard-code... use normal attr??
   t <- simpleText msg
 
   w <- return t >>=
