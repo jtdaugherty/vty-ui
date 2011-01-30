@@ -71,10 +71,10 @@ newDialog body title mFg = do
   return dlg
 
 onDialogAccept :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
-onDialogAccept = addHandler dialogAcceptHandlers
+onDialogAccept = addHandler (return . dialogAcceptHandlers)
 
 onDialogCancel :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
-onDialogCancel = addHandler dialogCancelHandlers
+onDialogCancel = addHandler (return . dialogCancelHandlers)
 
 acceptDialog :: (MonadIO m) => Dialog -> m ()
 acceptDialog dlg = fireEvent dlg (return . dialogAcceptHandlers) dlg

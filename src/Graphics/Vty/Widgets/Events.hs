@@ -12,9 +12,10 @@ import Data.IORef
 
 type Handler a = a -> IO ()
 
-addHandler :: (MonadIO m) => (w -> IORef [Handler a]) -> w -> Handler a -> m ()
-addHandler getRef w handler =
-    liftIO $ modifyIORef (getRef w) $ \s -> s ++ [handler]
+addHandler :: (MonadIO m) => (w -> m (IORef [Handler a])) -> w -> Handler a -> m ()
+addHandler getRef w handler = do
+  r <- getRef w
+  liftIO $ modifyIORef r $ \s -> s ++ [handler]
 
 fireEvent :: (MonadIO m) => w -> (w -> m (IORef [Handler a])) -> a -> m ()
 fireEvent w getRef ev = do

@@ -72,8 +72,8 @@ main = do
   r2 `onCheckboxChange` \_ v ->
       when v $ setText radioHeader "Death, please."
 
-  edit1 `onChange` \_ s -> setText edit1Header s
-  edit2 `onChange` \_ s -> setText edit2Header s
+  edit1 `onChange` (setText edit1Header)
+  edit2 `onChange` (setText edit2Header)
 
   lst `onSelectionChange` \_ _ k _ ->
       setText listHeader $ "You selected: " ++ k

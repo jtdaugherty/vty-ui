@@ -23,7 +23,7 @@ data Button = Button { buttonWidget :: Widget Padded
                      }
 
 onButtonPressed :: (MonadIO m) => Button -> (Button -> IO ()) -> m ()
-onButtonPressed = addHandler buttonPressedHandlers
+onButtonPressed = addHandler (return . buttonPressedHandlers)
 
 pressButton :: (MonadIO m) => Button -> m ()
 pressButton b = fireEvent b (return . buttonPressedHandlers) b

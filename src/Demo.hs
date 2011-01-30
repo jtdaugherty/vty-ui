@@ -105,7 +105,7 @@ main = do
 
   -- These event handlers will fire regardless of the input event
   -- context.
-  (theEdit st) `onChange` (updateFooterText st)
+  (theEdit st) `onChange` (updateFooterText st (theEdit st))
   (theEdit st) `onActivate` \e -> do
          addToList (theList st) =<< getEditText e
          setEditText e ""

@@ -22,9 +22,9 @@ main = do
   c <- centered =<< withPadding (padLeftRight 10) (dialogWidget d)
   (setFocusGroup c . fromJust) =<< (getFocusGroup $ dialogWidget d)
 
-  let updateTitle = setDialogTitle d =<< getEditText e
+  let updateTitle s = setDialogTitle d s
 
-  e `onChange` \_ _ -> updateTitle
+  e `onChange` updateTitle
   e `onActivate` \_ -> acceptDialog d
 
   d `onDialogAccept` const exitSuccess
