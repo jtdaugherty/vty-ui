@@ -7,6 +7,8 @@ import Test.QuickCheck
 
 import Text.Trans.Tokenize
 
+import Tests.Util
+
 instance (Arbitrary a) => Arbitrary (Token a) where
     arbitrary = oneof [ Whitespace <$> ws <*> arbitrary
                       , Token <$> s <*> arbitrary
@@ -28,27 +30,24 @@ checkToken :: Token a -> Bool
 checkToken (Whitespace s _) = all (`elem` " \t") s
 checkToken (Token s _) = all (not . (`elem` " \t")) s
 
-count :: (a -> Bool) -> [a] -> Int
-count _ [] = 0
-count f (a:as) = count f as + if f a then 1 else 0
-
-numNewlines :: String -> Int
-numNewlines = count (== '\n')
-
 collapse :: [Token a] -> String
 collapse = concat . map tokenString
 
 tests :: [Property]
 tests = [ label "tokenizeConsistency" $ property $ forAll tokenGen $
                     \ts -> serialize ts == (serialize $ tokenize (serialize ts) ())
+
         , label "tokenizeContents" $ property $ forAll stringGen $
                     \s -> all (all checkToken) $ tokenize s undefined
+
         , label "tokenizeNewlines" $ property $ forAll stringGen $
                     \s -> numNewlines s + 1 == (length $ tokenize s undefined)
+
         , label "truncLine" $ property $ forAll lineGen $
                     \ts -> forAll (arbitrary :: Gen (Positive Int)) $
                     \width -> let l = truncLine (fromIntegral width) ts
                               in length (collapse l) <= fromIntegral width
+
         -- wrapping: a single line wrapped should always result in
         -- lines that are no greater than the wrapping width, unless
         -- they have a single token.
