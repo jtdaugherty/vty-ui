@@ -30,6 +30,7 @@ Library
     pcre-light >= 0.3 && < 0.4
 
   GHC-Options:       -Wall -Werror
+
   Hs-Source-Dirs:    src
   Exposed-Modules:
           Graphics.Vty.Widgets.All
@@ -79,6 +80,8 @@ Executable vty-ui-demo
   Hs-Source-Dirs:  src
   GHC-Options:     -Wall
   Main-is:         Demo.hs
+  if os(darwin)
+    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     mtl >= 2.0 && < 2.1
 
@@ -86,6 +89,8 @@ Executable vty-ui-demo2
   Hs-Source-Dirs:  src
   GHC-Options:     -Wall
   Main-is:         Demo2.hs
+  if os(darwin)
+    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     mtl >= 2.0 && < 2.1,
     bytestring >= 0.9 && < 1.0
@@ -94,5 +99,7 @@ Executable vty-ui-dialog
   Hs-Source-Dirs:  src
   GHC-Options:     -Wall
   Main-is:         Dialog.hs
+  if os(darwin)
+    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     mtl >= 2.0 && < 2.1
