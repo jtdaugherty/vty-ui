@@ -1,10 +1,7 @@
 module Tests.Util where
 
 import Graphics.Vty
-import Graphics.Vty.Widgets.Rendering
 
-imageSize :: Widget a -> DisplayRegion -> Bool
-imageSize w sz =
+imageSize :: Image -> DisplayRegion -> Bool
+imageSize img sz =
     image_width img <= region_width sz && image_height img <= region_height sz
-        where
-          img = fst $ render w sz

@@ -35,6 +35,9 @@ count f (a:as) = count f as + if f a then 1 else 0
 numNewlines :: String -> Int
 numNewlines = count (== '\n')
 
+collapse :: [Token a] -> String
+collapse = concat . map tokenString
+
 tests :: [Property]
 tests = [ label "tokenizeConsistency" $ property $ forAll tokenGen $
                     \ts -> serialize ts == (serialize $ tokenize (serialize ts) ())
@@ -44,8 +47,8 @@ tests = [ label "tokenizeConsistency" $ property $ forAll tokenGen $
                     \s -> numNewlines s + 1 == (length $ tokenize s undefined)
         , label "truncLine" $ property $ forAll lineGen $
                     \ts -> forAll (arbitrary :: Gen (Positive Int)) $
-                    \width -> length (truncLine (fromIntegral width) ts) <=
-                              (fromIntegral width)
+                    \width -> let l = truncLine (fromIntegral width) ts
+                              in length (collapse l) <= fromIntegral width
         -- wrapping: a single line wrapped should always result in
         -- lines that are no greater than the wrapping width, unless
         -- they have a single token.
