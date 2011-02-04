@@ -69,6 +69,8 @@ Executable vty-ui-tests
   end
   Hs-Source-Dirs:  src,test,test/src
   Main-is:         TestDriver.hs
+  if os(darwin)
+    Extra-Lib-Dirs:  /usr/lib
 
   Other-Modules:
         Tests.Instances
