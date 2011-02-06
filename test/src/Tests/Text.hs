@@ -2,7 +2,8 @@ module Tests.Text where
 
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
-import Data.Char ( isPrint )
+
+import Control.Applicative
 
 import Graphics.Vty
 import Graphics.Vty.Widgets.Text
@@ -12,20 +13,25 @@ import Tests.Util
 
 import Tests.Instances ()
 
-textSize :: Property
-textSize =
+textHeight :: Property
+textHeight =
+    monadicIO $ forAllM textString $ \str -> do
+      let sz = DisplayRegion 100 100
+      w <- run $ simpleText str
+      img <- run $ render w sz defaultContext
+      if region_height sz == 0 then
+          return $ image_height img == 0 else
+          return $ image_height img == (toEnum $ numNewlines str + 1)
+
+textImageSize :: Property
+textImageSize =
     monadicIO $ forAllM textString $ \str ->
-        forAllM arbitrary $ \sz -> do
-          w <- run $ simpleText str
-          img <- run $ render w sz defaultContext
-          if null str || region_height sz == 0 || region_width sz == 0 then
-              return $ image_height img == 0 && image_width img == 0 else
-              return $ image_width img <= (toEnum $ length str) &&
-                     image_height img == (toEnum $ numNewlines str + 1)
+        sizeTest (simpleText str)
 
 textString :: Gen String
-textString = listOf (arbitrary `suchThat` (\c -> isPrint c))
+textString = listOf $ oneof [pure 'a', pure '\n', pure ' ']
 
 tests :: [Property]
-tests = [ label "textSize" textSize
+tests = [ label "textHeight" textHeight
+        , label "textImageSize" textImageSize
         ]

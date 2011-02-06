@@ -25,6 +25,7 @@ where
 
 import Control.Monad.Trans
 import Data.Maybe
+import Data.Word
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Text.Trans.Tokenize
@@ -149,7 +150,7 @@ renderText t foc format sz ctx =
       truncateLine = truncLine (fromEnum $ region_width sz)
       newText = format sz t
       mkLineImg line = if null line
-                       then string attr' " "
+                       then char_fill attr' ' ' (region_width sz) (1::Word)
                        else horiz_cat $ map mkTokenImg line
       nullImg = string def_attr ""
       mkTokenImg tok = string (tokenAttr tok) (tokenString tok)
