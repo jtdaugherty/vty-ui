@@ -29,7 +29,10 @@ textImageSize =
         sizeTest (simpleText str)
 
 textString :: Gen String
-textString = listOf $ oneof [pure 'a', pure '\n', pure ' ']
+textString = listOf $ oneof [ pure 'a'
+                            , pure '\n'
+                            , pure ' '
+                            ]
 
 tests :: [Property]
 tests = [ label "text: newlines rendered correctly" textHeight
