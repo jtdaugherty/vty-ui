@@ -53,7 +53,7 @@ tests = [ label "tokenize: round trip test" $ property $ forAll tokenGen $
         -- lines that are no greater than the wrapping width, unless
         -- they have a single token.
         , label "tokenize: line-wrapping works" $ property $ forAll lineGen $
-                    \ts -> forAll (choose (0, length ts + 1)) $
+                    \ts -> forAll (choose (0, length ts + 10)) $
                     \width -> let ls = wrapLine w ts
                                   w = fromIntegral width
                                   f l = length (serialize [l]) <= w || length l == 1
