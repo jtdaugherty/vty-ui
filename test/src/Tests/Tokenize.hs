@@ -34,16 +34,17 @@ collapse :: [Token a] -> String
 collapse = concat . map tokenString
 
 tests :: [Property]
-tests = [ label "tokenizeConsistency" $ property $ forAll tokenGen $
+tests = [ label "tokenize: round trip test" $ property $ forAll tokenGen $
                     \ts -> serialize ts == (serialize $ tokenize (serialize ts) ())
 
-        , label "tokenizeContents" $ property $ forAll stringGen $
+        , label "tokenize: token contents consistent with constructors" $
+                property $ forAll stringGen $
                     \s -> all (all checkToken) $ tokenize s undefined
 
-        , label "tokenizeNewlines" $ property $ forAll stringGen $
+        , label "tokenize: newlines handled properly" $ property $ forAll stringGen $
                     \s -> numNewlines s + 1 == (length $ tokenize s undefined)
 
-        , label "truncLine" $ property $ forAll lineGen $
+        , label "tokenize: line truncation works" $ property $ forAll lineGen $
                     \ts -> forAll (arbitrary :: Gen (Positive Int)) $
                     \width -> let l = truncLine (fromIntegral width) ts
                               in length (collapse l) <= fromIntegral width
@@ -51,7 +52,7 @@ tests = [ label "tokenizeConsistency" $ property $ forAll tokenGen $
         -- wrapping: a single line wrapped should always result in
         -- lines that are no greater than the wrapping width, unless
         -- they have a single token.
-        , label "wrapLine" $ property $ forAll lineGen $
+        , label "tokenize: line-wrapping works" $ property $ forAll lineGen $
                     \ts -> forAll (choose (0, length ts + 1)) $
                     \width -> let ls = wrapLine w ts
                                   w = fromIntegral width

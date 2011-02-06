@@ -32,6 +32,6 @@ textString :: Gen String
 textString = listOf $ oneof [pure 'a', pure '\n', pure ' ']
 
 tests :: [Property]
-tests = [ label "textHeight" textHeight
-        , label "textImageSize" textImageSize
+tests = [ label "text: newlines rendered correctly" textHeight
+        , label "text: image size" textImageSize
         ]
