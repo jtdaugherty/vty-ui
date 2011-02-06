@@ -1,4 +1,4 @@
-module Tests.Text where
+module Tests.FormattedText where
 
 import Test.QuickCheck
 import Test.QuickCheck.Monadic

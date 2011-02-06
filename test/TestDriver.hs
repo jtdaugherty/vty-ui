@@ -5,11 +5,11 @@ import System.Exit ( exitFailure, exitSuccess )
 import Test.QuickCheck
 import Test.QuickCheck.Test
 
-import qualified Tests.Text as Text
+import qualified Tests.FormattedText as FormattedText
 import qualified Tests.Tokenize as Tokenize
 
 tests :: [Property]
-tests = concat [ Text.tests
+tests = concat [ FormattedText.tests
                , Tokenize.tests
                ]
 
