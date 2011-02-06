@@ -15,7 +15,7 @@ tests = concat [ Text.tests
 
 main :: IO ()
 main = do
-  results <- mapM quickCheckResult tests
+  results <- mapM (quickCheckWithResult (stdArgs { maxSuccess = 200 })) tests
   if all isSuccess results then
       exitSuccess else
       exitFailure
