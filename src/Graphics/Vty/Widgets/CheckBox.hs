@@ -52,6 +52,7 @@ addToRadioGroup rg wRef = do
   updateWidgetState wRef $ \s -> s { radioGroup = Just rg
                                    }
   setCheckedChar wRef '*'
+  setCheckboxUnchecked wRef
 
   wRef `onCheckboxChange` \v ->
       when v $ do
