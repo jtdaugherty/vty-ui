@@ -36,10 +36,7 @@ module Graphics.Vty.Widgets.List
     , onItemAdded
     , onItemRemoved
     -- ** List inspection
-    , listItems
     , getSelected
-    , scrollTopIndex
-    , scrollWindowSize
     , getVisibleItems
     )
 where
