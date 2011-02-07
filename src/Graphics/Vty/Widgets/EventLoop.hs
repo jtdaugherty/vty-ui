@@ -1,15 +1,18 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Graphics.Vty.Widgets.EventLoop
-    ( runUi
-    , EventLoopError(..)
+    ( EventLoopError(..)
+    , runUi
+    , schedule
     )
 where
 
 import Data.Typeable
 import Data.Maybe
+import Control.Concurrent
 import Control.Exception
 import Control.Monad
 import Control.Monad.Trans
+import System.IO.Unsafe ( unsafePerformIO )
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 
@@ -18,16 +21,38 @@ data EventLoopError = NoFocusGroup
 
 instance Exception EventLoopError
 
+data CombinedEvent = VTYEvent Event
+                   | UserEvent UserEvent
+
+data UserEvent = ScheduledAction (IO ())
+
+eventChan :: Chan CombinedEvent
+{-# NOINLINE eventChan #-}
+eventChan = unsafePerformIO newChan
+
 runUi :: (MonadIO m, Show a) => Widget a -> RenderContext -> m ()
 runUi uiWidget ctx =
     liftIO $ do
       vty <- mkVty
-      runUi' vty uiWidget ctx `finally` do
+
+      -- Create VTY event listener thread
+      _ <- forkIO $ vtyEventListener vty eventChan
+
+      runUi' vty eventChan uiWidget ctx `finally` do
                reserve_display $ terminal vty
                shutdown vty
 
-runUi' :: (Show a) => Vty -> Widget a -> RenderContext -> IO ()
-runUi' vty uiWidget ctx = do
+vtyEventListener :: Vty -> Chan CombinedEvent -> IO ()
+vtyEventListener vty chan =
+    forever $ do
+      e <- next_event vty
+      writeChan chan $ VTYEvent e
+
+schedule :: (MonadIO m) => IO () -> m ()
+schedule act = liftIO $ writeChan eventChan $ UserEvent $ ScheduledAction act
+
+runUi' :: (Show a) => Vty -> Chan CombinedEvent -> Widget a -> RenderContext -> IO ()
+runUi' vty chan uiWidget ctx = do
   mFg <- getFocusGroup uiWidget
   when (isNothing mFg) $ throw NoFocusGroup
 
@@ -44,10 +69,11 @@ runUi' vty uiWidget ctx = do
                         set_cursor_pos (terminal vty) w h
     Nothing -> hide_cursor $ terminal vty
 
-  evt <- next_event vty
+  evt <- readChan chan
 
   case evt of
-    (EvKey k mods) -> handleKeyEvent fg k mods >> return ()
+    VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return ()
+    UserEvent (ScheduledAction act) -> liftIO act
     _ -> return ()
 
-  runUi' vty uiWidget ctx
+  runUi' vty chan uiWidget ctx

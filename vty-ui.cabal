@@ -95,7 +95,9 @@ Executable vty-ui-demo2
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     mtl >= 2.0 && < 2.1,
-    bytestring >= 0.9 && < 1.0
+    bytestring >= 0.9 && < 1.0,
+    time >= 1.1 && < 1.2,
+    old-locale >= 1.0 && < 1.1
 
 Executable vty-ui-dialog
   Hs-Source-Dirs:  src

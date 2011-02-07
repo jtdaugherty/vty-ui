@@ -2,6 +2,11 @@
 module Main where
 
 import System.Exit ( exitSuccess )
+import System.Locale
+import Control.Monad
+import Control.Concurrent
+import Data.Time.Clock
+import Data.Time.Format
 import Text.Regex.PCRE.Light
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
@@ -68,6 +73,7 @@ main = do
   rs <- vBox r1 r2
 
   cbHeader <- simpleText ""
+  timeText <- simpleText ""
 
   addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
   addRow table $ radioHeader .|. rs
@@ -75,6 +81,7 @@ main = do
   addRow table $ edit1Header .|. edit1
   addRow table $ edit2Header .|. edit2
   addRow table $ listHeader .|. customCell selector `pad` padNone
+  addRow table $ emptyCell .|. timeText
 
   rg `onRadioChange` \cb -> do
       s <- getCheckboxLabel cb
@@ -125,6 +132,12 @@ main = do
 
   ui <- centered =<< hLimit 70 mainBox
   setFocusGroup ui fgr
+
+  forkIO $ forever $ do
+         schedule $ do
+           t <- getCurrentTime
+           setText timeText $ formatTime defaultTimeLocale rfc822DateFormat t
+         threadDelay $ 1 * 1000 * 1000
 
   -- Enter the event loop.
   runUi ui $ defaultContext { focusAttr = focAttr
