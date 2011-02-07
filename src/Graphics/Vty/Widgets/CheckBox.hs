@@ -11,6 +11,8 @@ module Graphics.Vty.Widgets.CheckBox
     , setCheckboxUnchecked
     , setCheckboxChecked
     , setCheckedChar
+    , setLeftBracketChar
+    , setRightBracketChar
     , onCheckboxChange
     , checkboxIsChecked
     , getCheckboxLabel
@@ -51,11 +53,23 @@ setCheckedChar wRef ch =
     updateWidgetState wRef $ \s -> s { checkedChar = ch
                                       }
 
+setLeftBracketChar :: (MonadIO m) => Widget CheckBox -> Char -> m ()
+setLeftBracketChar wRef ch =
+    updateWidgetState wRef $ \s -> s { leftBracketChar = ch
+                                     }
+
+setRightBracketChar :: (MonadIO m) => Widget CheckBox -> Char -> m ()
+setRightBracketChar wRef ch =
+    updateWidgetState wRef $ \s -> s { rightBracketChar = ch
+                                     }
+
 addToRadioGroup :: (MonadIO m) => RadioGroup -> Widget CheckBox -> m ()
 addToRadioGroup rg wRef = do
   updateWidgetState wRef $ \s -> s { radioGroup = Just rg
                                    }
   setCheckedChar wRef '*'
+  setLeftBracketChar wRef '('
+  setRightBracketChar wRef ')'
   setCheckboxUnchecked wRef
 
   wRef `onCheckboxChange` \v ->
@@ -84,6 +98,8 @@ radioGroupSetCurrent wRef = do
 
 data CheckBox = CheckBox { isChecked :: Bool
                          , checkedChar :: Char
+                         , leftBracketChar :: Char
+                         , rightBracketChar :: Char
                          , checkboxLabel :: String
                          , checkboxChangeHandlers :: Handlers Bool
                          , radioGroup :: Maybe RadioGroup
@@ -107,6 +123,8 @@ newCheckbox label = do
                            , checkboxLabel = label
                            , checkboxChangeHandlers = cchs
                            , radioGroup = Nothing
+                           , leftBracketChar = '['
+                           , rightBracketChar = ']'
                            }
         , cursorInfo =
             \this -> do
@@ -129,7 +147,8 @@ newCheckbox label = do
 
                   ch = if isChecked st then checkedChar st else ' '
 
-                  s = ['[', ch, ']', ' '] ++ (checkboxLabel st)
+                  s = [leftBracketChar st, ch, rightBracketChar st, ' '] ++
+                      (checkboxLabel st)
 
               return $ string fAttr $ take (fromEnum $ region_width sz) s
         }
