@@ -247,7 +247,7 @@ listWidget list = do
               -- Resize the list based on the available space and the
               -- height of each item.
               when (h > 0) $
-                   resize (max 1 ((fromEnum $ region_height sz) `div` h)) this
+                   resize this (max 1 ((fromEnum $ region_height sz) `div` h))
 
               listData <- getState this
               foc <- focused <~ this
@@ -327,8 +327,8 @@ getSelected wRef = do
 
 -- |Set the window size of the list.  This automatically adjusts the
 -- window position to keep the selected item visible.
-resize :: (MonadIO m) => Int -> Widget (List a b) -> m ()
-resize newSize wRef = do
+resize :: (MonadIO m) => Widget (List a b) -> Int -> m ()
+resize wRef newSize = do
   when (newSize == 0) $ throw ResizeError
 
   size <- (scrollWindowSize . state) <~ wRef
