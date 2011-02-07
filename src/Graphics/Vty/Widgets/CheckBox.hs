@@ -49,7 +49,7 @@ type RadioGroup = IORef RadioGroupData
 
 newRadioGroup :: (MonadIO m) => m RadioGroup
 newRadioGroup = do
-  hs <- mkHandlers
+  hs <- newHandlers
   liftIO $ newIORef $ RadioGroupData Nothing hs
 
 onRadioChange :: (MonadIO m) => RadioGroup -> (Widget (CheckBox Bool) -> IO ())
@@ -124,7 +124,7 @@ newMultiStateCheckbox :: (Eq a, MonadIO m) => String -> [(a, Char)] -> m (Widget
 newMultiStateCheckbox _ [] = throw EmptyCheckboxStates
 newMultiStateCheckbox label states = do
   wRef <- newWidget
-  cchs <- mkHandlers
+  cchs <- newHandlers
   updateWidget wRef $ \w ->
       w { state = CheckBox { checkboxLabel = label
                            , checkboxChangeHandlers = cchs

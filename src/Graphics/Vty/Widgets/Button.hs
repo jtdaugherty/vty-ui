@@ -45,7 +45,7 @@ newButton msg = do
        withNormalAttribute (white `on` black) >>=
        withFocusAttribute (blue `on` white)
 
-  hs <- mkHandlers
+  hs <- newHandlers
 
   let b = Button w t hs
 

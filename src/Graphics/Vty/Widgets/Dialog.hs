@@ -55,8 +55,8 @@ newDialog body title mFg = do
 
   setFocusGroup b2 fg
 
-  ahs <- mkHandlers
-  chs <- mkHandlers
+  ahs <- newHandlers
+  chs <- newHandlers
 
   let dlg = Dialog { dialogWidget = b2
                    , setDialogTitle = setBorderedLabel b2

@@ -41,9 +41,9 @@ editWidget :: (MonadIO m) => m (Widget Edit)
 editWidget = do
   wRef <- newWidget
 
-  ahs <- mkHandlers
-  chs <- mkHandlers
-  cmhs <- mkHandlers
+  ahs <- newHandlers
+  chs <- newHandlers
+  cmhs <- newHandlers
 
   updateWidget wRef $ \w ->
       w { state = Edit { currentText = ""

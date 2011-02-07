@@ -19,9 +19,9 @@ module Graphics.Vty.Widgets.List
     , RemoveItemEvent(..)
     , SelectionEvent(..)
     -- ** List creation
-    , mkList
-    , mkSimpleList
-    , listWidget
+    , newList
+    , newSimpleListWidget
+    , newListWidget
     , addToList
     , removeFromList
     , getListSize
@@ -103,14 +103,14 @@ instance Show (List a b) where
 
 -- |Create a new list.  Emtpy lists and empty scrolling windows are
 -- not allowed.
-mkList :: (MonadIO m) =>
-          Attr -- ^The attribute of the selected item
-       -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
-       -> m (List a b)
-mkList selAttr f = do
-  schs <- mkHandlers
-  iahs <- mkHandlers
-  irhs <- mkHandlers
+newList :: (MonadIO m) =>
+           Attr -- ^The attribute of the selected item
+        -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
+        -> m (List a b)
+newList selAttr f = do
+  schs <- newHandlers
+  iahs <- newHandlers
+  irhs <- newHandlers
 
   return $ List { selectedUnfocusedAttr = selAttr
                 , selectedIndex = -1
@@ -220,8 +220,8 @@ onItemRemoved :: (MonadIO m) => Widget (List a b)
               -> (RemoveItemEvent a b -> IO ()) -> m ()
 onItemRemoved = addHandler (itemRemoveHandlers <~~)
 
-listWidget :: (MonadIO m, Show b) => List a b -> m (Widget (List a b))
-listWidget list = do
+newListWidget :: (MonadIO m, Show b) => List a b -> m (Widget (List a b))
+newListWidget list = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
       w { state = list
@@ -306,12 +306,12 @@ renderListWidget foc list s ctx = do
 
 -- |A convenience function to create a new list using 'String's as the
 -- internal identifiers and 'Text' widgets to represent those strings.
-mkSimpleList :: (MonadIO m) =>
-                Attr -- ^The attribute of the selected item
-             -> [String] -- ^The list items
-             -> m (Widget (List String FormattedText))
-mkSimpleList selAttr labels = do
-  list <- listWidget =<< mkList selAttr simpleText
+newSimpleListWidget :: (MonadIO m) =>
+                       Attr -- ^The attribute of the selected item
+                    -> [String] -- ^The list items
+                    -> m (Widget (List String FormattedText))
+newSimpleListWidget selAttr labels = do
+  list <- newListWidget =<< newList selAttr simpleText
   mapM_ (addToList list) labels
   return list
 

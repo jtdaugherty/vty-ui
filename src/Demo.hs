@@ -48,7 +48,7 @@ buildUi2 appst =
 -- Construct the application state using the message map.
 mkAppState :: IO AppState
 mkAppState = do
-  lw <- mkSimpleList selAttr []
+  lw <- newSimpleListWidget selAttr []
   b <- textWidget wrap ""
   f1 <- simpleText "" >>= withNormalAttribute titleAttr
   f2 <- simpleText "[]" >>= withNormalAttribute titleAttr

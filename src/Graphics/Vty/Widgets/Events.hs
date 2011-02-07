@@ -1,7 +1,7 @@
 module Graphics.Vty.Widgets.Events
     ( Handlers
     , Handler
-    , mkHandlers
+    , newHandlers
     , addHandler
     , fireEvent
     )
@@ -26,7 +26,7 @@ fireEvent w getRef ev = do
   forM_ handlers $ \handler ->
       liftIO $ handler ev
 
-mkHandlers :: (MonadIO m) => m (Handlers a)
-mkHandlers = do
+newHandlers :: (MonadIO m) => m (Handlers a)
+newHandlers = do
   r <- liftIO $ newIORef []
   return $ Handlers r
