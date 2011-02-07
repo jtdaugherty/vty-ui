@@ -372,7 +372,9 @@ resize newSize wRef = do
 -- * Moves the scrolling window position if necessary (i.e., if the
 --   cursor moves to an item not currently in view)
 scrollBy :: (MonadIO m) => Int -> Widget (List a b) -> m ()
-scrollBy amount wRef = updateWidgetState wRef $ scrollBy' amount
+scrollBy amount wRef = do
+  updateWidgetState wRef $ scrollBy' amount
+  notifySelectionHandler wRef
 
 -- Pure interface; should be used internally to the widget.
 scrollBy' :: Int -> List a b -> List a b
@@ -422,25 +424,23 @@ notifyItemAddHandler wRef pos k w =
 
 -- |Scroll a list down by one position.
 scrollDown :: (MonadIO m) => Widget (List a b) -> m ()
-scrollDown wRef = scrollBy 1 wRef >> notifySelectionHandler wRef
+scrollDown wRef = scrollBy 1 wRef
 
 -- |Scroll a list up by one position.
 scrollUp :: (MonadIO m) => Widget (List a b) -> m ()
-scrollUp wRef = scrollBy (-1) wRef >> notifySelectionHandler wRef
+scrollUp wRef = scrollBy (-1) wRef
 
 -- |Scroll a list down by one page from the current cursor position.
 pageDown :: (MonadIO m) => Widget (List a b) -> m ()
 pageDown wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy amt wRef
-  notifySelectionHandler wRef
 
 -- |Scroll a list up by one page from the current cursor position.
 pageUp :: (MonadIO m) => Widget (List a b) -> m ()
 pageUp wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy (-1 * amt) wRef
-  notifySelectionHandler wRef
 
 -- |Given a 'List', return the items that are currently visible
 -- according to the state of the list.  Returns the visible items and
