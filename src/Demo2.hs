@@ -18,6 +18,11 @@ msgAttr = fgColor blue
 color :: Formatter
 color = highlight (compile (BS8.pack "<.*>") []) (fgColor bright_green)
 
+data FrostingType = Chocolate
+                  | Vanilla
+                  | Lemon
+                    deriving (Eq, Show)
+
 main :: IO ()
 main = do
   let msg = "- <TAB> switches input elements\n\n\
@@ -44,7 +49,10 @@ main = do
   addToRadioGroup rg r1
   addToRadioGroup rg r2
 
-  r3 <- newCheckbox "Frosting"
+  r3 <- newMultiStateCheckbox "Frosting" [ (Chocolate, 'C')
+                                         , (Vanilla, 'V')
+                                         , (Lemon, 'L')
+                                         ]
 
   edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- editWidget
@@ -73,7 +81,7 @@ main = do
       setText radioHeader $ s ++ ", please."
 
   r3 `onCheckboxChange` \v ->
-      setText cbHeader (if v then "with frosting" else "no frosting")
+      setText cbHeader $ "you chose: " ++ show v
 
   edit1 `onChange` (setText edit1Header)
   edit2 `onChange` (setText edit2Header)
@@ -86,7 +94,13 @@ main = do
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
   setCheckboxChecked r1
-  setCheckboxChecked r3
+
+  setCheckboxState r3 Chocolate
+  -- It would be nice if we didn't have to do this, but the
+  -- setCheckboxState call above will not notify any state-change
+  -- handlers because the state isn't actually changing (from its
+  -- original value of Chocolate, the first value in its state list).
+  setText cbHeader $ "you chose: Chocolate"
 
   fgr <- newFocusGroup
   fgr `onKeyPressed` \_ k _ -> do
