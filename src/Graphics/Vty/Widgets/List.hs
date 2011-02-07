@@ -140,7 +140,7 @@ removeFromList list pos = do
   let (label, w) = listItems st !! pos
       sel = selectedIndex st
 
-  -- If that item is currently selected, select a different item.
+      -- If that item is currently selected, select a different item.
       newSelectedIndex = if pos > sel
                          then pos
                          else if pos < sel

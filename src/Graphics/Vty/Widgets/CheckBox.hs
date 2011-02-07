@@ -97,7 +97,7 @@ data CheckBoxError = EmptyCheckboxStates
                    | BadStateArgument
                      deriving (Show, Typeable)
 
-instance Exception CheckBoxError where
+instance Exception CheckBoxError
 
 data CheckBox a = CheckBox { leftBracketChar :: Char
                            , rightBracketChar :: Char

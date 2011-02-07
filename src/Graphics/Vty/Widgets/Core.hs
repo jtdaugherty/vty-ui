@@ -90,7 +90,7 @@ withFocusAttribute att w = do
 data RenderError = ImageTooBig String DisplayRegion DisplayRegion
                    deriving (Show, Typeable)
 
-instance Exception RenderError where
+instance Exception RenderError
 
 data RenderContext = RenderContext { normalAttr :: Attr
                                    , focusAttr :: Attr
