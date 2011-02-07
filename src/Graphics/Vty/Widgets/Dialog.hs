@@ -10,7 +10,6 @@ module Graphics.Vty.Widgets.Dialog
 where
 
 import Control.Monad.Trans
-import Data.IORef
 import Graphics.Vty.Widgets.Centering
 import Graphics.Vty.Widgets.Button
 import Graphics.Vty.Widgets.Padding
@@ -25,8 +24,8 @@ data DialogEvent = DialogAccept
 
 data Dialog = Dialog { dialogWidget :: Widget (Bordered Padded)
                      , setDialogTitle :: String -> IO ()
-                     , dialogAcceptHandlers :: IORef [Handler Dialog]
-                     , dialogCancelHandlers :: IORef [Handler Dialog]
+                     , dialogAcceptHandlers :: Handlers Dialog
+                     , dialogCancelHandlers :: Handlers Dialog
                      }
 
 instance HasNormalAttr Dialog where

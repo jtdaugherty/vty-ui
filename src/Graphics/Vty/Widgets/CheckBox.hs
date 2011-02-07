@@ -26,7 +26,7 @@ import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
 data RadioGroupData = RadioGroupData { currentlySelected :: Maybe (Widget CheckBox)
-                                     , changeHandlers :: IORef [Handler (Widget CheckBox)]
+                                     , changeHandlers :: Handlers (Widget CheckBox)
                                      }
 
 type RadioGroup = IORef RadioGroupData
@@ -80,7 +80,7 @@ radioGroupSetCurrent wRef = do
 data CheckBox = CheckBox { isChecked :: Bool
                          , checkedChar :: Char
                          , checkboxLabel :: String
-                         , checkboxChangeHandlers :: IORef [Handler Bool]
+                         , checkboxChangeHandlers :: Handlers Bool
                          , radioGroup :: Maybe RadioGroup
                          }
 

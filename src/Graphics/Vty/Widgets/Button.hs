@@ -8,7 +8,6 @@ module Graphics.Vty.Widgets.Button
     )
 where
 
-import Data.IORef
 import Control.Monad.Trans
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
@@ -19,7 +18,7 @@ import Graphics.Vty hiding (Button)
 
 data Button = Button { buttonWidget :: Widget Padded
                      , buttonText :: Widget FormattedText
-                     , buttonPressedHandlers :: IORef [Handler Button]
+                     , buttonPressedHandlers :: Handlers Button
                      }
 
 onButtonPressed :: (MonadIO m) => Button -> (Button -> IO ()) -> m ()

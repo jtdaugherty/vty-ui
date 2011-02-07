@@ -14,7 +14,6 @@ where
 
 import Control.Monad
 import Control.Monad.Trans
-import Data.IORef
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
@@ -24,9 +23,9 @@ data Edit = Edit { currentText :: String
                  , cursorPosition :: Int
                  , displayStart :: Int
                  , displayWidth :: Int
-                 , activateHandlers :: IORef [Handler (Widget Edit)]
-                 , changeHandlers :: IORef [Handler String]
-                 , cursorMoveHandlers :: IORef [Handler Int]
+                 , activateHandlers :: Handlers (Widget Edit)
+                 , changeHandlers :: Handlers String
+                 , cursorMoveHandlers :: Handlers Int
                  }
 
 instance Show Edit where

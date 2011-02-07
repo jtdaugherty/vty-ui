@@ -1,5 +1,6 @@
 module Graphics.Vty.Widgets.Events
-    ( Handler
+    ( Handlers
+    , Handler
     , mkHandlers
     , addHandler
     , fireEvent
@@ -11,18 +12,21 @@ import Control.Monad
 import Data.IORef
 
 type Handler a = a -> IO ()
+newtype Handlers a = Handlers (IORef [Handler a])
 
-addHandler :: (MonadIO m) => (w -> m (IORef [Handler a])) -> w -> Handler a -> m ()
+addHandler :: (MonadIO m) => (w -> m (Handlers a)) -> w -> Handler a -> m ()
 addHandler getRef w handler = do
-  r <- getRef w
+  (Handlers r) <- getRef w
   liftIO $ modifyIORef r $ \s -> s ++ [handler]
 
-fireEvent :: (MonadIO m) => w -> (w -> m (IORef [Handler a])) -> a -> m ()
+fireEvent :: (MonadIO m) => w -> (w -> m (Handlers a)) -> a -> m ()
 fireEvent w getRef ev = do
-  r <- getRef w
+  (Handlers r) <- getRef w
   handlers <- liftIO $ readIORef r
   forM_ handlers $ \handler ->
       liftIO $ handler ev
 
-mkHandlers :: (MonadIO m) => m (IORef [Handler a])
-mkHandlers = liftIO $ newIORef []
+mkHandlers :: (MonadIO m) => m (Handlers a)
+mkHandlers = do
+  r <- liftIO $ newIORef []
+  return $ Handlers r

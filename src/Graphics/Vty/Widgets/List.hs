@@ -44,7 +44,6 @@ module Graphics.Vty.Widgets.List
     )
 where
 
-import Data.IORef
 import Data.Typeable
 import Control.Exception hiding (Handler)
 import Control.Monad
@@ -86,9 +85,9 @@ data List a b = List { selectedUnfocusedAttr :: Attr
                      -- ^The size of the window of visible list items.
                      , listItems :: [ListItem a b]
                      -- ^The items in the list.
-                     , selectionChangeHandlers :: IORef [Handler (SelectionEvent a b)]
-                     , itemAddHandlers :: IORef [Handler (NewItemEvent a b)]
-                     , itemRemoveHandlers :: IORef [Handler (RemoveItemEvent a b)]
+                     , selectionChangeHandlers :: Handlers (SelectionEvent a b)
+                     , itemAddHandlers :: Handlers (NewItemEvent a b)
+                     , itemRemoveHandlers :: Handlers (RemoveItemEvent a b)
                      , itemHeight :: Int
                      , itemConstructor :: a -> IO (Widget b)
                      -- ^Function to construct new items
