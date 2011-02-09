@@ -12,6 +12,7 @@ module Graphics.Vty.Widgets.Box
     , withBoxSpacing
     , defaultChildSizePolicy
     , setBoxChildSizePolicy
+    , getBoxChildSizePolicy
     )
 where
 
@@ -183,6 +184,9 @@ withBoxSpacing :: (MonadIO m) => Int -> Widget (Box a b) -> m (Widget (Box a b))
 withBoxSpacing spacing wRef = do
   setBoxSpacing wRef spacing
   return wRef
+
+getBoxChildSizePolicy :: (MonadIO m) => Widget (Box a b) -> m ChildSizePolicy
+getBoxChildSizePolicy = (boxChildSizePolicy <~~)
 
 setBoxChildSizePolicy :: (MonadIO m) => Widget (Box a b) -> ChildSizePolicy -> m ()
 setBoxChildSizePolicy b spol = do
