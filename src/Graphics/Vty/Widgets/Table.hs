@@ -70,7 +70,7 @@ data BorderStyle = BorderPartial [BorderFlag]
                  | BorderNone
                    deriving (Eq, Show)
 
-data ColumnSize = Fixed Int | Auto
+data ColumnSize = ColFixed Int | ColAuto
                   deriving (Eq, Show)
 
 data ColumnSpec = ColumnSpec { columnSize :: ColumnSize
@@ -176,7 +176,7 @@ newTable specs borderSty = do
                         }
 
         , growHorizontal_ = \st -> do
-            return $ any (== Auto) (map columnSize $ columnSpecs st)
+            return $ any (== ColAuto) (map columnSize $ columnSpecs st)
 
         , render_ =
             \this sz ctx -> do
@@ -296,8 +296,8 @@ mkRowBorder_ t sz ctx intChar = do
       intersection = string bAttr' [intChar]
       imgs = (flip map) szs $ \s ->
              case s of
-               Fixed n -> char_fill bAttr' (skinHorizontal sk) n 1
-               Auto -> char_fill bAttr' (skinHorizontal sk) aw 1
+               ColFixed n -> char_fill bAttr' (skinHorizontal sk) n 1
+               ColAuto -> char_fill bAttr' (skinHorizontal sk) aw 1
       imgs' = if colBorders bs
               then intersperse intersection imgs
               else imgs
@@ -374,8 +374,8 @@ positionRow t bs pos cells = do
                then 1
                else 0
 
-      cellWidth Auto = aw
-      cellWidth (Fixed n) = toEnum n
+      cellWidth ColAuto = aw
+      cellWidth (ColFixed n) = toEnum n
 
       doPositioning _ [] = return ()
       doPositioning width ((szPolicy, cell):ws) =
@@ -393,11 +393,11 @@ autoWidth t sz = do
   bs <- borderStyle <~~ t
 
   let sizes = map columnSize specs
-      numAuto = length $ filter (== Auto) sizes
+      numAuto = length $ filter (== ColAuto) sizes
       totalFixed = sum $ (flip map) sizes $ \s ->
                    case s of
-                     Auto -> 0
-                     Fixed n -> n
+                     ColAuto -> 0
+                     ColFixed n -> n
       edgeWidth = if edgeBorders bs then 2 else 0
       colWidth = if colBorders bs then (toEnum $ length sizes - 1) else 0
 
@@ -509,8 +509,8 @@ renderRow tbl sz cells ctx = do
           do
             let cellSz = DisplayRegion cellWidth (region_height sz)
                 cellWidth = case sizeSpec of
-                              Fixed n -> toEnum n
-                              Auto -> aw
+                              ColFixed n -> toEnum n
+                              ColAuto -> aw
 
             img <- renderCell cellSz cellW $ ctx { normalAttr = newDefault }
             -- Right-pad the image if it isn't big enough to fill the

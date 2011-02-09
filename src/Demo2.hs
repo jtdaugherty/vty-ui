@@ -35,8 +35,8 @@ main = do
             \- <SPC> toggles radio buttons and checkboxes\n\n\
             \- <ESC> quits"
 
-      columns = [ column (Fixed 25) `pad` (padAll 1)
-                , column Auto `pad` (padAll 1)
+      columns = [ column (ColFixed 25) `pad` (padAll 1)
+                , column ColAuto `pad` (padAll 1)
                 ]
 
   table <- newTable columns BorderFull >>=
