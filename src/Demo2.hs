@@ -75,6 +75,8 @@ main = do
   cbHeader <- simpleText ""
   timeText <- simpleText ""
 
+  prog <- newProgressBar (red `on` red) (white `on` white)
+
   addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
   addRow table $ radioHeader .|. rs
   addRow table $ cbHeader .|. r3
@@ -82,6 +84,7 @@ main = do
   addRow table $ edit2Header .|. edit2
   addRow table $ listHeader .|. customCell selector `pad` padNone
   addRow table $ emptyCell .|. timeText
+  addRow table $ emptyCell .|. (progressBarWidget prog)
 
   rg `onRadioChange` \cb -> do
       s <- getCheckboxLabel cb
@@ -138,6 +141,13 @@ main = do
            t <- getCurrentTime
            setText timeText $ formatTime defaultTimeLocale rfc822DateFormat t
          threadDelay $ 1 * 1000 * 1000
+
+  forkIO $ forever $ do
+         let act i = do
+               threadDelay $ 1 * 1000 * 1000
+               schedule $ setProgress prog (i `mod` 101)
+               act $ i + 4
+         act 0
 
   -- Enter the event loop.
   runUi ui $ defaultContext { focusAttr = focAttr
