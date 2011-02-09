@@ -1,7 +1,9 @@
+{-# LANGUAGE DeriveDataTypeable #-}
 module Graphics.Vty.Widgets.Box
     ( Box
     , ChildSizePolicy(..)
     , IndividualPolicy(..)
+    , BoxError(..)
     , (<-->)
     , (<++>)
     , hBox
@@ -14,10 +16,18 @@ module Graphics.Vty.Widgets.Box
 where
 
 import GHC.Word ( Word )
+import Data.Typeable
+import Control.Exception
+import Control.Monad
 import Control.Monad.Trans
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty
 import Graphics.Vty.Widgets.Util
+
+data BoxError = BadPercentage
+                deriving (Eq, Show, Typeable)
+
+instance Exception BoxError
 
 -- |A simple orientation type.
 data Orientation = Horizontal | Vertical
@@ -175,8 +185,12 @@ withBoxSpacing spacing wRef = do
   return wRef
 
 setBoxChildSizePolicy :: (MonadIO m) => Widget (Box a b) -> ChildSizePolicy -> m ()
-setBoxChildSizePolicy b spol =
-    updateWidgetState b $ \s -> s { boxChildSizePolicy = spol }
+setBoxChildSizePolicy b spol = do
+  case spol of
+    Percentage v -> when (v < 0 || v > 100) $ throw BadPercentage
+    _ -> return ()
+
+  updateWidgetState b $ \s -> s { boxChildSizePolicy = spol }
 
 -- Box layout rendering implementation. This is generalized over the
 -- two dimensions in which box layout can be performed; it takes lot
