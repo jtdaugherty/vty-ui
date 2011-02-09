@@ -76,6 +76,7 @@ main = do
   timeText <- simpleText ""
 
   prog <- newProgressBar (red `on` red) (white `on` white)
+  progLabel <- simpleText ""
 
   addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
   addRow table $ radioHeader .|. rs
@@ -84,7 +85,7 @@ main = do
   addRow table $ edit2Header .|. edit2
   addRow table $ listHeader .|. customCell selector `pad` padNone
   addRow table $ emptyCell .|. timeText
-  addRow table $ emptyCell .|. (progressBarWidget prog)
+  addRow table $ progLabel .|. (progressBarWidget prog)
 
   rg `onRadioChange` \cb -> do
       s <- getCheckboxLabel cb
@@ -92,6 +93,9 @@ main = do
 
   r3 `onCheckboxChange` \v ->
       setText cbHeader $ "you chose: " ++ show v
+
+  prog `onProgressChange` \val ->
+      setText progLabel $ show val ++ " %"
 
   edit1 `onChange` (setText edit1Header)
   edit2 `onChange` (setText edit2Header)
