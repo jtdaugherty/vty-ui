@@ -99,6 +99,15 @@ Executable vty-ui-demo2
     time >= 1.1 && < 1.2,
     old-locale >= 1.0 && < 1.1
 
+Executable vty-ui-demo3
+  Hs-Source-Dirs:  src
+  GHC-Options:     -Wall
+  Main-is:         Demo3.hs
+  if os(darwin)
+    Extra-Lib-Dirs:  /usr/lib
+  Build-Depends:
+    mtl >= 2.0 && < 2.1
+
 Executable vty-ui-dialog
   Hs-Source-Dirs:  src
   GHC-Options:     -Wall

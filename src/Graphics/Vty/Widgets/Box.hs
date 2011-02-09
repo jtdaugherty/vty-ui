@@ -1,11 +1,15 @@
 module Graphics.Vty.Widgets.Box
     ( Box
+    , ChildSizePolicy(..)
+    , IndividualPolicy(..)
     , (<-->)
     , (<++>)
     , hBox
     , vBox
     , setBoxSpacing
     , withBoxSpacing
+    , defaultChildSizePolicy
+    , setBoxChildSizePolicy
     )
 where
 
@@ -19,14 +23,41 @@ import Graphics.Vty.Widgets.Util
 data Orientation = Horizontal | Vertical
                    deriving (Eq, Show)
 
-data Box a b = Box { boxOrientation :: Orientation
+data IndividualPolicy = BoxAuto
+                      | BoxFixed Int
+                        deriving (Show, Eq)
+
+data ChildSizePolicy = PerChild IndividualPolicy IndividualPolicy
+                     | Percentage Int
+                       -- ^percent of space given to first child,
+                       -- which implies that given to the second.
+                       deriving (Show, Eq)
+
+data Box a b = Box { boxChildSizePolicy :: ChildSizePolicy
+                   , boxOrientation :: Orientation
                    , boxSpacing :: Int
                    , boxFirst :: Widget a
                    , boxSecond :: Widget b
+
+                   -- Box layout functions
+
+                   -- growth comparison function
+                   , firstGrows :: IO Bool
+                   -- growth comparison function
+                   , secondGrows :: IO Bool
+                   -- region dimension fetch function
+                   , regDimension :: DisplayRegion -> Word
+                   -- image dimension fetch function
+                   , imgDimension :: Image -> Word
+                   -- dimension modification function
+                   , withDimension :: DisplayRegion -> Word -> DisplayRegion
+                   -- Oriented image concatenation
+                   , img_cat :: [Image] -> Image
                    }
 
 instance Show (Box a b) where
     show b = concat [ "Box { spacing = ", show $ boxSpacing b
+                    , ", childSizePolicy = ", show $ boxChildSizePolicy b
                     , ", orientation = ", show $ boxOrientation b
                     , " }"
                     ]
@@ -58,6 +89,9 @@ vBox = box Vertical 0
 infixl 3 <-->
 infixl 3 <++>
 
+defaultChildSizePolicy :: ChildSizePolicy
+defaultChildSizePolicy = PerChild BoxAuto BoxAuto
+
 -- |A box layout widget capable of containing two 'Widget's
 -- horizontally or vertically.  See 'hBox' and 'vBox'.  Boxes lay out
 -- their children by using the growth properties of the children:
@@ -78,10 +112,24 @@ box :: (MonadIO m, Show a, Show b) =>
 box o spacing wa wb = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Box { boxOrientation = o
+      w { state = Box { boxChildSizePolicy = defaultChildSizePolicy
+                      , boxOrientation = o
                       , boxSpacing = spacing
                       , boxFirst = wa
                       , boxSecond = wb
+
+                      , firstGrows =
+                          (if o == Vertical then growVertical else growHorizontal) wa
+                      , secondGrows =
+                          (if o == Vertical then growVertical else growHorizontal) wb
+                      , regDimension =
+                          if o == Vertical then region_height else region_width
+                      , imgDimension =
+                          if o == Vertical then image_height else image_width
+                      , withDimension =
+                          if o == Vertical then withHeight else withWidth
+                      , img_cat =
+                          if o == Vertical then vert_cat else horiz_cat
                       }
         , growHorizontal_ = \b -> do
             h1 <- growHorizontal $ boxFirst b
@@ -102,14 +150,7 @@ box o spacing wa wb = do
 
         , render_ = \this s ctx -> do
                       b <- getState this
-
-                      case boxOrientation b of
-                        Vertical ->
-                            renderBox s ctx b growVertical growVertical region_height
-                                      image_height withHeight
-                        Horizontal ->
-                            renderBox s ctx b growHorizontal growHorizontal region_width
-                                      image_width withWidth
+                      renderBox s ctx b
 
         , setCurrentPosition_ =
             \this pos -> do
@@ -133,6 +174,10 @@ withBoxSpacing spacing wRef = do
   setBoxSpacing wRef spacing
   return wRef
 
+setBoxChildSizePolicy :: (MonadIO m) => Widget (Box a b) -> ChildSizePolicy -> m ()
+setBoxChildSizePolicy b spol =
+    updateWidgetState b $ \s -> s { boxChildSizePolicy = spol }
+
 -- Box layout rendering implementation. This is generalized over the
 -- two dimensions in which box layout can be performed; it takes lot
 -- of functions, but mostly those are to query and update the correct
@@ -142,47 +187,113 @@ renderBox :: (Show a, Show b) =>
              DisplayRegion
           -> RenderContext
           -> Box a b
-          -> (Widget a -> IO Bool) -- growth comparison function
-          -> (Widget b -> IO Bool) -- growth comparison function
-          -> (DisplayRegion -> Word) -- region dimension fetch function
-          -> (Image -> Word) -- image dimension fetch function
-          -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
           -> IO Image
-renderBox s ctx this growFirst growSecond regDimension renderDimension withDim = do
-  let orientation = boxOrientation this
+renderBox s ctx this = do
+  let actualSpace = regDimension this s - (toEnum (boxSpacing this))
+
+  (img1, img2) <-
+      -- XXX fix for case where we don't have enough space to honor
+      -- hard-coded sizes (either fixed or derived fixed)
+
+      -- XXX also check for overflow
+      case boxChildSizePolicy this of
+        PerChild BoxAuto BoxAuto -> renderBoxAuto s ctx this
+        Percentage v -> do
+                         -- XXX
+                         let firstDim = round (fromRational
+                                        (fromRational ((toRational v) / (100.0)) *
+                                                          (toRational actualSpace)) ::Rational)
+                             secondDim = fromEnum (actualSpace - firstDim)
+                         renderBoxFixed s ctx this (fromEnum firstDim) secondDim
+        -- XXX
+        PerChild BoxAuto (BoxFixed v) -> do
+                                     let remaining = fromEnum (actualSpace - toEnum v)
+                                     renderBoxFixed s ctx this remaining v
+        -- XXX
+        PerChild (BoxFixed v) BoxAuto -> do
+                                     let remaining = fromEnum (actualSpace - toEnum v)
+                                     renderBoxFixed s ctx this v remaining
+        PerChild (BoxFixed v1) (BoxFixed v2) -> renderBoxFixed s ctx this v1 v2
+
+  let spAttr = getNormalAttr ctx
       spacing = boxSpacing this
+      spacer = case spacing of
+                 0 -> empty_image
+                 _ -> case boxOrientation this of
+                         Horizontal -> let h = max (image_height img1) (image_height img2)
+                                       in char_fill spAttr ' ' (toEnum spacing) h
+                         Vertical -> let w = max (image_width img1) (image_width img2)
+                                     in char_fill spAttr ' ' w (toEnum spacing)
+
+  return $ (img_cat this) [img1, spacer, img2]
+
+renderBoxFixed :: (Show a, Show b) =>
+                  DisplayRegion
+               -> RenderContext
+               -> Box a b
+               -> Int
+               -> Int
+               -> IO (Image, Image)
+renderBoxFixed s ctx this firstDim secondDim = do
+  let withDim = withDimension this
+  img1 <- render (boxFirst this) (s `withDim` (toEnum firstDim)) ctx
+  img2 <- render (boxSecond this) (s `withDim` (toEnum secondDim)) ctx
+
+  -- pad the images so they fill the space appropriately.
+  let fill img amt = case boxOrientation this of
+                       Vertical -> char_fill (getNormalAttr ctx) ' ' (image_width img) amt
+                       Horizontal -> char_fill (getNormalAttr ctx) ' ' amt (image_height img)
+      firstDimW = toEnum firstDim
+      secondDimW = toEnum secondDim
+      img1_size = (imgDimension this) img1
+      img2_size = (imgDimension this) img2
+      img1_padded = if img1_size < firstDimW
+                    then (img_cat this) [img1, fill img1 (firstDimW - img1_size)]
+                    else img1
+      img2_padded = if img2_size < secondDimW
+                    then (img_cat this) [img2, fill img2 (secondDimW - img2_size)]
+                    else img2
+
+  return (img1_padded, img2_padded)
+
+renderBoxAuto :: (Show a, Show b) =>
+                 DisplayRegion
+              -> RenderContext
+              -> Box a b
+              -> IO (Image, Image)
+renderBoxAuto s ctx this = do
+  let spacing = boxSpacing this
       first = boxFirst this
       second = boxSecond this
+      withDim = withDimension this
+      renderDimension = imgDimension this
+      regDim = regDimension this
 
-      actualSpace = s `withDim` (max (regDimension s - toEnum spacing) 0)
+      actualSpace = s `withDim` (max (regDim s - toEnum spacing) 0)
 
       renderOrdered a b = do
         a_img <- render a actualSpace ctx
 
-        let remaining = regDimension actualSpace - renderDimension a_img
+        let remaining = regDim actualSpace - renderDimension a_img
             s' = actualSpace `withDim` remaining
 
         b_img <- render b s' ctx
 
-        return $ if renderDimension a_img >= regDimension actualSpace
+        return $ if renderDimension a_img >= regDim actualSpace
                  then [a_img, empty_image]
                  else [a_img, b_img]
 
       renderHalves = do
-        let half = actualSpace `withDim` div (regDimension actualSpace) 2
-            half' = if regDimension actualSpace `mod` 2 == 0
+        let half = actualSpace `withDim` div (regDim actualSpace) 2
+            half' = if regDim actualSpace `mod` 2 == 0
                     then half
-                    else half `withDim` (regDimension half + 1)
+                    else half `withDim` (regDim half + 1)
         first_img <- render first half ctx
         second_img <- render second half' ctx
         return [first_img, second_img]
 
-      cat = case orientation of
-              Vertical -> vert_cat
-              Horizontal -> horiz_cat
-
-  gf <- growFirst first
-  gs <- growSecond second
+  gf <- firstGrows this
+  gs <- secondGrows this
 
   [img1, img2] <- case (gf, gs) of
                     (True, True) -> renderHalves
@@ -191,13 +302,4 @@ renderBox s ctx this growFirst growSecond regDimension renderDimension withDim =
                                   images <- renderOrdered second first
                                   return $ reverse images
 
-  let spAttr = getNormalAttr ctx
-      spacer = case spacing of
-                 0 -> empty_image
-                 _ -> case orientation of
-                         Horizontal -> let h = max (image_height img1) (image_height img2)
-                                       in char_fill spAttr ' ' (toEnum spacing) h
-                         Vertical -> let w = max (image_width img1) (image_width img2)
-                                     in char_fill spAttr ' ' w (toEnum spacing)
-
-  return $ cat [img1, spacer, img2]
+  return (img1, img2)
