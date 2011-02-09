@@ -19,13 +19,17 @@ import Graphics.Vty.Widgets.Util
 data Orientation = Horizontal | Vertical
                    deriving (Eq, Show)
 
-data Box a b = Box Orientation Int (Widget a) (Widget b)
+data Box a b = Box { boxOrientation :: Orientation
+                   , boxSpacing :: Int
+                   , boxFirst :: Widget a
+                   , boxSecond :: Widget b
+                   }
 
 instance Show (Box a b) where
-    show (Box sp orientation _ _) = concat [ "Box { spacing = ", show sp
-                                           , ", orientation = ", show orientation
-                                           , " }"
-                                           ]
+    show b = concat [ "Box { spacing = ", show $ boxSpacing b
+                    , ", orientation = ", show $ boxOrientation b
+                    , " }"
+                    ]
 
 -- |Create a horizontal box layout widget containing two widgets side
 -- by side.  Space consumed by the box will depend on its contents and
@@ -71,54 +75,58 @@ infixl 3 <++>
 --   space as its children combined
 box :: (MonadIO m, Show a, Show b) =>
        Orientation -> Int -> Widget a -> Widget b -> m (Widget (Box a b))
-box o spacing a b = do
+box o spacing wa wb = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
-      w { state = Box o spacing a b
-        , growHorizontal_ = \(Box _ _ ch1 ch2) -> do
-            h1 <- growHorizontal ch1
-            h2 <- growHorizontal ch2
+      w { state = Box { boxOrientation = o
+                      , boxSpacing = spacing
+                      , boxFirst = wa
+                      , boxSecond = wb
+                      }
+        , growHorizontal_ = \b -> do
+            h1 <- growHorizontal $ boxFirst b
+            h2 <- growHorizontal $ boxSecond b
             return $ h1 || h2
 
-        , growVertical_ = \(Box _ _ ch1 ch2) -> do
-            v1 <- growVertical ch1
-            v2 <- growVertical ch2
+        , growVertical_ = \b -> do
+            v1 <- growVertical $ boxFirst b
+            v2 <- growVertical $ boxSecond b
             return $ v1 || v2
 
         , keyEventHandler =
             \this key mods -> do
-              Box _ _ ch1 ch2 <- getState this
-              handled <- handleKeyEvent ch1 key mods
+              b <- getState this
+              handled <- handleKeyEvent (boxFirst b) key mods
               if handled then return True else
-                  handleKeyEvent ch2 key mods
+                  handleKeyEvent (boxSecond b) key mods
 
         , render_ = \this s ctx -> do
-                      st@(Box orientation _ _ _) <- getState this
+                      b <- getState this
 
-                      case orientation of
+                      case boxOrientation b of
                         Vertical ->
-                            renderBox s ctx st growVertical growVertical region_height
+                            renderBox s ctx b growVertical growVertical region_height
                                       image_height withHeight
                         Horizontal ->
-                            renderBox s ctx st growHorizontal growHorizontal region_width
+                            renderBox s ctx b growHorizontal growHorizontal region_width
                                       image_width withWidth
 
         , setCurrentPosition_ =
             \this pos -> do
-              Box orientation sp ch1 ch2 <- getState this
-              ch1_size <- getCurrentSize ch1
-              setCurrentPosition ch1 pos
-              case orientation of
-                Horizontal -> setCurrentPosition ch2 $
-                              pos `plusWidth` ((region_width ch1_size) + toEnum sp)
-                Vertical -> setCurrentPosition ch2 $
-                            pos `plusHeight` ((region_height ch1_size) + toEnum sp)
+              b <- getState this
+              ch1_size <- getCurrentSize $ boxFirst b
+              setCurrentPosition (boxFirst b) pos
+              case boxOrientation b of
+                Horizontal -> setCurrentPosition (boxSecond b) $
+                              pos `plusWidth` ((region_width ch1_size) + (toEnum $ boxSpacing b))
+                Vertical -> setCurrentPosition (boxSecond b) $
+                            pos `plusHeight` ((region_height ch1_size) + (toEnum $ boxSpacing b))
         }
   return wRef
 
 setBoxSpacing :: (MonadIO m) => Widget (Box a b) -> Int -> m ()
 setBoxSpacing wRef spacing =
-    updateWidgetState wRef $ \(Box o _ a b) -> Box o spacing a b
+    updateWidgetState wRef $ \b -> b { boxSpacing = spacing }
 
 withBoxSpacing :: (MonadIO m) => Int -> Widget (Box a b) -> m (Widget (Box a b))
 withBoxSpacing spacing wRef = do
@@ -141,7 +149,11 @@ renderBox :: (Show a, Show b) =>
           -> (DisplayRegion -> Word -> DisplayRegion) -- dimension modification function
           -> IO Image
 renderBox s ctx this growFirst growSecond regDimension renderDimension withDim = do
-  let Box orientation spacing first second = this
+  let orientation = boxOrientation this
+      spacing = boxSpacing this
+      first = boxFirst this
+      second = boxSecond this
+
       actualSpace = s `withDim` (max (regDimension s - toEnum spacing) 0)
 
       renderOrdered a b = do
