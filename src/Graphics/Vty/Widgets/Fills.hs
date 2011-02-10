@@ -24,8 +24,9 @@ vFill c = do
       w { state = VFill c
         , growVertical_ = const $ return True
         , render_ = \this s ctx -> do
+                   foc <- focused <~ this
                    VFill ch <- getState this
-                   let attr' = mergeAttrs [ overrideAttr ctx
+                   let attr' = mergeAttrs [ if foc then focusAttr ctx else overrideAttr ctx
                                           , normalAttr ctx
                                           ]
                    return $ char_fill attr' ch (region_width s) (region_height s)
@@ -44,8 +45,9 @@ hFill c h = do
       w { state = HFill c h
         , growHorizontal_ = const $ return True
         , render_ = \this s ctx -> do
+                   foc <- focused <~ this
                    HFill ch height <- getState this
-                   let attr' = mergeAttrs [ overrideAttr ctx
+                   let attr' = mergeAttrs [ if foc then focusAttr ctx else overrideAttr ctx
                                           , normalAttr ctx
                                           ]
                    return $ char_fill attr' ch (region_width s) (toEnum height)
