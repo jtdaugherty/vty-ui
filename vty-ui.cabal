@@ -29,7 +29,8 @@ Library
     containers >= 0.2 && < 0.4,
     pcre-light >= 0.3 && < 0.4,
     directory >= 1.0 && < 1.1,
-    filepath >= 1.1 && < 1.2
+    filepath >= 1.1 && < 1.2,
+    unix >= 2.4 && < 2.5
 
   GHC-Options:       -Wall -Werror
 
