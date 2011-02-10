@@ -5,6 +5,8 @@ module Graphics.Vty.Widgets.DirBrowser
     , setDirBrowserPath
     , getDirBrowserPath
     , defaultBrowserSkin
+    , onBrowseAccept
+    , onBrowseCancel
     )
 where
 
@@ -19,6 +21,7 @@ import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Box
 import Graphics.Vty.Widgets.Fills
 import Graphics.Vty.Widgets.Util
+import Graphics.Vty.Widgets.Events
 import System.Directory
 import System.FilePath
 import System.Posix.Files
@@ -37,6 +40,8 @@ data DirBrowser = DirBrowser { dirBrowserWidget :: T
                              , dirBrowserSelectionMap :: IORef (Map.Map FilePath Int)
                              , dirBrowserFileInfo :: Widget FormattedText
                              , dirBrowserSkin :: BrowserSkin
+                             , dirBrowserChooseHandlers :: Handlers FilePath
+                             , dirBrowserCancelHandlers :: Handlers FilePath
                              }
 
 data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
@@ -68,6 +73,9 @@ newDirBrowser path bSkin = do
   r <- liftIO $ newIORef ""
   r2 <- liftIO $ newIORef Map.empty
 
+  hs <- newHandlers
+  chs <- newHandlers
+
   let b = DirBrowser { dirBrowserWidget = ui
                      , dirBrowserList = l
                      , dirBrowserPath = r
@@ -75,6 +83,8 @@ newDirBrowser path bSkin = do
                      , dirBrowserSelectionMap = r2
                      , dirBrowserFileInfo = fileInfo
                      , dirBrowserSkin = bSkin
+                     , dirBrowserChooseHandlers = hs
+                     , dirBrowserCancelHandlers = chs
                      }
 
   l `onKeyPressed` handleBrowserKey b
@@ -86,6 +96,23 @@ newDirBrowser path bSkin = do
 
   setDirBrowserPath b path
   return b
+
+onBrowseAccept :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
+onBrowseAccept = addHandler (return . dirBrowserChooseHandlers)
+
+onBrowseCancel :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
+onBrowseCancel = addHandler (return . dirBrowserCancelHandlers)
+
+cancelBrowse :: (MonadIO m) => DirBrowser -> m ()
+cancelBrowse b = fireEvent b (return . dirBrowserCancelHandlers) =<< getDirBrowserPath b
+
+chooseCurrentEntry :: (MonadIO m) => DirBrowser -> m ()
+chooseCurrentEntry b = do
+  p <- getDirBrowserPath b
+  mCur <- getSelected (dirBrowserList b)
+  case mCur of
+    Nothing -> return ()
+    Just (_, (e, _)) -> fireEvent b (return . dirBrowserChooseHandlers) (p </> e)
 
 handleSelectionChange :: DirBrowser -> SelectionEvent String b -> IO ()
 handleSelectionChange b ev = do
@@ -120,6 +147,8 @@ handleBrowserKey :: DirBrowser -> Widget (List a b) -> Key -> [Modifier] -> IO B
 handleBrowserKey b _ KEnter [] = descend b >> return True
 handleBrowserKey b _ KRight [] = descend b >> return True
 handleBrowserKey b _ KLeft [] = ascend b >> return True
+handleBrowserKey b _ KEsc [] = cancelBrowse b >> return True
+handleBrowserKey b _ (KASCII 'q') [] = cancelBrowse b >> return True
 handleBrowserKey _ _ _ _ = return False
 
 setDirBrowserPath :: (MonadIO m) => DirBrowser -> FilePath -> m ()
@@ -191,10 +220,7 @@ descend b = do
                             True -> ascend b
                             False -> setDirBrowserPath b cPath
 
-                False -> do
-                          -- XXX send activation signal for file since
-                          -- this isn't a directory
-                          return ()
+                False -> chooseCurrentEntry b
 
 ascend :: (MonadIO m) => DirBrowser -> m ()
 ascend b = do
