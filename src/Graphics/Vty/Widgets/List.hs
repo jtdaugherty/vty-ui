@@ -167,6 +167,8 @@ removeFromList list pos = do
 
   -- Notify the selection handler, but only if the position we deleted
   -- from is the selected position; that means the selection changed.
+  --
+  -- XXX this should probably be ==, not <=.  Do some testing.
   when (pos <= selectedIndex st) $
        notifySelectionHandler list
 
