@@ -174,6 +174,10 @@ box o spacing wa wb = do
                 Vertical -> setCurrentPosition (boxSecond b) $
                             pos `plusHeight` ((region_height ch1_size) + (toEnum $ boxSpacing b))
         }
+
+  wRef `relayFocusEvents` wa
+  wRef `relayFocusEvents` wb
+
   return wRef
 
 setBoxSpacing :: (MonadIO m) => Widget (Box a b) -> Int -> m ()
