@@ -9,6 +9,7 @@ module Graphics.Vty.Widgets.DirBrowser
 where
 
 import Data.IORef
+import qualified Data.Map as Map
 import Control.Monad
 import Control.Monad.Trans
 import Graphics.Vty
@@ -33,7 +34,7 @@ data DirBrowser = DirBrowser { dirBrowserWidget :: T
                              , dirBrowserList :: Widget (List String FormattedText)
                              , dirBrowserPath :: IORef FilePath
                              , dirBrowserPathDisplay :: Widget FormattedText
-                             , dirBrowserSelectionStack :: IORef [Int]
+                             , dirBrowserSelectionMap :: IORef (Map.Map FilePath Int)
                              , dirBrowserFileInfo :: Widget FormattedText
                              , dirBrowserSkin :: BrowserSkin
                              }
@@ -65,13 +66,13 @@ newDirBrowser path bSkin = do
   ui <- vBox header =<< vBox l footer
 
   r <- liftIO $ newIORef ""
-  r2 <- liftIO $ newIORef []
+  r2 <- liftIO $ newIORef Map.empty
 
   let b = DirBrowser { dirBrowserWidget = ui
                      , dirBrowserList = l
                      , dirBrowserPath = r
                      , dirBrowserPathDisplay = pathWidget
-                     , dirBrowserSelectionStack = r2
+                     , dirBrowserSelectionMap = r2
                      , dirBrowserFileInfo = fileInfo
                      , dirBrowserSkin = bSkin
                      }
@@ -118,33 +119,42 @@ handleBrowserKey _ _ _ _ = return False
 
 setDirBrowserPath :: (MonadIO m) => DirBrowser -> FilePath -> m ()
 setDirBrowserPath b path = do
+  -- If something is currently selected, store that in the selection
+  -- map before changing the path.
+  cur <- getDirBrowserPath b
+  mCur <- getSelected (dirBrowserList b)
+  case mCur of
+    Nothing -> return ()
+    Just (i, _) -> storeSelection b cur i
+
   clearList (dirBrowserList b)
   cPath <- liftIO $ canonicalizePath path
   liftIO $ modifyIORef (dirBrowserPath b) $ const cPath
   setText (dirBrowserPathDisplay b) cPath
   load b
 
+  res <- getSelection b path
+  case res of
+    Nothing -> return ()
+    Just i -> scrollBy (dirBrowserList b) i
+
 getDirBrowserPath :: (MonadIO m) => DirBrowser -> m FilePath
 getDirBrowserPath = liftIO . readIORef . dirBrowserPath
 
-pushSelection :: (MonadIO m) => DirBrowser -> Int -> m ()
-pushSelection b i =
-    liftIO $ modifyIORef (dirBrowserSelectionStack b) $ \s -> s ++ [i]
+storeSelection :: (MonadIO m) => DirBrowser -> FilePath -> Int -> m ()
+storeSelection b path i =
+    liftIO $ modifyIORef (dirBrowserSelectionMap b) $ \m -> Map.insert path i m
 
-popSelection :: (MonadIO m) => DirBrowser -> m (Maybe Int)
-popSelection b =
+getSelection :: (MonadIO m) => DirBrowser -> FilePath -> m (Maybe Int)
+getSelection b path =
     liftIO $ do
-      st <- readIORef (dirBrowserSelectionStack b)
-      case st of
-        [] -> return Nothing
-        es -> do
-               let (rest, v) = (init es, last es)
-               writeIORef (dirBrowserSelectionStack b) rest
-               return $ Just v
+      st <- readIORef (dirBrowserSelectionMap b)
+      return $ Map.lookup path st
 
 load :: (MonadIO m) => DirBrowser -> m ()
 load b = do
   cur <- getDirBrowserPath b
+  -- XXX catch permission exception
   entries <- liftIO (getDirectoryContents cur)
   forM_ entries $ \entry -> do
            f <- liftIO $ getSymbolicLinkStatus $ cur </> entry
@@ -164,7 +174,7 @@ descend b = do
   mCur <- getSelected (dirBrowserList b)
   case mCur of
     Nothing -> return ()
-    Just (i, (p, _)) -> do
+    Just (_, (p, _)) -> do
               let newPath = base </> p
               e <- liftIO $ doesDirectoryExist newPath
               case e of
@@ -174,9 +184,7 @@ descend b = do
                        when (cur /= cPath) $ do
                           case takeDirectory cur == cPath of
                             True -> ascend b
-                            False -> do
-                              pushSelection b i
-                              setDirBrowserPath b cPath
+                            False -> setDirBrowserPath b cPath
 
                 False -> do
                           -- XXX send activation signal for file since
@@ -187,13 +195,5 @@ ascend :: (MonadIO m) => DirBrowser -> m ()
 ascend b = do
   cur <- liftIO $ getDirBrowserPath b
   let newPath = takeDirectory cur
-  when (newPath /= cur) $ do
-             -- Set the new path.
-             setDirBrowserPath b newPath
-
-             -- Pop a selection from the selection stack and update
-             -- the list selection.
-             res <- popSelection b
-             case res of
-               Nothing -> return ()
-               Just i -> scrollBy (dirBrowserList b) i
+  when (newPath /= cur) $
+       setDirBrowserPath b newPath
