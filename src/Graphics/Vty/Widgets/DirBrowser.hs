@@ -59,7 +59,7 @@ newDirBrowser path bSkin = do
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
   fileInfo <- simpleText ""
-  footer <- ((simpleText " File info: ") <++> (return fileInfo) <++> (hFill ' ' 1))
+  footer <- ((simpleText " ") <++> (return fileInfo) <++> (hFill ' ' 1))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
   l <- newListWidget =<< newList (browserUnfocusedSelAttr bSkin) (simpleText . (" " ++))
@@ -101,11 +101,12 @@ getFileInfo b path = do
                 linkPath <- liftIO $ readSymbolicLink newPath
                 liftIO $ canonicalizePath $ cur </> linkPath
 
-  return $ fileInfoStr st [ (isRegularFile, \s -> "regular file, " ++
-                                                  (show $ fileSize s) ++ " bytes")
-                          , (isSymbolicLink, const $ "symbolic link to " ++ linkDest)
-                          , (isDirectory, const "directory")
-                          ]
+  return $ path ++ ": " ++
+         (fileInfoStr st [ (isRegularFile, \s -> "regular file, " ++
+                                                 (show $ fileSize s) ++ " bytes")
+                         , (isSymbolicLink, const $ "symbolic link to " ++ linkDest)
+                         , (isDirectory, const "directory")
+                         ])
 
 fileInfoStr :: FileStatus -> [(FileStatus -> Bool, FileStatus -> String)] -> String
 fileInfoStr _ [] = ""
