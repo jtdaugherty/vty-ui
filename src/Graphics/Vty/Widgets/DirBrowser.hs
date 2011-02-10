@@ -80,6 +80,10 @@ newDirBrowser path bSkin = do
   l `onKeyPressed` handleBrowserKey b
   l `onSelectionChange` handleSelectionChange b
 
+  fg <- newFocusGroup
+  _ <- addToFocusGroup fg l
+  setFocusGroup ui fg
+
   setDirBrowserPath b path
   return b
 

@@ -10,10 +10,7 @@ main = do
   b <- newDirBrowser "/" defaultBrowserSkin
   let ui = dirBrowserWidget b
 
-  fg <- newFocusGroup
-  addToFocusGroup fg (dirBrowserList b)
-  setFocusGroup ui fg
-
+  --- ugly.
   (dirBrowserList b) `onKeyPressed` \_ k _ ->
       case k of
         KASCII 'q' -> exitSuccess
