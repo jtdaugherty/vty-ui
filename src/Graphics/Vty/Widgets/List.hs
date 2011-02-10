@@ -173,7 +173,7 @@ removeFromList list pos = do
   -- Return the removed item.
   return (label, w)
 
-addToList :: (MonadIO m, Show b) => Widget (List a b) -> a -> m ()
+addToList :: (MonadIO m, Show b) => Widget (List a b) -> a -> m (ListItem a b)
 addToList list key = do
   numItems <- (length . listItems) <~~ list
 
@@ -207,6 +207,8 @@ addToList list key = do
 
   when (numItems == 0) $
        notifySelectionHandler list
+
+  return (key, w)
 
 onSelectionChange :: (MonadIO m) =>
                      Widget (List a b)
