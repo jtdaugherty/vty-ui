@@ -35,12 +35,14 @@ module Graphics.Vty.Widgets.List
     , onSelectionChange
     , onItemAdded
     , onItemRemoved
+    , clearList
     -- ** List inspection
     , getSelected
     , getVisibleItems
     )
 where
 
+import Data.Maybe
 import Data.Typeable
 import Control.Exception hiding (Handler)
 import Control.Monad
@@ -219,6 +221,16 @@ onItemAdded = addHandler (itemAddHandlers <~~)
 onItemRemoved :: (MonadIO m) => Widget (List a b)
               -> (RemoveItemEvent a b -> IO ()) -> m ()
 onItemRemoved = addHandler (itemRemoveHandlers <~~)
+
+while :: (Monad m) => m Bool -> m () -> m ()
+while continue act = do
+  val <- continue
+  when val (act >> while continue act)
+
+clearList :: (MonadIO m) => Widget (List a b) -> m ()
+clearList w =
+    while (isJust `liftM` getSelected w) $
+          (removeFromList w 0 >> return ())
 
 newListWidget :: (MonadIO m, Show b) => List a b -> m (Widget (List a b))
 newListWidget list = do
