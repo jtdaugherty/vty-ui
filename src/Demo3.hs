@@ -2,25 +2,22 @@
 module Main where
 
 import System.Exit
+import Graphics.Vty
 import Graphics.Vty.Widgets.All
 
 main :: IO ()
 main = do
-  b1 <- (simpleText "One\nTwo\nThree") <++> (simpleText "Cake\nCookies\nDonuts")
-  b2 <- (simpleText "Foo\nBar\nBaz") <--> (return b1)
-
-  setBoxSpacing b1 1
-  setBoxSpacing b2 1
-
-  ui <- bordered b2
-
-  setBoxChildSizePolicy b1 $ Percentage 30
-  setBoxChildSizePolicy b2 (PerChild (BoxFixed 10) BoxAuto)
+  b <- newDirBrowser "/" defaultBrowserSkin
+  let ui = dirBrowserWidget b
 
   fg <- newFocusGroup
-  addToFocusGroup fg ui
+  addToFocusGroup fg (dirBrowserList b)
   setFocusGroup ui fg
 
-  ui `onKeyPressed` \_ _ _ -> exitSuccess
+  (dirBrowserList b) `onKeyPressed` \_ k _ ->
+      case k of
+        KASCII 'q' -> exitSuccess
+        _ -> return False
 
-  runUi ui defaultContext
+  runUi ui $ defaultContext { focusAttr = (black `on` yellow)
+                            }

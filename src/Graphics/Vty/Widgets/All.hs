@@ -21,6 +21,7 @@ module Graphics.Vty.Widgets.All
     , module Graphics.Vty.Widgets.Dialog
     , module Graphics.Vty.Widgets.Button
     , module Graphics.Vty.Widgets.ProgressBar
+    , module Graphics.Vty.Widgets.DirBrowser
     )
 where
 
@@ -45,3 +46,4 @@ import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Dialog
 import Graphics.Vty.Widgets.Button
 import Graphics.Vty.Widgets.ProgressBar
+import Graphics.Vty.Widgets.DirBrowser

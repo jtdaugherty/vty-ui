@@ -27,7 +27,9 @@ Library
     base >= 4 && < 5,
     vty >= 4.6 && < 4.7,
     containers >= 0.2 && < 0.4,
-    pcre-light >= 0.3 && < 0.4
+    pcre-light >= 0.3 && < 0.4,
+    directory >= 1.0 && < 1.1,
+    filepath >= 1.1 && < 1.2
 
   GHC-Options:       -Wall -Werror
 
@@ -55,6 +57,7 @@ Library
           Graphics.Vty.Widgets.Dialog
           Graphics.Vty.Widgets.Button
           Graphics.Vty.Widgets.ProgressBar
+          Graphics.Vty.Widgets.DirBrowser
   Other-Modules:
           Text.Trans.Tokenize
 
