@@ -152,8 +152,8 @@ fileInfoStr _ [] = ""
 fileInfoStr st ((f,info):rest) = if f st then info st else fileInfoStr st rest
 
 handleBrowserKey :: DirBrowser -> Widget (List a b) -> Key -> [Modifier] -> IO Bool
-handleBrowserKey b _ KEnter [] = descend b >> return True
-handleBrowserKey b _ KRight [] = descend b >> return True
+handleBrowserKey b _ KEnter [] = descend b True >> return True
+handleBrowserKey b _ KRight [] = descend b False >> return True
 handleBrowserKey b _ KLeft [] = ascend b >> return True
 handleBrowserKey b _ KEsc [] = cancelBrowse b >> return True
 handleBrowserKey b _ (KASCII 'q') [] = cancelBrowse b >> return True
@@ -211,8 +211,8 @@ load b = do
            (_, w) <- addToList (dirBrowserList b) (entry)
            setNormalAttribute w attr
 
-descend :: (MonadIO m) => DirBrowser -> m ()
-descend b = do
+descend :: (MonadIO m) => DirBrowser -> Bool -> m ()
+descend b shouldSelect = do
   base <- getDirBrowserPath b
   mCur <- getSelected (dirBrowserList b)
   case mCur of
@@ -229,7 +229,7 @@ descend b = do
                             True -> ascend b
                             False -> setDirBrowserPath b cPath
 
-                False -> chooseCurrentEntry b
+                False -> when shouldSelect $ chooseCurrentEntry b
 
 ascend :: (MonadIO m) => DirBrowser -> m ()
 ascend b = do
