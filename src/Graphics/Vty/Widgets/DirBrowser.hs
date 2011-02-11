@@ -7,6 +7,7 @@ module Graphics.Vty.Widgets.DirBrowser
     , defaultBrowserSkin
     , onBrowseAccept
     , onBrowseCancel
+    , onBrowserPathChange
     )
 where
 
@@ -42,6 +43,7 @@ data DirBrowser = DirBrowser { dirBrowserWidget :: T
                              , dirBrowserSkin :: BrowserSkin
                              , dirBrowserChooseHandlers :: Handlers FilePath
                              , dirBrowserCancelHandlers :: Handlers FilePath
+                             , dirBrowserPathChangeHandlers :: Handlers FilePath
                              }
 
 data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
@@ -75,6 +77,7 @@ newDirBrowser path bSkin = do
 
   hs <- newHandlers
   chs <- newHandlers
+  pchs <- newHandlers
 
   let b = DirBrowser { dirBrowserWidget = ui
                      , dirBrowserList = l
@@ -85,10 +88,12 @@ newDirBrowser path bSkin = do
                      , dirBrowserSkin = bSkin
                      , dirBrowserChooseHandlers = hs
                      , dirBrowserCancelHandlers = chs
+                     , dirBrowserPathChangeHandlers = pchs
                      }
 
   l `onKeyPressed` handleBrowserKey b
   l `onSelectionChange` handleSelectionChange b
+  b `onBrowserPathChange` setText (dirBrowserPathDisplay b)
 
   fg <- newFocusGroup
   _ <- addToFocusGroup fg l
@@ -102,6 +107,9 @@ onBrowseAccept = addHandler (return . dirBrowserChooseHandlers)
 
 onBrowseCancel :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
 onBrowseCancel = addHandler (return . dirBrowserCancelHandlers)
+
+onBrowserPathChange :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
+onBrowserPathChange = addHandler (return . dirBrowserPathChangeHandlers)
 
 cancelBrowse :: (MonadIO m) => DirBrowser -> m ()
 cancelBrowse b = fireEvent b (return . dirBrowserCancelHandlers) =<< getDirBrowserPath b
@@ -164,13 +172,14 @@ setDirBrowserPath b path = do
   clearList (dirBrowserList b)
   cPath <- liftIO $ canonicalizePath path
   liftIO $ modifyIORef (dirBrowserPath b) $ const cPath
-  setText (dirBrowserPathDisplay b) cPath
   load b
 
   res <- getSelection b path
   case res of
     Nothing -> return ()
     Just i -> scrollBy (dirBrowserList b) i
+
+  fireEvent b (return . dirBrowserPathChangeHandlers) cPath
 
 getDirBrowserPath :: (MonadIO m) => DirBrowser -> m FilePath
 getDirBrowserPath = liftIO . readIORef . dirBrowserPath
