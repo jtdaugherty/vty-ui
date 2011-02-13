@@ -21,7 +21,11 @@ main = do
 
   let ui = dirBrowserWidget b
 
-  b `onBrowseAccept` (error . ("You chose: " ++))
+  b `onBrowseAccept` \p ->
+      if "~" `isSuffixOf` p
+      then error $ "You chose: " ++ p
+      else reportBrowserError b "Please select an emacs backup file."
+
   b `onBrowseCancel` const (error "Cancelled.")
 
   runUi ui $ defaultContext { focusAttr = (black `on` yellow)

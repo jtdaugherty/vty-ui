@@ -9,6 +9,7 @@ module Graphics.Vty.Widgets.DirBrowser
     , onBrowseAccept
     , onBrowseCancel
     , onBrowserPathChange
+    , reportBrowserError
     )
 where
 
@@ -27,6 +28,7 @@ import Graphics.Vty.Widgets.Events
 import System.Directory
 import System.FilePath
 import System.Posix.Files
+import System.IO.Error
 
 type T = Widget (Box
                  (Box (Box FormattedText FormattedText) HFill)
@@ -128,8 +130,8 @@ newDirBrowser bSkin = do
   setDirBrowserPath b path
   return b
 
-reportError :: (MonadIO m) => DirBrowser -> String -> m ()
-reportError b msg = setText (dirBrowserErrorWidget b) msg
+reportBrowserError :: (MonadIO m) => DirBrowser -> String -> m ()
+reportBrowserError b msg = setText (dirBrowserErrorWidget b) $ "Error: " ++ msg
 
 clearError :: (MonadIO m) => DirBrowser -> m ()
 clearError b = setText (dirBrowserErrorWidget b) ""
@@ -225,7 +227,7 @@ setDirBrowserPath b path = do
                  entries <- getDirectoryContents cPath
                  return (True, entries))
                 `catch` \e -> do
-                             reportError b (show e)
+                             reportBrowserError b (ioeGetErrorString e)
                              return (False, [])
 
   when res $ do
