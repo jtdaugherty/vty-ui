@@ -407,7 +407,7 @@ scrollBy' amount list =
       topPosition = scrollTopIndex list
       windowPositions = [topPosition..bottomPosition]
 
-      adjustedTop = if newPosition `elem` windowPositions
+      adjustedTop = if newSelected `elem` windowPositions
                     then topPosition
                     else if newSelected >= bottomPosition
                          then newSelected - scrollWindowSize list + 1
