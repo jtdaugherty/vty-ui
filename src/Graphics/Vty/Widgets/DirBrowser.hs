@@ -2,6 +2,7 @@ module Graphics.Vty.Widgets.DirBrowser
     ( DirBrowser(dirBrowserWidget, dirBrowserList)
     , BrowserSkin(..)
     , newDirBrowser
+    , withCustomAttrs
     , setDirBrowserPath
     , getDirBrowserPath
     , defaultBrowserSkin
@@ -54,6 +55,7 @@ data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
                                , browserNamedPipeAttr :: Attr
                                , browserCharDevAttr :: Attr
                                , browserSockAttr :: Attr
+                               , browserCustomAttrs :: [(FilePath -> FileStatus -> Bool, Attr)]
                                }
 
 defaultBrowserSkin :: BrowserSkin
@@ -65,7 +67,11 @@ defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
                                  , browserNamedPipeAttr = fgColor yellow
                                  , browserCharDevAttr = fgColor red
                                  , browserSockAttr = fgColor magenta
+                                 , browserCustomAttrs = []
                                  }
+
+withCustomAttrs :: BrowserSkin -> [(FilePath -> FileStatus -> Bool, Attr)] -> BrowserSkin
+withCustomAttrs sk cs = sk { browserCustomAttrs = browserCustomAttrs sk ++ cs }
 
 newDirBrowser :: (MonadIO m) => BrowserSkin -> m DirBrowser
 newDirBrowser bSkin = do
@@ -149,24 +155,50 @@ getFileInfo b path = do
                 linkPath <- liftIO $ readSymbolicLink newPath
                 liftIO $ canonicalizePath $ cur </> linkPath
 
-  return $ path ++ ": " ++
-         (fileInfoStr st [ (isRegularFile, \s -> "regular file, " ++
-                                                 (show $ fileSize s) ++ " bytes")
-                         , (isSymbolicLink, const $ "symbolic link to " ++ linkDest)
-                         , (isDirectory, const "directory")
-                         , (isBlockDevice, const "block device")
-                         , (isNamedPipe, const "named pipe")
-                         , (isCharacterDevice, const "character device")
-                         , (isSocket, const "socket")
-                         ])
+  return $ path ++ ": " ++ fileInfoStr st linkDest
 
-fileAttr :: BrowserSkin -> FileStatus -> [(FileStatus -> Bool, BrowserSkin -> Attr)] -> Attr
-fileAttr _ _ [] = def_attr
-fileAttr sk st ((f,attr):rest) = if f st then attr sk else fileAttr sk st rest
+fileAttr :: BrowserSkin -> FileStatus -> FilePath -> Attr
+fileAttr sk st path = if custom /= def_attr then custom else skinAttr
+    where
+      custom = customAttr st path sk
+      skinAttr = fileAttr' sk st [ (isRegularFile, const def_attr)
+                                 , (isSymbolicLink, browserLinkAttr)
+                                 , (isDirectory, browserDirAttr)
+                                 , (isBlockDevice, browserBlockDevAttr)
+                                 , (isCharacterDevice, browserCharDevAttr)
+                                 , (isSocket, browserSockAttr)
+                                 , (isNamedPipe, browserNamedPipeAttr)
+                                 ]
 
-fileInfoStr :: FileStatus -> [(FileStatus -> Bool, FileStatus -> String)] -> String
-fileInfoStr _ [] = ""
-fileInfoStr st ((f,info):rest) = if f st then info st else fileInfoStr st rest
+      fileAttr' _ _ [] = def_attr
+      fileAttr' skn stat ((f,attr):rest) = if f stat
+                                           then attr skn
+                                           else fileAttr' skn stat rest
+
+customAttr :: FileStatus -> FilePath -> BrowserSkin -> Attr
+customAttr st path sk = customAttr' st path $ browserCustomAttrs sk
+    where
+      customAttr' _ _ [] = def_attr
+      customAttr' stat pth ((f,attr):rest) = if f path stat
+                                             then attr
+                                             else customAttr' stat pth rest
+
+fileInfoStr :: FileStatus -> FilePath -> String
+fileInfoStr st linkDest =
+    fileInfoStr' st [ (isRegularFile, \s -> "regular file, " ++
+                                            (show $ fileSize s) ++ " bytes")
+                    , (isSymbolicLink, const $ "symbolic link to " ++ linkDest)
+                    , (isDirectory, const "directory")
+                    , (isBlockDevice, const "block device")
+                    , (isNamedPipe, const "named pipe")
+                    , (isCharacterDevice, const "character device")
+                    , (isSocket, const "socket")
+                    ]
+    where
+      fileInfoStr' _ [] = ""
+      fileInfoStr' stat ((f,info):rest) = if f stat
+                                          then info stat
+                                          else fileInfoStr' stat rest
 
 handleBrowserKey :: DirBrowser -> Widget (List a b) -> Key -> [Modifier] -> IO Bool
 handleBrowserKey b _ KEnter [] = descend b True >> return True
@@ -218,14 +250,7 @@ load b = do
   entries <- liftIO (getDirectoryContents cur)
   forM_ entries $ \entry -> do
            f <- liftIO $ getSymbolicLinkStatus $ cur </> entry
-           let attr = fileAttr (dirBrowserSkin b) f [ (isRegularFile, const def_attr)
-                                                    , (isSymbolicLink, browserLinkAttr)
-                                                    , (isDirectory, browserDirAttr)
-                                                    , (isBlockDevice, browserBlockDevAttr)
-                                                    , (isCharacterDevice, browserCharDevAttr)
-                                                    , (isSocket, browserSockAttr)
-                                                    , (isNamedPipe, browserNamedPipeAttr)
-                                                    ]
+           let attr = fileAttr (dirBrowserSkin b) f entry
            (_, w) <- addToList (dirBrowserList b) (entry)
            setNormalAttribute w attr
 
