@@ -6,7 +6,7 @@ import Graphics.Vty.Widgets.All
 
 main :: IO ()
 main = do
-  b <- newDirBrowser "/" defaultBrowserSkin
+  b <- newDirBrowser defaultBrowserSkin
   let ui = dirBrowserWidget b
 
   b `onBrowseAccept` (error . ("You chose: " ++))

@@ -67,8 +67,9 @@ defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
                                  , browserSockAttr = fgColor magenta
                                  }
 
-newDirBrowser :: (MonadIO m) => FilePath -> BrowserSkin -> m DirBrowser
-newDirBrowser path bSkin = do
+newDirBrowser :: (MonadIO m) => BrowserSkin -> m DirBrowser
+newDirBrowser bSkin = do
+  path <- liftIO $ getCurrentDirectory
   pathWidget <- simpleText ""
   header <- ((simpleText " Path: ") <++> (return pathWidget) <++> (hFill ' ' 1))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
