@@ -13,6 +13,8 @@ module Graphics.Vty.Widgets.Box
     , defaultChildSizePolicy
     , setBoxChildSizePolicy
     , getBoxChildSizePolicy
+    , getFirstChild
+    , getSecondChild
     )
 where
 
@@ -179,6 +181,12 @@ box o spacing wa wb = do
   wRef `relayFocusEvents` wb
 
   return wRef
+
+getFirstChild :: (MonadIO m) => Widget (Box a b) -> m (Widget a)
+getFirstChild = (boxFirst <~~)
+
+getSecondChild :: (MonadIO m) => Widget (Box a b) -> m (Widget b)
+getSecondChild = (boxSecond <~~)
 
 setBoxSpacing :: (MonadIO m) => Widget (Box a b) -> Int -> m ()
 setBoxSpacing wRef spacing =
