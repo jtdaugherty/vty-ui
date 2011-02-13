@@ -3,6 +3,7 @@ module Graphics.Vty.Widgets.DirBrowser
     , BrowserSkin(..)
     , newDirBrowser
     , withCustomAttrs
+    , withCustomAnnotations
     , setDirBrowserPath
     , getDirBrowserPath
     , defaultBrowserSkin
@@ -16,6 +17,7 @@ import Data.IORef
 import qualified Data.Map as Map
 import Control.Monad
 import Control.Monad.Trans
+import Data.Maybe
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.List
@@ -56,6 +58,7 @@ data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
                                , browserCharDevAttr :: Attr
                                , browserSockAttr :: Attr
                                , browserCustomAttrs :: [(FilePath -> FileStatus -> Bool, Attr)]
+                               , browserCustomAnnotations :: [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String)]
                                }
 
 defaultBrowserSkin :: BrowserSkin
@@ -68,10 +71,15 @@ defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
                                  , browserCharDevAttr = fgColor red
                                  , browserSockAttr = fgColor magenta
                                  , browserCustomAttrs = []
+                                 , browserCustomAnnotations = []
                                  }
 
 withCustomAttrs :: BrowserSkin -> [(FilePath -> FileStatus -> Bool, Attr)] -> BrowserSkin
 withCustomAttrs sk cs = sk { browserCustomAttrs = browserCustomAttrs sk ++ cs }
+
+withCustomAnnotations :: BrowserSkin -> [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String)]
+                      -> BrowserSkin
+withCustomAnnotations sk as = sk { browserCustomAnnotations = browserCustomAnnotations sk ++ as }
 
 newDirBrowser :: (MonadIO m) => BrowserSkin -> m DirBrowser
 newDirBrowser bSkin = do
@@ -155,7 +163,8 @@ getFileInfo b path = do
                 linkPath <- liftIO $ readSymbolicLink newPath
                 liftIO $ canonicalizePath $ cur </> linkPath
 
-  return $ path ++ ": " ++ fileInfoStr st linkDest
+  ann <- fileAnnotation (dirBrowserSkin b) st (cur </> path) linkDest
+  return $ path ++ ": " ++ ann
 
 fileAttr :: BrowserSkin -> FileStatus -> FilePath -> Attr
 fileAttr sk st path = if custom /= def_attr then custom else skinAttr
@@ -183,20 +192,33 @@ customAttr st path sk = customAttr' st path $ browserCustomAttrs sk
                                              then attr
                                              else customAttr' stat pth rest
 
-fileInfoStr :: FileStatus -> FilePath -> String
-fileInfoStr st linkDest =
-    fileInfoStr' st [ (isRegularFile, \s -> "regular file, " ++
-                                            (show $ fileSize s) ++ " bytes")
-                    , (isSymbolicLink, const $ "symbolic link to " ++ linkDest)
-                    , (isDirectory, const "directory")
-                    , (isBlockDevice, const "block device")
-                    , (isNamedPipe, const "named pipe")
-                    , (isCharacterDevice, const "character device")
-                    , (isSocket, const "socket")
-                    ]
-    where
-      fileInfoStr' _ [] = ""
-      fileInfoStr' stat ((f,info):rest) = if f stat
+fileAnnotation :: (MonadIO m) => BrowserSkin -> FileStatus -> FilePath -> FilePath -> m String
+fileAnnotation sk st fullPath linkDest = do
+  c <- customAnnotation
+  if isJust c then
+    (return $ fromJust c) else
+    return defaultAnnotation
+        where
+          customAnnotation = customAnnotation' fullPath st (browserCustomAnnotations sk)
+          defaultAnnotation =
+              fileInfoStr' st [ (isRegularFile, \s -> "regular file, " ++
+                                                      (show $ fileSize s) ++ " bytes")
+                              , (isSymbolicLink, const $ "symbolic link to " ++ linkDest)
+                              , (isDirectory, const "directory")
+                              , (isBlockDevice, const "block device")
+                              , (isNamedPipe, const "named pipe")
+                              , (isCharacterDevice, const "character device")
+                              , (isSocket, const "socket")
+                              ]
+
+          customAnnotation' _ _ [] = return Nothing
+          customAnnotation' pth stat ((f,mkAnn):rest) =
+              if f pth stat
+              then (return . Just) =<< (liftIO $ mkAnn pth stat)
+              else customAnnotation' pth stat rest
+
+          fileInfoStr' _ [] = ""
+          fileInfoStr' stat ((f,info):rest) = if f stat
                                           then info stat
                                           else fileInfoStr' stat rest
 
