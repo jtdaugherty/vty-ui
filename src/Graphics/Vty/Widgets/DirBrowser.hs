@@ -10,6 +10,7 @@ module Graphics.Vty.Widgets.DirBrowser
     , onBrowseCancel
     , onBrowserPathChange
     , reportBrowserError
+    , refreshBrowser
     )
 where
 
@@ -214,7 +215,11 @@ handleBrowserKey b _ KRight [] = descend b False >> return True
 handleBrowserKey b _ KLeft [] = ascend b >> return True
 handleBrowserKey b _ KEsc [] = cancelBrowse b >> return True
 handleBrowserKey b _ (KASCII 'q') [] = cancelBrowse b >> return True
+handleBrowserKey b _ (KASCII 'r') [] = refreshBrowser b >> return True
 handleBrowserKey _ _ _ _ = return False
+
+refreshBrowser :: (MonadIO m) => DirBrowser -> m ()
+refreshBrowser b = setDirBrowserPath b =<< getDirBrowserPath b
 
 setDirBrowserPath :: (MonadIO m) => DirBrowser -> FilePath -> m ()
 setDirBrowserPath b path = do
