@@ -153,46 +153,47 @@ getFileInfo :: (MonadIO m) => DirBrowser -> FilePath -> m String
 getFileInfo b path = do
   cur <- getDirBrowserPath b
   let newPath = cur </> path
-
   st <- liftIO $ getSymbolicLinkStatus newPath
-  linkDest <- if not $ isSymbolicLink st
-              then return ""
-              else do
-                linkPath <- liftIO $ readSymbolicLink newPath
-                liftIO $ canonicalizePath $ cur </> linkPath
-
-  (_, mkAnn) <- fileAnnotation (dirBrowserSkin b) st (cur </> path) linkDest
+  (_, mkAnn) <- fileAnnotation (dirBrowserSkin b) st cur path
   ann <- liftIO mkAnn
   return $ path ++ ": " ++ ann
 
 fileAnnotation :: (MonadIO m) => BrowserSkin -> FileStatus -> FilePath -> FilePath -> m (Attr, IO String)
-fileAnnotation sk st fullPath linkDest = do
+fileAnnotation sk st cur shortPath = do
+  let fullPath = cur </> shortPath
+
+      customAnnotation = customAnnotation' fullPath st (browserCustomAnnotations sk)
+      defaultAnnotation =
+          fileAnnotation' st [ (isRegularFile, def_attr, \s -> return $ "regular file, " ++
+                                                               (show $ fileSize s) ++ " bytes")
+                             , (isSymbolicLink, browserLinkAttr sk, \stat -> do
+                                  linkDest <- if not $ isSymbolicLink stat
+                                              then return ""
+                                              else do
+                                                linkPath <- liftIO $ readSymbolicLink fullPath
+                                                liftIO $ canonicalizePath $ cur </> linkPath
+                                  return $ "symbolic link to " ++ linkDest)
+                             , (isDirectory, browserDirAttr sk, const $ return "directory")
+                             , (isBlockDevice, browserBlockDevAttr sk, const $ return "block device")
+                             , (isNamedPipe, browserNamedPipeAttr sk, const $ return "named pipe")
+                             , (isCharacterDevice, browserCharDevAttr sk, const $ return "character device")
+                             , (isSocket, browserSockAttr sk, const $ return "socket")
+                             ]
+
+      customAnnotation' _ _ [] = Nothing
+      customAnnotation' pth stat ((f,mkAnn,a):rest) =
+          if f pth stat
+          then Just (a, mkAnn pth stat)
+          else customAnnotation' pth stat rest
+
+      fileAnnotation' _ [] = (def_attr, return "")
+      fileAnnotation' stat ((f,a,info):rest) = if f stat
+                                               then (a, info stat)
+                                               else fileAnnotation' stat rest
+
   if isJust customAnnotation then
     (return $ fromJust customAnnotation) else
     return defaultAnnotation
-        where
-          customAnnotation = customAnnotation' fullPath st (browserCustomAnnotations sk)
-          defaultAnnotation =
-              fileAnnotation' st [ (isRegularFile, def_attr, \s -> "regular file, " ++
-                                                                   (show $ fileSize s) ++ " bytes")
-                                 , (isSymbolicLink, browserLinkAttr sk, const $ "symbolic link to " ++ linkDest)
-                                 , (isDirectory, browserDirAttr sk, const "directory")
-                                 , (isBlockDevice, browserBlockDevAttr sk, const "block device")
-                                 , (isNamedPipe, browserNamedPipeAttr sk, const "named pipe")
-                                 , (isCharacterDevice, browserCharDevAttr sk, const "character device")
-                                 , (isSocket, browserSockAttr sk, const "socket")
-                                 ]
-
-          customAnnotation' _ _ [] = Nothing
-          customAnnotation' pth stat ((f,mkAnn,a):rest) =
-              if f pth stat
-              then Just (a, mkAnn pth stat)
-              else customAnnotation' pth stat rest
-
-          fileAnnotation' _ [] = (def_attr, return "")
-          fileAnnotation' stat ((f,a,info):rest) = if f stat
-                                                   then (a, return $ info stat)
-                                                   else fileAnnotation' stat rest
 
 handleBrowserKey :: DirBrowser -> Widget (List a b) -> Key -> [Modifier] -> IO Bool
 handleBrowserKey b _ KEnter [] = descend b True >> return True
@@ -245,13 +246,7 @@ load b = do
   forM_ entries $ \entry -> do
            let fullPath = cur </> entry
            f <- liftIO $ getSymbolicLinkStatus fullPath
-           linkDest <- if not $ isSymbolicLink f
-                       then return ""
-                       else do
-                         linkPath <- liftIO $ readSymbolicLink fullPath
-                         liftIO $ canonicalizePath $ cur </> linkPath
-           -- XXX refactor linkdest code here and above
-           (attr, _) <- fileAnnotation (dirBrowserSkin b) f (cur </> entry) linkDest
+           (attr, _) <- fileAnnotation (dirBrowserSkin b) f cur entry
            (_, w) <- addToList (dirBrowserList b) (entry)
            setNormalAttribute w attr
 
