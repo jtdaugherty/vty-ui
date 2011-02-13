@@ -50,6 +50,10 @@ data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
                                , browserUnfocusedSelAttr :: Attr
                                , browserDirAttr :: Attr
                                , browserLinkAttr :: Attr
+                               , browserBlockDevAttr :: Attr
+                               , browserNamedPipeAttr :: Attr
+                               , browserCharDevAttr :: Attr
+                               , browserSockAttr :: Attr
                                }
 
 defaultBrowserSkin :: BrowserSkin
@@ -57,6 +61,10 @@ defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
                                  , browserUnfocusedSelAttr = bgColor blue
                                  , browserDirAttr = fgColor green
                                  , browserLinkAttr = fgColor cyan
+                                 , browserBlockDevAttr = fgColor red
+                                 , browserNamedPipeAttr = fgColor yellow
+                                 , browserCharDevAttr = fgColor red
+                                 , browserSockAttr = fgColor magenta
                                  }
 
 newDirBrowser :: (MonadIO m) => FilePath -> BrowserSkin -> m DirBrowser
@@ -145,7 +153,15 @@ getFileInfo b path = do
                                                  (show $ fileSize s) ++ " bytes")
                          , (isSymbolicLink, const $ "symbolic link to " ++ linkDest)
                          , (isDirectory, const "directory")
+                         , (isBlockDevice, const "block device")
+                         , (isNamedPipe, const "named pipe")
+                         , (isCharacterDevice, const "character device")
+                         , (isSocket, const "socket")
                          ])
+
+fileAttr :: BrowserSkin -> FileStatus -> [(FileStatus -> Bool, BrowserSkin -> Attr)] -> Attr
+fileAttr _ _ [] = def_attr
+fileAttr sk st ((f,attr):rest) = if f st then attr sk else fileAttr sk st rest
 
 fileInfoStr :: FileStatus -> [(FileStatus -> Bool, FileStatus -> String)] -> String
 fileInfoStr _ [] = ""
@@ -201,13 +217,14 @@ load b = do
   entries <- liftIO (getDirectoryContents cur)
   forM_ entries $ \entry -> do
            f <- liftIO $ getSymbolicLinkStatus $ cur </> entry
-           let attr = if isRegularFile f
-                      then def_attr
-                      else if isSymbolicLink f
-                           then browserLinkAttr (dirBrowserSkin b)
-                           else if isDirectory f
-                                then browserDirAttr (dirBrowserSkin b)
-                                else def_attr
+           let attr = fileAttr (dirBrowserSkin b) f [ (isRegularFile, const def_attr)
+                                                    , (isSymbolicLink, browserLinkAttr)
+                                                    , (isDirectory, browserDirAttr)
+                                                    , (isBlockDevice, browserBlockDevAttr)
+                                                    , (isCharacterDevice, browserCharDevAttr)
+                                                    , (isSocket, browserSockAttr)
+                                                    , (isNamedPipe, browserNamedPipeAttr)
+                                                    ]
            (_, w) <- addToList (dirBrowserList b) (entry)
            setNormalAttribute w attr
 
