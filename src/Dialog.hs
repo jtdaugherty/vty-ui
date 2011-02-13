@@ -22,18 +22,15 @@ main = do
   c <- centered =<< withPadding (padLeftRight 10) (dialogWidget d)
   (setFocusGroup c . fromJust) =<< (getFocusGroup $ dialogWidget d)
 
-  let updateTitle s = setDialogTitle d s
+  -- When the edit widget changes, set the dialog's title.
+  e `onChange` setDialogTitle d
 
-  e `onChange` updateTitle
-  e `onActivate` \_ -> acceptDialog d
+  -- When the user presses Enter in the edit widget, accept the
+  -- dialog.
+  e `onActivate` (const $ acceptDialog d)
 
+  -- Exit either way.
   d `onDialogAccept` const exitSuccess
   d `onDialogCancel` const exitSuccess
-
-  fg `onKeyPressed` \_ k _ ->
-      case k of
-        KASCII 'q' -> exitSuccess
-        KEsc -> exitSuccess
-        _ -> return False
 
   runUi c $ defaultContext { focusAttr = black `on` yellow }
