@@ -16,7 +16,6 @@ import Data.IORef
 import qualified Data.Map as Map
 import Control.Monad
 import Control.Monad.Trans
-import Data.Maybe
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.List
@@ -162,38 +161,34 @@ fileAnnotation :: (MonadIO m) => BrowserSkin -> FileStatus -> FilePath -> FilePa
 fileAnnotation sk st cur shortPath = do
   let fullPath = cur </> shortPath
 
-      customAnnotation = customAnnotation' fullPath st (browserCustomAnnotations sk)
-      defaultAnnotation =
-          fileAnnotation' st [ (isRegularFile, def_attr, \s -> return $ "regular file, " ++
-                                                               (show $ fileSize s) ++ " bytes")
-                             , (isSymbolicLink, browserLinkAttr sk, \stat -> do
-                                  linkDest <- if not $ isSymbolicLink stat
-                                              then return ""
-                                              else do
-                                                linkPath <- liftIO $ readSymbolicLink fullPath
-                                                liftIO $ canonicalizePath $ cur </> linkPath
-                                  return $ "symbolic link to " ++ linkDest)
-                             , (isDirectory, browserDirAttr sk, const $ return "directory")
-                             , (isBlockDevice, browserBlockDevAttr sk, const $ return "block device")
-                             , (isNamedPipe, browserNamedPipeAttr sk, const $ return "named pipe")
-                             , (isCharacterDevice, browserCharDevAttr sk, const $ return "character device")
-                             , (isSocket, browserSockAttr sk, const $ return "socket")
-                             ]
+      customAnnotation = customAnnotation' fullPath st $ (browserCustomAnnotations sk) ++
+                         builtIns
+      builtIns = [ (\_ s -> isRegularFile s
+                   , \_ s -> return $ "regular file, " ++
+                           (show $ fileSize s) ++ " bytes"
+                   , def_attr)
+                 , (\_ s -> isSymbolicLink s, (\p stat -> do
+                            linkDest <- if not $ isSymbolicLink stat
+                                        then return ""
+                                        else do
+                                          linkPath <- liftIO $ readSymbolicLink p
+                                          liftIO $ canonicalizePath $ cur </> linkPath
+                            return $ "symbolic link to " ++ linkDest)
+                   , browserLinkAttr sk)
+                 , (\_ s -> isDirectory s, \_ _ -> return "directory", browserDirAttr sk)
+                 , (\_ s -> isBlockDevice s, \_ _ -> return "block device", browserBlockDevAttr sk)
+                 , (\_ s -> isNamedPipe s, \_ _ -> return "named pipe", browserNamedPipeAttr sk)
+                 , (\_ s -> isCharacterDevice s, \_ _ -> return "character device", browserCharDevAttr sk)
+                 , (\_ s -> isSocket s, \_ _ -> return "socket", browserSockAttr sk)
+                 ]
 
-      customAnnotation' _ _ [] = Nothing
+      customAnnotation' _ _ [] = (def_attr, return "")
       customAnnotation' pth stat ((f,mkAnn,a):rest) =
           if f pth stat
-          then Just (a, mkAnn pth stat)
+          then (a, mkAnn pth stat)
           else customAnnotation' pth stat rest
 
-      fileAnnotation' _ [] = (def_attr, return "")
-      fileAnnotation' stat ((f,a,info):rest) = if f stat
-                                               then (a, info stat)
-                                               else fileAnnotation' stat rest
-
-  if isJust customAnnotation then
-    (return $ fromJust customAnnotation) else
-    return defaultAnnotation
+  return customAnnotation
 
 handleBrowserKey :: DirBrowser -> Widget (List a b) -> Key -> [Modifier] -> IO Bool
 handleBrowserKey b _ KEnter [] = descend b True >> return True
