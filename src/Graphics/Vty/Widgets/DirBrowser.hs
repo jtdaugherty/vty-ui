@@ -1,5 +1,5 @@
 module Graphics.Vty.Widgets.DirBrowser
-    ( DirBrowser(dirBrowserWidget, dirBrowserList)
+    ( DirBrowser(dirBrowserWidget)
     , BrowserSkin(..)
     , newDirBrowser
     , withAnnotations
