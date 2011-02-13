@@ -6,9 +6,6 @@ import Data.List
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
 
-isEmacsBackup :: FilePath -> FileStatus -> Bool
-isEmacsBackup fp _ = ("~" `isSuffixOf` fp)
-
 customAnnotations :: [( FilePath -> FileStatus -> Bool
                       , FilePath -> FileStatus -> IO String
                       , Attr)]
