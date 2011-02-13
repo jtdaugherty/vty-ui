@@ -2,7 +2,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 module Main where
 
-import Data.Maybe
 import System.Exit
 import Graphics.Vty hiding (Button)
 import Graphics.Vty.Widgets.All
@@ -20,7 +19,6 @@ main = do
   d <- newDialog pe "<enter text>" (Just fg) >>= withNormalAttribute (white `on` blue)
 
   c <- centered =<< withPadding (padLeftRight 10) (dialogWidget d)
-  (setFocusGroup c . fromJust) =<< (getFocusGroup $ dialogWidget d)
 
   -- When the edit widget changes, set the dialog's title.
   e `onChange` setDialogTitle d

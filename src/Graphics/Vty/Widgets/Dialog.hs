@@ -26,6 +26,7 @@ data Dialog = Dialog { dialogWidget :: Widget (Bordered Padded)
                      , setDialogTitle :: String -> IO ()
                      , dialogAcceptHandlers :: Handlers Dialog
                      , dialogCancelHandlers :: Handlers Dialog
+                     , dialogFocusGroup :: Widget FocusGroup
                      }
 
 instance HasNormalAttr Dialog where
@@ -62,6 +63,7 @@ newDialog body title mFg = do
                    , setDialogTitle = setBorderedLabel b2
                    , dialogAcceptHandlers = ahs
                    , dialogCancelHandlers = chs
+                   , dialogFocusGroup = fg
                    }
 
   okB `onButtonPressed` (const $ acceptDialog dlg)

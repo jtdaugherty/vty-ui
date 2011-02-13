@@ -7,7 +7,6 @@ module Graphics.Vty.Widgets.EventLoop
 where
 
 import Data.Typeable
-import Data.Maybe
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
@@ -53,16 +52,11 @@ schedule act = liftIO $ writeChan eventChan $ UserEvent $ ScheduledAction act
 
 runUi' :: (Show a) => Vty -> Chan CombinedEvent -> Widget a -> RenderContext -> IO ()
 runUi' vty chan uiWidget ctx = do
-  mFg <- getFocusGroup uiWidget
-  when (isNothing mFg) $ throw NoFocusGroup
-
-  let Just fg = mFg
-
   sz <- display_bounds $ terminal vty
   img <- renderAndPosition uiWidget (DisplayRegion 0 0) sz ctx
   update vty $ pic_for_image img
 
-  mPos <- getCursorPosition fg
+  mPos <- getCursorPosition uiWidget
   case mPos of
     Just (DisplayRegion w h) -> do
                         show_cursor $ terminal vty
@@ -72,7 +66,7 @@ runUi' vty chan uiWidget ctx = do
   evt <- readChan chan
 
   case evt of
-    VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return ()
+    VTYEvent (EvKey k mods) -> handleKeyEvent uiWidget k mods >> return ()
     UserEvent (ScheduledAction act) -> liftIO act
     _ -> return ()
 

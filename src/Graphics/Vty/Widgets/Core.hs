@@ -182,8 +182,9 @@ instance (Show a) => Show (WidgetImpl a) where
                     ]
 
 setFocusGroup :: (MonadIO m) => Widget a -> Widget FocusGroup -> m ()
-setFocusGroup wRef fg =
-    updateWidget wRef $ \w -> w { focusGroup = const $ return $ Just fg }
+setFocusGroup wRef fg = do
+  updateWidget wRef $ \w -> w { focusGroup = const $ return $ Just fg }
+  wRef `relayKeyEvents` fg
 
 getFocusGroup :: (MonadIO m) => Widget a -> m (Maybe (Widget FocusGroup))
 getFocusGroup wRef = do
@@ -265,14 +266,23 @@ newWidget =
                       , loseFocusHandler =
                           \this -> updateWidget this $ \w -> w { focused = False }
                       , keyEventHandler = \_ _ _ -> return False
-                      , cursorInfo =
-                          \this -> do
-                            sz <- getCurrentSize this
-                            pos <- getCurrentPosition this
-                            return $ Just $ pos `plusWidth` (region_width sz - 1)
+                      , cursorInfo = defaultCursorInfo
                       , normalAttribute = def_attr
                       , focusAttribute = def_attr
                       }
+
+defaultCursorInfo :: Widget a -> IO (Maybe DisplayRegion)
+defaultCursorInfo w = do
+  -- If this widget has a focus group, defer to that for the position
+  -- information.  Otherwise, use the physical position as the
+  -- default.
+  mFg <- getFocusGroup w
+  case mFg of
+    Just fg -> getCursorPosition fg
+    Nothing -> do
+             sz <- getCurrentSize w
+             pos <- getCurrentPosition w
+             return $ Just $ pos `plusWidth` (region_width sz - 1)
 
 handleKeyEvent :: (MonadIO m) => Widget a -> Key -> [Modifier] -> m Bool
 handleKeyEvent wRef keyEvent mods = do
@@ -384,6 +394,13 @@ newFocusGroup = do
       w { state = FocusGroup { entries = []
                              , currentEntryNum = -1
                              }
+
+        , cursorInfo =
+            \this -> do
+              eRef <- currentEntry this
+              (FocusEntry e) <- state <~ eRef
+              getCursorPosition e
+
         , keyEventHandler =
             \this key mods -> do
               st <- getState this
@@ -406,12 +423,10 @@ newFocusGroup = do
         }
   return wRef
 
-getCursorPosition :: (MonadIO m) => Widget FocusGroup -> m (Maybe DisplayRegion)
+getCursorPosition :: (MonadIO m) => Widget a -> m (Maybe DisplayRegion)
 getCursorPosition wRef = do
-  eRef <- currentEntry wRef
-  (FocusEntry w) <- state <~ eRef
-  ci <- cursorInfo <~ w
-  liftIO (ci w)
+  ci <- cursorInfo <~ wRef
+  liftIO (ci wRef)
 
 currentEntry :: (MonadIO m) => Widget FocusGroup -> m (Widget FocusEntry)
 currentEntry wRef = do
