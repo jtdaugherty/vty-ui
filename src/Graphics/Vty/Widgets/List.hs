@@ -403,7 +403,8 @@ scrollBy' amount list =
                          then lastPos
                          else 0
 
-      bottomPosition = scrollTopIndex list + scrollWindowSize list - 1
+      bottomPosition = min (scrollTopIndex list + scrollWindowSize list - 1)
+                       ((length $ listItems list) - 1)
       topPosition = scrollTopIndex list
       windowPositions = [topPosition..bottomPosition]
 
