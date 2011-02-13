@@ -29,11 +29,12 @@ import System.FilePath
 import System.Posix.Files
 
 type T = Widget (Box
-                  (Box (Box FormattedText FormattedText) HFill)
+                 (Box (Box FormattedText FormattedText) HFill)
+                 (Box
+                  (List [Char] FormattedText)
                   (Box
-                   (List String FormattedText)
-                   (Box
-                    (Box FormattedText FormattedText) HFill)))
+                   (Box (Box FormattedText FormattedText) HFill)
+                   FormattedText)))
 
 data DirBrowser = DirBrowser { dirBrowserWidget :: T
                              , dirBrowserList :: Widget (List String FormattedText)
@@ -42,6 +43,7 @@ data DirBrowser = DirBrowser { dirBrowserWidget :: T
                              , dirBrowserSelectionMap :: IORef (Map.Map FilePath Int)
                              , dirBrowserFileInfo :: Widget FormattedText
                              , dirBrowserSkin :: BrowserSkin
+                             , dirBrowserErrorWidget :: Widget FormattedText
                              , dirBrowserChooseHandlers :: Handlers FilePath
                              , dirBrowserCancelHandlers :: Handlers FilePath
                              , dirBrowserPathChangeHandlers :: Handlers FilePath
@@ -49,6 +51,7 @@ data DirBrowser = DirBrowser { dirBrowserWidget :: T
 
 data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
                                , browserUnfocusedSelAttr :: Attr
+                               , browserErrorAttr :: Attr
                                , browserDirAttr :: Attr
                                , browserLinkAttr :: Attr
                                , browserBlockDevAttr :: Attr
@@ -64,6 +67,7 @@ data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
 defaultBrowserSkin :: BrowserSkin
 defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
                                  , browserUnfocusedSelAttr = bgColor blue
+                                 , browserErrorAttr = white `on` red
                                  , browserDirAttr = fgColor green
                                  , browserLinkAttr = fgColor cyan
                                  , browserBlockDevAttr = fgColor red
@@ -82,11 +86,12 @@ newDirBrowser :: (MonadIO m) => BrowserSkin -> m DirBrowser
 newDirBrowser bSkin = do
   path <- liftIO $ getCurrentDirectory
   pathWidget <- simpleText ""
+  errorText <- simpleText "" >>= withNormalAttribute (browserErrorAttr bSkin)
   header <- ((simpleText " Path: ") <++> (return pathWidget) <++> (hFill ' ' 1))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
   fileInfo <- simpleText ""
-  footer <- ((simpleText " ") <++> (return fileInfo) <++> (hFill ' ' 1))
+  footer <- ((simpleText " ") <++> (return fileInfo) <++> (hFill ' ' 1) <++> (return errorText))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
   l <- newListWidget =<< newList (browserUnfocusedSelAttr bSkin) (simpleText . (" " ++))
@@ -109,10 +114,11 @@ newDirBrowser bSkin = do
                      , dirBrowserChooseHandlers = hs
                      , dirBrowserCancelHandlers = chs
                      , dirBrowserPathChangeHandlers = pchs
+                     , dirBrowserErrorWidget = errorText
                      }
 
   l `onKeyPressed` handleBrowserKey b
-  l `onSelectionChange` handleSelectionChange b
+  l `onSelectionChange` (\e -> clearError b >> handleSelectionChange b e)
   b `onBrowserPathChange` setText (dirBrowserPathDisplay b)
 
   fg <- newFocusGroup
@@ -121,6 +127,12 @@ newDirBrowser bSkin = do
 
   setDirBrowserPath b path
   return b
+
+reportError :: (MonadIO m) => DirBrowser -> String -> m ()
+reportError b msg = setText (dirBrowserErrorWidget b) msg
+
+clearError :: (MonadIO m) => DirBrowser -> m ()
+clearError b = setText (dirBrowserErrorWidget b) ""
 
 onBrowseAccept :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
 onBrowseAccept = addHandler (return . dirBrowserChooseHandlers)
@@ -204,25 +216,38 @@ handleBrowserKey _ _ _ _ = return False
 
 setDirBrowserPath :: (MonadIO m) => DirBrowser -> FilePath -> m ()
 setDirBrowserPath b path = do
-  -- If something is currently selected, store that in the selection
-  -- map before changing the path.
-  cur <- getDirBrowserPath b
-  mCur <- getSelected (dirBrowserList b)
-  case mCur of
-    Nothing -> return ()
-    Just (i, _) -> storeSelection b cur i
-
-  clearList (dirBrowserList b)
   cPath <- liftIO $ canonicalizePath path
-  liftIO $ modifyIORef (dirBrowserPath b) $ const cPath
-  load b
 
-  res <- getSelection b path
-  case res of
-    Nothing -> return ()
-    Just i -> scrollBy (dirBrowserList b) i
+  -- If for some reason we can't load the directory, report an error
+  -- and don't change the browser state.
+  (res, entries) <-
+      liftIO $ (do
+                 entries <- getDirectoryContents cPath
+                 return (True, entries))
+                `catch` \e -> do
+                             reportError b (show e)
+                             return (False, [])
 
-  fireEvent b (return . dirBrowserPathChangeHandlers) cPath
+  when res $ do
+    -- If something is currently selected, store that in the selection
+    -- map before changing the path.
+    cur <- getDirBrowserPath b
+    mCur <- getSelected (dirBrowserList b)
+    case mCur of
+      Nothing -> return ()
+      Just (i, _) -> storeSelection b cur i
+
+    clearList (dirBrowserList b)
+    liftIO $ modifyIORef (dirBrowserPath b) $ const cPath
+
+    liftIO $ load b cPath entries
+
+    sel <- getSelection b path
+    case sel of
+      Nothing -> return ()
+      Just i -> scrollBy (dirBrowserList b) i
+
+    fireEvent b (return . dirBrowserPathChangeHandlers) cPath
 
 getDirBrowserPath :: (MonadIO m) => DirBrowser -> m FilePath
 getDirBrowserPath = liftIO . readIORef . dirBrowserPath
@@ -237,17 +262,14 @@ getSelection b path =
       st <- readIORef (dirBrowserSelectionMap b)
       return $ Map.lookup path st
 
-load :: (MonadIO m) => DirBrowser -> m ()
-load b = do
-  cur <- getDirBrowserPath b
-  -- XXX catch permission exception
-  entries <- liftIO (getDirectoryContents cur)
-  forM_ entries $ \entry -> do
-           let fullPath = cur </> entry
-           f <- liftIO $ getSymbolicLinkStatus fullPath
-           (attr, _) <- fileAnnotation (dirBrowserSkin b) f cur entry
-           (_, w) <- addToList (dirBrowserList b) (entry)
-           setNormalAttribute w attr
+load :: DirBrowser -> FilePath -> [FilePath] -> IO ()
+load b cur entries =
+    forM_ entries $ \entry -> do
+      let fullPath = cur </> entry
+      f <- getSymbolicLinkStatus fullPath
+      (attr, _) <- fileAnnotation (dirBrowserSkin b) f cur entry
+      (_, w) <- addToList (dirBrowserList b) (entry)
+      setNormalAttribute w attr
 
 descend :: (MonadIO m) => DirBrowser -> Bool -> m ()
 descend b shouldSelect = do
