@@ -42,7 +42,6 @@ module Graphics.Vty.Widgets.List
     )
 where
 
-import Data.Maybe
 import Data.Typeable
 import Control.Exception hiding (Handler)
 import Control.Monad
@@ -226,15 +225,13 @@ onItemRemoved :: (MonadIO m) => Widget (List a b)
               -> (RemoveItemEvent a b -> IO ()) -> m ()
 onItemRemoved = addHandler (itemRemoveHandlers <~~)
 
-while :: (Monad m) => m Bool -> m () -> m ()
-while continue act = do
-  val <- continue
-  when val (act >> while continue act)
-
 clearList :: (MonadIO m) => Widget (List a b) -> m ()
-clearList w =
-    while (isJust `liftM` getSelected w) $
-          (removeFromList w 0 >> return ())
+clearList w = do
+  updateWidgetState w $ \l ->
+      l { selectedIndex = 0
+        , scrollTopIndex = 0
+        , listItems = []
+        }
 
 newListWidget :: (MonadIO m, Show b) => List a b -> m (Widget (List a b))
 newListWidget list = do
