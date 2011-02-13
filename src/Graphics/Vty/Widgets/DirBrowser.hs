@@ -157,38 +157,42 @@ getFileInfo b path = do
   ann <- liftIO mkAnn
   return $ path ++ ": " ++ ann
 
+builtInAnnotations :: FilePath -> BrowserSkin -> [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String, Attr)]
+builtInAnnotations cur sk =
+    [ (\_ s -> isRegularFile s
+      , \_ s -> return $ "regular file, " ++
+                (show $ fileSize s) ++ " bytes"
+      , def_attr)
+    , (\_ s -> isSymbolicLink s,
+       (\p stat -> do
+          linkDest <- if not $ isSymbolicLink stat
+                      then return ""
+                      else do
+                        linkPath <- liftIO $ readSymbolicLink p
+                        liftIO $ canonicalizePath $ cur </> linkPath
+          return $ "symbolic link to " ++ linkDest)
+      , browserLinkAttr sk)
+    , (\_ s -> isDirectory s, \_ _ -> return "directory", browserDirAttr sk)
+    , (\_ s -> isBlockDevice s, \_ _ -> return "block device", browserBlockDevAttr sk)
+    , (\_ s -> isNamedPipe s, \_ _ -> return "named pipe", browserNamedPipeAttr sk)
+    , (\_ s -> isCharacterDevice s, \_ _ -> return "character device", browserCharDevAttr sk)
+    , (\_ s -> isSocket s, \_ _ -> return "socket", browserSockAttr sk)
+    ]
+
 fileAnnotation :: (MonadIO m) => BrowserSkin -> FileStatus -> FilePath -> FilePath -> m (Attr, IO String)
 fileAnnotation sk st cur shortPath = do
   let fullPath = cur </> shortPath
 
-      customAnnotation = customAnnotation' fullPath st $ (browserCustomAnnotations sk) ++
-                         builtIns
-      builtIns = [ (\_ s -> isRegularFile s
-                   , \_ s -> return $ "regular file, " ++
-                           (show $ fileSize s) ++ " bytes"
-                   , def_attr)
-                 , (\_ s -> isSymbolicLink s, (\p stat -> do
-                            linkDest <- if not $ isSymbolicLink stat
-                                        then return ""
-                                        else do
-                                          linkPath <- liftIO $ readSymbolicLink p
-                                          liftIO $ canonicalizePath $ cur </> linkPath
-                            return $ "symbolic link to " ++ linkDest)
-                   , browserLinkAttr sk)
-                 , (\_ s -> isDirectory s, \_ _ -> return "directory", browserDirAttr sk)
-                 , (\_ s -> isBlockDevice s, \_ _ -> return "block device", browserBlockDevAttr sk)
-                 , (\_ s -> isNamedPipe s, \_ _ -> return "named pipe", browserNamedPipeAttr sk)
-                 , (\_ s -> isCharacterDevice s, \_ _ -> return "character device", browserCharDevAttr sk)
-                 , (\_ s -> isSocket s, \_ _ -> return "socket", browserSockAttr sk)
-                 ]
+      annotation = getAnnotation' fullPath st $ (browserCustomAnnotations sk) ++
+                   (builtInAnnotations cur sk)
 
-      customAnnotation' _ _ [] = (def_attr, return "")
-      customAnnotation' pth stat ((f,mkAnn,a):rest) =
+      getAnnotation' _ _ [] = (def_attr, return "")
+      getAnnotation' pth stat ((f,mkAnn,a):rest) =
           if f pth stat
           then (a, mkAnn pth stat)
-          else customAnnotation' pth stat rest
+          else getAnnotation' pth stat rest
 
-  return customAnnotation
+  return annotation
 
 handleBrowserKey :: DirBrowser -> Widget (List a b) -> Key -> [Modifier] -> IO Bool
 handleBrowserKey b _ KEnter [] = descend b True >> return True
