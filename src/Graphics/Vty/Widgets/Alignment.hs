@@ -42,4 +42,6 @@ rightAligned chRef = do
 
                   return $ fill <|> img
         }
+  wRef `relayKeyEvents` chRef
+  wRef `relayFocusEvents` chRef
   return wRef
