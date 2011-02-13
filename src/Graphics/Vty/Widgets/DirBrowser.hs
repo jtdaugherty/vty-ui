@@ -34,13 +34,13 @@ import System.IO.Error
 type T = Widget (Box
                  (Box (Box FormattedText FormattedText) HFill)
                  (Box
-                  (List [Char] FormattedText)
+                  (List [Char] (Box FormattedText FormattedText))
                   (Box
                    (Box (Box FormattedText FormattedText) HFill)
                    FormattedText)))
 
 data DirBrowser = DirBrowser { dirBrowserWidget :: T
-                             , dirBrowserList :: Widget (List String FormattedText)
+                             , dirBrowserList :: Widget (List String (Box FormattedText FormattedText))
                              , dirBrowserPath :: IORef FilePath
                              , dirBrowserPathDisplay :: Widget FormattedText
                              , dirBrowserSelectionMap :: IORef (Map.Map FilePath Int)
@@ -97,7 +97,7 @@ newDirBrowser bSkin = do
   footer <- ((simpleText " ") <++> (return fileInfo) <++> (hFill ' ' 1) <++> (return errorText))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
-  l <- newListWidget =<< newList (browserUnfocusedSelAttr bSkin) (simpleText . (" " ++))
+  l <- newListWidget =<< newList (browserUnfocusedSelAttr bSkin) (\s -> simpleText " " <++> simpleText s)
   ui <- vBox header =<< vBox l footer
 
   r <- liftIO $ newIORef ""
@@ -275,8 +275,9 @@ load b cur entries =
       let fullPath = cur </> entry
       f <- getSymbolicLinkStatus fullPath
       (attr, _) <- fileAnnotation (dirBrowserSkin b) f cur entry
-      (_, w) <- addToList (dirBrowserList b) (entry)
-      setNormalAttribute w attr
+      (_, w) <- addToList (dirBrowserList b) entry
+      ch <- getSecondChild w
+      setNormalAttribute ch attr
 
 descend :: (MonadIO m) => DirBrowser -> Bool -> m ()
 descend b shouldSelect = do
