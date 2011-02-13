@@ -2,8 +2,7 @@ module Graphics.Vty.Widgets.DirBrowser
     ( DirBrowser(dirBrowserWidget, dirBrowserList)
     , BrowserSkin(..)
     , newDirBrowser
-    , withCustomAttrs
-    , withCustomAnnotations
+    , withAnnotations
     , setDirBrowserPath
     , getDirBrowserPath
     , defaultBrowserSkin
@@ -57,8 +56,10 @@ data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
                                , browserNamedPipeAttr :: Attr
                                , browserCharDevAttr :: Attr
                                , browserSockAttr :: Attr
-                               , browserCustomAttrs :: [(FilePath -> FileStatus -> Bool, Attr)]
-                               , browserCustomAnnotations :: [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String)]
+                               , browserCustomAnnotations :: [ (FilePath -> FileStatus -> Bool
+                                                               , FilePath -> FileStatus -> IO String
+                                                               , Attr)
+                                                             ]
                                }
 
 defaultBrowserSkin :: BrowserSkin
@@ -70,16 +71,13 @@ defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
                                  , browserNamedPipeAttr = fgColor yellow
                                  , browserCharDevAttr = fgColor red
                                  , browserSockAttr = fgColor magenta
-                                 , browserCustomAttrs = []
                                  , browserCustomAnnotations = []
                                  }
 
-withCustomAttrs :: BrowserSkin -> [(FilePath -> FileStatus -> Bool, Attr)] -> BrowserSkin
-withCustomAttrs sk cs = sk { browserCustomAttrs = browserCustomAttrs sk ++ cs }
-
-withCustomAnnotations :: BrowserSkin -> [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String)]
-                      -> BrowserSkin
-withCustomAnnotations sk as = sk { browserCustomAnnotations = browserCustomAnnotations sk ++ as }
+withAnnotations :: BrowserSkin
+                -> [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String, Attr)]
+                -> BrowserSkin
+withAnnotations sk as = sk { browserCustomAnnotations = browserCustomAnnotations sk ++ as }
 
 newDirBrowser :: (MonadIO m) => BrowserSkin -> m DirBrowser
 newDirBrowser bSkin = do
@@ -163,64 +161,38 @@ getFileInfo b path = do
                 linkPath <- liftIO $ readSymbolicLink newPath
                 liftIO $ canonicalizePath $ cur </> linkPath
 
-  ann <- fileAnnotation (dirBrowserSkin b) st (cur </> path) linkDest
+  (_, mkAnn) <- fileAnnotation (dirBrowserSkin b) st (cur </> path) linkDest
+  ann <- liftIO mkAnn
   return $ path ++ ": " ++ ann
 
-fileAttr :: BrowserSkin -> FileStatus -> FilePath -> Attr
-fileAttr sk st path = if custom /= def_attr then custom else skinAttr
-    where
-      custom = customAttr st path sk
-      skinAttr = fileAttr' sk st [ (isRegularFile, const def_attr)
-                                 , (isSymbolicLink, browserLinkAttr)
-                                 , (isDirectory, browserDirAttr)
-                                 , (isBlockDevice, browserBlockDevAttr)
-                                 , (isCharacterDevice, browserCharDevAttr)
-                                 , (isSocket, browserSockAttr)
-                                 , (isNamedPipe, browserNamedPipeAttr)
-                                 ]
-
-      fileAttr' _ _ [] = def_attr
-      fileAttr' skn stat ((f,attr):rest) = if f stat
-                                           then attr skn
-                                           else fileAttr' skn stat rest
-
-customAttr :: FileStatus -> FilePath -> BrowserSkin -> Attr
-customAttr st path sk = customAttr' st path $ browserCustomAttrs sk
-    where
-      customAttr' _ _ [] = def_attr
-      customAttr' stat pth ((f,attr):rest) = if f path stat
-                                             then attr
-                                             else customAttr' stat pth rest
-
-fileAnnotation :: (MonadIO m) => BrowserSkin -> FileStatus -> FilePath -> FilePath -> m String
+fileAnnotation :: (MonadIO m) => BrowserSkin -> FileStatus -> FilePath -> FilePath -> m (Attr, IO String)
 fileAnnotation sk st fullPath linkDest = do
-  c <- customAnnotation
-  if isJust c then
-    (return $ fromJust c) else
+  if isJust customAnnotation then
+    (return $ fromJust customAnnotation) else
     return defaultAnnotation
         where
           customAnnotation = customAnnotation' fullPath st (browserCustomAnnotations sk)
           defaultAnnotation =
-              fileInfoStr' st [ (isRegularFile, \s -> "regular file, " ++
-                                                      (show $ fileSize s) ++ " bytes")
-                              , (isSymbolicLink, const $ "symbolic link to " ++ linkDest)
-                              , (isDirectory, const "directory")
-                              , (isBlockDevice, const "block device")
-                              , (isNamedPipe, const "named pipe")
-                              , (isCharacterDevice, const "character device")
-                              , (isSocket, const "socket")
-                              ]
+              fileAnnotation' st [ (isRegularFile, def_attr, \s -> "regular file, " ++
+                                                                   (show $ fileSize s) ++ " bytes")
+                                 , (isSymbolicLink, browserLinkAttr sk, const $ "symbolic link to " ++ linkDest)
+                                 , (isDirectory, browserDirAttr sk, const "directory")
+                                 , (isBlockDevice, browserBlockDevAttr sk, const "block device")
+                                 , (isNamedPipe, browserNamedPipeAttr sk, const "named pipe")
+                                 , (isCharacterDevice, browserCharDevAttr sk, const "character device")
+                                 , (isSocket, browserSockAttr sk, const "socket")
+                                 ]
 
-          customAnnotation' _ _ [] = return Nothing
-          customAnnotation' pth stat ((f,mkAnn):rest) =
+          customAnnotation' _ _ [] = Nothing
+          customAnnotation' pth stat ((f,mkAnn,a):rest) =
               if f pth stat
-              then (return . Just) =<< (liftIO $ mkAnn pth stat)
+              then Just (a, mkAnn pth stat)
               else customAnnotation' pth stat rest
 
-          fileInfoStr' _ [] = ""
-          fileInfoStr' stat ((f,info):rest) = if f stat
-                                          then info stat
-                                          else fileInfoStr' stat rest
+          fileAnnotation' _ [] = (def_attr, return "")
+          fileAnnotation' stat ((f,a,info):rest) = if f stat
+                                                   then (a, return $ info stat)
+                                                   else fileAnnotation' stat rest
 
 handleBrowserKey :: DirBrowser -> Widget (List a b) -> Key -> [Modifier] -> IO Bool
 handleBrowserKey b _ KEnter [] = descend b True >> return True
@@ -271,8 +243,15 @@ load b = do
   -- XXX catch permission exception
   entries <- liftIO (getDirectoryContents cur)
   forM_ entries $ \entry -> do
-           f <- liftIO $ getSymbolicLinkStatus $ cur </> entry
-           let attr = fileAttr (dirBrowserSkin b) f entry
+           let fullPath = cur </> entry
+           f <- liftIO $ getSymbolicLinkStatus fullPath
+           linkDest <- if not $ isSymbolicLink f
+                       then return ""
+                       else do
+                         linkPath <- liftIO $ readSymbolicLink fullPath
+                         liftIO $ canonicalizePath $ cur </> linkPath
+           -- XXX refactor linkdest code here and above
+           (attr, _) <- fileAnnotation (dirBrowserSkin b) f (cur </> entry) linkDest
            (_, w) <- addToList (dirBrowserList b) (entry)
            setNormalAttribute w attr
 

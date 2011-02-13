@@ -9,18 +9,18 @@ import Graphics.Vty.Widgets.All
 isEmacsBackup :: FilePath -> FileStatus -> Bool
 isEmacsBackup fp _ = ("~" `isSuffixOf` fp)
 
-customAttrs :: [(FilePath -> FileStatus -> Bool, Attr)]
-customAttrs = [ (isEmacsBackup, yellow `on` blue)
-              ]
-
-customAnnotations :: [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String)]
-customAnnotations = [ (\p _ -> "~" `isSuffixOf` p, \_ _ -> return "emacs backup file")
+customAnnotations :: [( FilePath -> FileStatus -> Bool
+                      , FilePath -> FileStatus -> IO String
+                      , Attr)]
+customAnnotations = [ (\p _ -> "~" `isSuffixOf` p
+                      , \_ _ -> return "emacs backup file"
+                      , yellow `on` blue)
                     ]
 
 main :: IO ()
 main = do
-  b <- newDirBrowser $ defaultBrowserSkin `withCustomAttrs` customAttrs
-       `withCustomAnnotations` customAnnotations
+  b <- newDirBrowser $ defaultBrowserSkin
+       `withAnnotations` customAnnotations
 
   let ui = dirBrowserWidget b
 
