@@ -41,6 +41,8 @@ module Graphics.Vty.Widgets.Core
     , FocusGroup
     , FocusGroupError(..)
     , newFocusGroup
+    , mergeFocusGroups
+    , resetFocusGroup
     , addToFocusGroup
     , focusNext
     , focusPrevious
@@ -422,6 +424,30 @@ newFocusGroup = do
         , render_ = \_ _ _ -> return empty_image
         }
   return wRef
+
+mergeFocusGroups :: (MonadIO m) => Widget FocusGroup -> Widget FocusGroup -> m (Widget FocusGroup)
+mergeFocusGroups a b = do
+  c <- newFocusGroup
+
+  aEntries <- entries <~~ a
+  bEntries <- entries <~~ b
+
+  when (null aEntries || null bEntries) $
+       throw FocusGroupEmpty
+
+  updateWidgetState c $ \s -> s { entries = aEntries ++ bEntries
+                                , currentEntryNum = 0
+                                }
+
+  return c
+
+resetFocusGroup :: (MonadIO m) => Widget FocusGroup -> m ()
+resetFocusGroup fg = do
+  cur <- currentEntry fg
+  es <- entries <~~ fg
+  forM_ es $ \e ->
+      when (e /= cur) $ unfocus e
+  focus cur
 
 getCursorPosition :: (MonadIO m) => Widget a -> m (Maybe DisplayRegion)
 getCursorPosition wRef = do

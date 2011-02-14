@@ -26,15 +26,13 @@ data Dialog = Dialog { dialogWidget :: Widget (Bordered Padded)
                      , setDialogTitle :: String -> IO ()
                      , dialogAcceptHandlers :: Handlers Dialog
                      , dialogCancelHandlers :: Handlers Dialog
-                     , dialogFocusGroup :: Widget FocusGroup
                      }
 
 instance HasNormalAttr Dialog where
     setNormalAttribute d a = setNormalAttribute (dialogWidget d) a
 
-newDialog :: (MonadIO m, Show a) => Widget a -> String -> Maybe (Widget FocusGroup)
-          -> m Dialog
-newDialog body title mFg = do
+newDialog :: (MonadIO m, Show a) => Widget a -> String -> m (Dialog, Widget FocusGroup)
+newDialog body title = do
   okB <- newButton "OK"
   cancelB <- newButton "Cancel"
 
@@ -44,17 +42,12 @@ newDialog body title mFg = do
   b <- withPadding (padTopBottom 1) =<<
        ((hCentered body) <--> (hCentered buttonBox) >>= withBoxSpacing 1)
 
-  fg <- case mFg of
-          Just g -> return g
-          Nothing -> newFocusGroup
-
+  fg <- newFocusGroup
   addToFocusGroup fg $ buttonWidget okB
   addToFocusGroup fg $ buttonWidget cancelB
 
   b2 <- bordered b >>=
         withBorderedLabel title
-
-  setFocusGroup b2 fg
 
   ahs <- newHandlers
   chs <- newHandlers
@@ -63,13 +56,12 @@ newDialog body title mFg = do
                    , setDialogTitle = setBorderedLabel b2
                    , dialogAcceptHandlers = ahs
                    , dialogCancelHandlers = chs
-                   , dialogFocusGroup = fg
                    }
 
   okB `onButtonPressed` (const $ acceptDialog dlg)
   cancelB `onButtonPressed` (const $ cancelDialog dlg)
 
-  return dlg
+  return (dlg, fg)
 
 onDialogAccept :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
 onDialogAccept = addHandler (return . dialogAcceptHandlers)

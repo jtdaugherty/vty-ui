@@ -78,11 +78,15 @@ addToCollection cRef wRef fg = do
                              then 0
                              else currentEntryNum st
          }
+  resetFocusGroup fg
   return $ setCurrentEntry cRef i
 
 setCurrentEntry :: (MonadIO m) => Collection -> Int -> m ()
 setCurrentEntry cRef i = do
   st <- liftIO $ readIORef cRef
   if i < length (entries st) && i >= 0 then
-      liftIO $ modifyIORef cRef $ \s -> s { currentEntryNum = i } else
+      (liftIO $ modifyIORef cRef $ \s -> s { currentEntryNum = i }) else
       throw $ BadCollectionIndex i
+
+  e <- getCurrentEntry cRef
+  resetFocusGroup $ entryFocusGroup e

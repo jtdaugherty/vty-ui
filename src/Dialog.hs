@@ -16,7 +16,8 @@ main = do
        >>= withBoxSpacing 1
 
   pe <- padded u (padLeftRight 2)
-  d <- newDialog pe "<enter text>" (Just fg) >>= withNormalAttribute (white `on` blue)
+  (d, dFg) <- newDialog pe "<enter text>"
+  setNormalAttribute d (white `on` blue)
 
   c <- centered =<< withPadding (padLeftRight 10) (dialogWidget d)
 
@@ -32,6 +33,6 @@ main = do
   d `onDialogCancel` const exitSuccess
 
   coll <- newCollection
-  _ <- addToCollection coll c fg
+  _ <- addToCollection coll c =<< (mergeFocusGroups fg dFg)
 
   runUi coll $ defaultContext { focusAttr = black `on` yellow }
