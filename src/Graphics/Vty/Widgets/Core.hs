@@ -47,6 +47,8 @@ module Graphics.Vty.Widgets.Core
     , focusNext
     , focusPrevious
     , setCurrentFocus
+    , setFocusGroupNextKey
+    , setFocusGroupPrevKey
     , getCursorPosition
     , focus
     , unfocus
@@ -343,6 +345,8 @@ data FocusEntry = forall a. FocusEntry (Widget a)
 
 data FocusGroup = FocusGroup { entries :: [Widget FocusEntry]
                              , currentEntryNum :: Int
+                             , nextKey :: (Key, [Modifier])
+                             , prevKey :: (Key, [Modifier])
                              }
 
 newFocusEntry :: (MonadIO m, Show a) => Widget a -> m (Widget FocusEntry)
@@ -374,6 +378,8 @@ newFocusGroup = do
   updateWidget wRef $ \w ->
       w { state = FocusGroup { entries = []
                              , currentEntryNum = -1
+                             , nextKey = (KASCII '\t', [])
+                             , prevKey = (KASCII '\t', [MShift])
                              }
 
         , cursorInfo =
@@ -388,21 +394,26 @@ newFocusGroup = do
               case currentEntryNum st of
                 (-1) -> return False
                 i -> do
-                  case (key, mods) of
-                    (KASCII '\t', []) -> do
-                             focusNext this
-                             return True
-                    (KASCII '\t', [MShift]) -> do
-                             focusPrevious this
-                             return True
-                    _ -> do
-                       let e = entries st !! i
-                       handleKeyEvent e key mods
+                  if (key, mods) == nextKey st then
+                      (focusNext this >> return True) else
+                      if (key, mods) == prevKey st then
+                            (focusPrevious this >> return True) else
+                          do
+                            let e = entries st !! i
+                            handleKeyEvent e key mods
 
         -- Should never be rendered.
         , render_ = \_ _ _ -> return empty_image
         }
   return wRef
+
+setFocusGroupNextKey :: (MonadIO m) => Widget FocusGroup -> Key -> [Modifier] -> m ()
+setFocusGroupNextKey fg k mods =
+    updateWidgetState fg $ \s -> s { nextKey = (k, mods) }
+
+setFocusGroupPrevKey :: (MonadIO m) => Widget FocusGroup -> Key -> [Modifier] -> m ()
+setFocusGroupPrevKey fg k mods =
+    updateWidgetState fg $ \s -> s { prevKey = (k, mods) }
 
 mergeFocusGroups :: (MonadIO m) => Widget FocusGroup -> Widget FocusGroup -> m (Widget FocusGroup)
 mergeFocusGroups a b = do
