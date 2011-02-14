@@ -41,7 +41,8 @@ hLimit maxWidth child = do
               HLimit _ ch <- getState this
               setCurrentPosition ch pos
         }
-  wRef `onKeyPressed` \_ key mods -> handleKeyEvent child key mods
+  wRef `relayKeyEvents` child
+  wRef `relayFocusEvents` child
   return wRef
 
 data VLimit a = (Show a) => VLimit Int (Widget a)
@@ -67,7 +68,8 @@ vLimit maxHeight child = do
               VLimit _ ch <- getState this
               setCurrentPosition ch pos
         }
-  wRef `onKeyPressed` \_ key mods -> handleKeyEvent child key mods
+  wRef `relayKeyEvents` child
+  wRef `relayFocusEvents` child
   return wRef
 
 setVLimit :: (MonadIO m) => Widget (VLimit a) -> Int -> m ()

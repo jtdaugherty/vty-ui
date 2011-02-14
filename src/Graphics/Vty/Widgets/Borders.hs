@@ -154,6 +154,8 @@ bordered child = do
               let chPos = pos `plusWidth` 1 `plusHeight` 1
               setCurrentPosition ch chPos
         }
+  wRef `relayFocusEvents` child
+  wRef `relayKeyEvents` child
   return wRef
 
 drawBordered :: (Show a) =>
