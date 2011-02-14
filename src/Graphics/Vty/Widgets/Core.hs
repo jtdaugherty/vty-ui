@@ -1,8 +1,20 @@
 {-# LANGUAGE ExistentialQuantification, DeriveDataTypeable, TypeSynonymInstances #-}
--- |This module provides a basic infrastructure for modelling a user
--- interface widget and converting it to Vty's 'Image' type.
+-- |This module is the core of this package; it provides
+-- infrastructure for creating new types of widgets and extending
+-- their functionality.  This module provides various bits of
+-- infrastructure, including:
+--
+-- * modeling user interface widgets
+--
+-- * managing changes in focus between widgets
+--
+-- * managing widget state
+--
+-- This module does not provide any concrete widget types.
 module Graphics.Vty.Widgets.Core
-    ( WidgetImpl(..)
+    (
+    -- ** Widget Infrastructure
+      WidgetImpl(..)
     , Widget
     , getNormalAttr
     , defaultContext
@@ -108,32 +120,26 @@ getNormalAttr ctx = mergeAttrs [ overrideAttr ctx, normalAttr ctx ]
 defaultContext :: RenderContext
 defaultContext = RenderContext def_attr def_attr def_attr unicodeSkin
 
--- |The type of user interface widgets.  A 'Widget' provides several
--- properties:
+-- |The 'WidgetImpl' type is the central widget state type in this
+-- library.  'WidgetImpl' is parameterized on one type variable, which
+-- is the type of the user-defined state held by this widget.  In
+-- addition to containing various state elements, this type provides
+-- an interface to various aspects of widget functionality:
 --
--- * /Growth properties/ which provide information about how to
---   allocate space to widgets depending on their propensity to
---   consume available space
+-- * 'growHorizontal_' and 'growVertical_', /growth properties/ which
+--   provide information about how to allocate space to widgets
+--   depending on their propensity to consume available space
 --
--- * A /rendering routine/ which converts the widget's internal state
---   into a 'Render' value.
+-- * 'render_', a /rendering routine/ which converts the widget's
+--   internal state, along with render-time context ('RenderContext'),
+--   into a VTY 'Image'
 --
--- Of primary concern is the rendering routine, 'render'.  The
--- rendering routine takes one parameter: the size of the space in
--- which the widget should be rendered.  The space is important
--- because it provides a maximum size for the widget.  For widgets
--- that consume all available space, the size of the resulting
--- 'Render' will be equal to the supplied size.  For smaller widgets
--- (e.g., a simple string of text), the size of the 'Render' will
--- likely be much smaller than the supplied size.  In any case, any
--- 'Widget' implementation /must/ obey the rule that the resulting
--- 'Render' must not exceed the supplied 'DisplayRegion' in size.  If
--- it does, there's a good chance your interface will be garbled.
+-- * The widget's current size and position and focused state
 --
--- If the widget has child widgets, the supplied size should be
--- subdivided to fit the child widgets as appropriate.  How the space
--- is subdivided may depend on the growth properties of the children
--- or it may be a matter of policy.
+-- * The widget's \'normal\' and \'focused\' attribute overrides
+--
+-- * Functions to handle keyboard input events and changes in focus
+--   state
 data WidgetImpl a = WidgetImpl {
     -- |User-defined state type.
       state :: a
