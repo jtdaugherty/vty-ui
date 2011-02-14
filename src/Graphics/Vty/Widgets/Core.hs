@@ -7,6 +7,7 @@ module Graphics.Vty.Widgets.Core
     , RenderContext(..)
     , HasNormalAttr(..)
     , HasFocusAttr(..)
+    , RenderError(..)
     , getNormalAttr
     , defaultContext
     , renderAndPosition
