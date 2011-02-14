@@ -10,8 +10,8 @@ Description:         An extensible library of user interface widgets
                      and modify without having to worry about terminal
                      size.
 Category:            User Interfaces
-Author:              Jonathan Daugherty <drcygnus@gmail.com>
-Maintainer:          Jonathan Daugherty <drcygnus@gmail.com>
+Author:              Jonathan Daugherty <jtd@galois.com>
+Maintainer:          Jonathan Daugherty <jtd@galois.com>
 Build-Type:          Simple
 License:             BSD3
 License-File:        LICENSE
@@ -32,7 +32,7 @@ Library
     filepath >= 1.1 && < 1.2,
     unix >= 2.4 && < 2.5
 
-  GHC-Options:       -Wall -Werror
+  GHC-Options:       -Wall
 
   Hs-Source-Dirs:    src
   Exposed-Modules:
@@ -67,7 +67,7 @@ Executable vty-ui-tests
     QuickCheck >= 2.4 && < 2.5
 
   CPP-Options: -DTESTING
-  GHC-Options: -Wall -Werror
+  GHC-Options: -Wall
 
   if !flag(testing)
     Buildable:     False
