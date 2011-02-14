@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, ExistentialQuantification, DeriveDataTypeable, TypeSynonymInstances #-}
+{-# LANGUAGE ExistentialQuantification, DeriveDataTypeable, TypeSynonymInstances #-}
 -- |This module provides a basic infrastructure for modelling a user
 -- interface widget and converting it to Vty's 'Image' type.
 module Graphics.Vty.Widgets.Core
