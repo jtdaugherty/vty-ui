@@ -422,11 +422,12 @@ mergeFocusGroups a b = do
 
 resetFocusGroup :: (MonadIO m) => Widget FocusGroup -> m ()
 resetFocusGroup fg = do
-  cur <- currentEntry fg
+  cur <- currentEntryNum <~~ fg
   es <- entries <~~ fg
-  forM_ es $ \e ->
-      when (e /= cur) $ unfocus e
-  focus cur
+  forM_ (zip [1..] es) $ \(i, e) ->
+      when (i /= cur) $ unfocus e
+  when (cur >= 0) $
+       focus =<< currentEntry fg
 
 getCursorPosition :: (MonadIO m) => Widget a -> m (Maybe DisplayRegion)
 getCursorPosition wRef = do
