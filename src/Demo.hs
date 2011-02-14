@@ -153,9 +153,6 @@ main = do
                   return True
            _ -> return False
 
-  setFocusGroup ui1 fg1
-  setFocusGroup ui2 fg2
-
   setEditText (theEdit st) "edit me"
 
   -- We need to call these handlers manually because while they will

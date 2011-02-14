@@ -48,8 +48,6 @@ module Graphics.Vty.Widgets.Core
     , focusPrevious
     , setCurrentFocus
     , getCursorPosition
-    , setFocusGroup
-    , getFocusGroup
     , focus
     , unfocus
     )
@@ -161,7 +159,6 @@ data WidgetImpl a = WidgetImpl {
     , gainFocusHandler :: Widget a -> IO ()
     , loseFocusHandler :: Widget a -> IO ()
     , focused :: Bool
-    , focusGroup :: Widget a -> IO (Maybe (Widget FocusGroup))
 
     , cursorInfo :: Widget a -> IO (Maybe DisplayRegion)
     }
@@ -182,16 +179,6 @@ instance (Show a) => Show (WidgetImpl a) where
                     , show $ focused w
                     , " }"
                     ]
-
-setFocusGroup :: (MonadIO m) => Widget a -> Widget FocusGroup -> m ()
-setFocusGroup wRef fg = do
-  updateWidget wRef $ \w -> w { focusGroup = const $ return $ Just fg }
-  wRef `relayKeyEvents` fg
-
-getFocusGroup :: (MonadIO m) => Widget a -> m (Maybe (Widget FocusGroup))
-getFocusGroup wRef = do
-  act <- focusGroup <~ wRef
-  liftIO $ act wRef
 
 growHorizontal :: (MonadIO m) => Widget a -> m Bool
 growHorizontal w = do
@@ -259,7 +246,6 @@ newWidget =
                       , growVertical_ = const $ return False
                       , growHorizontal_ = const $ return False
                       , setCurrentPosition_ = \_ _ -> return ()
-                      , focusGroup = const $ return Nothing
                       , currentSize = DisplayRegion 0 0
                       , currentPosition = DisplayRegion 0 0
                       , focused = False
@@ -275,16 +261,9 @@ newWidget =
 
 defaultCursorInfo :: Widget a -> IO (Maybe DisplayRegion)
 defaultCursorInfo w = do
-  -- If this widget has a focus group, defer to that for the position
-  -- information.  Otherwise, use the physical position as the
-  -- default.
-  mFg <- getFocusGroup w
-  case mFg of
-    Just fg -> getCursorPosition fg
-    Nothing -> do
-             sz <- getCurrentSize w
-             pos <- getCurrentPosition w
-             return $ Just $ pos `plusWidth` (region_width sz - 1)
+  sz <- getCurrentSize w
+  pos <- getCurrentPosition w
+  return $ Just $ pos `plusWidth` (region_width sz - 1)
 
 handleKeyEvent :: (MonadIO m) => Widget a -> Key -> [Modifier] -> m Bool
 handleKeyEvent wRef keyEvent mods = do
