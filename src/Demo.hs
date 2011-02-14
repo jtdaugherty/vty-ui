@@ -14,7 +14,7 @@ data AppState =
              , theFooter2 :: Widget FormattedText
              , theEdit :: Widget Edit
              , theListLimit :: Widget (VLimit (List String FormattedText))
-             , uis :: Widget Collection
+             , uis :: Collection
              }
 
 -- Visual attributes.
@@ -92,14 +92,15 @@ main = do
   ui1 <- buildUi1 st
   ui2 <- buildUi2 st
 
-  showMainUI <- addToCollection (uis st) ui1
-  showMessageUI <- addToCollection (uis st) ui2
-
   fg1 <- newFocusGroup
+  fg2 <- newFocusGroup
+
+  showMainUI <- addToCollection (uis st) ui1 fg1
+  showMessageUI <- addToCollection (uis st) ui2 fg2
+
   listCtx1 <- addToFocusGroup fg1 (theList st)
   addToFocusGroup fg1 (theEdit st)
 
-  fg2 <- newFocusGroup
   listCtx2 <- addToFocusGroup fg2 (theList st)
   addToFocusGroup fg2 (theEdit st)
 

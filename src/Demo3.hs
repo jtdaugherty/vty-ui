@@ -16,10 +16,8 @@ customAnnotations = [ (\p _ -> "~" `isSuffixOf` p
 
 main :: IO ()
 main = do
-  b <- newDirBrowser $ defaultBrowserSkin
-       `withAnnotations` customAnnotations
-
-  let ui = dirBrowserWidget b
+  (b, fg) <- newDirBrowser $ defaultBrowserSkin
+             `withAnnotations` customAnnotations
 
   b `onBrowseAccept` \p ->
       if "~" `isSuffixOf` p
@@ -28,5 +26,8 @@ main = do
 
   b `onBrowseCancel` const (error "Cancelled.")
 
-  runUi ui $ defaultContext { focusAttr = (black `on` yellow)
-                            }
+  c <- newCollection
+  _ <- addToCollection c (dirBrowserWidget b) fg
+
+  runUi c $ defaultContext { focusAttr = (black `on` yellow)
+                           }

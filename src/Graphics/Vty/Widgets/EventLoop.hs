@@ -14,6 +14,7 @@ import Control.Monad.Trans
 import System.IO.Unsafe ( unsafePerformIO )
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
+import Graphics.Vty.Widgets.Collections
 
 data EventLoopError = NoFocusGroup
                       deriving (Show, Typeable)
@@ -29,15 +30,15 @@ eventChan :: Chan CombinedEvent
 {-# NOINLINE eventChan #-}
 eventChan = unsafePerformIO newChan
 
-runUi :: (MonadIO m, Show a) => Widget a -> RenderContext -> m ()
-runUi uiWidget ctx =
+runUi :: (MonadIO m) => Collection -> RenderContext -> m ()
+runUi collection ctx =
     liftIO $ do
       vty <- mkVty
 
       -- Create VTY event listener thread
       _ <- forkIO $ vtyEventListener vty eventChan
 
-      runUi' vty eventChan uiWidget ctx `finally` do
+      runUi' vty eventChan collection ctx `finally` do
                reserve_display $ terminal vty
                shutdown vty
 
@@ -50,13 +51,17 @@ vtyEventListener vty chan =
 schedule :: (MonadIO m) => IO () -> m ()
 schedule act = liftIO $ writeChan eventChan $ UserEvent $ ScheduledAction act
 
-runUi' :: (Show a) => Vty -> Chan CombinedEvent -> Widget a -> RenderContext -> IO ()
-runUi' vty chan uiWidget ctx = do
+runUi' :: Vty -> Chan CombinedEvent -> Collection -> RenderContext -> IO ()
+runUi' vty chan collection ctx = do
   sz <- display_bounds $ terminal vty
-  img <- renderAndPosition uiWidget (DisplayRegion 0 0) sz ctx
+
+  e <- getCurrentEntry collection
+  let fg = entryFocusGroup e
+
+  img <- entryRenderAndPosition e (DisplayRegion 0 0) sz ctx
   update vty $ pic_for_image img
 
-  mPos <- getCursorPosition uiWidget
+  mPos <- getCursorPosition fg
   case mPos of
     Just (DisplayRegion w h) -> do
                         show_cursor $ terminal vty
@@ -66,8 +71,8 @@ runUi' vty chan uiWidget ctx = do
   evt <- readChan chan
 
   case evt of
-    VTYEvent (EvKey k mods) -> handleKeyEvent uiWidget k mods >> return ()
+    VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return ()
     UserEvent (ScheduledAction act) -> liftIO act
     _ -> return ()
 
-  runUi' vty chan uiWidget ctx
+  runUi' vty chan collection ctx

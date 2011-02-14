@@ -85,7 +85,7 @@ withAnnotations :: BrowserSkin
                 -> BrowserSkin
 withAnnotations sk as = sk { browserCustomAnnotations = browserCustomAnnotations sk ++ as }
 
-newDirBrowser :: (MonadIO m) => BrowserSkin -> m DirBrowser
+newDirBrowser :: (MonadIO m) => BrowserSkin -> m (DirBrowser, Widget FocusGroup)
 newDirBrowser bSkin = do
   path <- liftIO $ getCurrentDirectory
   pathWidget <- simpleText ""
@@ -126,10 +126,9 @@ newDirBrowser bSkin = do
 
   fg <- newFocusGroup
   _ <- addToFocusGroup fg l
-  setFocusGroup ui fg
 
   setDirBrowserPath b path
-  return b
+  return (b, fg)
 
 reportBrowserError :: (MonadIO m) => DirBrowser -> String -> m ()
 reportBrowserError b msg = setText (dirBrowserErrorWidget b) $ "Error: " ++ msg

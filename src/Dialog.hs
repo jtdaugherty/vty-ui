@@ -31,4 +31,7 @@ main = do
   d `onDialogAccept` const exitSuccess
   d `onDialogCancel` const exitSuccess
 
-  runUi c $ defaultContext { focusAttr = black `on` yellow }
+  coll <- newCollection
+  _ <- addToCollection coll c fg
+
+  runUi coll $ defaultContext { focusAttr = black `on` yellow }

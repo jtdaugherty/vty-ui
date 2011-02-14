@@ -138,7 +138,6 @@ main = do
   addToFocusGroup fgr lst
 
   ui <- centered =<< hLimit 70 mainBox
-  setFocusGroup ui fgr
 
   forkIO $ forever $ do
          schedule $ do
@@ -154,6 +153,9 @@ main = do
          act 0
 
   -- Enter the event loop.
-  runUi ui $ defaultContext { focusAttr = focAttr
-                            , normalAttr = fg `on` bg
-                            }
+  c <- newCollection
+  _ <- addToCollection c ui fgr
+
+  runUi c $ defaultContext { focusAttr = focAttr
+                           , normalAttr = fg `on` bg
+                           }

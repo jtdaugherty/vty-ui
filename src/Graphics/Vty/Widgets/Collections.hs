@@ -2,13 +2,19 @@
 module Graphics.Vty.Widgets.Collections
     ( Collection
     , CollectionError(..)
+    , Entry
     , newCollection
     , addToCollection
-    , setCurrent
+    , getCurrentEntry
+    , setCurrentEntry
+
+    , entryRenderAndPosition
+    , entryFocusGroup
     )
 where
 
 import Data.Typeable
+import Data.IORef
 import Control.Monad.Trans
 import Control.Exception
 import Graphics.Vty
@@ -25,111 +31,58 @@ data CollectionError = EmptyCollection
 
 instance Exception CollectionError
 
-data Entry = forall a. (Show a) => Entry (Widget a)
+data Entry = forall a. (Show a) => Entry (Widget a) (Widget FocusGroup)
 
-data Collection =
-    Collection { entries :: [Entry]
-               , currentEntryNum :: Int
-               }
+data CollectionData =
+    CollectionData { entries :: [Entry]
+                   , currentEntryNum :: Int
+                   }
 
-instance Show Collection where
-    show (Collection es num) = concat [ "Collection { "
-                                      , "entries = <", show $ length es, "entries>"
-                                      , ", currentEntryNum = ", show num
-                                      , " }"
-                                      ]
+type Collection = IORef CollectionData
 
-renderEntry :: (MonadIO m) => Entry -> DisplayRegion -> RenderContext -> m Image
-renderEntry (Entry w) = render w
+instance Show CollectionData where
+    show (CollectionData es num) = concat [ "Collection { "
+                                          , "entries = <", show $ length es, "entries>"
+                                          , ", currentEntryNum = ", show num
+                                          , " }"
+                                          ]
 
-positionEntry :: Entry -> DisplayRegion -> IO ()
-positionEntry (Entry w) = setCurrentPosition w
+entryRenderAndPosition :: (MonadIO m) => Entry -> DisplayRegion -> DisplayRegion -> RenderContext -> m Image
+entryRenderAndPosition (Entry w _) = renderAndPosition w
 
-entryHandleKeyEvent :: (MonadIO m) => Entry -> Key -> [Modifier] -> m Bool
-entryHandleKeyEvent (Entry w) k mods = handleKeyEvent w k mods
+entryFocusGroup :: Entry -> Widget FocusGroup
+entryFocusGroup (Entry _ fg) = fg
 
-entryFocusGroup :: Entry -> IO (Maybe (Widget FocusGroup))
-entryFocusGroup (Entry w) = getFocusGroup w
+newCollection :: (MonadIO m) => m Collection
+newCollection =
+    liftIO $ newIORef $ CollectionData { entries = []
+                                       , currentEntryNum = -1
+                                       }
 
-entryGrowHorizontal :: Entry -> IO Bool
-entryGrowHorizontal (Entry w) = growHorizontal w
+getCurrentEntry :: (MonadIO m) => Collection -> m Entry
+getCurrentEntry cRef = do
+  cur <- currentEntryNum <~ cRef
+  es <- entries <~ cRef
+  if cur == -1 then
+      throw $ BadCollectionIndex cur else
+      if cur >= 0 && cur < length es then
+          return $ es !! cur else
+          throw $ BadCollectionIndex cur
 
-entryGrowVertical :: Entry -> IO Bool
-entryGrowVertical (Entry w) = growVertical w
-
-newCollection :: (MonadIO m) => m (Widget Collection)
-newCollection = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
-      w { state = Collection { entries = []
-                             , currentEntryNum = -1
-                             }
-        , growHorizontal_ = \st -> do
-            case currentEntryNum st of
-              (-1) -> throw EmptyCollection
-              i -> do
-                let e = entries st !! i
-                liftIO $ entryGrowHorizontal e
-
-        , growVertical_ = \st -> do
-            case currentEntryNum st of
-              (-1) -> throw EmptyCollection
-              i -> do
-                let e = entries st !! i
-                liftIO $ entryGrowVertical e
-
-        , focusGroup =
-            \this -> do
-              st <- getState this
-              case currentEntryNum st of
-                (-1) -> return Nothing
-                i -> do
-                       let e = entries st !! i
-                       entryFocusGroup e
-
-        , render_ = \this size ctx -> do
-                   st <- getState this
-                   case currentEntryNum st of
-                     (-1) -> throw EmptyCollection
-                     i -> do
-                       let e = entries st !! i
-                       renderEntry e size ctx
-
-        , setCurrentPosition_ =
-            \this pos -> do
-              st <- getState this
-              case currentEntryNum st of
-                (-1) -> throw EmptyCollection
-                i -> do
-                  let e = entries st !! i
-                  positionEntry e pos
-        }
-
-  wRef `onKeyPressed`
-           \this key mods -> do
-                  st <- getState this
-                  case currentEntryNum st of
-                    (-1) -> return False
-                    i -> do
-                      let e = entries st !! i
-                      entryHandleKeyEvent e key mods
-
-  return wRef
-
-addToCollection :: (MonadIO m, Show a) => Widget Collection -> Widget a -> m (m ())
-addToCollection cRef wRef = do
-  i <- (length . entries) <~~ cRef
-  updateWidgetState cRef $ \st ->
-      st { entries = (entries st) ++ [Entry wRef]
+addToCollection :: (MonadIO m, Show a) => Collection -> Widget a -> Widget FocusGroup -> m (m ())
+addToCollection cRef wRef fg = do
+  i <- (length . entries) <~ cRef
+  liftIO $ modifyIORef cRef $ \st ->
+      st { entries = (entries st) ++ [Entry wRef fg]
          , currentEntryNum = if currentEntryNum st == -1
                              then 0
                              else currentEntryNum st
          }
-  return $ setCurrent cRef i
+  return $ setCurrentEntry cRef i
 
-setCurrent :: (MonadIO m) => Widget Collection -> Int -> m ()
-setCurrent cRef i = do
-  st <- state <~ cRef
+setCurrentEntry :: (MonadIO m) => Collection -> Int -> m ()
+setCurrentEntry cRef i = do
+  st <- liftIO $ readIORef cRef
   if i < length (entries st) && i >= 0 then
-      updateWidgetState cRef $ \s -> s { currentEntryNum = i } else
+      liftIO $ modifyIORef cRef $ \s -> s { currentEntryNum = i } else
       throw $ BadCollectionIndex i
