@@ -4,14 +4,8 @@
 module Graphics.Vty.Widgets.Core
     ( WidgetImpl(..)
     , Widget
-    , RenderContext(..)
-    , HasNormalAttr(..)
-    , HasFocusAttr(..)
-    , RenderError(..)
     , getNormalAttr
     , defaultContext
-    , renderAndPosition
-    , render
     , updateWidget
     , updateWidgetState
     , newWidget
@@ -19,17 +13,24 @@ module Graphics.Vty.Widgets.Core
     , getCurrentSize
     , setCurrentPosition
     , getCurrentPosition
+    , growVertical
+    , growHorizontal
+    , getCursorPosition
     , showWidget
     , (<~)
     , (<~~)
 
+    -- ** Rendering
+    , RenderContext(..)
+    , RenderError(..)
+    , render
+    , renderAndPosition
+
     -- ** Miscellaneous
+    , HasNormalAttr(..)
+    , HasFocusAttr(..)
     , withNormalAttribute
     , withFocusAttribute
-    , relayFocusEvents
-
-    , growVertical
-    , growHorizontal
 
     -- ** Events
     , handleKeyEvent
@@ -37,6 +38,7 @@ module Graphics.Vty.Widgets.Core
     , onGainFocus
     , onLoseFocus
     , relayKeyEvents
+    , relayFocusEvents
 
     -- ** Focus management
     , FocusGroup
@@ -50,7 +52,6 @@ module Graphics.Vty.Widgets.Core
     , setCurrentFocus
     , setFocusGroupNextKey
     , setFocusGroupPrevKey
-    , getCursorPosition
     , focus
     , unfocus
     )
