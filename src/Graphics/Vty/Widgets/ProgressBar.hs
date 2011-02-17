@@ -16,14 +16,18 @@ import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Fills
 import Graphics.Vty.Widgets.Box
 import Graphics.Vty.Widgets.Events
+import Graphics.Vty.Widgets.Util
 
 data ProgressBar = ProgressBar { progressBarWidget :: Widget (Box HFill HFill)
                                , progressBarAmount :: IORef Int
                                , onChangeHandlers :: Handlers Int
                                }
 
-newProgressBar :: (MonadIO m) => Attr -> Attr -> m ProgressBar
-newProgressBar completeAttr incompleteAttr = do
+newProgressBar :: (MonadIO m) => Color -> Color -> m ProgressBar
+newProgressBar completeColor incompleteColor = do
+  let completeAttr = completeColor `on` completeColor
+      incompleteAttr = incompleteColor `on` incompleteColor
+
   w <- (hFill ' ' 1 >>= withNormalAttribute completeAttr) <++>
        (hFill ' ' 1 >>= withNormalAttribute incompleteAttr)
   r <- liftIO $ newIORef 0

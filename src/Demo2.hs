@@ -75,7 +75,7 @@ main = do
   cbHeader <- simpleText ""
   timeText <- simpleText ""
 
-  prog <- newProgressBar (red `on` red) (white `on` white)
+  prog <- newProgressBar red white
   progLabel <- simpleText ""
 
   addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
