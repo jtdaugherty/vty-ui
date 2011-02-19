@@ -1,0 +1,514 @@
+Introduction
+------------
+
+Terminal emulator user interfaces are a good, lightweight alternative to
+fully graphical interfaces such as those provided by GTK, QT, and the
+Windows and Macintosh OS X operating systems.  Aside from being
+lightweight, such interfaces are appealing because they can be used for
+remote administration more easily, and many users prefer them over
+graphical interfaces for their responsiveness.
+
+However, historically terminal interfaces have been notoriously
+difficult to program.  Libraries have appeared to aid in this task, such
+as Ncurses.  Ncurses is fairly low-level so other, higher-level
+libraries arose, such as CDK, Dialog, and Newt.  This library fits into
+the same category as those high-level libraries.
+
+vty-ui provides a “widget” infrastructure for constructing user
+interfaces similar to what you will find in libraries such as QT and
+GTK.  In addition to rendering infrastructure, vty-ui provides
+infrastructure for managing user input events, changes in widget focus,
+box layout support, and a flexible API for binding event handlers to
+widget events.  It is build on the vty library, which provides
+functionality similar to ncurses.
+
+This manual provides comprehensive documentation on how to use the
+vty-ui’s built-in widgets as well as information on how to implement
+your own.
+
+Getting Started
+---------------
+
+To get started using the library, you’ll need to import the main library
+module:
+
+  import Graphics.Vty.All
+
+This module imports everything exported by the library; if you prefer,
+you may import specific modules depending on your needs.
+
+As a demonstration, we’ll create a program which presents an editing
+widget in the middle of the screen.  You’ll be able to provide some text
+input and press Enter, at which point the program will exit and print
+what you entered.  The code for this program is as follows:
+
+  main :: IO ()
+  main = do
+   e <- editWidget
+   ui <- centered e
+
+   fg <- newFocusGroup
+   addToFocusGroup fg e
+
+   c <- newCollection
+   addToCollection c ui fg
+
+   e `onActivate` \this ->
+       getEditText this >>= (error . ("You entered: " ++))
+
+   runUi c defaultContext
+
+There are some interesting things to note about this program.  First, it
+withstands changes in your terminal size automatically, even though the
+size of the terminal is not an explicit part of the main program.
+Second, it only took a few lines of code to create a rich editing
+interface and position it in the terminal as desired.  Now we’ll go into
+some depth on this example.
+
+  e <- editWidget
+
+This line creates an “edit widget.”  This type of widget provides an
+editing interface for a single line of text and supports some
+Emacs-style editing keybindings.  For more information on this widget,
+see XXX.
+
+  ui <- centered e
+
+This creates a new widget, ui, which centers the edit widget vertically
+and horizontally.  This is a common pattern: create one widget and wrap
+it in another to affect its behavior.  For more information on
+centering, see XXX.
+
+  fg <- newFocusGroup
+
+This creates a “focus group.”  A focus group is an ordered sequence of
+widgets that will receive focus as you cycle between them.  By default,
+this is done with the Tab key.  Every vty-ui interface requires a focus
+group.
+
+  addToFocusGroup fg e
+
+This adds the edit widget to the focus group.  The first widget to be
+added to a focus group automatically receives the initial focus, and
+widgets receive focus in the order they are added to the group.
+
+  c <- newCollection
+
+This creates a new “collection.”  A collection is group of interfaces,
+each with its own focus group, and the collection makes it possible to
+switch between these interfaces.  Think of an e-mail client whose
+initial interface might be listing the contents of the inbox; subsequent
+interactions might change the interface to present only the selected
+message on the screen, with different navigation keystrokes, one of
+which returns to the inbox interface.  Collections make it easy to
+switch between such interface modes.  Every vty-ui program requires a
+collection.
+
+  addToCollection ui fg
+
+This adds the top-level user interface widget, ui, to the collection and
+sets its focus group to fg.  This means that the widgets to receive the
+user’s focus (and, consequently, input) will be those in the focus group
+fg and the interface to be presented will be ui.
+
+  e `onActivate`   \this -> getEditText this >>= (error . ("You entered: " ++))
+
+This binds an event handler to the “activation” of the edit widget,
+which occurs when the user focuses the edit widget and presses Enter.
+The handler for this event is an IO action which takes the edit widget
+itself as its only parameter.  The getEditText function gets the current
+text of the edit widget, and we use error to abort the program and print
+the text.
+
+  runUi c defaultContext
+
+This runs the main vty-ui event loop with the collection we created
+above.  We pass a “default rendering context” which provides defaults
+for the rendering process, such as the default foreground and background
+colors to be used for normal and focused widgets, as well as a “skin”
+for line-drawing.  The main event loop processes input events from the
+Vty library and re-draws the interface after calling any event handlers.
+It also shuts down Vty in the event of an exception.
+
+We’ve now seen the general structure of a vty-ui program:
+
+ - Create and compose widgets,
+
+ - Create a focus group and add input-receiving widgets to the group,
+
+ - Create a collection and add the top-level widget and focus group to
+   the collection, and
+
+ - Invoke the main event loop with the collection and some default
+   rendering settings.
+
+The vty-ui API
+--------------
+
+When you create a widget in vty-ui, the result with almost always have a
+type like 'Widget a'.  The type variable 'a' represents the specific
+type of state the widget can carry, and therefore which operations can
+be performed on it.  For example, a text widget has type 'Widget
+FormattedText'.
+
+All widget constructors must ultimately be run in the IO monad, so all
+API functions must be run in an instance of MonadIO.  In this manual, we
+will use IO to simplify type signatures.  Although MonadIO is by far the
+more common constraint, be sure to check the API documentation to be
+sure; some functions, such as callbacks, are IO actions.
+
+Composing Widgets
+-----------------
+
+As with any user interface toolkit, vty-ui lets you compose your widgets
+to create a user interface that is laid out the way you want.  Widgets
+fall into two basic categories:
+
+ - "basic" widgets like text strings, ASCII decorations
+   (e.g. vertical and horizontal borders), and space-filling widgets
+
+ - "container" widgets which hold other widgets and control how those
+   widgets are laid out and rendered.  Most of these widgets influence
+   layout; some modify other behaviors.
+
+The most important widgets used in interface layout are the box layout
+widgets:
+
+  vBox :: Widget a -> Widget b -> IO (Widget (Box a b))
+  hBox :: Widget a -> Widget b -> IO (Widget (Box a b))
+
+The vBox function returns a new widget of type 'Widget (Box a b)' which
+lays out its two children vertically in the order they are passed to the
+function.  The hBox function does the same for horizontal layout.  These
+two widgets will probably be the most common in your applications.
+
+vty-ui provides some combinators to make Boxes a bit eaiser to work
+with:
+
+  (<-->) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
+  (<++>) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
+
+These functions are essentially aliases for vBox and hBox, respectively,
+with the important difference being that they take IO arguments; so, for
+example, you can use them to create nested boxes as follows:
+
+  mainBox <- (hBox a b) <--> (hBox c d <++> vBox e f)
+
+If you already have a pure reference to another widget, you can merely
+wrap it with 'return' to use it with these combinators:
+
+  box1 <- hBox a b
+  box2 <- (return box1) <++> (hBox c d)
+
+The box layout widgets do more than merely place their children next to
+each other.  Box widgets determine how to lay their children out
+depending on two primary factors:
+
+ - the amount of terminal space available to the box at the time it is rendered
+ - the size policies of the child widgets
+
+Just as with graphical toolkits, when the terminal is resized, more
+space is available to render the interface, so we need to use the space
+wisely, and to determine how to use it, vty-ui requires that the widgets
+declare their own policies for how to use the available space.  The box
+size policy is to expand to use all available space to provide the
+maximum space to its children.  For more details on how Box widget is
+implemented, see the API documentation.
+
+Just placing text widgets in boxes won't get you very far; to influence
+layout, you'll need to add other space-filling widgets to those boxes to
+dynamically take advantage of the space in the terminal.  See the API
+documentation for the 'Fills' module in particular.
+
+There are many other examples of widgets which influence their children;
+take note of widget constructors which take other widgets as parameters.
+
+Handling User Input
+-------------------
+
+Many widgets in vty-ui can accept user input.  A widget can accept user
+input if (1) it has one or more key event handlers attached to it and
+(2) if it currently has the 'focus'.  The concept of focus in vty-ui
+works the same as in other user interface toolkits:  fundamentally, only
+one widget has the focus, and any user input is passed to that widget
+for handling.  Key event handlers can be chained so that if one handler
+does not handle an input event, it can be passed on to remaining
+handlers until either a handler accepts it or all handlers decline to
+handle it.
+
+Key event handlers can be added to any widget as follows:
+
+  w <- someWidget
+  w `onKeyPressed` \this key modifiers -> do
+    ...
+
+The handler must return IO Bool; True indicates that the handler
+processed the key event and took action, and False indicates that the
+handler declined to handle the event.  The event handler is passed the
+keystoke itself along with any modifier keys detected by the underlying
+Vty input processing.
+
+Key event handlers are invoked in the order in which they are added to
+the widget.  In the following example, the first handler will deline the
+'q' key but the second one will process it:
+
+  w `onKeyPressed` \_ key _ ->
+    if key == KASCII 'f' then
+      (launchTheMissiles >> return True) else
+      return False
+
+  w `onKeyPressed` \_ key _ ->
+    if key == KASCII 'q' then
+      exitSuccess else return False
+
+This functionality allows any widget to have its own "default" input
+event handling while still allowing you to add custom input event
+handling.
+
+Although any widget -- even a basic text widget -- can accept input
+events in this way, the events will only reach the widget if it has the
+focus.  The way we manage focus is with "focus groups."
+
+Focus Groups and Focus Changes
+------------------------------
+
+Graphical interfaces allow the user to change focus between all of the
+primary interface input elements, usually with the Tab key.  The same is
+true in vty-ui, except that because any widget can accept events -- and
+because which widgets the focus is a policy decision that you get to
+make -- the library cannot automatically determine which widgets should
+get the focus, or the order in which focus should be received.  As a
+result, vty-ui provides a type called a "focus group."
+
+A focus group is just an ordered sequence of widgets that should get the
+user's focus as the Tab key is pressed.  Widgets receive focus in the
+order in which they are added to the group, and the first widget to be
+added automatically gets the focus when the interface is set up.
+
+Creating a focus group is simple:
+
+  fg <- newFocusGroup
+
+Adding widgets to focus groups is also straightforward:
+
+  w <- someWidget
+  addToFocusGroup fg w
+
+A widget's "focused behavior" depends entirely on the widget's
+implementation.  Some widgets, when focused, provide a text cursor;
+others merely change foreground and background color.  In any case, the
+widgets that the user can interact with should be in the interface's
+focus group.
+
+Once the widgets are added to the focus group, you won't have to manage
+anything else; the Tab key event is intercepted by the FocusGroup
+itself, and user input events are passed to the focused widget until the
+focus is changed.
+
+If, for some reason, you would like to be notified when a widget
+receives or loses focus, you may register event handlers for these
+events on any widget:
+
+  w <- someWidget
+  w `onGainFocus` \this -> ...
+  w `onLoseFocus` \this -> ...
+
+In both cases above, the 'this' parameter to each event handler is just
+the widget to which the event handler is being attached (i.e., 'w').
+Many event handlers follow this pattern.
+
+Top-Level Key Handlers
+----------------------
+
+All user input is handled via a focus group; the focus state of the
+group indicates which widget will receive user input events.  However,
+focus groups are widgets, too!  Although they cannot be rendered, they
+support the same key handler interface as other widgets.  This is how we
+create "top-level" key event handlers for the interface.  For example,
+if you want to register a handler for a "quit" key such as 'q', the
+focus group itself is where this key event handler belongs.  This is
+because focus groups always try to handle key events first, and only
+pass those events onto the focused widget if they have no registered
+handler.
+
+  fg <- newFocusGroup
+  fg `onKeyPressed` \_ key _ ->
+    if key == KASCII 'q' then
+      exitSuccess else return False
+
+Merging Focus Groups
+--------------------
+
+Some widgets, such as the "dialog" widget, are composed of a number of
+input widgets already; these widgets must create their own focus groups
+and will return them to you when they are created.  In order to
+integrate these focus groups' input widgets into your overall
+application, you must merge them with your own focus group.
+
+For example, consider the "directory browser" widget provided by the
+library; you might want to place this alongside other widgets that
+should also accept input.  When you create the browser widget, you will
+get a reference to the widget and a reference to its focus group.
+
+  (browser, fg1) <- newDirBrowser defaultBrowserSkin
+
+  fg2 <- newFocusGroup
+  -- Add my own widgets to fg2
+
+  merged <- mergeFocusGroups fg1 fg2
+
+The 'mergeFocusGroups' function will merge the two focus groups and
+preserve the order of the widgets, such that widgets in the first group
+will come before widgets in the second group in the new group's focus
+ordering.  The merged group should then be passed to the rest of the
+setup process that we introduced in Getting Started; we'll go into more
+detail on that in the next section.
+
+Collections
+-----------
+
+Traditional user interfaces present the user with a window for each task
+the user needs to accomplish.  Since we don't have the option of
+presenting multiple "windows" to users of a terminal interface, we must
+present the user with one interface at a time.  Then, the application
+will manage the transition between these interfaces.
+
+Consider a text editor program in which we must present these top-level
+interfaces in the following order:
+
+ - The user runs the program and is presented with an interface to
+   select a file to edit
+ - The user chooses a file to edit and is presented with the editing
+   interface
+ - After editing, the user chooses to exit and we present a dialog which
+   asks the user whether to save the file
+
+All three of these interfaces are separate and should be given the
+entire terminal window; unlike other graphical toolkits, vty-ui does not
+provide a way to "show" or "hide" widgets.  Instead, it provides the
+notion of a "collection."  A collection is a widget which wraps a set of
+other widgets and maintains a pointer to the one that should be
+displayed at any given time.  The application then changes the current
+interface by changing the collection state.
+
+But an interface is more than what is presented in the terminal; each
+interface should have its own set of user input widgets and its own
+notion of focus.  Therefore, a collection is a set of interfaces *and
+their focus groups.*  When we change the state of the collection, we are
+really changing both the visual interface as well as the focus group
+used to interact with it.
+
+To create a collection:
+
+  c <- newCollection
+
+To add an interface and a focus group to the collection:
+
+  fg <- newFocusGroup
+  -- Add widgets to focus group fg
+  ui <- someWidget
+  changeToW <- addToCollection c ui fg
+
+As a convenience, addToCollection returns a MonadIO action which, when
+run, will switch to the specified interface.  In the example above,
+changeToW is an action which will switch to the interface with 'ui' as
+its top-level widget and 'fg' as its focus group.  You can use this
+action in event handlers that change your interface state.  If you
+prefer, you can use the 'setCurrentEntry' function instead, which allows
+you to set the collection's interface by number.  That method is not
+recommended, however, since a bad index can cause an exception to be
+thrown.
+
+The vty-ui Event Loop
+---------------------
+
+Vty-ui manages the user input event loop for you, and once you have
+created and populated a collection, you can invoke the main vty-ui event
+loop:
+
+  runUi c defaultContext
+
+The first parameter is the collection you have created; the second
+parameter is the 'rendering context'.  Here we use the 'default'
+rendering context provided by the library.  The rendering context
+provides three key pieces of functionality:
+
+ - The "skin" to use when rendering ASCII lines, corners, and
+   intersections
+ - The default "normal" (unfocused) attribute
+ - The default "focused" attribute
+
+Skinning
+========
+
+Some widgets, such as the table widget and the horizontal and vertical
+border widgets, use line-drawing characters to draw borders between
+interface elements.  Some terminal emulators are capable of drawing
+Unicode characters, which make for nicer-looking line-drawing.  Other
+terminal emulators work best only with ASCII.  The default rendering
+context uses a Unicode line-drawing skin, which you can change to any
+other skin (or your own) as follows:
+
+  runUi c $ defaultContext { skin = asciiSkin }
+
+The library provides skins in the 'Skin' module.
+
+Attributes
+==========
+
+The default attributes specified in the skin control how widgets appear.
+An attribute may consist of one or more settings of foreground and
+background color and text style, such as underline or blink.
+
+Every widget has the ability to store its own normal and focused
+attributes.  When widgets are rendered, they use these attributes; if
+they are not set, the widgets default to using those specified by the
+rendering context.  Widgets provide an API for setting these attributes
+using the 'HasNormalAttr' and 'HasFocusAttr' type classes.  The reason
+we use type classes to provide this API is so that third-party widgets
+may also provide this functionality.  The API is defined in the 'Core'
+module and is as follows:
+
+  setNormalAttribute w attr
+  setFocusAttribute w attr
+
+The 'attr' value is a Vty attribute value.  A Vty attribute may provide
+any (but not necessarily all!) of the settings that make up an
+attribute; any setting not specified (e.g. background color) can fall
+back to the default.  As a result, the attribute of a widget is the
+*combination* of its attribute and the attribute from the rendering
+context.  The widget's settings will take precedence, but any setting
+not provided will default to the rendering context.
+
+Consider this example:
+
+  w <- someWidget
+  setNormalAttribute w (fgColor white)
+
+  -- ... add the widget to a collection, etc.
+  runUi c $ defaultContext { normalAttr = yellow `on` blue }
+
+In this example, the widget 'w' will use a normal attribute of white on
+a blue background, since it specified only a foreground color as its
+normal attribute.  This kind of precedence allows you to very easily
+maintain consistency across your entire interface.
+
+In addition, container widgets are designed to pass their normal and
+focused attributes onto their children during the rendering process;
+this way, unless a child specifies an override with 'setNormalAttribute'
+or similar, it uses its parent's attributes.  Again, this facilitates
+consistency across the interface while only requiring the you to specify
+attributes where you want to deviate from the default.
+
+You can create attributes with varying levels of specificity by using
+the vty-ui API:
+
+  fgColor blue -- foreground only
+  bgColor blue -- background only
+  style underline -- style only
+  blue `on` red -- foreground and background
+  someAttr `withStyle` underline -- adding a style
+
+The Vty 'def_attr' value's default configuration is used as a basis for
+all partially-specified attributes.  The functions described above are
+defined in the 'Util' module.
