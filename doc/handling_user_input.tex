@@ -14,7 +14,7 @@ Key event handlers can be added to any widget as follows:
 
 \begin{verbatim}
 w <- someWidget
-w `onKeyPressed` {\backslash}this key modifiers -> do
+w `onKeyPressed` \this key modifiers -> do
   ...
 \end{verbatim}
 
@@ -29,12 +29,12 @@ the widget.  In the following example, the first handler will deline the
 'q' key but the second one will process it:
 
 \begin{verbatim}
-w `onKeyPressed` \backslash _ key _ ->
+w `onKeyPressed` \_ key _ ->
   if key == KASCII 'f' then
     (launchTheMissiles >> return True) else
     return False
 
-w `onKeyPressed` \backslash _ key _ ->
+w `onKeyPressed` \_ key _ ->
   if key == KASCII 'q' then
     exitSuccess else return False
 \end{verbatim}
