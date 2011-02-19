@@ -229,17 +229,14 @@ renderBox s ctx this = do
       case boxChildSizePolicy this of
         PerChild BoxAuto BoxAuto -> renderBoxAuto s ctx this
         Percentage v -> do
-                         -- XXX
                          let firstDim = round (fromRational
                                         (fromRational ((toRational v) / (100.0)) *
                                                           (toRational actualSpace)) ::Rational)
                              secondDim = fromEnum (actualSpace - firstDim)
                          renderBoxFixed s ctx this (fromEnum firstDim) secondDim
-        -- XXX
         PerChild BoxAuto (BoxFixed v) -> do
                                      let remaining = fromEnum (actualSpace - toEnum v)
                                      renderBoxFixed s ctx this remaining v
-        -- XXX
         PerChild (BoxFixed v) BoxAuto -> do
                                      let remaining = fromEnum (actualSpace - toEnum v)
                                      renderBoxFixed s ctx this v remaining
