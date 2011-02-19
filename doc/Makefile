@@ -5,4 +5,4 @@ manual.pdf: manual.tex
 	pdflatex manual.tex
 
 clean:
-	rm -f manual.dvi *~ manual.pdf manual.log manual.aux
+	rm -f *~ *.dvi *.pdf *.log *.aux *.toc *.out
