@@ -109,3 +109,66 @@ someAttr `withStyle` underline -- adding a style
 The Vty 'def\_attr' value's default configuration is used as a basis for
 all partially-specified attributes.  The functions described above are
 defined in the 'Util' module.
+
+\subsection{\texttt{vty-ui} and Concurrency}
+\label{sec:concurrency}
+
+So far we have only seen programs which modify widget state when user
+input events occur.  Such changes in widget state are safe, because
+they are triggered by the 'vty-ui' event loop.  However, your program
+will more than likely need to trigger some widget state changes due to
+other external events -- such as network events -- and 'vty-ui'
+provides a mechanism for doing this in a thread-safe way.
+
+'vty-ui' provides a function in the 'Core' module called 'schedule'
+which takes an 'IO' action and ``schedules'' it to be run by the main
+event loop.  It will be run as soon as possible, once the program
+control flow has returned to the event loop.  Since the scheduled
+action will be run by the event loop, it's important that the action
+not take very long; if it's important to block (e.g., by calling
+'threadDelay'), you should do that in a thread and only call
+'schedule' when you have work to do.
+
+Consider this example, in which a text widget called 'timeText' gets
+updated with the current time every second:
+
+\begin{minted}{haskell}
+forkIO $
+  forever $ do
+    schedule $ do
+      t <- getCurrentTime
+      setText timeText $
+        formatTime defaultTimeLocale rfc822DateFormat t
+    threadDelay 1000000
+\end{minted}
+
+In this example the blocking occurs outside of the scheduled code, and
+only when we have an update for the clock display do we schedule an
+action to run.
+
+Some built-in widgets will almost always be used in this way; for an
+example, take a look at the 'ProgressBar' widget in the 'ProgressBar'
+module.
+
+\subsection{Managing Your Own State}
+
+Vty-ui provides a lot of functionality, but of course the only truly
+useful applications you write will have their own state and will use
+that state to update the terminal interface.  Accomplishing this will
+require use of the 'schedule' function mentioned in Section
+\ref{sec:concurrency}.
+
+A typical design for applications using Vty-ui is:
+
+\begin{itemize}
+\item The application defines its own state type, call it 'AppState'.
+\item The 'AppState' type has fields for the various widgets that need
+  to be mutated over the course of the application's execution; for
+  example, lists, progress bars, radio buttons, check boxes, etc.
+\item Various event handlers are set up on these and other widgets.
+\item The application spawns one or more threads to manage events from
+  external sources, and when these events occur, actions are scheduled
+  to update the interface state accordingly.
+\item The main event loop is executed and control is passed to the
+  library.
+\end{itemize}
