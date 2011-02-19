@@ -389,13 +389,13 @@ Many event handlers follow this pattern.
 All user input is handled via a focus group; the focus state of the
 group indicates which widget will receive user input events.  However,
 focus groups are widgets, too!  Although they cannot be rendered, they
-support the same key handler interface as other widgets.  This is how we
-create "top-level" key event handlers for the interface.  For example,
-if you want to register a handler for a "quit" key such as 'q', the
-focus group itself is where this key event handler belongs.  This is
-because focus groups always try to handle key events first, and only
-pass those events onto the focused widget if they have no registered
-handler.
+support the same key handler interface as other widgets.  This is how
+we create "top-level" key event handlers for the interface.  For
+example, if you want to register a handler for a "quit" key such as
+'q', the focus group itself is where this key event handler belongs.
+This is because focus groups always try to handle key events first,
+and only pass those events onto the focused widget if the focus group
+has no matching handler.
 
 \begin{verbatim}
 fg <- newFocusGroup
@@ -407,10 +407,11 @@ fg `onKeyPressed` \backslash _ key _ ->
 \section{Merging Focus Groups}
 
 Some widgets, such as the "dialog" widget, are composed of a number of
-input widgets already; these widgets must create their own focus groups
-and will return them to you when they are created.  In order to
-integrate these focus groups' input widgets into your overall
-application, you must merge them with your own focus group.
+input widgets already; widgets like "dialog" must create their own
+focus groups to provide coherent focus behavior, and they will return
+them to you when they are created.  In order to integrate these focus
+groups' input widgets into your overall application, you must merge
+them with your own focus group.
 
 For example, consider the "directory browser" widget provided by the
 library; you might want to place this alongside other widgets that
@@ -488,10 +489,10 @@ run, will switch to the specified interface.  In the example above,
 changeToW is an action which will switch to the interface with 'ui' as
 its top-level widget and 'fg' as its focus group.  You can use this
 action in event handlers that change your interface state.  If you
-prefer, you can use the 'setCurrentEntry' function instead, which allows
-you to set the collection's interface by number.  That method is not
-recommended, however, since a bad index can cause an exception to be
-thrown.
+prefer, you can use the 'setCurrentEntry' function instead, which
+allows you to set the collection's interface by number.  That method
+is not recommended, however, since a bad index can cause an exception
+to be thrown.
 
 \section{The vty-ui Event Loop}
 
