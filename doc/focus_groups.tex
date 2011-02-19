@@ -1,0 +1,103 @@
+\section{Focus Groups and Focus Changes}
+
+Graphical interfaces allow the user to change focus between all of the
+primary interface input elements, usually with the Tab key.  The same is
+true in vty-ui, except that because any widget can accept events -- and
+because which widgets the focus is a policy decision that you get to
+make -- the library cannot automatically determine which widgets should
+get the focus, or the order in which focus should be received.  As a
+result, vty-ui provides a type called a "focus group."
+
+A focus group is just an ordered sequence of widgets that should get the
+user's focus as the Tab key is pressed.  Widgets receive focus in the
+order in which they are added to the group, and the first widget to be
+added automatically gets the focus when the interface is set up.
+
+Creating a focus group is simple:
+
+\begin{verbatim}
+fg <- newFocusGroup
+\end{verbatim}
+
+Adding widgets to focus groups is also straightforward:
+
+\begin{verbatim}
+w <- someWidget
+addToFocusGroup fg w
+\end{verbatim}
+
+A widget's "focused behavior" depends entirely on the widget's
+implementation.  Some widgets, when focused, provide a text cursor;
+others merely change foreground and background color.  In any case, the
+widgets that the user can interact with should be in the interface's
+focus group.
+
+Once the widgets are added to the focus group, you won't have to manage
+anything else; the Tab key event is intercepted by the FocusGroup
+itself, and user input events are passed to the focused widget until the
+focus is changed.
+
+If, for some reason, you would like to be notified when a widget
+receives or loses focus, you may register event handlers for these
+events on any widget:
+
+\begin{verbatim}
+w <- someWidget
+w `onGainFocus` {\backslash}this -> ...
+w `onLoseFocus` {\backslash}this -> ...
+\end{verbatim}
+
+In both cases above, the 'this' parameter to each event handler is just
+the widget to which the event handler is being attached (i.e., 'w').
+Many event handlers follow this pattern.
+
+\subsection{Top-Level Key Event Handlers}
+
+All user input is handled via a focus group; the focus state of the
+group indicates which widget will receive user input events.  However,
+focus groups are widgets, too!  Although they cannot be rendered, they
+support the same key handler interface as other widgets.  This is how
+we create "top-level" key event handlers for the interface.  For
+example, if you want to register a handler for a "quit" key such as
+'q', the focus group itself is where this key event handler belongs.
+This is because focus groups always try to handle key events first,
+and only pass those events onto the focused widget if the focus group
+has no matching handler.
+
+\begin{verbatim}
+fg <- newFocusGroup
+fg `onKeyPressed` \backslash _ key _ ->
+  if key == KASCII 'q' then
+    exitSuccess else return False
+\end{verbatim}
+
+\subsection{Merging Focus Groups}
+
+Some widgets, such as the "dialog" widget, are composed of a number of
+input widgets already; widgets like "dialog" must create their own
+focus groups to provide coherent focus behavior, and they will return
+them to you when they are created.  In order to integrate these focus
+groups' input widgets into your overall application, you must merge
+them with your own focus group.
+
+For example, consider the "directory browser" widget provided by the
+library; you might want to place this alongside other widgets that
+should also accept input.  When you create the browser widget, you will
+get a reference to the widget and a reference to its focus group.
+
+\begin{verbatim}
+(browser, fg1) <- newDirBrowser defaultBrowserSkin
+
+fg2 <- newFocusGroup
+-- Add my own widgets to fg2
+
+merged <- mergeFocusGroups fg1 fg2
+\end{verbatim}
+
+The 'mergeFocusGroups' function will merge the two focus groups and
+preserve the order of the widgets, such that widgets in the first
+group will come before widgets in the second group in the new group's
+focus ordering.  The merged group should then be passed to the rest of
+the setup process that we introduced in Section
+\ref{sec:gettingStarted}; we'll go into more detail on that in the
+next section.

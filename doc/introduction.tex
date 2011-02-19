@@ -1,0 +1,26 @@
+\section{Introduction}
+
+The terminal emulator user interface is a good, lightweight
+alternative to fully graphical interfaces such as those provided by
+GTK, QT, and the Windows and Macintosh OS X operating systems.  Aside
+from being lightweight, such interfaces are appealing because they can
+be used for remote administration more easily, and many users prefer
+them over graphical interfaces for their responsiveness.
+
+Historically, terminal interfaces have been notoriously difficult to
+program.  Libraries have appeared to aid in this task, such as
+Ncurses.  Ncurses is fairly low-level so other, higher-level libraries
+arose, such as CDK, Dialog, and Newt.  This library fits into the same
+category as those high-level libraries.
+
+vty-ui provides a “widget” infrastructure for constructing user
+interfaces similar to what you will find in libraries such as QT and
+GTK.  In addition to rendering infrastructure, vty-ui provides
+infrastructure for managing user input events, changes in widget focus,
+box layout support, and a flexible API for binding event handlers to
+widget events.  It is built on the Vty library, which provides
+functionality similar to Ncurses.
+
+This manual provides comprehensive documentation on how to use
+vty-ui's built-in widgets as well as information on how to implement
+your own.

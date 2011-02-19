@@ -1,0 +1,111 @@
+\section{The vty-ui Event Loop}
+
+Vty-ui manages the user input event loop for you, and once you have
+created and populated a collection, you can invoke the main vty-ui event
+loop:
+
+\begin{verbatim}
+runUi c defaultContext
+\end{verbatim}
+
+The first parameter is the collection you have created; the second
+parameter is the 'rendering context'.  Here we use the 'default'
+rendering context provided by the library.  The rendering context
+provides three key pieces of functionality:
+
+\begin{itemize}
+\item The "skin" to use when rendering ASCII lines, corners, and
+      intersections
+\item The default "normal" (unfocused) attribute
+\item The default "focused" attribute
+\end{itemize}
+
+\subsection{Skinning}
+
+Some widgets, such as the table widget and the horizontal and vertical
+border widgets, use line-drawing characters to draw borders between
+interface elements.  Some terminal emulators are capable of drawing
+Unicode characters, which make for nicer-looking line-drawing.  Other
+terminal emulators work best only with ASCII.  The default rendering
+context uses a Unicode line-drawing skin, which you can change to any
+other skin (or your own) as follows:
+
+\begin{verbatim}
+runUi c $ defaultContext { skin = asciiSkin }
+\end{verbatim}
+
+The library provides skins in the 'Skin' module.
+
+\subsection{Attributes}
+
+The default attributes specified in the skin control how widgets appear.
+An attribute may consist of one or more settings of foreground and
+background color and text style, such as underline or blink.
+
+Every widget has the ability to store its own normal and focused
+attributes.  When widgets are rendered, they use these attributes; if
+they are not set, the widgets default to using those specified by the
+rendering context.  Widgets provide an API for setting these attributes
+using the 'HasNormalAttr' and 'HasFocusAttr' type classes.  The reason
+we use type classes to provide this API is so that third-party widgets
+may also provide this functionality.  The API is defined in the 'Core'
+module and is as follows:
+
+\begin{verbatim}
+setNormalAttribute w attr
+setFocusAttribute w attr
+\end{verbatim}
+
+Convenience combinators also exist:
+
+\begin{verbatim}
+w <- someWidget
+     >>= withNormalAttribute attr
+     >>= withFocusAttribute attr
+\end{verbatim}
+
+The 'attr' value is a Vty attribute value.  A Vty attribute may provide
+any (but not necessarily all!) of the settings that make up an
+attribute; any setting not specified (e.g. background color) can fall
+back to the default.  As a result, the attribute of a widget is the
+*combination* of its attribute and the attribute from the rendering
+context.  The widget's settings will take precedence, but any setting
+not provided will default to the rendering context.
+
+Consider this example:
+
+\begin{verbatim}
+w <- someWidget
+setNormalAttribute w (fgColor white)
+
+-- ... add the widget to a collection, etc.
+runUi c $ defaultContext { normalAttr = yellow `on` blue }
+\end{verbatim}
+
+In this example, the widget 'w' will use a normal attribute of white on
+a blue background, since it specified only a foreground color as its
+normal attribute.  This kind of precedence allows you to very easily
+maintain consistency across your entire interface.
+
+In addition, container widgets are designed to pass their normal and
+focused attributes onto their children during the rendering process;
+this way, unless a child specifies an override with 'setNormalAttribute'
+or similar, it uses its parent's attributes.  Again, this facilitates
+consistency across the interface while only requiring the you to specify
+attributes where you want to deviate from the default.
+
+You can create attributes with varying levels of specificity by using
+the vty-ui API:
+
+XXX make this a table
+\begin{verbatim}
+fgColor blue -- foreground only
+bgColor blue -- background only
+style underline -- style only
+blue `on` red -- foreground and background
+someAttr `withStyle` underline -- adding a style
+\end{verbatim}
+
+The Vty 'def\_attr' value's default configuration is used as a basis for
+all partially-specified attributes.  The functions described above are
+defined in the 'Util' module.

@@ -1,0 +1,148 @@
+\section{Getting Started}
+\label{sec:gettingStarted}
+
+To get started using the library, you'll need to import the main library
+module:
+
+\begin{verbatim}
+import Graphics.Vty.All
+\end{verbatim}
+
+This module imports everything exported by the library; if you prefer,
+you may import specific modules depending on your needs.
+
+As a demonstration, we'll create a program which presents an editing
+widget in the middle of the screen.  You'll be able to provide some
+text input and press Enter, at which point the program will exit and
+will print what you entered.  The code for this program is as follows:
+
+\begin{verbatim}
+main :: IO ()
+main = do
+  e <- editWidget
+  ui <- centered e
+
+  fg <- newFocusGroup
+  addToFocusGroup fg e
+
+  c <- newCollection
+  addToCollection c ui fg
+
+  e `onActivate` \this ->
+    getEditText this >>= (error . ("You entered: " ++))
+
+  runUi c defaultContext
+\end{verbatim}
+
+There are some interesting things to note about this program.  First,
+it withstands changes in your terminal size automatically, even though
+the size of the terminal is not an explicit part of the program.
+Second, it only took a few lines of code to create a rich editing
+interface and position it in the terminal as desired.  Now we'll go
+into some depth on this example.
+
+\begin{verbatim}
+e <- editWidget
+\end{verbatim}
+
+This line creates an “edit widget.”  This type of widget provides an
+editing interface for a single line of text and supports some
+Emacs-style editing keybindings.  For more information on this widget
+type, see XXX.
+
+\begin{verbatim}
+ui <- centered e
+\end{verbatim}
+
+This creates a new widget, ui, which centers the edit widget vertically
+and horizontally.  This is a common pattern: create one widget and wrap
+it in another to affect its behavior.  For more information on
+centering, see XXX.
+
+\begin{verbatim}
+fg <- newFocusGroup
+\end{verbatim}
+
+This creates a “focus group.”  A focus group is an ordered sequence of
+widgets that will receive focus as you cycle between them.  By default,
+this is done with the Tab key.  Every vty-ui interface requires a focus
+group.
+
+\begin{verbatim}
+addToFocusGroup fg e
+\end{verbatim}
+
+This adds the edit widget to the focus group.  The first widget to be
+added to a focus group automatically receives the initial focus, and
+widgets receive focus in the order they are added to the group.
+
+\begin{verbatim}
+c <- newCollection
+\end{verbatim}
+
+This creates a new “collection.”  A collection is group of interfaces,
+each with its own focus group, and the collection makes it possible to
+switch between these interfaces.  Think of an e-mail client whose
+initial interface might be listing the contents of the inbox; subsequent
+interactions might change the interface to present only the selected
+message on the screen, with different navigation keystrokes, one of
+which returns to the inbox interface.  Collections make it easy to
+switch between such interface modes.  Every vty-ui program requires a
+collection.
+
+\begin{verbatim}
+addToCollection ui fg
+\end{verbatim}
+
+This adds the top-level user interface widget, ui, to the collection and
+sets its focus group to fg.  This means that the widgets to receive the
+user’s focus (and, consequently, input) will be those in the focus group
+fg and the interface to be presented will be ui.
+
+\begin{verbatim}
+e `onActivate` \this -> getEditText this >>=
+  (error . ("You entered: " ++))
+\end{verbatim}
+
+This binds an event handler to the “activation” of the edit widget,
+which occurs when the user focuses the edit widget and presses Enter.
+The handler for this event is an IO action which takes the edit widget
+itself as its only parameter.  The getEditText function gets the current
+text of the edit widget, and we use error to abort the program and print
+the text.
+
+\begin{verbatim}
+runUi c defaultContext
+\end{verbatim}
+
+This runs the main vty-ui event loop with the collection we created
+above.  We pass a “default rendering context” which provides defaults
+for the rendering process, such as the default foreground and background
+colors to be used for normal and focused widgets, as well as a “skin”
+for line-drawing.  The main event loop processes input events from the
+Vty library and re-draws the interface after calling any event handlers.
+It also shuts down Vty in the event of an exception.
+
+We've now seen the general structure of a vty-ui program:
+\begin{itemize}
+\item Create and compose widgets,
+\item Create a focus group and add input-receiving widgets to the group,
+\item Create a collection and add the top-level widget and focus group
+      to the collection, and
+\item Invoke the main event loop with the collection and some default
+      rendering settings.
+\end{itemize}
+
+\subsection{Notes on the \texttt{vty-ui} API}
+
+When you create a widget in vty-ui, the result with almost always have a
+type like 'Widget a'.  The type variable 'a' represents the specific
+type of state the widget can carry, and therefore which operations can
+be performed on it.  For example, a text widget has type 'Widget
+FormattedText'.
+
+All widget constructors must ultimately be run in the IO monad, so all
+API functions must be run in an instance of MonadIO.  In this manual, we
+will use IO to simplify type signatures.  Although MonadIO is by far the
+more common constraint, be sure to check the API documentation to be
+sure; some functions, such as callbacks, are IO actions.

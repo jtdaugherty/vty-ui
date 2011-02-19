@@ -1,0 +1,48 @@
+\section{Handling User Input}
+
+Many widgets in vty-ui can accept user input.  A widget can accept user
+input if (1) it has one or more key event handlers attached to it and
+(2) if it currently has the 'focus'.  The concept of focus in vty-ui
+works the same as in other user interface toolkits:  fundamentally, only
+one widget has the focus, and any user input is passed to that widget
+for handling.  Key event handlers can be chained so that if one handler
+does not handle an input event, it can be passed on to remaining
+handlers until either a handler accepts it or all handlers decline to
+handle it.
+
+Key event handlers can be added to any widget as follows:
+
+\begin{verbatim}
+w <- someWidget
+w `onKeyPressed` {\backslash}this key modifiers -> do
+  ...
+\end{verbatim}
+
+The handler must return IO Bool; True indicates that the handler
+processed the key event and took action, and False indicates that the
+handler declined to handle the event.  The event handler is passed the
+keystoke itself along with any modifier keys detected by the underlying
+Vty input processing.
+
+Key event handlers are invoked in the order in which they are added to
+the widget.  In the following example, the first handler will deline the
+'q' key but the second one will process it:
+
+\begin{verbatim}
+w `onKeyPressed` \backslash _ key _ ->
+  if key == KASCII 'f' then
+    (launchTheMissiles >> return True) else
+    return False
+
+w `onKeyPressed` \backslash _ key _ ->
+  if key == KASCII 'q' then
+    exitSuccess else return False
+\end{verbatim}
+
+This functionality allows any widget to have its own "default" input
+event handling while still allowing you to add custom input event
+handling.
+
+Although any widget -- even a basic text widget -- can accept input
+events in this way, the events will only reach the widget if it has the
+focus.  The way we manage focus is with "focus groups."

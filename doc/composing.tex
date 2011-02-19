@@ -1,0 +1,77 @@
+\section{Composing Widgets}
+
+As with any user interface toolkit, vty-ui lets you compose your widgets
+to create a user interface that is laid out the way you want.  Widgets
+fall into two basic categories:
+
+\begin{itemize}
+\item "basic" widgets like text strings, ASCII decorations
+      (e.g. vertical and horizontal borders), and space-filling
+      widgets
+\item "container" widgets which hold other widgets and control how
+      those widgets are laid out and rendered.  Most of these widgets
+      influence layout; some modify other behaviors.
+\end{itemize}
+
+The most important widgets used in interface layout are the box layout
+widgets:
+
+\begin{verbatim}
+vBox :: Widget a -> Widget b -> IO (Widget (Box a b))
+hBox :: Widget a -> Widget b -> IO (Widget (Box a b))
+\end{verbatim}
+
+The vBox function returns a new widget of type 'Widget (Box a b)' which
+lays out its two children vertically in the order they are passed to the
+function.  The hBox function does the same for horizontal layout.  These
+two widgets will probably be the most common in your applications.
+
+vty-ui provides some combinators to make Boxes a bit eaiser to work
+with:
+
+\begin{verbatim}
+(<-->) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
+(<++>) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
+\end{verbatim}
+
+These functions are essentially aliases for vBox and hBox, respectively,
+with the important difference being that they take IO arguments; so, for
+example, you can use them to create nested boxes as follows:
+
+\begin{verbatim}
+mainBox <- (hBox a b) <--> (hBox c d <++> vBox e f)
+\end{verbatim}
+
+If you already have a pure reference to another widget, you can merely
+wrap it with 'return' to use it with these combinators:
+
+\begin{verbatim}
+box1 <- hBox a b
+box2 <- (return box1) <++> (hBox c d)
+\end{verbatim}
+
+The box layout widgets do more than merely place their children next to
+each other.  Box widgets determine how to lay their children out
+depending on two primary factors:
+
+\begin{itemize}
+\item the amount of terminal space available to the box at the time it
+      is rendered
+\item the size policies of the child widgets
+\end{itemize}
+
+Just as with graphical toolkits, when the terminal is resized, more
+space is available to render the interface, so we need to use the space
+wisely, and to determine how to use it, vty-ui requires that the widgets
+declare their own policies for how to use the available space.  The box
+size policy is to expand to use all available space to provide the
+maximum space to its children.  For more details on how Box widget is
+implemented, see the API documentation.
+
+Just placing text widgets in boxes won't get you very far; to influence
+layout, you'll need to add other space-filling widgets to those boxes to
+dynamically take advantage of the space in the terminal.  See the API
+documentation for the 'Fills' module in particular.
+
+There are many other examples of widgets which influence their children;
+take note of widget constructors which take other widgets as parameters.

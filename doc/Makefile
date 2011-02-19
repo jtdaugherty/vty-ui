@@ -1,5 +1,5 @@
 
-manual.pdf: manual.tex
+manual.pdf: *.tex
 	# Run it twice so the TOC gets generated properly
 	pdflatex manual.tex
 	pdflatex manual.tex
