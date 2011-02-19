@@ -1,4 +1,5 @@
 \section{Focus Groups and Focus Changes}
+\label{sec:focus}
 
 Graphical interfaces allow the user to change focus between all of the
 primary interface input elements, usually with the Tab key.  The same is
@@ -70,6 +71,36 @@ fg `onKeyPressed` \_ key _ ->
   if key == KASCII 'q' then
     exitSuccess else return False
 \end{minted}
+
+\subsection{Container Widgets and Input Events}
+
+Although most of the time you will probably end up adding key event
+handlers directly to interactive widgets, it may be convenient to wrap
+those widgets in containers that affect their behavior.  For example,
+in the demonstration in Section \ref{sec:gettingStarted}, we used then
+'centered' function to center an edit widget.  The result was a
+'Centered' widget, which is one of the many built-in container widget
+types.  This type of widget ``relays'' user input events and focus
+events to the widget it contains.  This means you can add key and
+focus event handlers to the outer widget and they will be passed on to
+the child widget for handling.  Most container widgets are implemented
+this way; when in doubt about event relaying behavior, consult the API
+documentation.
+
+As we saw above, only focused widgets will ever be asked to process
+input events; this means that if you add event handlers to a container
+such as 'Centered', you'll need to add that widget -- not its child --
+to the focus group that you create.
+
+You might wonder why this is useful.  Consider a situation in which
+you want to want to add some paadding to an input widget, such as an
+edit widget, but when the edit widget is focused you want to highlight
+the padding, too, to make them appear as a single widget.  Since
+padding widgets (see Section XXX) relay events to their children, you
+could focus the padding widget and the edit widget would automatically
+receive the focus as well as user input events.  This kind of focus
+and event ``inheritance'' makes it possible to create new, composite
+widgets in a flexible way.
 
 \subsection{Merging Focus Groups}
 
