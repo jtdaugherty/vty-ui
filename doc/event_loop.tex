@@ -4,9 +4,9 @@ Vty-ui manages the user input event loop for you, and once you have
 created and populated a collection, you can invoke the main vty-ui event
 loop:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 runUi c defaultContext
-\end{verbatim}
+\end{minted}
 
 The first parameter is the collection you have created; the second
 parameter is the 'rendering context'.  Here we use the 'default'
@@ -30,9 +30,9 @@ terminal emulators work best only with ASCII.  The default rendering
 context uses a Unicode line-drawing skin, which you can change to any
 other skin (or your own) as follows:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 runUi c $ defaultContext { skin = asciiSkin }
-\end{verbatim}
+\end{minted}
 
 The library provides skins in the 'Skin' module.
 
@@ -51,18 +51,18 @@ we use type classes to provide this API is so that third-party widgets
 may also provide this functionality.  The API is defined in the 'Core'
 module and is as follows:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 setNormalAttribute w attr
 setFocusAttribute w attr
-\end{verbatim}
+\end{minted}
 
 Convenience combinators also exist:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 w <- someWidget
      >>= withNormalAttribute attr
      >>= withFocusAttribute attr
-\end{verbatim}
+\end{minted}
 
 The 'attr' value is a Vty attribute value.  A Vty attribute may provide
 any (but not necessarily all!) of the settings that make up an
@@ -74,13 +74,13 @@ not provided will default to the rendering context.
 
 Consider this example:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 w <- someWidget
 setNormalAttribute w (fgColor white)
 
 -- ... add the widget to a collection, etc.
 runUi c $ defaultContext { normalAttr = yellow `on` blue }
-\end{verbatim}
+\end{minted}
 
 In this example, the widget 'w' will use a normal attribute of white on
 a blue background, since it specified only a foreground color as its
@@ -98,13 +98,13 @@ You can create attributes with varying levels of specificity by using
 the vty-ui API:
 
 XXX make this a table
-\begin{verbatim}
+\begin{minted}{haskell}
 fgColor blue -- foreground only
 bgColor blue -- background only
 style underline -- style only
 blue `on` red -- foreground and background
 someAttr `withStyle` underline -- adding a style
-\end{verbatim}
+\end{minted}
 
 The Vty 'def\_attr' value's default configuration is used as a basis for
 all partially-specified attributes.  The functions described above are

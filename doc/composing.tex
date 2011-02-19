@@ -16,10 +16,10 @@ fall into two basic categories:
 The most important widgets used in interface layout are the box layout
 widgets:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 vBox :: Widget a -> Widget b -> IO (Widget (Box a b))
 hBox :: Widget a -> Widget b -> IO (Widget (Box a b))
-\end{verbatim}
+\end{minted}
 
 The vBox function returns a new widget of type 'Widget (Box a b)' which
 lays out its two children vertically in the order they are passed to the
@@ -29,26 +29,26 @@ two widgets will probably be the most common in your applications.
 vty-ui provides some combinators to make Boxes a bit eaiser to work
 with:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 (<-->) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
 (<++>) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
-\end{verbatim}
+\end{minted}
 
 These functions are essentially aliases for vBox and hBox, respectively,
 with the important difference being that they take IO arguments; so, for
 example, you can use them to create nested boxes as follows:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 mainBox <- (hBox a b) <--> (hBox c d <++> vBox e f)
-\end{verbatim}
+\end{minted}
 
 If you already have a pure reference to another widget, you can merely
 wrap it with 'return' to use it with these combinators:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 box1 <- hBox a b
 box2 <- (return box1) <++> (hBox c d)
-\end{verbatim}
+\end{minted}
 
 The box layout widgets do more than merely place their children next to
 each other.  Box widgets determine how to lay their children out

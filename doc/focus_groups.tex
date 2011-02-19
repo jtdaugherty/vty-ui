@@ -15,16 +15,16 @@ added automatically gets the focus when the interface is set up.
 
 Creating a focus group is simple:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 fg <- newFocusGroup
-\end{verbatim}
+\end{minted}
 
 Adding widgets to focus groups is also straightforward:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 w <- someWidget
 addToFocusGroup fg w
-\end{verbatim}
+\end{minted}
 
 A widget's "focused behavior" depends entirely on the widget's
 implementation.  Some widgets, when focused, provide a text cursor;
@@ -41,11 +41,11 @@ If, for some reason, you would like to be notified when a widget
 receives or loses focus, you may register event handlers for these
 events on any widget:
 
-\begin{verbatim}
+\begin{minted}{haskell}
 w <- someWidget
 w `onGainFocus` \this -> ...
 w `onLoseFocus` \this -> ...
-\end{verbatim}
+\end{minted}
 
 In both cases above, the 'this' parameter to each event handler is just
 the widget to which the event handler is being attached (i.e., 'w').
@@ -64,12 +64,12 @@ This is because focus groups always try to handle key events first,
 and only pass those events onto the focused widget if the focus group
 has no matching handler.
 
-\begin{verbatim}
+\begin{minted}{haskell}
 fg <- newFocusGroup
 fg `onKeyPressed` \_ key _ ->
   if key == KASCII 'q' then
     exitSuccess else return False
-\end{verbatim}
+\end{minted}
 
 \subsection{Merging Focus Groups}
 
@@ -85,14 +85,14 @@ library; you might want to place this alongside other widgets that
 should also accept input.  When you create the browser widget, you will
 get a reference to the widget and a reference to its focus group.
 
-\begin{verbatim}
+\begin{minted}{haskell}
 (browser, fg1) <- newDirBrowser defaultBrowserSkin
 
 fg2 <- newFocusGroup
 -- Add my own widgets to fg2
 
 merged <- mergeFocusGroups fg1 fg2
-\end{verbatim}
+\end{minted}
 
 The 'mergeFocusGroups' function will merge the two focus groups and
 preserve the order of the widgets, such that widgets in the first
