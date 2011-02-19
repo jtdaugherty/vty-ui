@@ -472,6 +472,12 @@ module and is as follows:
   setNormalAttribute w attr
   setFocusAttribute w attr
 
+Convenience combinators also exist:
+
+  w <- someWidget
+       >>= withNormalAttribute attr
+       >>= withFocusAttribute attr
+
 The 'attr' value is a Vty attribute value.  A Vty attribute may provide
 any (but not necessarily all!) of the settings that make up an
 attribute; any setting not specified (e.g. background color) can fall
