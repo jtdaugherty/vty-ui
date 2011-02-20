@@ -77,9 +77,9 @@ fg `onKeyPressed` \_ key _ ->
 Although most of the time you will probably end up adding key event
 handlers directly to interactive widgets, it may be convenient to wrap
 those widgets in containers that affect their behavior.  For example,
-in the demonstration in Section \ref{sec:gettingStarted}, we used then
-\fw{centered} function to center an edit widget.  The result was a
-\fw{Centered} widget, which is one of the many built-in container
+in the demonstration in Section \ref{sec:gettingStarted}, we used
+then \fw{centered} function to center an edit widget.  The result was
+a \fw{Centered} widget, which is one of the many built-in container
 widget types.  This type of widget ``relays'' user input events and
 focus events to the widget it contains.  This means you can add key
 and focus event handlers to the outer widget and they will be passed

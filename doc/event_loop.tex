@@ -17,8 +17,9 @@ provides three key pieces of functionality:
 \begin{itemize}
 \item The "skin" to use when rendering ASCII lines, corners, and
       intersections
-\item The default "normal" (unfocused) attribute
-\item The default "focused" attribute
+\item The default ``normal'' (unfocused) attribute
+\item The default ``focused'' attribute
+\item The current ``override'' attribute
 \end{itemize}
 
 \subsection{Skinning}
@@ -38,19 +39,27 @@ runUi c $ defaultContext { skin = asciiSkin }
 The library provides skins in the \fw{Skin} module.
 
 \subsection{Attributes}
+\label{sec:attributes}
 
-The default attributes specified in the skin control how widgets appear.
 An attribute may consist of one or more settings of foreground and
-background color and text style, such as underline or blink.
+background color and text style, such as underline or blink.  The
+default attributes specified in the skin control how widgets appear.
 
 Every widget has the ability to store its own normal and focused
 attributes.  When widgets are rendered, they use these attributes; if
 they are not set, the widgets default to using those specified by the
-rendering context.  Widgets provide an API for setting these
-attributes using the \fw{HasNormalAttr} and \fw{HasFocusAttr} type
-classes.  The reason we use type classes to provide this API is so
-that third-party widgets may also provide this functionality.  The API
-is defined in the \fw{Core} module and is as follows:
+rendering context.  The only exception is the ``override'' attribute.
+Instead of ``falling back'' to this attribute of no others are
+specified, the presence of this attribute reuqires widgets to use it.
+For example, this attribute is used in the \fw{List} widget so that
+the currently-selected list item can be highlighted, which requires
+the \fw{List} to override the item's default attribute configuration.
+
+Widgets provide an API for setting these attributes using the
+\fw{HasNormalAttr} and \fw{HasFocusAttr} type classes.  The reason we
+use type classes to provide this API is so that third-party widgets
+may also provide this functionality.  The API is defined in the
+\fw{Core} module and is as follows:
 
 \begin{minted}{haskell}
 setNormalAttribute w attr
