@@ -1,3 +1,135 @@
 \section{Creating a New Widget Type}
 
-Stuff.
+The first step in creating a custom widget is deciding what kind of
+state the widget will store.  This decision is based on what behaviors
+the widget can have and it determines what the widget's user-facing
+API will be.
+
+As an example, consider a widget that displays a numeric counter.  The
+widget state will be the value of the counter.  We'll start with the
+following state type:\footnote{You might wonder why we don't just use
+  \fw{Int}; the reason is because that's too general.  Other widgets
+  might represent the temperature with an \fw{Int}, and then your
+  counter API functions -- taking a widget of type \fw{Widget Int} --
+  would work on their widgets, which is probably not what you want!
+  An alternative would be to use a \fw{newtype}.}
+
+\begin{minted}{haskell}
+data Counter = Counter Int
+\end{minted}
+
+The next step is to write a widget constructor function.  This
+function will return a value of type \fw{Widget Counter}, which
+indicates that it is a \fw{Widget} with state type \fw{Counter}.
+We'll allow the constructor to take the counter's initial value.
+Here's what the function will look like in full:
+
+\begin{minted}{haskell}
+newCounter :: (MonadIO m) => Int -> m (Widget Counter)
+newCounter initialValue = do
+  wRef <- newWidget
+  updateWidget wRef $ \w ->
+    w { state = Counter initialValue
+      , render_ =
+        \this size ctx -> do
+          (Counter v) <- getState this
+          return $ string (getNormalAttr ctx) (show v)
+      }
+\end{minted}
+
+Now we have a constructor for a \fw{Counter} widget!  Its type will
+allow us to use it in any monad on top of \fw{IO}.  Let's go through
+the code:
+
+\begin{minted}{haskell}
+wRef <- newWidget
+\end{minted}
+
+The \fw{Core} module's \fw{newWidget} function creates a new
+\fw{IORef} wrapping a \fw{WidgetImpl a}.  The \fw{WidgetImpl} type is
+where all of the widet logic is actually implemented.  You implement
+this logic by overriding the default fields of the \fw{WidgetImpl}
+type, such as \fw{render\_} and \fw{state}.  We call \fw{newWidget}'s
+result \fw{wRef} because it is a reference to a widget object, and
+this helps distinguish it from the actual widget data in the next
+step.
+
+\begin{minted}{haskell}
+updateWidget wRef $ \w -> ...
+\end{minted}
+
+The \fw{updateWidget} function takes any \fw{Widget a} and a function
+\fw{WidgetImpl a -> WidgetImpl a} and updates the widget
+implementation contained in the \fw{IORef}.  We use this step to
+specify the behavior of the widget beyond the defaults, which are
+specified in the \fw{Core} module.
+
+\begin{minted}{haskell}
+state = Counter initialValue
+\end{minted}
+
+Here we set the inital value of the counter and create the
+\fw{Counter} state and store it in the \fw{WidgetImpl} which, due to
+type inference, is of type \fw{WidgetImpl Counter}.  We'll reference
+this state later on, in the rendering code and in any API functions
+that we want to implement to mutate it.
+
+\begin{minted}{haskell}
+render_ =
+  \this size ctx -> do
+    (Counter v) <- getState this
+    return $ string (getNormalAttr ctx) (show v)
+\end{minted}
+
+This actually does the job of rendering the counter value into a form
+that can be displayed in the terminal.  The type of \fw{render\_} is
+\fw{Widget a -> DisplayRegion -> RenderContext -> IO Image}.  The
+types are as follows:
+
+\begin{itemize}
+\item \fw{Widget a} - the widget being rendered, i.e., the \fw{Widget
+  Counter} reference.  This is passed to provide access to the
+  widget's state, which will be used to render it.
+\item \fw{DisplayRegion} - the size of the display region into which
+  the widget should fit, measured in rows and columns.  The image
+  returned by \fw{render\_} should \textit{never} be larger than this
+  region, or the rendering process will raise an exception.  The
+  reason is because if it were to violate the specified size, then the
+  assumptions made by any other widgets about layout would fail, and
+  the interface would become garbled in the terminal.  In addition,
+  widget sizes are used to compute widget positions, so sizes must be
+  accurate.
+
+  A widget may render to an \fw{Image} \textit{smaller} than the
+  specified size; many do.
+\item \fw{RenderContext} - the rendering context passed to \fw{runUi}
+  as explained in Section \ref{sec:event_loop}.  In the \fw{render\_}
+  function, we use this to determine which screen attributes to use.
+  We don't care about supporting a focused behavior in our
+  \fw{Counter} widgets, so we just look at the ``normal'' attribute.
+\item \fw{Image} - this is the type of Vty ``images'' that can be
+  composed into a final terminal representation.  All widgets must be
+  converted to this type during the rendering process to be put
+  together into what goes into the terminal.
+\end{itemize}
+
+The implementation of the \fw{render\_} function is as follows:
+
+\begin{minted}{haskell}
+(Counter v) <- getState this
+\end{minted}
+
+The \fw{getState} function takes a \fw{Widget a} and returns its
+\fw{state} field (of type \fw{a}).  In this case, it returns the
+\fw{Counter} value resident in the widget structure.
+
+\begin{minted}{haskell}
+return $ string (getNormalAttr ctx) (show v)
+\end{minted}
+
+The \fw{string} function is a Vty library function which takes an
+attribute (\fw{Attr}) and a \fw{String} and returns an \fw{Image}.
+The \fw{getNormalAttr} function returns the default normal attribute
+from the \fw{RenderContext}, merged with the ``override'' attribute
+from the \fw{RenderContext}, if it is set. XXX either explain that
+now, or explain it sooner!
