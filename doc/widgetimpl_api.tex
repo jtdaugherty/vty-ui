@@ -1,2 +1,75 @@
 \section{The \fw{WidgetImpl} API}
 
+The \fw{WidgetImpl} type is the type of widget implementations.  You
+have already seen some of its fields in previous sections.
+
+\begin{minted}{haskell}
+data WidgetImpl a = WidgetImpl {
+      state :: a
+    , render_ :: Widget a -> DisplayRegion -> RenderContext
+              -> IO Image
+    , growHorizontal_ :: a -> IO Bool
+    , growVertical_ :: a -> IO Bool
+    , setCurrentPosition_ :: Widget a -> DisplayRegion -> IO ()
+    , cursorInfo :: Widget a -> IO (Maybe DisplayRegion)
+    , focused :: Bool
+    , currentSize :: DisplayRegion
+    , currentPosition :: DisplayRegion
+    , normalAttribute :: Attr
+    , focusAttribute :: Attr
+    , keyEventHandler :: Widget a -> Key -> [Modifier] -> IO Bool
+    , gainFocusHandler :: Widget a -> IO ()
+    , loseFocusHandler :: Widget a -> IO ()
+    }
+\end{minted}
+
+Several fields are managed automatically and should not be overridden
+by widget implementors:
+
+\begin{itemize}
+\item \fw{focused} -- \fw{True} if this widget is focused.  As
+  explained in Section \ref{sec:focus}, although one widget has the
+  user's focus, internally many widgets may share it in a hierarchy.
+\item \fw{currentSize} -- the ``current'' size of the widget, i.e.,
+  the size of the \fw{Image} \textit{after} the last time the widget
+  was rendered.  Sometimes used when rendering child widgets.
+\item \fw{currentPosition} -- the ``currnet'' position of the widget's
+  upper-left corner, i.e., the position of the widget's upper-left
+  corner \textit{after} the last time the widget as rendered.
+  Sometimes used when rendering child widgets and when positioning the
+  cursor, if any.
+\item \fw{normalAttribute} -- the widget's normal attribute.  Defaults
+  to Vty's \fw{def\_attr} value, which merges transparently with the
+  \fw{RenderContext}'s normal attribute.
+\item \fw{focusAttribute} -- the widget's focus attribute.  Defaults
+  to Vty's \fw{def\_attr} value, which merges transparently with the
+  \fw{RenderContext}'s focus attribute.
+\item \fw{keyEventHandler} -- the action responsible for handling key
+  events for this widget.  The default implementation merely starts
+  calling the chain of user-registered key event handlers; it is
+  strongly recommended that you \textit{not} replace this, but use
+  \fw{onKeyPressed} to register key handlers instead.
+\item \fw{gainFocusHandler} -- the action responisible for handling
+  the widget's focus gain event.  The default implementation sets the
+  \fw{focused} field and calls user-registered focus change event
+  handlers.  Extend this by adding your own focus event handlers with
+  \fw{onGainFocus} as described in Section \ref{sec:focus}.
+\item \fw{loseFocusHandler} -- the action responisible for handling
+  the widget's focus loss event.  The default implementation sets the
+  \fw{focused} field and calls user-registered focus change event
+  handlers.  Extend this by adding your own focus event handlers with
+  \fw{onLoseFocus} as described in Section \ref{sec:focus}.
+\end{itemize}
+
+The following fields are important to widget implementors and,
+depending on the widget requirements, need to be overridden:
+
+\begin{itemize}
+\item \fw{state} -- the state of the widget, as described in Section
+  \ref{sec:new_widget_type}.
+\item \fw{render\_} --
+\item \fw{growHorizontal\_} --
+\item \fw{growVertical\_} --
+\item \fw{getCurrentPosition\_} --
+\item \fw{cursorInfo} --
+\end{itemize}
