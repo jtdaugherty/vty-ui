@@ -114,3 +114,8 @@
 
 # Custom
 (^|/)dist(/|$)
+\.aux$
+\.log$
+\.dvi$
+\.out$
+\.toc$
