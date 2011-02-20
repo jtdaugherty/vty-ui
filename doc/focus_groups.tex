@@ -27,11 +27,11 @@ w <- someWidget
 addToFocusGroup fg w
 \end{minted}
 
-A widget's "focused behavior" depends entirely on the widget's
+A widget's ``focused behavior'' depends entirely on the widget's
 implementation.  Some widgets, when focused, provide a text cursor;
-others merely change foreground and background color.  In any case, the
-widgets that the user can interact with should be in the interface's
-focus group.
+others merely change foreground and background color.  In any case,
+the widgets that the user can interact with should be in the
+interface's focus group.
 
 Once the widgets are added to the focus group, you won't have to manage
 anything else; the Tab key event is intercepted by the FocusGroup
@@ -48,9 +48,9 @@ w `onGainFocus` \this -> ...
 w `onLoseFocus` \this -> ...
 \end{minted}
 
-In both cases above, the 'this' parameter to each event handler is just
-the widget to which the event handler is being attached (i.e., 'w').
-Many event handlers follow this pattern.
+In both cases above, the \fw{this} parameter to each event handler is
+just the widget to which the event handler is being attached (i.e.,
+\fw{w}).  Many event handlers follow this pattern.
 
 \subsection{Top-Level Key Event Handlers}
 
@@ -60,10 +60,10 @@ focus groups are widgets, too!  Although they cannot be rendered, they
 support the same key handler interface as other widgets.  This is how
 we create "top-level" key event handlers for the interface.  For
 example, if you want to register a handler for a "quit" key such as
-'q', the focus group itself is where this key event handler belongs.
-This is because focus groups always try to handle key events first,
-and only pass those events onto the focused widget if the focus group
-has no matching handler.
+\fw{'q'}, the focus group itself is where this key event handler
+belongs.  This is because focus groups always try to handle key events
+first, and only pass those events onto the focused widget if the focus
+group has no matching handler.
 
 \begin{minted}{haskell}
 fg <- newFocusGroup
@@ -78,19 +78,19 @@ Although most of the time you will probably end up adding key event
 handlers directly to interactive widgets, it may be convenient to wrap
 those widgets in containers that affect their behavior.  For example,
 in the demonstration in Section \ref{sec:gettingStarted}, we used then
-'centered' function to center an edit widget.  The result was a
-'Centered' widget, which is one of the many built-in container widget
-types.  This type of widget ``relays'' user input events and focus
-events to the widget it contains.  This means you can add key and
-focus event handlers to the outer widget and they will be passed on to
-the child widget for handling.  Most container widgets are implemented
-this way; when in doubt about event relaying behavior, consult the API
-documentation.
+\fw{centered} function to center an edit widget.  The result was a
+\fw{Centered} widget, which is one of the many built-in container
+widget types.  This type of widget ``relays'' user input events and
+focus events to the widget it contains.  This means you can add key
+and focus event handlers to the outer widget and they will be passed
+on to the child widget for handling.  Most container widgets are
+implemented this way; when in doubt about event relaying behavior,
+consult the API documentation.
 
 As we saw above, only focused widgets will ever be asked to process
 input events; this means that if you add event handlers to a container
-such as 'Centered', you'll need to add that widget -- not its child --
-to the focus group that you create.
+such as \fw{Centered}, you'll need to add that widget -- not its child
+-- to the focus group that you create.
 
 You might wonder why this is useful.  Consider a situation in which
 you want to want to add some paadding to an input widget, such as an
@@ -125,7 +125,7 @@ fg2 <- newFocusGroup
 merged <- mergeFocusGroups fg1 fg2
 \end{minted}
 
-The 'mergeFocusGroups' function will merge the two focus groups and
+The \fw{mergeFocusGroups} function will merge the two focus groups and
 preserve the order of the widgets, such that widgets in the first
 group will come before widgets in the second group in the new group's
 focus ordering.  The merged group should then be passed to the rest of

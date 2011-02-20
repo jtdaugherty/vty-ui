@@ -21,10 +21,11 @@ vBox :: Widget a -> Widget b -> IO (Widget (Box a b))
 hBox :: Widget a -> Widget b -> IO (Widget (Box a b))
 \end{minted}
 
-The vBox function returns a new widget of type 'Widget (Box a b)' which
-lays out its two children vertically in the order they are passed to the
-function.  The hBox function does the same for horizontal layout.  These
-two widgets will probably be the most common in your applications.
+The \fw{vBox} function returns a new widget of type \fw{Widget (Box a
+  b)} which lays out its two children vertically in the order they are
+passed to the function.  The \fw{hBox} function does the same for
+horizontal layout.  These two widgets will probably be the most common
+in your applications.
 
 vty-ui provides some combinators to make Boxes a bit eaiser to work
 with:
@@ -34,16 +35,17 @@ with:
 (<++>) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
 \end{minted}
 
-These functions are essentially aliases for vBox and hBox, respectively,
-with the important difference being that they take IO arguments; so, for
-example, you can use them to create nested boxes as follows:
+These functions are essentially aliases for \fw{vBox} and \fw{hBox},
+respectively, with the important difference being that they take
+\fw{IO} arguments; so you can use them to create nested boxes as
+follows:
 
 \begin{minted}{haskell}
 mainBox <- (hBox a b) <--> (hBox c d <++> vBox e f)
 \end{minted}
 
 If you already have a pure reference to another widget, you can merely
-wrap it with 'return' to use it with these combinators:
+wrap it with \fw{return} to use it with these combinators:
 
 \begin{minted}{haskell}
 box1 <- hBox a b
@@ -61,17 +63,19 @@ depending on two primary factors:
 \end{itemize}
 
 Just as with graphical toolkits, when the terminal is resized, more
-space is available to render the interface, so we need to use the space
-wisely, and to determine how to use it, vty-ui requires that the widgets
-declare their own policies for how to use the available space.  The box
-size policy is to expand to use all available space to provide the
-maximum space to its children.  For more details on how Box widget is
-implemented, see the API documentation.
+space is available to render the interface, so we need to use the
+space wisely, and to determine how to use it, \fw{vty-ui} requires
+that the widgets declare their own policies for how to use the
+available space.  The box size policy is to expand to use all
+available space to provide the maximum space to its children.  For
+more details on how Box widget is implemented, see the API
+documentation.
 
-Just placing text widgets in boxes won't get you very far; to influence
-layout, you'll need to add other space-filling widgets to those boxes to
-dynamically take advantage of the space in the terminal.  See the API
-documentation for the 'Fills' module in particular.
+Just placing text widgets in boxes won't get you very far; to
+influence layout, you'll need to add other space-filling widgets to
+those boxes to dynamically take advantage of the space in the
+terminal.  See the API documentation for the \fw{Fills} module in
+particular.
 
 There are many other examples of widgets which influence their children;
 take note of widget constructors which take other widgets as parameters.

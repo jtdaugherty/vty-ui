@@ -2,7 +2,7 @@
 
 Many widgets in vty-ui can accept user input.  A widget can accept
 user input if (1) it has one or more key event handlers attached to it
-and (2) if it currently has the 'focus'.  The concept of focus in
+and (2) if it currently has the ``focus''.  The concept of focus in
 vty-ui works the same as in other user interface toolkits:
 essentially, only one widget has the focus and any user input is
 passed to that widget for handling.  Key event handlers can be chained
@@ -27,7 +27,7 @@ Vty input processing.
 
 Key event handlers are invoked in the order in which they are added to
 the widget.  In the following example, the first handler will deline the
-'q' key but the second one will process it:
+\fw{'q'} key but the second one will process it:
 
 \begin{minted}{haskell}
 w `onKeyPressed` \_ key _ ->

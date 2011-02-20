@@ -50,10 +50,10 @@ changeToW <- addToCollection c ui fg
 
 As a convenience, addToCollection returns a MonadIO action which, when
 run, will switch to the specified interface.  In the example above,
-changeToW is an action which will switch to the interface with 'ui' as
-its top-level widget and 'fg' as its focus group.  You can use this
-action in event handlers that change your interface state.  If you
-prefer, you can use the 'setCurrentEntry' function instead, which
-allows you to set the collection's interface by number.  That method
-is not recommended, however, since a bad index can cause an exception
-to be thrown.
+changeToW is an action which will switch to the interface with \fw{ui}
+as its top-level widget and \fw{fg} as its focus group.  You can use
+this action in event handlers that change your interface state.  If
+you prefer, you can use the \fw{setCurrentEntry} function instead,
+which allows you to set the collection's interface by number.  That
+method is not recommended, however, since a bad index can cause an
+exception to be thrown.

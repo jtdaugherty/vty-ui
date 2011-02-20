@@ -1,21 +1,21 @@
 \section{Notes on the \texttt{vty-ui} API}
 
-When you create a widget in vty-ui, the result with almost always have a
-type like 'Widget a'.  The type variable 'a' represents the specific
-type of state the widget can carry, and therefore which operations can
-be performed on it.  For example, a text widget has type 'Widget
-FormattedText'.
+When you create a widget in vty-ui, the result with almost always have
+a type like \fw{Widget a}.  The type variable \fw{a} represents the
+specific type of state the widget can carry, and therefore which
+operations can be performed on it.  For example, a text widget has
+type \fw{Widget FormattedText}.
 
-The 'Widget' type is actually an 'IORef' which wraps the real widget
-implementation type, 'WidgetImpl'.  So it's safe (and recommended!) to
-always use 'Widget a' whenever you need to refer to a widget; this
-makes it possible to mutate widget state when events occur in your
-application.
+The \fw{Widget} type is actually an \fw{IORef} which wraps the real
+widget implementation type, \fw{WidgetImpl}.  So it's safe (and
+recommended!) to use \fw{Widget a} whenever you need to refer to a
+widget; this makes it possible to mutate widget state when events
+occur in your application.
 
-All widget constructors must ultimately be run in the 'IO' monad, so
-all API functions must be run in an instance of 'MonadIO'.  In this
-manual we will use 'IO' to simplify type signatures, but keep in mind
-that the actual type is likely to be '(MonadIO m) => m'.  Although
-'MonadIO' is by far the more common constraint, be sure to check the
-API documentation to be sure; some functions, such as callbacks, are
-'IO' actions.
+All widget constructors must ultimately be run in the \fw{IO} monad,
+so all API functions must be run in an instance of \fw{MonadIO}.  In
+this manual we will use \fw{IO} to simplify type signatures, but keep
+in mind that the actual type is likely to be \fw{(MonadIO m) => m}.
+Although \fw{MonadIO} is by far the more common constraint, be sure to
+check the API documentation to be sure; some functions, such as
+callbacks, are \fw{IO} actions.
