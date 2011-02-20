@@ -58,8 +58,9 @@ widget implementations:
   version of the widget's state and, as a result, the correct child
   widget reference.
 \item We defer all behaviors to the child: growth policy, rendering,
-  positioning, and cursor behavior.  Most container widgets defer all
-  of these things.
+  positioning, cursor behavior, focus events, and key events.  Most
+  container widgets defer all of these things.  You should have a good
+  reason to do otherwise.
 \end{itemize}
 
 In some cases -- such as with \fw{Centered} widgets or anything that
