@@ -10,12 +10,10 @@ In this section we'll create a wrapper widget type called \fw{Wrapper}
 and we'll implement all of its behaviors to illustrate how the
 behaviors can be deferred in each case.
 
-We'll start with the type.\footnote{A \fw{newtype} would work just as
-  well.}  We provide a function to get the child to make it easier to
-deal with:
+We'll start with the type.
 
 \begin{minted}{haskell}
-data Wrapper a = Wrapper { wrappedChild :: Widget a }
+data Wrapper a = Wrapper (Widget a)
 \end{minted}
 
 Then the implementation of the constructor:\footnote{This widget
