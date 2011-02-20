@@ -133,3 +133,26 @@ The \fw{getNormalAttr} function returns the default normal attribute
 from the \fw{RenderContext}, merged with the ``override'' attribute
 from the \fw{RenderContext}, if it is set.  For more information on
 the override attribute, see Section \vref{sec:attributes}.
+
+This concludes the basic implementation requirements for a new widget
+type; to make it useful, we'll need to add some functions to
+manipulate its state:
+
+\begin{minted}{haskell}
+setCounterValue :: (MonadIO m) => Widget Counter -> Int -> m ()
+setCounterValue wRef val =
+  updateWidgetState wRef $ const $ Counter val
+
+getCounterValue :: (MonadIO m) => Widget Counter -> m Int
+getCounterValue wRef = do
+  Counter val <- getState wRef
+  return val
+\end{minted}
+
+The \fw{setCounterValue} function takes a \fw{Counter} widget and sets
+its \fw{state} to a new counter state value.  The
+\fw{updateWidgetState} function takes a \fw{Widget a} and a state
+transformation function and updates the \fw{state} field of the
+widget.  The \fw{getCounterValue} function just reads the state and
+returns the counter's value.  Now you could write a program using
+these functions to create and manipulate the counter.
