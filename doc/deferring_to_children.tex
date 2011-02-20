@@ -18,7 +18,9 @@ deal with:
 data Wrapper a = Wrapper { wrappedChild :: Widget a }
 \end{minted}
 
-Then the implementation of the constructor:
+Then the implementation of the constructor:\footnote{This widget
+  implementation uses the ``relaying'' functions we described in
+  Section \ref{sec:containers_and_input}.}
 
 \begin{minted}{haskell}
 newWrapper :: (MonadIO m) => Widget a -> m (Widget (Wrapper a))
@@ -26,20 +28,15 @@ newWrapper child = do
   wRef <- newWidget
   updateWidget wRef $ \w ->
     w { state = Wrapper child
-      , growHorizontal_ = growHorizontal . wrappedChild
-      , growVertical_ = growVertical . wrappedChild
+      , growHorizontal_ = growHorizontal child
+      , growVertical_ = growVertical child
       , setCurrentPosition_ =
-          \this pos = do
-            st <- getState this
-            setCurrentPosition (wrappedChild st) pos
+          \_ pos = setCurrentPosition child pos
       , cursorInfo =
-          \this ->
-            st <- getState this
-            getCursorPosition (wrappedChild st)
+          const $ getCursorPosition child
       , render_ =
-          \this sz ctx = do
-            st <- getState this
-            render (wrappedChild st) sz ctx
+          \_ sz ctx = do
+            render child sz ctx
       }
 
   wRef `relayFocusEvents` child
@@ -47,5 +44,27 @@ newWrapper child = do
   return wRef
 \end{minted}
 
-This widget implementation uses the ``relaying'' functions we
-described in Section \ref{sec:containers_and_input}.
+This demonstration highlights some important features of container
+widget implementations:
+
+\begin{itemize}
+\item The state type of the wrapped widget, \fw{a}, is preserved in
+  the type of the wrapper widget itself.
+\item We referred directly to \fw{child} instead of using
+  \fw{getState} in all of the functions; the reason is because we
+  don't care about allowing the child to be replaced with a different
+  widget.  If that is something you want to support, then you
+  \textit{must} use \fw{getState} to ensure that you have the latest
+  version of the widget's state and, as a result, the correct child
+  widget reference.
+\item We defer all behaviors to the child: growth policy, rendering,
+  positioning, and cursor behavior.  Most container widgets defer all
+  of these things.
+\end{itemize}
+
+In some cases -- such as with \fw{Centered} widgets or anything that
+adds padding -- the growth policies will need to be changed to reflect
+how the final result should be laid out.  In those cases, it is
+sufficient to provide an implementation for the growth policy
+functions that returns the desired value rather than calling that of
+the child widget.
