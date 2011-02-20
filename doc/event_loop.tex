@@ -99,14 +99,14 @@ the default.
 You can create attributes with varying levels of specificity by using
 the vty-ui API:
 
-XXX make this a table
-\begin{minted}{haskell}
-fgColor blue -- foreground only
-bgColor blue -- background only
-style underline -- style only
-blue `on` red -- foreground and background
-someAttr `withStyle` underline -- adding a style
-\end{minted}
+\begin{tabular}{|l|l|} \hline
+Expression & Type \\ \hline
+\fw{fgColor blue} & foreground only \\ \hline
+\fw{bgColor blue} & background only \\ \hline
+\fw{style underline} & style only \\ \hline
+\fw{blue `on` red} & foreground and background \\ \hline
+\fw{someAttr `withStyle` underline} & adding a style \\ \hline
+\end{tabular}
 
 The Vty \fw{def\_attr} value's default configuration is used as a
 basis for all partially-specified attributes.  The functions described
