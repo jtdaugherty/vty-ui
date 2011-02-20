@@ -1,1 +1,68 @@
 \section{Growth Policy Functions}
+\label{sec:growth_policy_functions}
+
+In order to lay widgets out in way that makes the best use of the
+available terminal space, we need them to give us hints about how they
+use space.  In this regard, widgets fall into two basic categories:
+
+\begin{itemize}
+\item ``Fixed-size'' widgets which have the same size regardless of
+  the amount of available space
+\item ``Variable-size'' widgets which use all available space
+\end{itemize}
+
+An example of a ``fixed-size'' widget is a text widget: the string
+``\fw{foobar}'' will always require only one row and six columns'
+worth of space.  We could also render such a widget in a much bigger
+space -- an entire terminal window, say -- but it would look the same;
+there would still be plenty of room for other things in the inteface.
+Such a widget does not ``grow'' with the available space.
+
+An example of a ``variable-size'' widget is one which centers its
+child widget vertically and horizontally in the terminal.  Such a
+widget will pad its child widget accordingly so that it is always
+centered, and this behavior depends on how much space is available.
+For example, in a 100x100 terminal, the string ``\fw{foobar}'' would
+need different padding to remain centered than it would require in a
+50x50 terminal.  As a result, we say that the wrapper widget -- the
+one that does the centering -- ``grows'' with available space.
+
+The \fw{WidgetImpl} type defines the following functions to provide
+these hints, where \fw{a} is the type of widget state:
+
+\begin{itemize}
+\item \fw{growHorizontal\_ ::\ a -> IO Bool}
+\item \fw{growVertical\_ ::\ a -> IO Bool}
+\end{itemize}
+
+These functions should return \fw{True} when the widget in question
+``grows'' as described above, and \fw{False} otherwise.  These hints
+may be used by parent widgets to make layout decisions; concrete
+examples of such widgets are the \fw{Box} and \fw{Centered} widget
+types.
+
+In situations where your widget wraps another -- as with the \fw{Box}
+and \fw{Centered} types -- it is \textit{strongly} recommended that
+you defer to the child widgets for these policy values \textit{unless}
+you have a good reason to override them.  The \fw{Centered} widget is
+a good example of this: it overrides the growth policy of its child so
+that it grows in both dimensions, even though its child may not.  But
+the \fw{Box} widget explicitly defers to its children to determine its
+growth policy, since it is only responsible for layout and does not
+add anything to the interface.
+
+An example of a \fw{growHorizontal\_} implementation which defers to a
+child widget is as follows:
+
+\begin{minted}{haskell}
+growHorizontal_ = \st -> do
+  let ch = getChildWidget st
+  growHorizontal ch
+\end{minted}
+
+Notice that we call the top-level function, \fw{growHorizontal}, on
+the child widget; it does the job of dereferencing the widget and
+calling its \fw{growHorizontal\_} function.  This is another example
+of the API convention we mentioned in Section
+\ref{note:api_convention_1}. (XXX fix this ref, since it does not
+actually go to the note.)

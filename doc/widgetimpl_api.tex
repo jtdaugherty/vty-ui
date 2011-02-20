@@ -66,10 +66,30 @@ depending on the widget requirements, need to be overridden:
 
 \begin{itemize}
 \item \fw{state} -- the state of the widget, as described in Section
-  \ref{sec:new_widget_type}.
-\item \fw{render\_} --
-\item \fw{growHorizontal\_} --
-\item \fw{growVertical\_} --
-\item \fw{getCurrentPosition\_} --
-\item \fw{cursorInfo} --
+  \ref{sec:new_widget_type}.  Use the \fw{getState} function to read
+  this state, and use the \fw{updateWidgetState} function to modify
+  it.
+\item \fw{render\_} -- the rendering routine for the widget.  If this
+  widget wraps child widgets, this function is responsible for
+  rendering them and composing the resulting \fw{Image}s into a final
+  \fw{Image}.
+\item \fw{growHorizontal\_} -- the \textit{horizontal growth policy
+  function}.  See Section \ref{sec:growth_policy_functions}.
+\item \fw{growVertical\_} -- the \textit{vertical growth policy
+  function}.  See Section \ref{sec:growth_policy_functions}.
+\item \fw{setCurrentPosition\_} -- this function is used to set the
+  current position -- the position of the upper-left corner -- of the
+  widget.  This is included in the \fw{WidgetImpl} API so that you can
+  override it if your widget wraps others or has special logic for
+  setting their positions.
+\item \fw{cursorInfo} -- this function may be used to indicate that
+  this widget should display a cursor when it has the focus.  The way
+  that it does this is by returning a \fw{DisplayRegion}.  The default
+  implementation returns \fw{Nothing}, which indicates that the widget
+  does not want to position the cursor.  For implementations which do
+  show the cursor, the returned position should be relative to the
+  position returned by \fw{getCurrentPosition}.
 \end{itemize}
+
+We've already introduced the \fw{state} and \fw{render\_} functions.
+Now we'll go into detail on the use of the other functions.

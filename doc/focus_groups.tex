@@ -73,19 +73,29 @@ fg `onKeyPressed` \_ key _ ->
 \end{minted}
 
 \subsection{Container Widgets and Input Events}
+\label{sec:containers_and_input}
 
 Although most of the time you will probably end up adding key event
 handlers directly to interactive widgets, it may be convenient to wrap
 those widgets in containers that affect their behavior.  For example,
-in the demonstration in Section \ref{sec:gettingStarted}, we used
-then \fw{centered} function to center an edit widget.  The result was
-a \fw{Centered} widget, which is one of the many built-in container
+in the demonstration in Section \ref{sec:gettingStarted}, we used then
+\fw{centered} function to center an edit widget.  The result was a
+\fw{Centered} widget, which is one of the many built-in container
 widget types.  This type of widget ``relays'' user input events and
 focus events to the widget it contains.  This means you can add key
 and focus event handlers to the outer widget and they will be passed
 on to the child widget for handling.  Most container widgets are
 implemented this way; when in doubt about event relaying behavior,
-consult the API documentation.
+consult the API documentation.  Relaying of events is accomplished
+with the following functions, defined in the \fw{Core} module:
+
+\begin{itemize}
+\item \fw{relayFocusEvents} -- relays focus events from one widget to
+  another.  For example, \fw{wRef `relayFocusEvents` someWidget}.
+\item \fw{relayKeyEvents} -- relays keyboard input events from one
+  widget to another.  For example, \fw{wRef `relayKeyEvents`
+    someWidget}.
+\end{itemize}
 
 As we saw above, only focused widgets will ever be asked to process
 input events; this means that if you add event handlers to a container

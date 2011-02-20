@@ -1,1 +1,73 @@
 \section{Rendering}
+
+As described in Section \ref{sec:new_widget_type}, the \fw{render\_}
+function is responsible for converting a widget's internal state into
+an \fw{Image} to be displayed in the terminal.  This function is
+responsible for generating a visual representation of the widget based
+on various factors, including:
+
+\begin{itemize}
+\item The focus state of the widget
+\item The available space specified by the \fw{size} parameter to the
+  \fw{render\_} function
+\item The widget's own internal state in its \fw{state} field
+\item Any and all child widgets
+\item Attributes stored in the widget as well as those provided in the
+  \fw{RenderContext}
+\end{itemize}
+
+This involves constructing \fw{Image}s using the Vty library's
+primitives.  Some primitives include:
+
+\begin{itemize}
+\item \fw{string} -- Creates an image from a string using the
+  specified attribute.
+\item \fw{char} -- Creates an image from a character using the
+  specified attribute.
+\item \fw{char\_fill} -- Creates an image with the specified width and
+  height, filled with the specified character and attribute.
+\item \fw{<->} -- Vertical concatenation of images.
+\item \fw{<|>} -- Horizontal concatenation of images.
+\end{itemize}
+
+While these functions should be sufficient to render most widgets, if
+your widget wraps other widgets, you'll have to use the top-level
+\fw{render} function provided by the \fw{Core} module.  This function
+is defined as follows:
+
+\begin{minted}{haskell}
+render :: Widget a -> DisplayRegion -> RenderContext -> IO Image
+\end{minted}
+
+This function looks a lot like the \fw{render\_} function in the
+\fw{WidgetImpl} type, and that's intentional; the difference is that
+\fw{render} \textit{calls} \fw{render\_} on the widget that is passed
+to it, and it does some other important things:
+
+\begin{itemize}
+\item It gets the normal and focus attributes stored in the widget, if
+  any, and merges them into the \fw{RenderContext}.  This means that
+  the \fw{render\_} function doesn't have to specifically look those
+  attributes up.  It just needs to use whatever is in the context.
+\item It invokes the \fw{render\_} function to get the resulting
+  \fw{Image}
+\item It measures the size of the resulting image against the
+  \fw{DisplayRegion} given to it and raises an exception (of type
+  \fw{RenderError}) if the image is too large
+\item If the size check passes, it calls \fw{setCurrentSize} on the
+  widget with the size of the generated \fw{Image}
+\end{itemize}
+
+All of this book-keeping is vital to ensuring that the rendering
+process works correctly; as a result, whenever you are rendering other
+widgets inside your \fw{render\_} implementation, you \textit{must}
+use \fw{render} to do it, instead of extracting and calling the
+\fw{render\_} function on your child widgets.
+
+\label{note:api_convention_1}
+(XXX make this a nice note box or something)
+Note: this is an example of a trend in the API: whenever a
+\fw{WidgetImpl} function ends with an underscore, there is a
+top-level function with the same name without the underscore that
+you should use to invoke the respective functionality on any widget
+reference you hold.
