@@ -78,6 +78,7 @@ import Control.Exception
 import Graphics.Vty
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Skins
+import Graphics.Vty.Widgets.Events
 
 class HasNormalAttr w where
     setNormalAttribute :: (MonadIO m) => w -> Attr -> m ()
@@ -166,8 +167,8 @@ data WidgetImpl a = WidgetImpl {
 
     , keyEventHandler :: Widget a -> Key -> [Modifier] -> IO Bool
 
-    , gainFocusHandler :: Widget a -> IO ()
-    , loseFocusHandler :: Widget a -> IO ()
+    , gainFocusHandlers :: Handlers (Widget a)
+    , loseFocusHandlers :: Handlers (Widget a)
     , focused :: Bool
 
     , getCursorPosition_ :: Widget a -> IO (Maybe DisplayRegion)
@@ -249,25 +250,33 @@ setCurrentPosition wRef pos = do
     (setCurrentPosition_ w) wRef pos
 
 newWidget :: (MonadIO m) => m (Widget a)
-newWidget =
-    liftIO $ newIORef $
-           WidgetImpl { state = undefined
-                      , render_ = undefined
-                      , growVertical_ = const $ return False
-                      , growHorizontal_ = const $ return False
-                      , setCurrentPosition_ = \_ _ -> return ()
-                      , currentSize = DisplayRegion 0 0
-                      , currentPosition = DisplayRegion 0 0
-                      , focused = False
-                      , gainFocusHandler =
-                          \this -> updateWidget this $ \w -> w { focused = True }
-                      , loseFocusHandler =
-                          \this -> updateWidget this $ \w -> w { focused = False }
-                      , keyEventHandler = \_ _ _ -> return False
-                      , getCursorPosition_ = defaultCursorInfo
-                      , normalAttribute = def_attr
-                      , focusAttribute = def_attr
-                      }
+newWidget = do
+  gfhs <- newHandlers
+  lfhs <- newHandlers
+
+  wRef <- liftIO $ newIORef $
+          WidgetImpl { state = undefined
+                     , render_ = undefined
+                     , growVertical_ = const $ return False
+                     , growHorizontal_ = const $ return False
+                     , setCurrentPosition_ = \_ _ -> return ()
+                     , currentSize = DisplayRegion 0 0
+                     , currentPosition = DisplayRegion 0 0
+                     , focused = False
+                     , gainFocusHandlers = gfhs
+                     , loseFocusHandlers = lfhs
+                     , keyEventHandler = \_ _ _ -> return False
+                     , getCursorPosition_ = defaultCursorInfo
+                     , normalAttribute = def_attr
+                     , focusAttribute = def_attr
+                     }
+
+  wRef `onGainFocus` \this ->
+      updateWidget this $ \w -> w { focused = True }
+  wRef `onLoseFocus` \this ->
+      updateWidget this $ \w -> w { focused = False }
+
+  return wRef
 
 defaultCursorInfo :: Widget a -> IO (Maybe DisplayRegion)
 defaultCursorInfo w = do
@@ -304,26 +313,16 @@ onKeyPressed wRef handler = do
   updateWidget wRef $ \w -> w { keyEventHandler = combinedHandler }
 
 focus :: (MonadIO m) => Widget a -> m ()
-focus wRef = do
-  act <- gainFocusHandler <~ wRef
-  liftIO $ act wRef
+focus wRef = fireEvent wRef (gainFocusHandlers <~) wRef
 
 unfocus :: (MonadIO m) => Widget a -> m ()
-unfocus wRef = do
-  act <- loseFocusHandler <~ wRef
-  liftIO $ act wRef
+unfocus wRef = fireEvent wRef (loseFocusHandlers <~) wRef
 
 onGainFocus :: (MonadIO m) => Widget a -> (Widget a -> IO ()) -> m ()
-onGainFocus wRef handler = do
-  oldHandler <- gainFocusHandler <~ wRef
-  let combinedHandler = \w -> oldHandler w >> handler w
-  updateWidget wRef $ \w -> w { gainFocusHandler = combinedHandler }
+onGainFocus = addHandler (gainFocusHandlers <~)
 
 onLoseFocus :: (MonadIO m) => Widget a -> (Widget a -> IO ()) -> m ()
-onLoseFocus wRef handler = do
-  oldHandler <- loseFocusHandler <~ wRef
-  let combinedHandler = \w -> oldHandler w >> handler w
-  updateWidget wRef $ \w -> w { loseFocusHandler = combinedHandler }
+onLoseFocus = addHandler (loseFocusHandlers <~)
 
 (<~) :: (MonadIO m) => (a -> b) -> IORef a -> m b
 (<~) f wRef = (return . f) =<< (liftIO $ readIORef wRef)
