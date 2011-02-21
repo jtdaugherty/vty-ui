@@ -1,4 +1,5 @@
 \section{Deferring to Child Widgets}
+\label{sec:deferring}
 
 Widget-wrapping widget types are common in \fw{vty-ui}, since we use
 this technique to influence rendering and other behaviors.  As a
@@ -30,7 +31,7 @@ newWrapper child = do
       , growVertical_ = growVertical child
       , setCurrentPosition_ =
           \_ pos = setCurrentPosition child pos
-      , cursorInfo =
+      , getCursorPosition_ =
           const $ getCursorPosition child
       , render_ =
           \_ sz ctx = do

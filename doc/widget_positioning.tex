@@ -1,2 +1,50 @@
 \section{Widget Positioning}
 
+Some widgets, such as the \fw{Edit} widget, need to position a cursor
+in the terminal when they have the focus; to support this, each widget
+stores its position after it is rendered.  The positioning of the
+widgets happens in a separate phase after rendering takes place, since
+the positions cannot be calculated until the sizes of all widgets'
+\fw{Image}s are known.
+
+The top-level function to set a widget's position is called
+\fw{setCurrentPosition} and is defined in the \fw{Core} module.  It is
+called, initially, by the vty-ui event loop with a position of \fw{(0,
+  0)}.  This function updates the \fw{currentPosition} field of the
+widget's \fw{WidgetImpl} structure and then calls its
+\fw{setCurrentPosition\_} function to take care of any widget-specific
+duties.  For most widgets, \fw{setCurrentPosition\_} need not be
+overridden from its default no-op implementation.  However, container
+widgets must override it to set the positions of their children.
+
+Consider the \fw{Box} widget type.  This type contains two child
+widgets.  The position of the \fw{Box} itself is the upper-left corner
+of the space in which it is rendered, and that position is also the
+position of its first child widget.  The second child widget, however,
+is offset (vertically or horizontally, depending on the box type) by
+the size of the first child widget.  This is an example of a case in
+which implementing \fw{setCurrentPosition\_} is necessary.
+
+Here is an example implementation of \fw{setCurrentPosition\_} for the
+\fw{Wrapper} widget that we examined in Section \ref{sec:deferring}:
+
+\begin{minted}{haskell}
+setCurrentPosition_ = \this pos -> do
+  -- Since the position of the wrapper has already been set,
+  -- we just need to set the position of the child.
+  (Wrapper child) <- getState this
+  setCurrentPosition child pos
+\end{minted}
+
+The function calls the top-level \fw{setCurrentPosition} on the child
+widget to ensure that its position is set and that its
+\fw{setCurrentPosition\_} function is called.  It uses the position of
+the wrapper, \fw{pos}, as the position of the child because the
+wrapper has not done anything to offset that position (e.g., by adding
+an ASCII art border or padding).
+
+If you're implementing a container widget with more than one child,
+you can use functions in the \fw{Util} module to manage the
+\fw{DisplayRegion}s used to position your widgets; for more
+information, see the \fw{withWidth}, \fw{withHeight}, \fw{plusWidth},
+and \fw{plusHeight} functions.

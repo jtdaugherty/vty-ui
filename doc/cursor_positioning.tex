@@ -1,1 +1,31 @@
 \section{Cursor Positioning}
+
+Once a widget is properly positioned, the widget can display a cursor.
+This is especially useful for edit widgets, since the user needs to
+know the cursor position.  The \fw{Core} module provides a top-level
+function to accomplish this called \fw{getCursorPosition}; this
+function calls the \fw{WidgetImpl} type's \fw{getCursorPosition_}
+function to query widgets.
+
+The \fw{getCursorPosition_} function returns \fw{Maybe DisplayRegion};
+a return value of \fw{Nothing} indicates that the widget does not want
+to show a cursor, so when it gains focus, no cursor will be displayed.
+Otherwise, positioning the cursor at row \fw{r} and column \fw{c} is
+accomplished by returning \fw{Just (DisplayRegion r c)}.  The cursor
+is then shown at that location by the event loop.
+
+Typically, the position of the cursor is computed as an offset to the
+widget's current position.  In Section \ref{sec:deferring} we deferred
+to the child widget to control the cursor, but we might instead
+specify our own position:
+
+\begin{minted}{haskell}
+getCursorPosition_ = \this -> do
+  childCursor <- getCursorPosition child
+  case childCursor of
+    Nothing -> return Nothing
+    Just pos -> return $ Just $ pos `plusWidth` 1 `plusHeight` 1
+\end{minted}
+
+Although contrived, this example shows how we can return a new cursor
+position based on the child widget's cursor position.
