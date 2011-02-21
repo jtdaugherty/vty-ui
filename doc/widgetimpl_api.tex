@@ -82,13 +82,13 @@ depending on the widget requirements, need to be overridden:
   widget.  This is included in the \fw{WidgetImpl} API so that you can
   override it if your widget wraps others or has special logic for
   setting their positions.
-\item \fw{getCursorPosition_} -- this function may be used to indicate
-  that this widget should display a cursor when it has the focus.  The
-  way that it does this is by returning a \fw{DisplayRegion}.  The
-  default implementation returns \fw{Nothing}, which indicates that
-  the widget does not want to position the cursor.  For
-  implementations which do show the cursor, the returned position
-  should be relative to the position returned by
+\item \fw{getCursorPosition\_} -- this function may be used to
+  indicate that this widget should display a cursor when it has the
+  focus.  The way that it does this is by returning a
+  \fw{DisplayRegion}.  The default implementation returns
+  \fw{Nothing}, which indicates that the widget does not want to
+  position the cursor.  For implementations which do show the cursor,
+  the returned position should be relative to the position returned by
   \fw{getCurrentPosition}.
 \end{itemize}
 
