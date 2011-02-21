@@ -242,7 +242,7 @@ newListWidget list = do
 
         , growVertical_ = const $ return True
 
-        , cursorInfo =
+        , getCursorPosition_ =
             \this -> do
               st <- getState this
               pos <- getCurrentPosition this

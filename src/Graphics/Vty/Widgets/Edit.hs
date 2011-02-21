@@ -56,7 +56,7 @@ editWidget = do
                        }
 
         , growHorizontal_ = const $ return True
-        , cursorInfo =
+        , getCursorPosition_ =
             \this -> do
               f <- focused <~ this
               pos <- getCurrentPosition this

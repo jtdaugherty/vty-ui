@@ -134,7 +134,7 @@ newMultiStateCheckbox label states = do
                            , currentState = fst $ states !! 0
                            , checkboxFrozen = False
                            }
-        , cursorInfo =
+        , getCursorPosition_ =
             \this -> do
               pos <- getCurrentPosition this
               return $ Just (pos `plusWidth` 1)

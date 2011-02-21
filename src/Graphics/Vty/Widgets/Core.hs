@@ -170,7 +170,7 @@ data WidgetImpl a = WidgetImpl {
     , loseFocusHandler :: Widget a -> IO ()
     , focused :: Bool
 
-    , cursorInfo :: Widget a -> IO (Maybe DisplayRegion)
+    , getCursorPosition_ :: Widget a -> IO (Maybe DisplayRegion)
     }
 
 type Widget a = IORef (WidgetImpl a)
@@ -264,7 +264,7 @@ newWidget =
                       , loseFocusHandler =
                           \this -> updateWidget this $ \w -> w { focused = False }
                       , keyEventHandler = \_ _ _ -> return False
-                      , cursorInfo = defaultCursorInfo
+                      , getCursorPosition_ = defaultCursorInfo
                       , normalAttribute = def_attr
                       , focusAttribute = def_attr
                       }
@@ -390,7 +390,7 @@ newFocusGroup = do
                              , prevKey = (KASCII '\t', [MShift])
                              }
 
-        , cursorInfo =
+        , getCursorPosition_ =
             \this -> do
               eRef <- currentEntry this
               (FocusEntry e) <- state <~ eRef
@@ -450,7 +450,7 @@ resetFocusGroup fg = do
 
 getCursorPosition :: (MonadIO m) => Widget a -> m (Maybe DisplayRegion)
 getCursorPosition wRef = do
-  ci <- cursorInfo <~ wRef
+  ci <- getCursorPosition_ <~ wRef
   liftIO (ci wRef)
 
 currentEntry :: (MonadIO m) => Widget FocusGroup -> m (Widget FocusEntry)
