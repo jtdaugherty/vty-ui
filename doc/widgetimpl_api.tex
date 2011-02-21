@@ -18,8 +18,8 @@ have already seen some of its fields in previous sections.
      , normalAttribute :: Attr
      , focusAttribute :: Attr
      , keyEventHandler :: Widget a -> Key -> [Modifier] -> IO Bool
-     , gainFocusHandler :: Widget a -> IO ()
-     , loseFocusHandler :: Widget a -> IO ()
+     , gainFocusHandlers :: Handlers (Widget a)
+     , loseFocusHandlers :: Handlers (Widget a)
      }
 \end{minted}
 
@@ -49,16 +49,18 @@ by widget implementors:
   calling the chain of user-registered key event handlers; it is
   strongly recommended that you \textit{not} replace this, but use
   \fw{onKeyPressed} to register key handlers instead.
-\item \fw{gainFocusHandler} -- the action responisible for handling
-  the widget's focus gain event.  The default implementation sets the
-  \fw{focused} field and calls user-registered focus change event
-  handlers.  Extend this by adding your own focus event handlers with
-  \fw{onGainFocus} as described in Section \ref{sec:focus}.
-\item \fw{loseFocusHandler} -- the action responisible for handling
-  the widget's focus loss event.  The default implementation sets the
-  \fw{focused} field and calls user-registered focus change event
-  handlers.  Extend this by adding your own focus event handlers with
-  \fw{onLoseFocus} as described in Section \ref{sec:focus}.
+\item \fw{gainFocusHandlers} -- the actions responisible for handling
+  the widget's focus gain event.  When a widget is created, this
+  contains an action to set the \fw{focused} field.  You can add your
+  own handlers with \fw{onGainFocus} as described in Section
+  \ref{sec:focus}.  For more information about event handling and the
+  \fw{Handlers} type, see Section \ref{sec:event_handlers}.
+\item \fw{loseFocusHandlers} -- the actions responisible for handling
+  the widget's focus loss event.  When a widget is created, this
+  contains an action to set the \fw{focused} field.  You can add your
+  own handlers with \fw{onLoseFocus} as described in Section
+  \ref{sec:focus}.  For more information about event handling and the
+  \fw{Handlers} type, see Section \ref{sec:event_handlers}.
 \end{itemize}
 
 The following fields are important to widget implementors and,
