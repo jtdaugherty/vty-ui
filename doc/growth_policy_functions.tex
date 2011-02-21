@@ -55,9 +55,9 @@ An example of a \fw{growHorizontal\_} implementation which defers to a
 child widget is as follows:
 
 \begin{minted}{haskell}
-growHorizontal_ = \st -> do
-  let ch = getChildWidget st
-  growHorizontal ch
+ growHorizontal_ = \st -> do
+   let ch = getChildWidget st
+   growHorizontal ch
 \end{minted}
 
 Notice that we call the top-level function, \fw{growHorizontal}, on

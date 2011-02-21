@@ -17,8 +17,8 @@ The most important widgets used in interface layout are the box layout
 widgets:
 
 \begin{minted}{haskell}
-vBox :: Widget a -> Widget b -> IO (Widget (Box a b))
-hBox :: Widget a -> Widget b -> IO (Widget (Box a b))
+ vBox :: Widget a -> Widget b -> IO (Widget (Box a b))
+ hBox :: Widget a -> Widget b -> IO (Widget (Box a b))
 \end{minted}
 
 The \fw{vBox} function returns a new widget of type \fw{Widget (Box a
@@ -31,8 +31,8 @@ vty-ui provides some combinators to make Boxes a bit eaiser to work
 with:
 
 \begin{minted}{haskell}
-(<-->) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
-(<++>) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
+ (<-->) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
+ (<++>) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
 \end{minted}
 
 These functions are essentially aliases for \fw{vBox} and \fw{hBox},
@@ -41,15 +41,15 @@ respectively, with the important difference being that they take
 follows:
 
 \begin{minted}{haskell}
-mainBox <- (hBox a b) <--> (hBox c d <++> vBox e f)
+ mainBox <- (hBox a b) <--> (hBox c d <++> vBox e f)
 \end{minted}
 
 If you already have a pure reference to another widget, you can merely
 wrap it with \fw{return} to use it with these combinators:
 
 \begin{minted}{haskell}
-box1 <- hBox a b
-box2 <- (return box1) <++> (hBox c d)
+ box1 <- hBox a b
+ box2 <- (return box1) <++> (hBox c d)
 \end{minted}
 
 The box layout widgets do more than merely place their children next to

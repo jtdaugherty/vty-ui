@@ -17,14 +17,14 @@ added automatically gets the focus when the interface is set up.
 Creating a focus group is simple:
 
 \begin{minted}{haskell}
-fg <- newFocusGroup
+ fg <- newFocusGroup
 \end{minted}
 
 Adding widgets to focus groups is also straightforward:
 
 \begin{minted}{haskell}
-w <- someWidget
-addToFocusGroup fg w
+ w <- someWidget
+ addToFocusGroup fg w
 \end{minted}
 
 A widget's ``focused behavior'' depends entirely on the widget's
@@ -43,9 +43,9 @@ receives or loses focus, you may register event handlers for these
 events on any widget:
 
 \begin{minted}{haskell}
-w <- someWidget
-w `onGainFocus` \this -> ...
-w `onLoseFocus` \this -> ...
+ w <- someWidget
+ w `onGainFocus` \this -> ...
+ w `onLoseFocus` \this -> ...
 \end{minted}
 
 In both cases above, the \fw{this} parameter to each event handler is
@@ -66,10 +66,10 @@ first, and only pass those events onto the focused widget if the focus
 group has no matching handler.
 
 \begin{minted}{haskell}
-fg <- newFocusGroup
-fg `onKeyPressed` \_ key _ ->
-  if key == KASCII 'q' then
-    exitSuccess else return False
+ fg <- newFocusGroup
+ fg `onKeyPressed` \_ key _ ->
+   if key == KASCII 'q' then
+     exitSuccess else return False
 \end{minted}
 
 \subsection{Container Widgets and Input Events}
@@ -127,12 +127,12 @@ should also accept input.  When you create the browser widget, you will
 get a reference to the widget and a reference to its focus group.
 
 \begin{minted}{haskell}
-(browser, fg1) <- newDirBrowser defaultBrowserSkin
+ (browser, fg1) <- newDirBrowser defaultBrowserSkin
 
-fg2 <- newFocusGroup
--- Add my own widgets to fg2
+ fg2 <- newFocusGroup
+ -- Add my own widgets to fg2
 
-merged <- mergeFocusGroups fg1 fg2
+ merged <- mergeFocusGroups fg1 fg2
 \end{minted}
 
 The \fw{mergeFocusGroups} function will merge the two focus groups and

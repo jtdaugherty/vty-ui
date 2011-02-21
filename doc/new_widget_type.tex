@@ -16,7 +16,7 @@ following state type:\footnote{You might wonder why we don't just use
   An alternative would be to use a \fw{newtype}.}
 
 \begin{minted}{haskell}
-data Counter = Counter Int
+ data Counter = Counter Int
 \end{minted}
 
 The next step is to write a widget constructor function.  This
@@ -26,16 +26,16 @@ We'll allow the constructor to take the counter's initial value.
 Here's what the function will look like in full:
 
 \begin{minted}{haskell}
-newCounter :: (MonadIO m) => Int -> m (Widget Counter)
-newCounter initialValue = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
-    w { state = Counter initialValue
-      , render_ =
-        \this size ctx -> do
-          (Counter v) <- getState this
-          return $ string (getNormalAttr ctx) (show v)
-      }
+ newCounter :: (MonadIO m) => Int -> m (Widget Counter)
+ newCounter initialValue = do
+   wRef <- newWidget
+   updateWidget wRef $ \w ->
+     w { state = Counter initialValue
+       , render_ =
+         \this size ctx -> do
+           (Counter v) <- getState this
+           return $ string (getNormalAttr ctx) (show v)
+       }
 \end{minted}
 
 Now we have a constructor for a \fw{Counter} widget!  Its type will
@@ -43,7 +43,7 @@ allow us to use it in any monad on top of \fw{IO}.  Let's go through
 the code:
 
 \begin{minted}{haskell}
-wRef <- newWidget
+ wRef <- newWidget
 \end{minted}
 
 The \fw{Core} module's \fw{newWidget} function creates a new
@@ -56,7 +56,7 @@ this helps distinguish it from the actual widget data in the next
 step.
 
 \begin{minted}{haskell}
-updateWidget wRef $ \w -> ...
+ updateWidget wRef $ \w -> ...
 \end{minted}
 
 The \fw{updateWidget} function takes any \fw{Widget a} and a function
@@ -66,7 +66,7 @@ specify the behavior of the widget beyond the defaults, which are
 specified in the \fw{Core} module.
 
 \begin{minted}{haskell}
-state = Counter initialValue
+ state = Counter initialValue
 \end{minted}
 
 Here we set the inital value of the counter and create the
@@ -76,10 +76,10 @@ this state later on, in the rendering code and in any API functions
 that we want to implement to mutate it.
 
 \begin{minted}{haskell}
-render_ =
-  \this size ctx -> do
-    (Counter v) <- getState this
-    return $ string (getNormalAttr ctx) (show v)
+ render_ =
+   \this size ctx -> do
+     (Counter v) <- getState this
+     return $ string (getNormalAttr ctx) (show v)
 \end{minted}
 
 This actually does the job of rendering the counter value into a form
@@ -117,7 +117,7 @@ types are as follows:
 The implementation of the \fw{render\_} function is as follows:
 
 \begin{minted}{haskell}
-(Counter v) <- getState this
+ (Counter v) <- getState this
 \end{minted}
 
 The \fw{getState} function takes a \fw{Widget a} and returns its
@@ -125,7 +125,7 @@ The \fw{getState} function takes a \fw{Widget a} and returns its
 \fw{Counter} value resident in the widget structure.
 
 \begin{minted}{haskell}
-return $ string (getNormalAttr ctx) (show v)
+ return $ string (getNormalAttr ctx) (show v)
 \end{minted}
 
 The \fw{string} function is a Vty library function which takes an
@@ -140,14 +140,14 @@ type; to make it useful, we'll need to add some functions to
 manipulate its state:
 
 \begin{minted}{haskell}
-setCounterValue :: (MonadIO m) => Widget Counter -> Int -> m ()
-setCounterValue wRef val =
-  updateWidgetState wRef $ const $ Counter val
+ setCounterValue :: (MonadIO m) => Widget Counter -> Int -> m ()
+ setCounterValue wRef val =
+    updateWidgetState wRef $ const $ Counter val
 
-getCounterValue :: (MonadIO m) => Widget Counter -> m Int
-getCounterValue wRef = do
-  Counter val <- getState wRef
-  return val
+ getCounterValue :: (MonadIO m) => Widget Counter -> m Int
+ getCounterValue wRef = do
+    Counter val <- getState wRef
+    return val
 \end{minted}
 
 The \fw{setCounterValue} function takes a \fw{Counter} widget and sets

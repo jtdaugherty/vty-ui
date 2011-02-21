@@ -21,11 +21,11 @@ to the child widget to control the cursor, but we might instead
 specify our own position:
 
 \begin{minted}{haskell}
-getCursorPosition_ = \this -> do
-  childCursor <- getCursorPosition child
-  case childCursor of
-    Nothing -> return Nothing
-    Just pos -> return $ Just $ pos `plusWidth` 1 `plusHeight` 1
+ getCursorPosition_ = \this -> do
+   childCursor <- getCursorPosition child
+   case childCursor of
+     Nothing -> return Nothing
+     Just pos -> return $ Just $ pos `plusWidth` 1 `plusHeight` 1
 \end{minted}
 
 Although contrived, this example shows how we can return a new cursor

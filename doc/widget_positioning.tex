@@ -29,11 +29,11 @@ Here is an example implementation of \fw{setCurrentPosition\_} for the
 \fw{Wrapper} widget that we examined in Section \ref{sec:deferring}:
 
 \begin{minted}{haskell}
-setCurrentPosition_ = \this pos -> do
-  -- Since the position of the wrapper has already been set,
-  -- we just need to set the position of the child.
-  (Wrapper child) <- getState this
-  setCurrentPosition child pos
+ setCurrentPosition_ = \this pos -> do
+   -- Since the position of the wrapper has already been set,
+   -- we just need to set the position of the child.
+   (Wrapper child) <- getState this
+   setCurrentPosition child pos
 \end{minted}
 
 The function calls the top-level \fw{setCurrentPosition} on the child

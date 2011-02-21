@@ -14,7 +14,7 @@ behaviors can be deferred in each case.
 We'll start with the type.
 
 \begin{minted}{haskell}
-data Wrapper a = Wrapper (Widget a)
+ data Wrapper a = Wrapper (Widget a)
 \end{minted}
 
 Then the implementation of the constructor:\footnote{This widget
@@ -22,25 +22,25 @@ Then the implementation of the constructor:\footnote{This widget
   Section \ref{sec:containers_and_input}.}
 
 \begin{minted}{haskell}
-newWrapper :: (MonadIO m) => Widget a -> m (Widget (Wrapper a))
-newWrapper child = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
-    w { state = Wrapper child
-      , growHorizontal_ = growHorizontal child
-      , growVertical_ = growVertical child
-      , setCurrentPosition_ =
-          \_ pos = setCurrentPosition child pos
-      , getCursorPosition_ =
-          const $ getCursorPosition child
-      , render_ =
-          \_ sz ctx = do
-            render child sz ctx
-      }
+ newWrapper :: (MonadIO m) => Widget a -> m (Widget (Wrapper a))
+ newWrapper child = do
+   wRef <- newWidget
+   updateWidget wRef $ \w ->
+     w { state = Wrapper child
+       , growHorizontal_ = growHorizontal child
+       , growVertical_ = growVertical child
+       , setCurrentPosition_ =
+           \_ pos = setCurrentPosition child pos
+       , getCursorPosition_ =
+           const $ getCursorPosition child
+       , render_ =
+           \_ sz ctx = do
+             render child sz ctx
+       }
 
-  wRef `relayFocusEvents` child
-  wRef `relayKeyEvents` child
-  return wRef
+   wRef `relayFocusEvents` child
+   wRef `relayKeyEvents` child
+   return wRef
 \end{minted}
 
 This demonstration highlights some important features of container
