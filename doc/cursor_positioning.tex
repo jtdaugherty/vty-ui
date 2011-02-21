@@ -16,9 +16,9 @@ cursor will be displayed.  Otherwise, positioning the cursor at row
 the event loop.
 
 Typically, the position of the cursor is computed as an offset to the
-widget's current position.  In Section \ref{sec:deferring} we deferred
-to the child widget to control the cursor, but we might instead
-specify our own position:
+widget's current position.  In the \fw{Wrapper} widget in Section
+\ref{sec:deferring} we deferred to the child widget to control the
+cursor, but we might instead specify our own position:
 
 \begin{minted}{haskell}
  getCursorPosition_ = \this -> do
