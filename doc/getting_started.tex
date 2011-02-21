@@ -64,9 +64,9 @@ centering, see XXX.
 \end{minted}
 
 This creates a “focus group.”  A focus group is an ordered sequence of
-widgets that will receive focus as you cycle between them.  By default,
-this is done with the Tab key.  Every vty-ui interface requires a focus
-group.
+widgets that will receive focus as you cycle between them.  By
+default, this is done with the Tab key.  Every \vtyui\ interface
+requires a focus group.
 
 \begin{minted}{haskell}
  addToFocusGroup fg e
@@ -83,12 +83,12 @@ widgets receive focus in the order they are added to the group.
 This creates a new “collection.”  A collection is group of interfaces,
 each with its own focus group, and the collection makes it possible to
 switch between these interfaces.  Think of an e-mail client whose
-initial interface might be listing the contents of the inbox; subsequent
-interactions might change the interface to present only the selected
-message on the screen, with different navigation keystrokes, one of
-which returns to the inbox interface.  Collections make it easy to
-switch between such interface modes.  Every vty-ui program requires a
-collection.
+initial interface might be listing the contents of the inbox;
+subsequent interactions might change the interface to present only the
+selected message on the screen, with different navigation keystrokes,
+one of which returns to the inbox interface.  Collections make it easy
+to switch between such interface modes.  Every \vtyui\ program
+requires a collection.
 
 \begin{minted}{haskell}
  addToCollection ui fg
@@ -115,15 +115,16 @@ the text.
  runUi c defaultContext
 \end{minted}
 
-This runs the main vty-ui event loop with the collection we created
+This runs the main \vtyui\ event loop with the collection we created
 above.  We pass a “default rendering context” which provides defaults
-for the rendering process, such as the default foreground and background
-colors to be used for normal and focused widgets, as well as a “skin”
-for line-drawing.  The main event loop processes input events from the
-Vty library and re-draws the interface after calling any event handlers.
-It also shuts down Vty in the event of an exception.
+for the rendering process, such as the default foreground and
+background colors to be used for normal and focused widgets, as well
+as a “skin” for line-drawing.  The main event loop processes input
+events from the Vty library and re-draws the interface after calling
+any event handlers.  It also shuts down Vty in the event of an
+exception.
 
-We've now seen the general structure of a vty-ui program:
+We've now seen the general structure of a \vtyui\ program:
 \begin{itemize}
 \item Create and compose widgets,
 \item Create a focus group and add input-receiving widgets to the group,

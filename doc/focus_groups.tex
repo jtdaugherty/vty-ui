@@ -2,12 +2,12 @@
 \label{sec:focus}
 
 Graphical interfaces allow the user to change focus between all of the
-primary interface input elements, usually with the Tab key.  The same is
-true in vty-ui, except that because any widget can accept events -- and
-because which widgets the focus is a policy decision that you get to
-make -- the library cannot automatically determine which widgets should
-get the focus, or the order in which focus should be received.  As a
-result, vty-ui provides a type called a "focus group."
+primary interface input elements, usually with the Tab key.  The same
+is true in \vtyui, except that because any widget can accept events --
+and because which widgets the focus is a policy decision that you get
+to make -- the library cannot automatically determine which widgets
+should get the focus, or the order in which focus should be received.
+As a result, \vtyui\ provides a type called a "focus group."
 
 A focus group is just an ordered sequence of widgets that should get the
 user's focus as the Tab key is pressed.  Widgets receive focus in the
@@ -113,6 +113,7 @@ and event ``inheritance'' makes it possible to create new, composite
 widgets in a flexible way.
 
 \subsection{Merging Focus Groups}
+\label{sec:merging_focus_groups}
 
 Some widgets, such as the "dialog" widget, are composed of a number of
 input widgets already; widgets like "dialog" must create their own

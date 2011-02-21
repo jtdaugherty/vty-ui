@@ -1,9 +1,9 @@
-\section{The vty-ui Event Loop}
+\section{The \vtyui\ Event Loop}
 \label{sec:event_loop}
 
 Vty-ui manages the user input event loop for you, and once you have
-created and populated a collection, you can invoke the main vty-ui event
-loop:
+created and populated a collection, you can invoke the main
+\vtyui\ event loop:
 
 \begin{minted}{haskell}
  runUi c defaultContext
@@ -106,7 +106,7 @@ requiring the you to specify attributes where you want to deviate from
 the default.
 
 You can create attributes with varying levels of specificity by using
-the vty-ui API:
+the \vtyui\ API:
 
 \begin{tabular}{|l|l|} \hline
 Expression & Resulting attribute \\ \hline
@@ -121,17 +121,17 @@ The Vty \fw{def\_attr} value's default configuration is used as a
 basis for all partially-specified attributes.  The functions described
 above are defined in the \fw{Util} module.
 
-\subsection{\texttt{vty-ui} and Concurrency}
+\subsection{\vtyui\ and Concurrency}
 \label{sec:concurrency}
 
 So far we have only seen programs which modify widget state when user
 input events occur.  Such changes in widget state are safe, because
-they are triggered by the \fw{vty-ui} event loop.  However, your
-program will more than likely need to trigger some widget state
-changes due to other external events -- such as network events -- and
-\fw{vty-ui} provides a mechanism for doing this in a thread-safe way.
+they are triggered by the \vtyui\ event loop.  However, your program
+will more than likely need to trigger some widget state changes due to
+other external events -- such as network events -- and
+\vtyui\ provides a mechanism for doing this in a thread-safe way.
 
-\fw{vty-ui} provides a function in the \fw{Core} module called
+\vtyui\ provides a function in the \fw{Core} module called
 \fw{schedule} which takes an \fw{IO} action and ``schedules'' it to be
 run by the main event loop.  It will be run as soon as possible, once
 the program control flow has returned to the event loop.  Since the
@@ -163,13 +163,13 @@ example, take a look at the \fw{ProgressBar} widget in the
 
 \subsection{Managing Your Own State}
 
-Vty-ui provides a lot of functionality, but of course the only truly
+\vtyui\ provides a lot of functionality, but of course the only truly
 useful applications you write will have their own state and will use
 that state to update the terminal interface.  Accomplishing this will
 require use of the \fw{schedule} function mentioned in Section
 \ref{sec:concurrency}.
 
-A typical design for applications using Vty-ui is:
+A typical design for applications using \vtyui\ is:
 
 \begin{itemize}
 \item The application defines its own state type, call it

@@ -9,9 +9,9 @@ the positions cannot be calculated until the sizes of all widgets'
 
 The top-level function to set a widget's position is called
 \fw{setCurrentPosition} and is defined in the \fw{Core} module.  It is
-called, initially, by the vty-ui event loop with a position of \fw{(0,
-  0)}.  This function updates the \fw{currentPosition} field of the
-widget's \fw{WidgetImpl} structure and then calls its
+called, initially, by the \vtyui\ event loop with a position of
+\fw{(0, 0)}.  This function updates the \fw{currentPosition} field of
+the widget's \fw{WidgetImpl} structure and then calls its
 \fw{setCurrentPosition\_} function to take care of any widget-specific
 duties.  For most widgets, \fw{setCurrentPosition\_} need not be
 overridden from its default no-op implementation.  However, container

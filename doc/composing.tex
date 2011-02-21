@@ -1,8 +1,8 @@
 \section{Composing Widgets}
 
-As with any user interface toolkit, vty-ui lets you compose your widgets
-to create a user interface that is laid out the way you want.  Widgets
-fall into two basic categories:
+As with any user interface toolkit, \vtyui\ lets you compose your
+widgets to create a user interface that is laid out the way you want.
+Widgets fall into two basic categories:
 
 \begin{itemize}
 \item "basic" widgets like text strings, ASCII decorations
@@ -27,7 +27,7 @@ passed to the function.  The \fw{hBox} function does the same for
 horizontal layout.  These two widgets will probably be the most common
 in your applications.
 
-vty-ui provides some combinators to make Boxes a bit eaiser to work
+\vtyui\ provides some combinators to make Boxes a bit eaiser to work
 with:
 
 \begin{minted}{haskell}
@@ -64,12 +64,11 @@ depending on two primary factors:
 
 Just as with graphical toolkits, when the terminal is resized, more
 space is available to render the interface, so we need to use the
-space wisely, and to determine how to use it, \fw{vty-ui} requires
-that the widgets declare their own policies for how to use the
-available space.  The box size policy is to expand to use all
-available space to provide the maximum space to its children.  For
-more details on how Box widget is implemented, see the API
-documentation.
+space wisely, and to determine how to use it, \vtyui\ requires that
+the widgets declare their own policies for how to use the available
+space.  The box size policy is to expand to use all available space to
+provide the maximum space to its children.  For more details on how
+Box widget is implemented, see the API documentation.
 
 Just placing text widgets in boxes won't get you very far; to
 influence layout, you'll need to add other space-filling widgets to
