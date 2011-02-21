@@ -271,11 +271,6 @@ newWidget = do
                      , focusAttribute = def_attr
                      }
 
-  wRef `onGainFocus` \this ->
-      updateWidget this $ \w -> w { focused = True }
-  wRef `onLoseFocus` \this ->
-      updateWidget this $ \w -> w { focused = False }
-
   return wRef
 
 defaultCursorInfo :: Widget a -> IO (Maybe DisplayRegion)
@@ -313,10 +308,14 @@ onKeyPressed wRef handler = do
   updateWidget wRef $ \w -> w { keyEventHandler = combinedHandler }
 
 focus :: (MonadIO m) => Widget a -> m ()
-focus wRef = fireEvent wRef (gainFocusHandlers <~) wRef
+focus wRef = do
+  updateWidget wRef $ \w -> w { focused = True }
+  fireEvent wRef (gainFocusHandlers <~) wRef
 
 unfocus :: (MonadIO m) => Widget a -> m ()
-unfocus wRef = fireEvent wRef (loseFocusHandlers <~) wRef
+unfocus wRef = do
+  updateWidget wRef $ \w -> w { focused = False }
+  fireEvent wRef (loseFocusHandlers <~) wRef
 
 onGainFocus :: (MonadIO m) => Widget a -> (Widget a -> IO ()) -> m ()
 onGainFocus = addHandler (gainFocusHandlers <~)

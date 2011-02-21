@@ -50,17 +50,15 @@ by widget implementors:
   strongly recommended that you \textit{not} replace this, but use
   \fw{onKeyPressed} to register key handlers instead.
 \item \fw{gainFocusHandlers} -- the actions responisible for handling
-  the widget's focus gain event.  When a widget is created, this
-  contains an action to set the \fw{focused} field.  You can add your
-  own handlers with \fw{onGainFocus} as described in Section
-  \ref{sec:focus}.  For more information about event handling and the
-  \fw{Handlers} type, see Section \ref{sec:event_handlers}.
+  the widget's focus gain event.  You can add your own handlers with
+  \fw{onGainFocus} as described in Section \ref{sec:focus}.  For more
+  information about event handling and the \fw{Handlers} type, see
+  Section \ref{sec:event_handlers}.
 \item \fw{loseFocusHandlers} -- the actions responisible for handling
-  the widget's focus loss event.  When a widget is created, this
-  contains an action to set the \fw{focused} field.  You can add your
-  own handlers with \fw{onLoseFocus} as described in Section
-  \ref{sec:focus}.  For more information about event handling and the
-  \fw{Handlers} type, see Section \ref{sec:event_handlers}.
+  the widget's focus loss event.  You can add your own handlers with
+  \fw{onLoseFocus} as described in Section \ref{sec:focus}.  For more
+  information about event handling and the \fw{Handlers} type, see
+  Section \ref{sec:event_handlers}.
 \end{itemize}
 
 The following fields are important to widget implementors and,
