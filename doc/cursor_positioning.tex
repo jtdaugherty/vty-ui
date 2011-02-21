@@ -22,6 +22,7 @@ specify our own position:
 
 \begin{minted}{haskell}
  getCursorPosition_ = \this -> do
+   (Wrapper child) <- getState this
    childCursor <- getCursorPosition child
    case childCursor of
      Nothing -> return Nothing
