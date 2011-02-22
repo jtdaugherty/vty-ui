@@ -1,5 +1,5 @@
 
-manual.pdf: *.tex
+manual.pdf: *.tex ch[1234]/*.tex
 	# Run it twice so the TOC gets generated properly
 	pdflatex -shell-escape manual.tex
 	pdflatex -shell-escape manual.tex
