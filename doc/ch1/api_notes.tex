@@ -4,7 +4,11 @@ When you create a widget in \vtyui, the result with almost always have
 a type like \fw{Widget a}.  The type variable \fw{a} represents the
 specific type of state the widget can carry, and therefore which
 operations can be performed on it.  For example, a text widget has
-type \fw{Widget FormattedText}.
+type \fw{Widget FormattedText}.  Throughout this document, we'll refer
+frequently to widgets by their state type (e.g., ``\fw{Edit}
+widgets''). In most cases we are referring to a value whose type is,
+e.g., \fw{Widget Edit}.  When in doubt, be sure to check the API
+documentation.
 
 The \fw{Widget} type is actually an \fw{IORef} which wraps the real
 widget implementation type, \fw{WidgetImpl a}.  So it's best to use
@@ -23,8 +27,3 @@ Regarding return values, even if a function is of type \fw{...\ -> IO
   a}, we say it is ``in the \fw{IO} monad'' and \textit{returns}
 \fw{a}.  We won't bother saying that a function \textit{returns \fw{IO
     a}}.
-
-Throughout this document, we'll refer frequently to widgets by their
-state type (e.g., ``\fw{Edit} widgets''). In most cases we are
-referring to a value whose type is, e.g., \fw{Widget Edit}.  When in
-doubt, be sure to check the API documentation.
