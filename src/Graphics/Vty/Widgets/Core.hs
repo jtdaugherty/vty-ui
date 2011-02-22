@@ -249,8 +249,8 @@ setCurrentPosition wRef pos = do
     w <- readIORef wRef
     (setCurrentPosition_ w) wRef pos
 
-newWidget :: (MonadIO m) => m (Widget a)
-newWidget = do
+newWidget :: (MonadIO m) => (WidgetImpl a -> WidgetImpl a) -> m (Widget a)
+newWidget f = do
   gfhs <- newHandlers
   lfhs <- newHandlers
 
@@ -271,6 +271,7 @@ newWidget = do
                      , focusAttribute = def_attr
                      }
 
+  updateWidget wRef f
   return wRef
 
 defaultCursorInfo :: Widget a -> IO (Maybe DisplayRegion)
@@ -357,8 +358,7 @@ data FocusGroup = FocusGroup { entries :: [Widget FocusEntry]
 
 newFocusEntry :: (MonadIO m, Show a) => Widget a -> m (Widget FocusEntry)
 newFocusEntry chRef = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = FocusEntry chRef
 
         , growHorizontal_ = const $ growHorizontal chRef
@@ -380,8 +380,7 @@ newFocusEntry chRef = do
 
 newFocusGroup :: (MonadIO m) => m (Widget FocusGroup)
 newFocusGroup = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = FocusGroup { entries = []
                              , currentEntryNum = -1
                              , nextKey = (KASCII '\t', [])

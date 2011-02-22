@@ -93,8 +93,7 @@ withPadding = flip padded
 
 padded :: (MonadIO m, Show a) => Widget a -> Padding -> m (Widget Padded)
 padded ch padding = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = Padded ch padding
 
         , growVertical_ = const $ growVertical ch

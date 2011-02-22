@@ -28,8 +28,7 @@ Here's what the function will look like in full:
 \begin{haskellcode}
  newCounter :: (MonadIO m) => Int -> m (Widget Counter)
  newCounter initialValue = do
-   wRef <- newWidget
-   updateWidget wRef $ \w ->
+   wRef <- newWidget $ \w ->
      w { state = Counter initialValue
        , render_ =
          \this size ctx -> do
@@ -43,7 +42,7 @@ allow us to use it in any monad on top of \fw{IO}.  Let's go through
 the code:
 
 \begin{haskellcode}
- wRef <- newWidget
+ wRef <- newWidget $ \w -> ...
 \end{haskellcode}
 
 The \fw{Core} module's \fw{newWidget} function creates a new
@@ -55,15 +54,10 @@ result \fw{wRef} because it is a reference to a widget object, and
 this helps distinguish it from the actual widget data in the next
 step.
 
-\begin{haskellcode}
- updateWidget wRef $ \w -> ...
-\end{haskellcode}
-
-The \fw{updateWidget} function takes any \fw{Widget a} and a function
-\fw{WidgetImpl a -> WidgetImpl a} and updates the widget
-implementation contained in the \fw{IORef}.  We use this step to
-specify the behavior of the widget beyond the defaults, which are
-specified in the \fw{Core} module.
+The \fw{newWidget} function takes a function \fw{WidgetImpl a ->
+  WidgetImpl a} and updates the widget implementation contained in the
+\fw{IORef}.  We use this to specify the behavior of the widget beyond
+the defaults, which are specified in the \fw{Core} module.
 
 \begin{haskellcode}
  state = Counter initialValue

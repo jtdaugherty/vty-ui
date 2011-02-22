@@ -56,8 +56,7 @@ setBorderedLabel w label =
 -- attribute and character.
 hBorder :: (MonadIO m) => m (Widget HBorder)
 hBorder = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = HBorder def_attr ""
         , growHorizontal_ = const $ return True
         , render_ = renderHBorder
@@ -100,8 +99,7 @@ instance HasBorderAttr (Widget VBorder) where
 -- attribute and character.
 vBorder :: (MonadIO m) => m (Widget VBorder)
 vBorder = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = VBorder def_attr
         , growVertical_ = const $ return True
         , render_ = \this s ctx -> do
@@ -131,8 +129,7 @@ instance HasBorderAttr (Widget (Bordered a)) where
 -- |Wrap a widget in a bordering box using the specified attribute.
 bordered :: (MonadIO m, Show a) => Widget a -> m (Widget (Bordered a))
 bordered child = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = Bordered def_attr child ""
 
         , growVertical_ = const $ growVertical child

@@ -123,8 +123,7 @@ defaultChildSizePolicy = PerChild BoxAuto BoxAuto
 box :: (MonadIO m, Show a, Show b) =>
        Orientation -> Int -> Widget a -> Widget b -> m (Widget (Box a b))
 box o spacing wa wb = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = Box { boxChildSizePolicy = defaultChildSizePolicy
                       , boxOrientation = o
                       , boxSpacing = spacing

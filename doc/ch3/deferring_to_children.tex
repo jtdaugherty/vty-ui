@@ -24,8 +24,7 @@ Then the implementation of the constructor:\footnote{This widget
 \begin{haskellcode}
  newWrapper :: (MonadIO m) => Widget a -> m (Widget (Wrapper a))
  newWrapper child = do
-   wRef <- newWidget
-   updateWidget wRef $ \w ->
+   wRef <- newWidget $ \w ->
      w { state = Wrapper child
        , growHorizontal_ = growHorizontal child
        , growVertical_ = growVertical child

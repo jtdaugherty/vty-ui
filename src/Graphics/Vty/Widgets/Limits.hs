@@ -28,8 +28,7 @@ instance Show (HLimit a) where
 -- |Impose a maximum horizontal size, in columns, on a 'Widget'.
 hLimit :: (MonadIO m, Show a) => Int -> Widget a -> m (Widget (HLimit a))
 hLimit maxWidth child = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = HLimit maxWidth child
         , render_ = \this s ctx -> do
                    HLimit width ch <- getState this
@@ -53,8 +52,7 @@ instance Show (VLimit a) where
 -- |Impose a maximum horizontal size, in columns, on a 'Widget'.
 vLimit :: (MonadIO m, Show a) => Int -> Widget a -> m (Widget (VLimit a))
 vLimit maxHeight child = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = VLimit maxHeight child
         , growHorizontal_ = const $ growHorizontal child
 

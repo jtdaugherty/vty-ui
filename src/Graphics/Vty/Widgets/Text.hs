@@ -108,8 +108,7 @@ matchesRegex r t = isJust $ match r (tokenString t) [exec_anchored]
 -- of how the formatters will modify the text (and affect each other).
 textWidget :: (MonadIO m) => Formatter -> String -> m (Widget FormattedText)
 textWidget format s = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = FormattedText { text = prepareText s
                                 , formatter = format
                                 }

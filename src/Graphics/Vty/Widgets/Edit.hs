@@ -39,13 +39,11 @@ instance Show Edit where
 
 editWidget :: (MonadIO m) => m (Widget Edit)
 editWidget = do
-  wRef <- newWidget
-
   ahs <- newHandlers
   chs <- newHandlers
   cmhs <- newHandlers
 
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = Edit { currentText = ""
                        , cursorPosition = 0
                        , displayStart = 0

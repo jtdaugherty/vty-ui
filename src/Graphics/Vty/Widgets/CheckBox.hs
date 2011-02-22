@@ -123,9 +123,8 @@ newCheckbox label = newMultiStateCheckbox label [(False, ' '), (True, 'x')]
 newMultiStateCheckbox :: (Eq a, MonadIO m) => String -> [(a, Char)] -> m (Widget (CheckBox a))
 newMultiStateCheckbox _ [] = throw EmptyCheckboxStates
 newMultiStateCheckbox label states = do
-  wRef <- newWidget
   cchs <- newHandlers
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = CheckBox { checkboxLabel = label
                            , checkboxChangeHandlers = cchs
                            , leftBracketChar = '['

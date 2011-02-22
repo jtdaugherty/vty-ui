@@ -19,8 +19,7 @@ data VFill = VFill Char
 -- specified character and attribute.
 vFill :: (MonadIO m) => Char -> m (Widget VFill)
 vFill c = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = VFill c
         , growVertical_ = const $ return True
         , render_ = \this s ctx -> do
@@ -40,8 +39,7 @@ data HFill = HFill Char Int
 -- one row high, using the specified character and attribute.
 hFill :: (MonadIO m) => Char -> Int -> m (Widget HFill)
 hFill c h = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = HFill c h
         , growHorizontal_ = const $ return True
         , render_ = \this s ctx -> do

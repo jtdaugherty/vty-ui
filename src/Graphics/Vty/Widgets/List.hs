@@ -235,8 +235,7 @@ clearList w = do
 
 newListWidget :: (MonadIO m, Show b) => List a b -> m (Widget (List a b))
 newListWidget list = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = list
         , keyEventHandler = listKeyEvent
 

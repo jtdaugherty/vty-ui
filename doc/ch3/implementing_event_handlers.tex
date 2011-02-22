@@ -43,11 +43,8 @@ constructor to construct a \fw{Handlers} list:
 \begin{haskellcode}
  newTempMonitor :: (MonadIO m) => m (Widget TempMonitor)
  newTempMonitor = do
-   wRef <- newWidget
-
    handlers <- newHandlers
-
-   updateWidget wRef $ \w ->
+   wRef <- newWidget $ \w ->
      w { state = TempMonitor { tempChangeHandlers = handlers
                              }
        }

@@ -24,8 +24,7 @@ instance Show RightAligned where
 
 rightAligned :: (MonadIO m, Show a) => Widget a -> m (Widget RightAligned)
 rightAligned chRef = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { growHorizontal_ = const $ return True
         , growVertical_ = const $ growVertical chRef
         , state = RightAligned chRef

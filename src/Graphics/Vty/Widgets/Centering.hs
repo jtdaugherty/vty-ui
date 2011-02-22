@@ -21,8 +21,7 @@ instance Show (HCentered a) where
 
 hCentered :: (MonadIO m, Show a) => Widget a -> m (Widget (HCentered a))
 hCentered ch = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = HCentered ch
         , growHorizontal_ = const $ return True
 
@@ -62,8 +61,7 @@ instance Show (VCentered a) where
 
 vCentered :: (MonadIO m, Show a) => Widget a -> m (Widget (VCentered a))
 vCentered ch = do
-  wRef <- newWidget
-  updateWidget wRef $ \w ->
+  wRef <- newWidget $ \w ->
       w { state = VCentered ch
         , growVertical_ = const $ return True
         , growHorizontal_ = const $ growHorizontal ch

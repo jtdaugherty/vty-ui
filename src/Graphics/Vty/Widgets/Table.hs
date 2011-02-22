@@ -164,8 +164,7 @@ newTable :: (MonadIO m) =>
          -> BorderStyle
          -> m (Widget Table)
 newTable specs borderSty = do
-  t <- newWidget
-  updateWidget t $ \w ->
+  t <- newWidget $ \w ->
       w { state = Table { rows = []
                         , columnSpecs = specs
                         , borderStyle = borderSty
