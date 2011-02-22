@@ -4,14 +4,14 @@
 An interface is truly interactive only if we can express the
 relationship between various events in the interface.  User input and
 network events may affect the user interface, but we also need to be
-define how the interface components interact with each other.  Vty-ui
-provides a mechanism to address this called the \fw{Handlers} type,
-defined in the \fw{Events} module.
+define how the interface components interact with each other.
+\vtyui\ provides a mechanism to address this called the \fw{Handlers}
+type, defined in the \fw{Events} module.
 
 For any given widget type, we must decide what events can occur as a
 result of the widget's state change.  For each type of event, we must
 decide what sort of data we should pass to handlers of this event so
-they can take action.
+they can take an appropriate action.
 
 Imagine that you've implemented a ``temperature monitor'' widget, and
 you want to be notified whenever the temperature changes so you can
@@ -52,16 +52,13 @@ constructor to construct a \fw{Handlers} list:
    return wRef
 \end{haskellcode}
 
-The \fw{newHandlers} function is polymorphic on the handler parameter
-type, so it can be used to create \fw{Handlers a} for any \fw{a}.
-
 Now we have a place to store the handlers, a model for the event data
 itself, and an updated constructor.  Next, we need a nice API to
 register new event handlers.  The \fw{vty-ui} convention is to use
 functions prefixed with ``on'', such as \fw{onGainFocus} and
 \fw{onActivate}.  This convention makes it easy to write readable
 infix event handler registration functions.  In the temperature
-monitor case, we might right something like this:
+monitor case, we might write something like this:
 
 \begin{haskellcode}
  onTemperatureChange :: (MonadIO m) => Widget TempMonitor
@@ -74,16 +71,14 @@ monitor case, we might right something like this:
 We've introduced a new operator here, \fw{<\string~\string~}.  This
 operator takes any \fw{Widget a} and a function on its state type,
 \fw{a -> b}, and runs the function and returns the value, \fw{b},
-inside calling monad.  In this case, we need to return a value of type
-\fw{Handlers TemperatureEvent}, and to do that we must dereference the
-widget reference and get the \fw{tempChangeHandlers} out of the widget
-state.
+inside calling monad.  \fw{addHandler} needs a value of type
+\fw{Handlers TemperatureEvent}, and to get that we must use
+\fw{<\string~\string~}.
 
 The \fw{addHandler} function takes a \fw{Handlers a} and a handler of
 type \fw{a -> IO ()} and adds it to the \fw{Handlers} list.
 
-An (arguably bogus) way of using this new function would be the
-following:
+Here is a bogus but valid demonstration of this new function:
 
 \begin{haskellcode}
  let maxTemp = 100
@@ -93,7 +88,7 @@ following:
 \end{haskellcode}
 
 The last thing it do is to actually ``fire'' the event that these
-handlers will handle; assuming the monitor widget as a
+handlers will handle; assuming the monitor widget has a
 \fw{setTemperature} function and some internal state to store the
 temperature, that function would create the \fw{TemperatureEvent} and
 invoke the handlers as follows:
@@ -108,9 +103,8 @@ invoke the handlers as follows:
 \end{haskellcode}
 
 Just as with \fw{addHandler}, we pass a handler list lookup function
-to \fw{fireEvent}.  We also pass it a value of the event data type,
-\fw{a}, which will be passed to all of the registered handler
-functions.
+to \fw{fireEvent}.  We also pass it an event value which will be
+passed to all of the registered handler functions.
 
 The functions \fw{newHandlers}, \fw{addHandler}, and \fw{fireEvent}
 are defined along with the \fw{Handlers} type in the \fw{Events}

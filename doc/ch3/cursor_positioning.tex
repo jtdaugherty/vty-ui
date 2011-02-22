@@ -1,14 +1,15 @@
 \section{Cursor Positioning}
+\label{sec:cursor_positioning}
 
 Once a widget is properly positioned, the widget can display a cursor.
 This is especially useful for edit widgets, since the user needs to
 know the cursor position.  The \fw{Core} module provides a top-level
 function to accomplish this called \fw{getCursorPosition}; this
 function calls the \fw{WidgetImpl} type's \fw{getCursorPosition\_}
-function to query widgets.
+function.
 
 The \fw{getCursorPosition\_} function returns \fw{Maybe
-  DisplayRegion}; a return value of \fw{Nothing} indicates that the
+  DisplayRegion}.  A return value of \fw{Nothing} indicates that the
 widget does not want to show a cursor, so when it gains focus, no
 cursor will be displayed.  Otherwise, positioning the cursor at row
 \fw{r} and column \fw{c} is accomplished by returning \fw{Just
@@ -16,9 +17,9 @@ cursor will be displayed.  Otherwise, positioning the cursor at row
 the event loop.
 
 Typically, the position of the cursor is computed as an offset to the
-widget's current position.  In the \fw{Wrapper} widget in Section
-\ref{sec:deferring} we deferred to the child widget to control the
-cursor, but we might instead specify our own position:
+widget's current position.  In the \fw{Wrapper} widget example in
+Section \ref{sec:deferring} we deferred to the child widget to control
+the cursor, but we might instead specify our own position:
 
 \begin{haskellcode}
  getCursorPosition_ = \this -> do

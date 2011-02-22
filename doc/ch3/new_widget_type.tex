@@ -35,8 +35,7 @@ Here's what the function will look like in full:
        }
 \end{haskellcode}
 
-Now we have a constructor for a \fw{Counter} widget!  Its type will
-allow us to use it in any monad on top of \fw{IO}.  Let's go through
+Now we have a constructor for a \fw{Counter} widget.  Let's go through
 the code:
 
 \begin{haskellcode}
@@ -45,33 +44,34 @@ the code:
 
 The \fw{Core} module's \fw{newWidget} function creates a new
 \fw{IORef} wrapping a \fw{WidgetImpl a}.  The \fw{WidgetImpl} type is
-where all of the widet logic is actually implemented.  You implement
-this logic by overriding the default fields of the \fw{WidgetImpl}
-type, such as \fw{render\_} and \fw{state}.  We call \fw{newWidget}'s
-result \fw{wRef} because it is a reference to a widget object, and
-this helps distinguish it from the actual widget data in the next
-step.
+where all of the widget logic is actually implemented.  You implement
+this logic by overriding the fields of the \fw{WidgetImpl} type, such
+as \fw{render\_} and \fw{state}.  We call \fw{newWidget}'s result
+\fw{wRef} because it is a reference to a widget object, and this helps
+distinguish it from the actual widget data in the next step.
 
 The \fw{newWidget} function takes a function \fw{WidgetImpl a ->
   WidgetImpl a} and updates the widget implementation contained in the
 \fw{IORef}.  We use this to specify the behavior of the widget beyond
-the defaults, which are specified in the \fw{Core} module.
+the defaults, which are specified in the \fw{newWidget} function.
 
 \begin{haskellcode}
  state = Counter initialValue
 \end{haskellcode}
 
 Here we set the inital value of the counter and create the
-\fw{Counter} state and store it in the \fw{WidgetImpl} which, due to
-type inference, is of type \fw{WidgetImpl Counter}.  We'll reference
-this state later on, in the rendering code and in any API functions
-that we want to implement to mutate it.
+\fw{Counter} state and store it in the \fw{WidgetImpl}.  We'll
+reference this state later on in the rendering code and in any API
+functions that we want to implement to mutate it.
 
 \begin{haskellcode}
  render_ =
    \this size ctx -> do
      (Counter v) <- getState this
-     return $ string (getNormalAttr ctx) (show v)
+     let s = show v
+         width = fromEnum $ region_width size - length s
+         truncated = take width s
+     return $ string (getNormalAttr ctx) truncated
 \end{haskellcode}
 
 This actually does the job of rendering the counter value into a form
@@ -82,9 +82,9 @@ types are as follows:
 \begin{itemize}
 \item \fw{Widget a} - the widget being rendered, i.e., the \fw{Widget
   Counter} reference.  This is passed to provide access to the
-  widget's state, which will be used to render it.
+  widget's state which will be used to render it.
 \item \fw{DisplayRegion} - the size of the display region into which
-  the widget should fit, measured in rows and columns.  The image
+  the widget should fit, measured in rows and columns.  The \fw{Image}
   returned by \fw{render\_} should \textit{never} be larger than this
   region, or the rendering process will raise an exception.  The
   reason is because if it were to violate the specified size, then the
@@ -102,8 +102,8 @@ types are as follows:
   \fw{Counter} widgets, so we just look at the ``normal'' attribute.
 \item \fw{Image} - this is the type of Vty ``images'' that can be
   composed into a final terminal representation.  All widgets must be
-  converted to this type during the rendering process to be put
-  together into what goes into the terminal.
+  converted to this type during the rendering process to be composed
+  into the final result.
 \end{itemize}
 
 The implementation of the \fw{render\_} function is as follows:
@@ -113,23 +113,32 @@ The implementation of the \fw{render\_} function is as follows:
 \end{haskellcode}
 
 The \fw{getState} function takes a \fw{Widget a} and returns its
-\fw{state} field (of type \fw{a}).  In this case, it returns the
-\fw{Counter} value resident in the widget structure.
+\fw{state} field.  In this case, it returns the \fw{Counter} value.
 
 \begin{haskellcode}
- return $ string (getNormalAttr ctx) (show v)
+ let s = show v
+     width = fromEnum $ region_width size - length s
+     truncated = take width s
+\end{haskellcode}
+
+To ensure that the \fw{Image} we generate does not exceed \fw{size} as
+described above, we use the width of the region to limit how many
+characters we take from the string representation of the counter.
+
+\begin{haskellcode}
+ return $ string (getNormalAttr ctx) truncated
 \end{haskellcode}
 
 The \fw{string} function is a Vty library function which takes an
 attribute (\fw{Attr}) and a \fw{String} and returns an \fw{Image}.
-The \fw{getNormalAttr} function returns the default normal attribute
-from the \fw{RenderContext}, merged with the ``override'' attribute
-from the \fw{RenderContext}, if it is set.  For more information on
-the override attribute, see Section \vref{sec:attributes}.
+The \fw{getNormalAttr} function returns the normal attribute from the
+\fw{RenderContext}, merged with the ``override'' attribute from the
+\fw{RenderContext}, if it is set.  For more information on the
+override attribute, see Section \vref{sec:attributes}.
 
 This concludes the basic implementation requirements for a new widget
-type; to make it useful, we'll need to add some functions to
-manipulate its state:
+type; to make it useful, we'll need to add some functions to manage
+its state:
 
 \begin{haskellcode}
  setCounterValue :: (MonadIO m) => Widget Counter -> Int -> m ()
@@ -143,9 +152,9 @@ manipulate its state:
 \end{haskellcode}
 
 The \fw{setCounterValue} function takes a \fw{Counter} widget and sets
-its \fw{state} to a new counter state value.  The
-\fw{updateWidgetState} function takes a \fw{Widget a} and a state
-transformation function and updates the \fw{state} field of the
-widget.  The \fw{getCounterValue} function just reads the state and
-returns the counter's value.  Now you could write a program using
-these functions to create and manipulate the counter.
+its \fw{state} to a new counter value.  The \fw{updateWidgetState}
+function takes a \fw{Widget a} and a state transformation function and
+updates the \fw{state} field of the widget.  The \fw{getCounterValue}
+function just reads the state and returns the counter's value.  Now
+you could write a program using these functions to create, manipulate,
+and display the counter.

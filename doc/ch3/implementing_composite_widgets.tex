@@ -6,17 +6,16 @@ straightforward for more complex, composite widgets.
 
 The \vtyui\ library provides some ``widgets'' which don't fit this
 pattern: \fw{Dialog} and \fw{DirBrowser}.  These widgets are actually
-entire interfaces, complete with multiple focusable widgets and their
-own internal focus group.  These widgets don't take the form of
-\fw{Widget Dialog} or \fw{Widget DirBrowser}; they \textit{could} be
-implemented that way, but we'd find that many of the \fw{WidgetImpl}
-functions would end up deferring to a child widget anyway, so there
-isn't much point.
+entire interfaces, complete with multiple focusable widgets and focus
+groups.  These widgets don't take the form of \fw{Widget Dialog} or
+\fw{Widget DirBrowser}; they \textit{could} be implemented that way,
+but we'd find that many of the \fw{WidgetImpl} functions would end up
+deferring to a child widget anyway, so there isn't much point.
 
 Instead, we invert the widget organization: we create a type (e.g.,
 \fw{Dialog}) which contains the actual widget to be rendered, as well
 as other book-keeping internals, and we return that from our
-constructor.  This makes it easier to implement such widgets, since we
+constructor.  This makes it easier to implement such widgets since we
 are less concerned with their inner workings and more concerned with
 returning something high-level that has the right behaviors.
 
@@ -53,7 +52,9 @@ implementing \fw{WidgetImpl}'s interface.  First we provide the types:
 
 Then, we provide the constructor:
 
-\begin{haskellcode}
+% Let this block span a page boundary since it's so big that it's
+% likely, and we don't want to bump it down unless it looks good. :)
+\begin{haskellcode*}{samepage=false}
  newPhoneInput :: (MonadIO m) => (PhoneInput, FocusGroup)
  newPhoneInput = do
    ahs <- newHandlers
@@ -79,7 +80,7 @@ Then, we provide the constructor:
    fg <- newFocusGroup
    mapM_ (addToFocusGroup fg) [e1, e2, e3]
    return (w, fg)
-\end{haskellcode}
+\end{haskellcode*}
 
 Then we would provide a function to register phone number handlers:
 

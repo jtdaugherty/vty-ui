@@ -47,18 +47,17 @@ widget implementations:
 
 \begin{itemize}
 \item The state type of the wrapped widget, \fw{a}, is preserved in
-  the type of the wrapper widget itself.
+  the type of the wrapper widget itself, \fw{Wrapper a}.
 \item We referred directly to \fw{child} instead of using
   \fw{getState} in all of the functions; the reason is because we
   don't care about allowing the child to be replaced with a different
-  widget.  If that is something you want to support, then you
-  \textit{must} use \fw{getState} to ensure that you have the latest
-  version of the widget's state and, as a result, the correct child
-  widget reference.
+  widget at a later time.  If that is something you want to support,
+  then you \textit{must} use \fw{getState} to ensure that you have the
+  latest version of the widget's state and, as a result, the correct
+  child widget reference.
 \item We defer all behaviors to the child: growth policy, rendering,
   positioning, cursor behavior, focus events, and key events.  Most
-  container widgets defer all of these things.  You should have a good
-  reason to do otherwise.
+  container widgets defer most of these things.
 \end{itemize}
 
 In some cases -- such as with \fw{Centered} widgets or anything that

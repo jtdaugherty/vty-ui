@@ -23,8 +23,9 @@ have already seen some of its fields in previous sections.
      }
 \end{haskellcode}
 
-Several fields are managed automatically and should not be overridden
-by widget implementors:
+The following fields are managed automatically and should not be
+overridden by widget implementors but are explained here for
+completeness:
 
 \begin{itemize}
 \item \fw{focused} -- \fw{True} if this widget is focused.  As
@@ -32,12 +33,12 @@ by widget implementors:
   user's focus, internally many widgets may share it in a hierarchy.
 \item \fw{currentSize} -- the ``current'' size of the widget, i.e.,
   the size of the \fw{Image} \textit{after} the last time the widget
-  was rendered.  Sometimes used when rendering child widgets.
+  was rendered.
 \item \fw{currentPosition} -- the ``current'' position of the widget's
   upper-left corner, i.e., the position of the widget's upper-left
-  corner \textit{after} the last time the widget as rendered.
-  Sometimes used when rendering child widgets and when positioning the
-  cursor, if any.
+  corner \textit{after} the last time the widget was rendered.
+  Sometimes used when positioning child widgets and when positioning
+  the cursor, if any.
 \item \fw{normalAttribute} -- the widget's normal attribute.  Defaults
   to Vty's \fw{def\_attr} value, which merges transparently with the
   \fw{RenderContext}'s normal attribute.
@@ -46,10 +47,10 @@ by widget implementors:
   \fw{RenderContext}'s focus attribute.
 \item \fw{keyEventHandler} -- the action responsible for handling key
   events for this widget.  The default implementation merely starts
-  calling the chain of user-registered key event handlers; it is
+  calling the sequence of user-registered key event handlers; it is
   strongly recommended that you \textit{not} replace this, but use
   \fw{onKeyPressed} to register key handlers instead.
-\item \fw{gainFocusHandlers} -- the actions responisible for handling
+\item \fw{gainFocusHandlers} -- the actions responsible for handling
   the widget's focus gain event.  You can add your own handlers with
   \fw{onGainFocus} as described in Section \ref{sec:focus}.  For more
   information about event handling and the \fw{Handlers} type, see
@@ -62,13 +63,12 @@ by widget implementors:
 \end{itemize}
 
 The following fields are important to widget implementors and,
-depending on the widget requirements, need to be overridden:
+depending on widget requirements, need to be overridden:
 
 \begin{itemize}
-\item \fw{state} -- the state of the widget, as described in Section
+\item \fw{state} -- the state of the widget as described in Section
   \ref{sec:new_widget_type}.  Use the \fw{getState} function to read
-  this state, and use the \fw{updateWidgetState} function to modify
-  it.
+  this state and use the \fw{updateWidgetState} function to modify it.
 \item \fw{render\_} -- the rendering routine for the widget.  If this
   widget wraps child widgets, this function is responsible for
   rendering them and composing the resulting \fw{Image}s into a final
@@ -81,7 +81,7 @@ depending on the widget requirements, need to be overridden:
   current position -- the position of the upper-left corner -- of the
   widget.  This is included in the \fw{WidgetImpl} API so that you can
   override it if your widget wraps others or has special logic for
-  setting their positions.
+  setting their positions.  See Section \ref{sec:widget_positioning}.
 \item \fw{getCursorPosition\_} -- this function may be used to
   indicate that this widget should display a cursor when it has the
   focus.  The way that it does this is by returning a
@@ -89,7 +89,7 @@ depending on the widget requirements, need to be overridden:
   \fw{Nothing}, which indicates that the widget does not want to
   position the cursor.  For implementations which do show the cursor,
   the returned position should be relative to the position returned by
-  \fw{getCurrentPosition}.
+  \fw{getCurrentPosition}.  See Section \ref{sec:cursor_positioning}.
 \end{itemize}
 
 We've already introduced the \fw{state} and \fw{render\_} functions.

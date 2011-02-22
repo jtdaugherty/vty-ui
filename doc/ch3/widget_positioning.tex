@@ -1,21 +1,23 @@
 \section{Widget Positioning}
+\label{sec:widget_positioning}
 
 Some widgets, such as the \fw{Edit} widget, need to position a cursor
-in the terminal when they have the focus; to support this, each widget
-stores its position after it is rendered.  The positioning of the
-widgets happens in a separate phase after rendering takes place, since
-the positions cannot be calculated until the sizes of all widgets'
-\fw{Image}s are known.
+in the terminal when they have the focus.  To support this, each
+widget stores its position after it is rendered.  The positioning of
+the widgets happens in a separate phase after rendering takes place
+since the positions cannot be calculated until the sizes of all
+widgets' \fw{Image}s are known.
 
 The top-level function to set a widget's position is called
 \fw{setCurrentPosition} and is defined in the \fw{Core} module.  It is
-called, initially, by the \vtyui\ event loop with a position of
-\fw{(0, 0)}.  This function updates the \fw{currentPosition} field of
-the widget's \fw{WidgetImpl} structure and then calls its
+called initially by the \vtyui\ event loop with a position of \fw{(0,
+  0)}.  This function updates the \fw{currentPosition} field of the
+widget's \fw{WidgetImpl} structure and then calls its
 \fw{setCurrentPosition\_} function to take care of any widget-specific
 duties.  For most widgets, \fw{setCurrentPosition\_} need not be
 overridden from its default no-op implementation.  However, container
-widgets must override it to set the positions of their children.
+widgets \textit{must} override it to set the positions of their
+children.
 
 Consider the \fw{Box} widget type.  This type contains two child
 widgets.  The position of the \fw{Box} itself is the upper-left corner
@@ -30,8 +32,9 @@ Here is an example implementation of \fw{setCurrentPosition\_} for the
 
 \begin{haskellcode}
  setCurrentPosition_ = \this pos -> do
-   -- Since the position of the wrapper has already been set,
-   -- we just need to set the position of the child.
+   -- Since the position of the wrapper has already been
+   -- set by setCurrentPosition, we just need to set the
+   -- position of the child.
    (Wrapper child) <- getState this
    setCurrentPosition child pos
 \end{haskellcode}
@@ -45,6 +48,6 @@ an ASCII art border or padding).
 
 If you're implementing a container widget with more than one child,
 you can use functions in the \fw{Util} module to manage the
-\fw{DisplayRegion}s used to position your widgets; for more
+\fw{DisplayRegion}s used to position your widgets.  For more
 information, see the \fw{withWidth}, \fw{withHeight}, \fw{plusWidth},
 and \fw{plusHeight} functions.
