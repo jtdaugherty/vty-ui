@@ -92,9 +92,11 @@ Then we would provide a function to register phone number handlers:
 
 When the user presses \fw{Enter} in one of the phone number input
 widgets, thus ``activating'' it, we will invoke all phone number input
-handlers with a \fw{PhoneNumber} value.  (Assume that we would also do
-some kind of validation and decide whether to call the handlers
-accordingly.)
+handlers with a \fw{PhoneNumber} value.\footnote{Assume that we would
+  also do some kind of validation and decide whether to call the
+  handlers accordingly.  We might even consider supporting ``error''
+  event handlers for the widget to report validation errors to be
+  displayed elsewhere in the interface!}
 
 In the calling environment, the user would add the
 \fw{phoneInputWidget} to the interface and merge the returned
