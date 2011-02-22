@@ -1,17 +1,17 @@
 \section{The \vtyui\ Event Loop}
 \label{sec:event_loop}
 
-Vty-ui manages the user input event loop for you, and once you have
-created and populated a collection, you can invoke the main
+\vtyui\ manages the user input event loop for you, and once you have
+created and populated a \fw{Collection}, you can invoke the main
 \vtyui\ event loop:
 
 \begin{haskellcode}
  runUi c defaultContext
 \end{haskellcode}
 
-The first parameter is the collection you have created; the second
-parameter is the ``rendering context''.  Here we use the ``default''
-rendering context provided by the library.  The rendering context
+The first parameter is the \fw{Collection} you have created; the
+second parameter is a \fw{RenderContext}.  Here we use the ``default''
+rendering context provided by the library.  The ``rendering context''
 provides three key pieces of functionality:
 
 \begin{itemize}
@@ -24,8 +24,9 @@ provides three key pieces of functionality:
 
 \subsection{Skinning}
 
-Some widgets, such as the table widget and the horizontal and vertical
-border widgets, use line-drawing characters to draw borders between
+Some widgets, such as the \fw{Table} widget (see Section XXX) and the
+horizontal and vertical border widgets \fw{VBorder} and \fw{HBorder}
+(see Section XXX), use line-drawing characters to draw borders between
 interface elements.  Some terminal emulators are capable of drawing
 Unicode characters, which make for nicer-looking line-drawing.  Other
 terminal emulators work best only with ASCII.  The default rendering
@@ -36,24 +37,25 @@ other skin (or your own) as follows:
  runUi c $ defaultContext { skin = asciiSkin }
 \end{haskellcode}
 
-The library provides skins in the \fw{Skin} module.
+The library provides \fw{Skin}s in the \fw{Skins} module.
 
 \subsection{Attributes}
 \label{sec:attributes}
 
 An attribute may consist of one or more settings of foreground and
 background color and text style, such as underline or blink.  The
-default attributes specified in the skin control how widgets appear.
+default attributes specified in the \fw{RenderContext} control how
+widgets appear.
 
 Every widget has the ability to store its own normal and focused
 attributes.  When widgets are rendered, they use these attributes; if
 they are not set, the widgets default to using those specified by the
 rendering context.  The only exception is the ``override'' attribute.
-Instead of ``falling back'' to this attribute of no others are
-specified, the presence of this attribute reuqires widgets to use it.
-For example, this attribute is used in the \fw{List} widget so that
-the currently-selected list item can be highlighted, which requires
-the \fw{List} to override the item's default attribute configuration.
+Instead of ``falling back'' to this attribute, the presence of this
+attribute reuqires widgets to use it.  For example, this attribute is
+used in the \fw{List} widget so that the currently-selected list item
+can be highlighted, which requires the \fw{List} to override the
+item's default attribute configuration.
 
 Widgets provide an API for setting these attributes using the
 \fw{HasNormalAttr} and \fw{HasFocusAttr} type classes.  The reason we
@@ -74,32 +76,30 @@ Convenience combinators also exist:
       >>= withFocusAttribute attr
 \end{haskellcode}
 
-The \fw{attr} value is a Vty attribute value.  A Vty attribute may provide
+The \fw{attr} value is a Vty attribute.  A Vty attribute may provide
 any (but not necessarily all!) of the settings that make up an
 attribute; any setting not specified (e.g. background color) can fall
 back to the default.  As a result, the attribute of a widget is the
-*combination* of its attribute and the attribute from the rendering
-context.  The widget's settings will take precedence, but any setting
-not provided will default to the rendering context.
+\textit{combination} of its attribute and the attribute from the
+rendering context.  The widget's settings will take precedence, but
+any setting not provided will default to the rendering context.
 
 Consider this example:
 
 \begin{haskellcode}
  w <- someWidget
  setNormalAttribute w (fgColor white)
-
- -- ... add the widget to a collection, etc.
  runUi c $ defaultContext { normalAttr = yellow `on` blue }
 \end{haskellcode}
 
 In this example, the widget \fw{w} will use a normal attribute of
 white on a blue background, since it specified only a foreground color
-as its normal attribute.  This kind of precedence allows you to very
-easily maintain consistency across your entire interface.
+as its normal attribute.  This kind of precedence facilitates visual
+consistency across your entire interface.
 
 In addition, container widgets are designed to pass their normal and
 focused attributes onto their children during the rendering process;
-this way, unless a child specifies an override with
+this way, unless a child specifies a default with
 \fw{setNormalAttribute} or similar, it uses its parent's attributes.
 Again, this facilitates consistency across the interface while only
 requiring the you to specify attributes where you want to deviate from
@@ -126,19 +126,21 @@ above are defined in the \fw{Util} module.
 
 So far we have only seen programs which modify widget state when user
 input events occur.  Such changes in widget state are safe, because
-they are triggered by the \vtyui\ event loop.  However, your program
-will more than likely need to trigger some widget state changes due to
-other external events -- such as network events -- and
-\vtyui\ provides a mechanism for doing this in a thread-safe way.
+they are triggered by the \vtyui\ event loop.\footnote{``Unsafe''
+  updates are those that are not guaranteed to be reflected in the
+  most-recently-rendered interface.}  However, your program will more
+than likely need to trigger some widget state changes due to other
+external events -- such as network events -- and \vtyui\ provides a
+mechanism for doing this in a safe way.
 
 \vtyui\ provides a function in the \fw{Core} module called
 \fw{schedule} which takes an \fw{IO} action and ``schedules'' it to be
-run by the main event loop.  It will be run as soon as possible, once
-the program control flow has returned to the event loop.  Since the
-scheduled action will be run by the event loop, it's important that
-the action not take very long; if it's important to block (e.g., by
-calling \fw{Control.Concurrent.threadDelay}), you should do that in a
-thread and only call \fw{schedule} when you have work to do.
+run by the main event loop.  It will be run as soon as possible, i.e.,
+once the program control flow has returned to the event loop.  Since
+the scheduled action will be run by the event loop, it's important
+that the action not take very long; if it's important to block (e.g.,
+by calling \fw{Control.Concurrent.threadDelay}), you should do that in
+a thread and only call \fw{schedule} when you have work to do.
 
 Consider this example, in which a text widget called \fw{timeText}
 gets updated with the current time every second:
@@ -159,15 +161,13 @@ action to run.
 
 Some built-in widgets will almost always be used in this way; for an
 example, take a look at the \fw{ProgressBar} widget in the
-\fw{ProgressBar} module.
+\fw{ProgressBar} module (see Section XXX).
 
 \subsection{Managing Your Own State}
 
-\vtyui\ provides a lot of functionality, but of course the only truly
-useful applications you write will have their own state and will use
-that state to update the terminal interface.  Accomplishing this will
-require use of the \fw{schedule} function mentioned in Section
-\ref{sec:concurrency}.
+If your applications have their own state management needs, then that
+state management can be done in parallel with the \vtyui\ event loop
+with proper use of \fw{schedule}.
 
 A typical design for applications using \vtyui\ is:
 

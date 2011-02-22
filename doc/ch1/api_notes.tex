@@ -1,4 +1,4 @@
-\section{Notes on the \vtyui\ API}
+\section{Conventions and API Notes}
 
 When you create a widget in \vtyui, the result with almost always have
 a type like \fw{Widget a}.  The type variable \fw{a} represents the
@@ -18,6 +18,11 @@ in mind that the actual type is likely to be \fw{(MonadIO m) => m}.
 Although \fw{MonadIO} is by far the more common constraint, be sure to
 check the API documentation to be sure; some functions, such as event
 handlers, are \fw{IO} actions.
+
+Regarding return values, even if a function is of type \fw{...\ -> IO
+  a}, we say it is ``in the \fw{IO} monad'' and \textit{returns}
+\fw{a}.  We won't bother saying that a function \textit{returns \fw{IO
+    a}}.
 
 Throughout this document, we'll refer frequently to widgets by their
 state type (e.g., ``\fw{Edit} widgets''). In most cases we are

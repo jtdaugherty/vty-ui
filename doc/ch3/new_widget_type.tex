@@ -3,8 +3,7 @@
 
 The first step in creating a custom widget is deciding what kind of
 state the widget will store.  This decision is based on what behaviors
-the widget can have and it determines what the widget's user-facing
-API will be.
+the widget can have and it determines what the widget's API will be.
 
 As an example, consider a widget that displays a numeric counter.  The
 widget state will be the value of the counter.  We'll start with the
@@ -12,8 +11,7 @@ following state type:\footnote{You might wonder why we don't just use
   \fw{Int}; the reason is because that's too general.  Other widgets
   might represent the temperature with an \fw{Int}, and then your
   counter API functions -- taking a widget of type \fw{Widget Int} --
-  would work on their widgets, which is probably not what you want!
-  An alternative would be to use a \fw{newtype}.}
+  would work on their widgets, which is probably not what you want!}
 
 \begin{haskellcode}
  data Counter = Counter Int

@@ -1,45 +1,46 @@
 \section{Collections}
 
-Traditional user interfaces present the user with a window for each task
-the user needs to accomplish.  Since we don't have the option of
-presenting multiple "windows" to users of a terminal interface, we must
-present the user with one interface at a time.  Then, the application
-will manage the transition between these interfaces.
+Traditional user interfaces present the user with a window for each
+task the user needs to accomplish.  Since we don't have the option of
+presenting multiple "windows" to users of a terminal interface, we
+must present the user with one interface at a time.  Then, through the
+use of event handlers, the application will manage the transition
+between these interfaces.
 
 Consider a text editor program in which we must present these top-level
 interfaces in the following order:
 
 \begin{itemize}
 \item The user runs the program and is presented with an interface to
-      select a file to edit
+  select a file to edit;
 \item The user chooses a file to edit and is presented with the
-      editing interface
+  editing interface;
 \item After editing, the user chooses to exit and we present a dialog
-      which asks the user whether to save the file
+  which asks the user whether to save the file.
 \end{itemize}
 
 All three of these interfaces are separate and should be given the
 entire terminal window; unlike other graphical toolkits, \vtyui\ does
 not provide a way to "show" or "hide" widgets.  Instead, it provides
-the notion of a "collection."  A collection is a widget which wraps a
-set of other widgets and maintains a pointer to the one that should be
-displayed at any given time.  The application then changes the current
-interface by changing the collection state.
+the notion of a "collection."  A \fw{Collection} is a widget which
+wraps a set of other widgets and maintains a pointer to the one that
+should be displayed at any given time.  The application then changes
+the current interface by changing the \fw{Collection}'s state.
 
 But an interface is more than what is presented in the terminal; each
 interface should have its own set of user input widgets and its own
-notion of focus.  Therefore, a collection is a set of interfaces *and
-their focus groups.*  When we change the state of the collection, we are
-really changing both the visual interface as well as the focus group
-used to interact with it.
+notion of focus.  Therefore, a \fw{Collection} is a set of interfaces
+\textit{and their focus groups}.  When we change the state of the
+\fw{Collection}, we are really changing both the visual interface as
+well as the focus group used to interact with it.
 
-To create a collection:
+To create a \fw{Collection}:
 
 \begin{haskellcode}
  c <- newCollection
 \end{haskellcode}
 
-To add an interface and a focus group to the collection:
+To add an interface and a \fw{FocusGroup} to the \fw{Collection}:
 
 \begin{haskellcode}
  fg <- newFocusGroup
@@ -48,12 +49,13 @@ To add an interface and a focus group to the collection:
  changeToW <- addToCollection c ui fg
 \end{haskellcode}
 
-As a convenience, addToCollection returns a MonadIO action which, when
-run, will switch to the specified interface.  In the example above,
-changeToW is an action which will switch to the interface with \fw{ui}
-as its top-level widget and \fw{fg} as its focus group.  You can use
-this action in event handlers that change your interface state.  If
-you prefer, you can use the \fw{setCurrentEntry} function instead,
-which allows you to set the collection's interface by number.  That
-method is not recommended, however, since a bad index can cause an
-exception to be thrown.
+As a convenience, \fw{addToCollection} returns a \fw{MonadIO} action
+which, when run, will switch to the specified interface.  In the
+example above, \fw{changeToW} is an action which will switch to the
+interface with \fw{ui} as its top-level widget and \fw{fg} as its
+focus group.  You can use this action in event handlers that change
+your interface state.  If you prefer, you can use the
+\fw{setCurrentEntry} function instead, which allows you to set the
+\fw{Collection}'s interface by number.  Use of \fw{setCurrentEntry} is
+not recommended, however, since a bad index can cause an exception to
+be thrown.
