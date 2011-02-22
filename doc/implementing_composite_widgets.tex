@@ -32,12 +32,16 @@ numbers.  The \fw{PhoneInput} will have three \fw{Edit} widgets and
 will manage tabbing between them and might even do such things as data
 validation on the input.  Here's a suggestive example for how we might
 implement such a thing without going to all the trouble of
-implementing \fw{WidgetImpl}'s interface:
+implementing \fw{WidgetImpl}'s interface.  First we provide the types:
 
 \begin{haskellcode}
  data PhoneNumber = PhoneNumber String String String
 
+ -- This type isn't pretty, but we have to specify the type
+ -- of the complete interface.  Initially you can let the
+ -- compiler tell you what it is.
  type T = Box (Box Edit Edit) Edit
+
  data PhoneInput =
    PhoneInput { phoneInputWidget :: Widget T
               , edit1 :: Widget Edit
@@ -45,38 +49,35 @@ implementing \fw{WidgetImpl}'s interface:
               , edit3 :: Widget Edit
               , activateHandlers :: Handlers PhoneNumber
               }
+\end{haskellcode}
 
+Then, we provide the constructor:
+
+\begin{haskellcode}
  newPhoneInput :: (MonadIO m) => (PhoneInput, FocusGroup)
  newPhoneInput = do
-   fg <- newFocusGroup
-
-   -- Construct the interface.
+   ahs <- newHandlers
    e1 <- editWidget
    e2 <- editWidget
    e3 <- editWidget
    ui <- (return e1) <++> (return e2) <++> (return e3)
-   let w = PhoneInput ui e1 e2 e3
 
-   addToFocusGroup fg e1
-   addToFocusGroup fg e2
-   addToFocusGroup fg e3
-
-   ahs <- newHandlers
-
-   let doFireEvent = const $
+   let w = PhoneInput ui e1 e2 e3 ahs
+       doFireEvent = const $
          fireEvent w (return . activateHandlers) mkPhoneNumber
 
        mkPhoneNumber = do
          s1 <- getEditText e1
          s2 <- getEditText e2
          s3 <- getEditText e3
-         return $ PhoneNumber s1 s2 s3 ahs
+         return $ PhoneNumber s1 s2 s3
 
-   -- Set up event handlers.
    e1 `onActivate` doFireEvent
    e2 `onActivate` doFireEvent
    e3 `onActivate` doFireEvent
 
+   fg <- newFocusGroup
+   mapM_ (addToFocusGroup fg) [e1, e2, e3]
    return (w, fg)
 \end{haskellcode}
 
