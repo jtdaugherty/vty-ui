@@ -6,3 +6,4 @@ manual.pdf: *.tex
 
 clean:
 	rm -f *~ *.dvi *.pdf *.log *.aux *.toc *.out
+	rm -f ch[1234]/*.aux ch[1234]/*~
