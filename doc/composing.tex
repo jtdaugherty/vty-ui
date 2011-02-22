@@ -16,10 +16,10 @@ Widgets fall into two basic categories:
 The most important widgets used in interface layout are the box layout
 widgets:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  vBox :: Widget a -> Widget b -> IO (Widget (Box a b))
  hBox :: Widget a -> Widget b -> IO (Widget (Box a b))
-\end{minted}
+\end{haskellcode}
 
 The \fw{vBox} function returns a new widget of type \fw{Widget (Box a
   b)} which lays out its two children vertically in the order they are
@@ -30,27 +30,27 @@ in your applications.
 \vtyui\ provides some combinators to make Boxes a bit eaiser to work
 with:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  (<-->) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
  (<++>) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
-\end{minted}
+\end{haskellcode}
 
 These functions are essentially aliases for \fw{vBox} and \fw{hBox},
 respectively, with the important difference being that they take
 \fw{IO} arguments.  You can use them to create nested boxes as
 follows:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  mainBox <- (hBox a b) <--> (hBox c d <++> vBox e f)
-\end{minted}
+\end{haskellcode}
 
 If you already have a pure reference to another widget, you can merely
 wrap it with \fw{return} to use it with these combinators:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  box1 <- hBox a b
  box2 <- (return box1) <++> (hBox c d)
-\end{minted}
+\end{haskellcode}
 
 The box layout widgets do more than merely place their children next to
 each other.  Box widgets determine how to lay their children out

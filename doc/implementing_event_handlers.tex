@@ -18,18 +18,18 @@ you want to be notified whenever the temperature changes so you can
 update other parts of your interface.  In that case, the event data is
 a type containing the new temperature:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  data TemperatureEvent = Temp Int
-\end{minted}
+\end{haskellcode}
 
 In your widget type definition, you'll need a place to store the event
 handlers for this temperature change event:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  data TempMonitor =
    TempMonitor { tempChangeHandlers :: Handlers TemperatureEvent
                }
-\end{minted}
+\end{haskellcode}
 
 Notice that we use the event type as the type parameter to
 \fw{Handlers}; this indicates that we want to store a collection of
@@ -40,7 +40,7 @@ handler functions which take an argument of type
 Once we've defined our storage type, we need to update our widget
 constructor to construct a \fw{Handlers} list:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  newTempMonitor :: (MonadIO m) => m (Widget TempMonitor)
  newTempMonitor = do
    wRef <- newWidget
@@ -53,7 +53,7 @@ constructor to construct a \fw{Handlers} list:
        }
 
    return wRef
-\end{minted}
+\end{haskellcode}
 
 The \fw{newHandlers} function is polymorphic on the handler parameter
 type, so it can be used to create \fw{Handlers a} for any \fw{a}.
@@ -66,13 +66,13 @@ functions prefixed with ``on'', such as \fw{onGainFocus} and
 infix event handler registration functions.  In the temperature
 monitor case, we might right something like this:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  onTemperatureChange :: (MonadIO m) => Widget TempMonitor
                      -> (TemperatureEvent -> IO ())
                      -> m ()
  onTemperatureChange wRef handler =
    addHandler (tempChangeHandlers <~~) wRef handler
-\end{minted}
+\end{haskellcode}
 
 We've introduced a new operator here, \fw{<\string~\string~}.  This
 operator takes any \fw{Widget a} and a function on its state type,
@@ -88,12 +88,12 @@ type \fw{a -> IO ()} and adds it to the \fw{Handlers} list.
 An (arguably bogus) way of using this new function would be the
 following:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  let maxTemp = 100
  t <- newTempMonitor
  t `onTemperatureChange` \(Temp newTemp) ->
    when (newTemp > maxTemp) $ error "It's too hot!"
-\end{minted}
+\end{haskellcode}
 
 The last thing it do is to actually ``fire'' the event that these
 handlers will handle; assuming the monitor widget as a
@@ -101,14 +101,14 @@ handlers will handle; assuming the monitor widget as a
 temperature, that function would create the \fw{TemperatureEvent} and
 invoke the handlers as follows:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  setTemperature :: (MonadIO m) => Widget TempMonitor -> Int -> m ()
  setTemperature wRef newTemp = do
    -- Set the internal widget state.
    -- ...
    -- Then invoke the handlers:
    fireEvent wRef (tempChangeHandlers <~~) (TemperatureEvent newTemp)
-\end{minted}
+\end{haskellcode}
 
 Just as with \fw{addHandler}, we pass a handler list lookup function
 to \fw{fireEvent}.  We also pass it a value of the event data type,

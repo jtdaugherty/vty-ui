@@ -35,18 +35,18 @@ used to interact with it.
 
 To create a collection:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  c <- newCollection
-\end{minted}
+\end{haskellcode}
 
 To add an interface and a focus group to the collection:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  fg <- newFocusGroup
  -- Add widgets to focus group fg
  ui <- someWidget
  changeToW <- addToCollection c ui fg
-\end{minted}
+\end{haskellcode}
 
 As a convenience, addToCollection returns a MonadIO action which, when
 run, will switch to the specified interface.  In the example above,

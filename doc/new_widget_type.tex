@@ -15,9 +15,9 @@ following state type:\footnote{You might wonder why we don't just use
   would work on their widgets, which is probably not what you want!
   An alternative would be to use a \fw{newtype}.}
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  data Counter = Counter Int
-\end{minted}
+\end{haskellcode}
 
 The next step is to write a widget constructor function.  This
 function will return a value of type \fw{Widget Counter}, which
@@ -25,7 +25,7 @@ indicates that it is a \fw{Widget} with state type \fw{Counter}.
 We'll allow the constructor to take the counter's initial value.
 Here's what the function will look like in full:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  newCounter :: (MonadIO m) => Int -> m (Widget Counter)
  newCounter initialValue = do
    wRef <- newWidget
@@ -36,15 +36,15 @@ Here's what the function will look like in full:
            (Counter v) <- getState this
            return $ string (getNormalAttr ctx) (show v)
        }
-\end{minted}
+\end{haskellcode}
 
 Now we have a constructor for a \fw{Counter} widget!  Its type will
 allow us to use it in any monad on top of \fw{IO}.  Let's go through
 the code:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  wRef <- newWidget
-\end{minted}
+\end{haskellcode}
 
 The \fw{Core} module's \fw{newWidget} function creates a new
 \fw{IORef} wrapping a \fw{WidgetImpl a}.  The \fw{WidgetImpl} type is
@@ -55,9 +55,9 @@ result \fw{wRef} because it is a reference to a widget object, and
 this helps distinguish it from the actual widget data in the next
 step.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  updateWidget wRef $ \w -> ...
-\end{minted}
+\end{haskellcode}
 
 The \fw{updateWidget} function takes any \fw{Widget a} and a function
 \fw{WidgetImpl a -> WidgetImpl a} and updates the widget
@@ -65,9 +65,9 @@ implementation contained in the \fw{IORef}.  We use this step to
 specify the behavior of the widget beyond the defaults, which are
 specified in the \fw{Core} module.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  state = Counter initialValue
-\end{minted}
+\end{haskellcode}
 
 Here we set the inital value of the counter and create the
 \fw{Counter} state and store it in the \fw{WidgetImpl} which, due to
@@ -75,12 +75,12 @@ type inference, is of type \fw{WidgetImpl Counter}.  We'll reference
 this state later on, in the rendering code and in any API functions
 that we want to implement to mutate it.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  render_ =
    \this size ctx -> do
      (Counter v) <- getState this
      return $ string (getNormalAttr ctx) (show v)
-\end{minted}
+\end{haskellcode}
 
 This actually does the job of rendering the counter value into a form
 that can be displayed in the terminal.  The type of \fw{render\_} is
@@ -116,17 +116,17 @@ types are as follows:
 
 The implementation of the \fw{render\_} function is as follows:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  (Counter v) <- getState this
-\end{minted}
+\end{haskellcode}
 
 The \fw{getState} function takes a \fw{Widget a} and returns its
 \fw{state} field (of type \fw{a}).  In this case, it returns the
 \fw{Counter} value resident in the widget structure.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  return $ string (getNormalAttr ctx) (show v)
-\end{minted}
+\end{haskellcode}
 
 The \fw{string} function is a Vty library function which takes an
 attribute (\fw{Attr}) and a \fw{String} and returns an \fw{Image}.
@@ -139,7 +139,7 @@ This concludes the basic implementation requirements for a new widget
 type; to make it useful, we'll need to add some functions to
 manipulate its state:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  setCounterValue :: (MonadIO m) => Widget Counter -> Int -> m ()
  setCounterValue wRef val =
     updateWidgetState wRef $ const $ Counter val
@@ -148,7 +148,7 @@ manipulate its state:
  getCounterValue wRef = do
     Counter val <- getState wRef
     return val
-\end{minted}
+\end{haskellcode}
 
 The \fw{setCounterValue} function takes a \fw{Counter} widget and sets
 its \fw{state} to a new counter state value.  The

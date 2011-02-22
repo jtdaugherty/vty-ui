@@ -35,9 +35,9 @@ your widget wraps other widgets, you'll have to use the top-level
 \fw{render} function provided by the \fw{Core} module.  This function
 is defined as follows:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  render :: Widget a -> DisplayRegion -> RenderContext -> IO Image
-\end{minted}
+\end{haskellcode}
 
 This function looks a lot like the \fw{render\_} function in the
 \fw{WidgetImpl} type, and that's intentional; the difference is that

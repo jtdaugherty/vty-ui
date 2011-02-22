@@ -28,13 +28,13 @@ which implementing \fw{setCurrentPosition\_} is necessary.
 Here is an example implementation of \fw{setCurrentPosition\_} for the
 \fw{Wrapper} widget that we examined in Section \ref{sec:deferring}:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  setCurrentPosition_ = \this pos -> do
    -- Since the position of the wrapper has already been set,
    -- we just need to set the position of the child.
    (Wrapper child) <- getState this
    setCurrentPosition child pos
-\end{minted}
+\end{haskellcode}
 
 The function calls the top-level \fw{setCurrentPosition} on the child
 widget to ensure that its position is set and that its

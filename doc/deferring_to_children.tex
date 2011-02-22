@@ -13,15 +13,15 @@ behaviors can be deferred in each case.
 
 We'll start with the type.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  data Wrapper a = Wrapper (Widget a)
-\end{minted}
+\end{haskellcode}
 
 Then the implementation of the constructor:\footnote{This widget
   implementation uses the ``relaying'' functions we described in
   Section \ref{sec:containers_and_input}.}
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  newWrapper :: (MonadIO m) => Widget a -> m (Widget (Wrapper a))
  newWrapper child = do
    wRef <- newWidget
@@ -41,7 +41,7 @@ Then the implementation of the constructor:\footnote{This widget
    wRef `relayFocusEvents` child
    wRef `relayKeyEvents` child
    return wRef
-\end{minted}
+\end{haskellcode}
 
 This demonstration highlights some important features of container
 widget implementations:

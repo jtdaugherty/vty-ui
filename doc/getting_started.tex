@@ -4,9 +4,9 @@
 To get started using the library, you'll need to import the main library
 module:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  import Graphics.Vty.Widgets.All
-\end{minted}
+\end{haskellcode}
 
 This module imports everything exported by the library; if you prefer,
 you may import specific modules depending on your needs.
@@ -16,7 +16,7 @@ widget in the middle of the screen.  You'll be able to provide some
 text input and press Enter, at which point the program will exit and
 will print what you entered.  The code for this program is as follows:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  main :: IO ()
  main = do
    e <- editWidget
@@ -32,7 +32,7 @@ will print what you entered.  The code for this program is as follows:
      getEditText this >>= (error . ("You entered: " ++))
 
    runUi c defaultContext
-\end{minted}
+\end{haskellcode}
 
 There are some interesting things to note about this program.  First,
 it withstands changes in your terminal size automatically, even though
@@ -41,44 +41,44 @@ Second, it only took a few lines of code to create a rich editing
 interface and position it in the terminal as desired.  Now we'll go
 into some depth on this example.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  e <- editWidget
-\end{minted}
+\end{haskellcode}
 
 This line creates an “edit widget.”  This type of widget provides an
 editing interface for a single line of text and supports some
 Emacs-style editing keybindings.  For more information on this widget
 type, see XXX.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  ui <- centered e
-\end{minted}
+\end{haskellcode}
 
 This creates a new widget, ui, which centers the edit widget vertically
 and horizontally.  This is a common pattern: create one widget and wrap
 it in another to affect its behavior.  For more information on
 centering, see XXX.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  fg <- newFocusGroup
-\end{minted}
+\end{haskellcode}
 
 This creates a “focus group.”  A focus group is an ordered sequence of
 widgets that will receive focus as you cycle between them.  By
 default, this is done with the Tab key.  Every \vtyui\ interface
 requires a focus group.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  addToFocusGroup fg e
-\end{minted}
+\end{haskellcode}
 
 This adds the edit widget to the focus group.  The first widget to be
 added to a focus group automatically receives the initial focus, and
 widgets receive focus in the order they are added to the group.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  c <- newCollection
-\end{minted}
+\end{haskellcode}
 
 This creates a new “collection.”  A collection is group of interfaces,
 each with its own focus group, and the collection makes it possible to
@@ -90,19 +90,19 @@ one of which returns to the inbox interface.  Collections make it easy
 to switch between such interface modes.  Every \vtyui\ program
 requires a collection.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  addToCollection ui fg
-\end{minted}
+\end{haskellcode}
 
 This adds the top-level user interface widget, ui, to the collection and
 sets its focus group to fg.  This means that the widgets to receive the
 user’s focus (and, consequently, input) will be those in the focus group
 fg and the interface to be presented will be ui.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  e `onActivate` \this -> getEditText this >>=
    (error . ("You entered: " ++))
-\end{minted}
+\end{haskellcode}
 
 This binds an event handler to the “activation” of the edit widget,
 which occurs when the user focuses the edit widget and presses Enter.
@@ -111,9 +111,9 @@ itself as its only parameter.  The getEditText function gets the current
 text of the edit widget, and we use error to abort the program and print
 the text.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  runUi c defaultContext
-\end{minted}
+\end{haskellcode}
 
 This runs the main \vtyui\ event loop with the collection we created
 above.  We pass a “default rendering context” which provides defaults

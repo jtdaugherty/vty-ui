@@ -5,9 +5,9 @@ Vty-ui manages the user input event loop for you, and once you have
 created and populated a collection, you can invoke the main
 \vtyui\ event loop:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  runUi c defaultContext
-\end{minted}
+\end{haskellcode}
 
 The first parameter is the collection you have created; the second
 parameter is the ``rendering context''.  Here we use the ``default''
@@ -32,9 +32,9 @@ terminal emulators work best only with ASCII.  The default rendering
 context uses a Unicode line-drawing skin, which you can change to any
 other skin (or your own) as follows:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  runUi c $ defaultContext { skin = asciiSkin }
-\end{minted}
+\end{haskellcode}
 
 The library provides skins in the \fw{Skin} module.
 
@@ -61,18 +61,18 @@ use type classes to provide this API is so that third-party widgets
 may also provide this functionality.  The API is defined in the
 \fw{Core} module and is as follows:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  setNormalAttribute w attr
  setFocusAttribute w attr
-\end{minted}
+\end{haskellcode}
 
 Convenience combinators also exist:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  w <- someWidget
       >>= withNormalAttribute attr
       >>= withFocusAttribute attr
-\end{minted}
+\end{haskellcode}
 
 The \fw{attr} value is a Vty attribute value.  A Vty attribute may provide
 any (but not necessarily all!) of the settings that make up an
@@ -84,13 +84,13 @@ not provided will default to the rendering context.
 
 Consider this example:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  w <- someWidget
  setNormalAttribute w (fgColor white)
 
  -- ... add the widget to a collection, etc.
  runUi c $ defaultContext { normalAttr = yellow `on` blue }
-\end{minted}
+\end{haskellcode}
 
 In this example, the widget \fw{w} will use a normal attribute of
 white on a blue background, since it specified only a foreground color
@@ -143,7 +143,7 @@ thread and only call \fw{schedule} when you have work to do.
 Consider this example, in which a text widget called \fw{timeText}
 gets updated with the current time every second:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  forkIO $
    forever $ do
      schedule $ do
@@ -151,7 +151,7 @@ gets updated with the current time every second:
        setText timeText $
          formatTime defaultTimeLocale rfc822DateFormat t
      threadDelay 1000000
-\end{minted}
+\end{haskellcode}
 
 In this example the blocking occurs outside of the scheduled code, and
 only when we have an update for the clock display do we schedule an

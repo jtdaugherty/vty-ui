@@ -54,11 +54,11 @@ add anything to the interface.
 An example of a \fw{growHorizontal\_} implementation which defers to a
 child widget is as follows:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  growHorizontal_ = \st -> do
    let ch = getChildWidget st
    growHorizontal ch
-\end{minted}
+\end{haskellcode}
 
 Notice that we call the top-level function, \fw{growHorizontal}, on
 the child widget; it does the job of dereferencing the widget and

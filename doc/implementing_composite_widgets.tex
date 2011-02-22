@@ -34,7 +34,7 @@ validation on the input.  Here's a suggestive example for how we might
 implement such a thing without going to all the trouble of
 implementing \fw{WidgetImpl}'s interface:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  data PhoneNumber = PhoneNumber String String String
 
  type T = Box (Box Edit Edit) Edit
@@ -78,16 +78,16 @@ implementing \fw{WidgetImpl}'s interface:
    e3 `onActivate` doFireEvent
 
    return (w, fg)
-\end{minted}
+\end{haskellcode}
 
 Then we would provide a function to register phone number handlers:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  onPhoneInputActivate :: (MonadIO m) => PhoneInput
                       -> (PhoneNumber -> IO ()) -> m ()
  onPhoneInputActivate pi handler =
    addHandler (return . activateHandlers) pi handler
-\end{minted}
+\end{haskellcode}
 
 When the user presses \fw{Enter} in one of the phone number input
 widgets, thus ``activating'' it, we will invoke all phone number input

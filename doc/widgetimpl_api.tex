@@ -3,7 +3,7 @@
 The \fw{WidgetImpl} type is the type of widget implementations.  You
 have already seen some of its fields in previous sections.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  data WidgetImpl a = WidgetImpl {
        state :: a
      , render_ :: Widget a -> DisplayRegion -> RenderContext
@@ -21,7 +21,7 @@ have already seen some of its fields in previous sections.
      , gainFocusHandlers :: Handlers (Widget a)
      , loseFocusHandlers :: Handlers (Widget a)
      }
-\end{minted}
+\end{haskellcode}
 
 Several fields are managed automatically and should not be overridden
 by widget implementors:

@@ -16,16 +16,16 @@ added automatically gets the focus when the interface is set up.
 
 Creating a focus group is simple:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  fg <- newFocusGroup
-\end{minted}
+\end{haskellcode}
 
 Adding widgets to focus groups is also straightforward:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  w <- someWidget
  addToFocusGroup fg w
-\end{minted}
+\end{haskellcode}
 
 A widget's ``focused behavior'' depends entirely on the widget's
 implementation.  Some widgets, when focused, provide a text cursor;
@@ -42,11 +42,11 @@ If, for some reason, you would like to be notified when a widget
 receives or loses focus, you may register event handlers for these
 events on any widget:
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  w <- someWidget
  w `onGainFocus` \this -> ...
  w `onLoseFocus` \this -> ...
-\end{minted}
+\end{haskellcode}
 
 In both cases above, the \fw{this} parameter to each event handler is
 just the widget to which the event handler is being attached (i.e.,
@@ -65,12 +65,12 @@ belongs.  This is because focus groups always try to handle key events
 first, and only pass those events onto the focused widget if the focus
 group has no matching handler.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  fg <- newFocusGroup
  fg `onKeyPressed` \_ key _ ->
    if key == KASCII 'q' then
      exitSuccess else return False
-\end{minted}
+\end{haskellcode}
 
 \subsection{Container Widgets and Input Events}
 \label{sec:containers_and_input}
@@ -127,14 +127,14 @@ library; you might want to place this alongside other widgets that
 should also accept input.  When you create the browser widget, you will
 get a reference to the widget and a reference to its focus group.
 
-\begin{minted}{haskell}
+\begin{haskellcode}
  (browser, fg1) <- newDirBrowser defaultBrowserSkin
 
  fg2 <- newFocusGroup
  -- Add my own widgets to fg2
 
  merged <- mergeFocusGroups fg1 fg2
-\end{minted}
+\end{haskellcode}
 
 The \fw{mergeFocusGroups} function will merge the two focus groups and
 preserve the order of the widgets, such that widgets in the first
