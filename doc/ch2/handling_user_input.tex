@@ -1,16 +1,13 @@
 \section{Handling User Input}
 
 Many widgets in \vtyui\ can accept user input.  A widget can accept
-user input if (1) it has one or more key event handlers attached to it
-and (2) if it currently has the ``focus''.  The concept of focus in
-\vtyui\ works the same as in other user interface toolkits:
-essentially, only one widget has the focus and any user input is
-passed to that widget for handling.  Key event handlers can be chained
-so that if one handler does not handle an input event, it can be
-passed on to remaining handlers until either a handler accepts it or
-all handlers decline to handle it.
+user input if (1) it has one or more \textit{key event handlers}
+attached to it and (2) if it currently has the \textit{focus}.  The
+concept of focus in \vtyui\ works the same as in other user interface
+toolkits: essentially, only one widget has the focus and any user
+input is passed to that widget for handling.
 
-Key event handlers can be added to any widget as follows:
+Key event handlers can be added to any \fw{Widget a} as follows:
 
 \begin{haskellcode}
  w <- someWidget
@@ -19,15 +16,15 @@ Key event handlers can be added to any widget as follows:
    return False
 \end{haskellcode}
 
-The handler must return IO Bool; True indicates that the handler
-processed the key event and took action, and False indicates that the
-handler declined to handle the event.  The event handler is passed the
-keystoke itself along with any modifier keys detected by the underlying
-Vty input processing.
+The handler must return \fw{IO Bool}; \fw{True} indicates that the
+handler processed the key event and took action and \fw{False}
+indicates that the handler declined to handle the event.  The event
+handler is passed the keystoke itself along with any modifier keys
+detected by the underlying Vty input processing.
 
 Key event handlers are invoked in the order in which they are added to
-the widget.  In the following example, the first handler will deline the
-\fw{'q'} key but the second one will process it:
+the widget.  In the following example, the first handler will decline
+the \fw{'q'} key event but the second one will process it:
 
 \begin{haskellcode}
  w `onKeyPressed` \_ key _ ->

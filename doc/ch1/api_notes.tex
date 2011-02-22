@@ -7,15 +7,19 @@ operations can be performed on it.  For example, a text widget has
 type \fw{Widget FormattedText}.
 
 The \fw{Widget} type is actually an \fw{IORef} which wraps the real
-widget implementation type, \fw{WidgetImpl}.  So it's safe (and
-recommended!) to use \fw{Widget a} whenever you need to refer to a
-widget; this makes it possible to mutate widget state when events
-occur in your application.
+widget implementation type, \fw{WidgetImpl a}.  So it's best to use
+\fw{Widget a} whenever you need to refer to a widget; this makes it
+possible to mutate widget state when events occur in your application.
 
 All widget constructors must ultimately be run in the \fw{IO} monad,
 so all API functions must be run in an instance of \fw{MonadIO}.  In
 this manual we will use \fw{IO} to simplify type signatures, but keep
 in mind that the actual type is likely to be \fw{(MonadIO m) => m}.
 Although \fw{MonadIO} is by far the more common constraint, be sure to
-check the API documentation to be sure; some functions, such as
-callbacks, are \fw{IO} actions.
+check the API documentation to be sure; some functions, such as event
+handlers, are \fw{IO} actions.
+
+Throughout this document, we'll refer frequently to widgets by their
+state type (e.g., ``\fw{Edit} widgets''). In most cases we are
+referring to a value whose type is, e.g., \fw{Widget Edit}.  When in
+doubt, be sure to check the API documentation.

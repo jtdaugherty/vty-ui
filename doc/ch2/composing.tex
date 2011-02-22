@@ -5,12 +5,11 @@ widgets to create a user interface that is laid out the way you want.
 Widgets fall into two basic categories:
 
 \begin{itemize}
-\item "basic" widgets like text strings, ASCII decorations
-      (e.g. vertical and horizontal borders), and space-filling
-      widgets
-\item "container" widgets which hold other widgets and control how
-      those widgets are laid out and rendered.  Most of these widgets
-      influence layout; some modify other behaviors.
+\item ``Basic'' widgets, such as text strings, ASCII decorations
+  (e.g. vertical and horizontal borders), and space-filling widgets.
+\item ``Container'' widgets, which hold other widgets and control how
+  those widgets are laid out and rendered.  Most of these widgets
+  influence layout; some modify other behaviors.
 \end{itemize}
 
 The most important widgets used in interface layout are the box layout
@@ -21,14 +20,14 @@ widgets:
  hBox :: Widget a -> Widget b -> IO (Widget (Box a b))
 \end{haskellcode}
 
-The \fw{vBox} function returns a new widget of type \fw{Widget (Box a
-  b)} which lays out its two children vertically in the order they are
-passed to the function.  The \fw{hBox} function does the same for
-horizontal layout.  These two widgets will probably be the most common
-in your applications.
+The \fw{vBox} returns a \fw{Box} widget which lays out its two
+children vertically in the order in which they are passed to the
+function.  The \fw{hBox} function does the same for horizontal layout.
+These two widget types will probably be the most common in your
+applications.
 
-\vtyui\ provides some combinators to make Boxes a bit eaiser to work
-with:
+\vtyui\ provides some combinators to make \fw{Box}es a bit eaiser to
+work with:
 
 \begin{haskellcode}
  (<-->) :: IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
@@ -44,17 +43,16 @@ follows:
  mainBox <- (hBox a b) <--> (hBox c d <++> vBox e f)
 \end{haskellcode}
 
-If you already have a pure reference to another widget, you can merely
-wrap it with \fw{return} to use it with these combinators:
+If you already have a reference to another widget, you can merely wrap
+it with \fw{return} to use it with these combinators:
 
 \begin{haskellcode}
- box1 <- hBox a b
  box2 <- (return box1) <++> (hBox c d)
 \end{haskellcode}
 
-The box layout widgets do more than merely place their children next to
-each other.  Box widgets determine how to lay their children out
-depending on two primary factors:
+The box layout widgets do more than merely place their children next
+to each other.  \fw{Box} widgets determine how to lay their children
+out depending on two primary factors:
 
 \begin{itemize}
 \item the amount of terminal space available to the box at the time it
@@ -64,17 +62,18 @@ depending on two primary factors:
 
 Just as with graphical toolkits, when the terminal is resized, more
 space is available to render the interface, so we need to use the
-space wisely, and to determine how to use it, \vtyui\ requires that
-the widgets declare their own policies for how to use the available
-space.  The box size policy is to expand to use all available space to
-provide the maximum space to its children.  For more details on how
-Box widget is implemented, see the API documentation.
+space wisely.  To determine how to use it, \vtyui\ requires that the
+widgets declare their own policies for how to use the available space.
+The size policy for the \fw{Box} itself is to expand to use all
+available space only if that is true for either of its children.  As a
+result, a \fw{Box} containing two fixed-size widgets will have a fixed
+size.  For more details on how the \fw{Box} widget is implemented, see
+the API documentation.
 
-Just placing text widgets in boxes won't get you very far; to
-influence layout, you'll need to add other space-filling widgets to
-those boxes to dynamically take advantage of the space in the
-terminal.  See the API documentation for the \fw{Fills} module in
-particular.
+Placing text widgets in \fw{Box}es may suffice for most purposes.  See
+the documentation for space-filling widgets for greater control over
+box layout.
 
-There are many other examples of widgets which influence their children;
-take note of widget constructors which take other widgets as parameters.
+There are many other examples of widgets which influence their
+children; we'll see more examples of these in Chapter
+\ref{chap:guided_tour}.
