@@ -16,14 +16,14 @@ In addition, the box combinators \fw{<-->} and \fw{<++>} can be used
 to create vertical and horizontal boxes, respectively, using widgets
 in \fw{IO}.
 
-Box widgets have a \fw{child size policy} which determines how space
-in the box is allocated to the child widgets.  The size policy type is
-\fw{ChildSizePolicy} and defaults to \fw{PerChild BoxAuto BoxAuto} for
-new boxes.  Each widget can have an individual policy whose type is
-\fw{IndividualPolicy}; this policy can be set to \fw{BoxAuto} or
-\fw{BoxFixed Int}.  In the former case, space will be allocated as
-needed; in the latter, the specified number of rows or columns
-(depending on the orientation of the \fw{Box}) will be used.
+Box widgets have a \textit{child size policy} which determines how
+space in the box is allocated to the child widgets.  The size policy
+type is \fw{ChildSizePolicy} and defaults to \fw{PerChild BoxAuto
+  BoxAuto} for new boxes.  Each widget can have an individual policy
+whose type is \fw{IndividualPolicy}; this policy can be set to
+\fw{BoxAuto} or \fw{BoxFixed Int}.  In the former case, space will be
+allocated as needed; in the latter, the specified number of rows or
+columns (depending on the orientation of the \fw{Box}) will be used.
 
 Use the \fw{setBoxChildSizePolicy} to change the box size policy to
 one of the following kinds of values:
