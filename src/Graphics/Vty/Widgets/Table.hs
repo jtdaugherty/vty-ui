@@ -38,6 +38,8 @@ import Graphics.Vty.Widgets.Alignment
 import Graphics.Vty.Widgets.Borders
 import Graphics.Vty.Widgets.Skins
 import Graphics.Vty.Widgets.Util
+import Graphics.Vty.Widgets.Fills
+import Graphics.Vty.Widgets.Box
 
 data TableError = ColumnCountMismatch
                 | CellImageTooBig
@@ -431,7 +433,7 @@ applyCellAlignment al (TableCell w a p) = do
       grow <- growHorizontal w
       case grow of
         False -> do
-                  w' <- rightAligned w
+                  w' <- (hFill ' ' 1) <++> (return w)
                   return $ TableCell w' a p
         True -> return $ TableCell w a p
 
