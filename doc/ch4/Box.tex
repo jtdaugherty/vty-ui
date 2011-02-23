@@ -1,0 +1,58 @@
+\section{Boxes}
+
+The \fw{Box} module provides two box layout widgets can be created the
+following functions:
+
+\begin{itemize}
+\item \fw{vBox} -- creates a box of type \fw{Widget (Box a b)} which
+  lays out two children of types \fw{Widget a} and \fw{Widget b}
+  vertically
+\item \fw{hBox} -- creates a box of type \fw{Widget (Box a b)} which
+  lays out two children of types \fw{Widget a} and \fw{Widget b}
+  horizontally
+\end{itemize}
+
+In addition, the box combinators \fw{<-->} and \fw{<++>} can be used
+to create vertical and horizontal boxes, respectively, using widgets
+in \fw{IO}.
+
+Box widgets have a \fw{child size policy} which determines how space
+in the box is allocated to the child widgets.  The size policy type is
+\fw{ChildSizePolicy} and defaults to \fw{PerChild BoxAuto BoxAuto} for
+new boxes.  Each widget can have an individual policy whose type is
+\fw{IndividualPolicy}; this policy can be set to \fw{BoxAuto} or
+\fw{BoxFixed Int}.  In the former case, space will be allocated as
+needed; in the latter, the specified number of rows or columns
+(depending on the orientation of the \fw{Box}) will be used.
+
+Use the \fw{setBoxChildSizePolicy} to change the box size policy to
+one of the following kinds of values:
+
+\begin{itemize}
+\item \fw{PerChild IndividualPolicy IndividualPolicy} -- set the
+  policies for each widget.
+\item \fw{Percentage Int} -- the total available space will be
+  allocated as a percentage.  The number specified here is the
+  percentage $n$ ($0 \le n \le 100$) allocated to the first child; the
+  rest will be allocated to the second.  The \fw{BoxError} exception
+  will be raised if an invalid percentage value is specified.
+\end{itemize}
+
+Boxes may also be configured with a number of rows or columns of
+spacing in between their child widgets; this is accomplished with the
+\fw{setBoxSpacing} function.  It takes a number of rows or columns,
+depending on the orientation of the box.  The function
+\fw{withBoxSpacing} is provided as a convenience for setting the box
+spacing in a monadic construction.
+
+The following example creates a box of each type to lay out some text
+widgets:
+
+\begin{haskellcode}
+ b1 <- (simpleText "foo") <++> (simpleText "bar") >>= withBoxSpacing 1
+ b2 <- (return b1) <--> (simpleText "baz") >>= withBoxSpacing 1
+\end{haskellcode}
+
+The result is an inner horizontal box, \fw{b1}, containing two
+\fw{FormattedText} widgets separated by one column, laid out on top of
+another \fw{FormattedText} widget and separated by one row.

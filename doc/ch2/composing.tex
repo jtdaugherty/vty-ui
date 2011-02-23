@@ -64,11 +64,11 @@ Just as with graphical toolkits, when the terminal is resized, more
 space is available to render the interface, so we need to use the
 space wisely.  To determine how to use it, \vtyui\ requires that the
 widgets declare their own policies for how to use the available space.
-The size policy for the \fw{Box} itself is to expand to use all
-available space only if that is true for either of its children.  As a
-result, a \fw{Box} containing two fixed-size widgets will have a fixed
-size.  For more details on how the \fw{Box} widget is implemented, see
-the API documentation.
+The default size policy for the \fw{Box} itself is to expand to use
+all available space only if that is true for either of its children.
+As a result, a \fw{Box} containing two fixed-size widgets will have a
+fixed size.  For more details on how the \fw{Box} widget is
+implemented, see the API documentation.
 
 Placing text widgets in \fw{Box}es may suffice for most purposes.  See
 the documentation for space-filling widgets for greater control over
