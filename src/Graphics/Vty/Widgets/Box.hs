@@ -251,7 +251,30 @@ renderBox s ctx this = do
                          Vertical -> let w = max (image_width img1) (image_width img2)
                                      in char_fill spAttr ' ' w (toEnum spacing)
 
-  return $ (img_cat this) [img1, spacer, img2]
+      -- Use the larger of the two images to determine padding in the
+      -- opposite dimension.  E.g. if this is a vertical box, we want
+      -- to pad the images such that they have the same width.
+      common_opposite_dim = case boxOrientation this of
+                              Horizontal -> max (image_height img1) (image_height img2)
+                              Vertical -> max (image_width img1) (image_width img2)
+
+      padded_img1 = case boxOrientation this of
+                      Horizontal -> img1 <->
+                                    (char_fill spAttr ' ' (image_width img1)
+                                     (common_opposite_dim - image_height img1))
+                      Vertical -> img1 <|>
+                                  (char_fill spAttr ' ' (common_opposite_dim - image_width img1)
+                                   (image_height img1))
+      padded_img2 = case boxOrientation this of
+                      Horizontal -> img2 <->
+                                    (char_fill spAttr ' ' (image_width img2)
+                                     (common_opposite_dim - image_height img2))
+                      Vertical -> img2 <|>
+                                  (char_fill spAttr ' ' (common_opposite_dim - image_width img2)
+                                   (image_height img2))
+
+
+  return $ (img_cat this) [padded_img1, spacer, padded_img2]
 
 renderBoxFixed :: (Show a, Show b) =>
                   DisplayRegion
@@ -267,8 +290,8 @@ renderBoxFixed s ctx this firstDim secondDim = do
 
   -- pad the images so they fill the space appropriately.
   let fill img amt = case boxOrientation this of
-                       Vertical -> char_fill (getNormalAttr ctx) ' ' (image_width img) amt
-                       Horizontal -> char_fill (getNormalAttr ctx) ' ' amt (image_height img)
+                   Vertical -> char_fill (getNormalAttr ctx) ' ' (image_width img) amt
+                   Horizontal -> char_fill (getNormalAttr ctx) ' ' amt (image_height img)
       firstDimW = toEnum firstDim
       secondDimW = toEnum secondDim
       img1_size = (imgDimension this) img1
