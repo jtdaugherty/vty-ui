@@ -49,7 +49,7 @@ data VLimit a = (Show a) => VLimit Int (Widget a)
 instance Show (VLimit a) where
     show (VLimit i _) = "VLimit { height = " ++ show i ++ ", ... }"
 
--- |Impose a maximum horizontal size, in columns, on a 'Widget'.
+-- |Impose a maximum vertical size, in columns, on a 'Widget'.
 vLimit :: (MonadIO m, Show a) => Int -> Widget a -> m (Widget (VLimit a))
 vLimit maxHeight child = do
   wRef <- newWidget $ \w ->
