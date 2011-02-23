@@ -1,0 +1,65 @@
+\section{Borders}
+
+The \fw{Borders} module provides a number border widgets which can be
+created with the following functions:
+
+\begin{itemize}
+\item \fw{vBorder} -- creates a vertical border of type \fw{Widget
+  VBorder}
+\item \fw{hBorder} -- creates a horizontal border of type \fw{Widget
+  HBorder}
+\item \fw{bordered} -- creates a bordered box of type \fw{Widget
+  (Bordered a)} around a widget of type \fw{Widget a}
+\end{itemize}
+
+All bordered widgets use the \fw{RenderContext}'s \fw{Skin} as
+described in Section \ref{sec:skinning}.  By default, all borders will
+use the \fw{RenderContext}'s normal attribute, but all border widget
+types are instances of the \fw{HasBorderAttr} type class.  This type
+class makes it possible to specify the border attribute of these
+widgets with the \fw{setBorderAttribute} function.
+
+The following example creates an interface using all three border
+widget types.
+
+\begin{haskellcode}
+ b1 <- (simpleText "foo") <--> hBorder <--> (simpleText "bar")
+ b2 <- (return b1) <++> vBorder <++> (simpleText "baz")
+ b3 <- bordered b2
+\end{haskellcode}
+
+Using the \fw{Box} combinators, we lay out text widgets separated by
+different kinds of borders and wrap the entire interface in a
+line-drawn box.
+
+When drawn with the \fw{asciiSkin}, this will result in the following
+interface:
+
+\begin{verbatim}
++-------+
+|foo|baz|
+|---|   |
+|bar|   |
++-------+
+\end{verbatim}
+
+Horizontal and box borders support labels in their top borders.  To
+set the label on an \fw{HBorder}, use the \fw{setHBorderLabel}
+function; for \fw{Bordered} widgets, use \fw{setBorderedLabel}.  Using
+the example above, we can set the label on \fw{b3} to \fw{'x'} to
+achieve the following result:
+
+\begin{haskellcode}
+setBorderedLabel b3 "x"
+\end{haskellcode}
+
+\begin{verbatim}
++-- x --+
+|foo|baz|
+|---|   |
+|bar|   |
++-------+
+\end{verbatim}
+
+If the \fw{Bordered} widget is not large enough to show the title, it
+is hidden and a horizontal border is drawn instead.
