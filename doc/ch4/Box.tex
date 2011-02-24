@@ -57,3 +57,28 @@ widgets:
 The result is an inner horizontal box, \fw{b1}, containing two
 \fw{FormattedText} widgets separated by one column, laid out on top of
 another \fw{FormattedText} widget and separated by one row.
+
+\subsection{Growth Policy}
+
+\fw{Box}es grow in their respective dimensions if and only if:
+
+\begin{itemize}
+\item One or more children can also grow in that dimension, and
+\item The children which can grow are in box cells with the
+  \fw{Percentage} or \fw{BoxAuto} size policies set.
+\end{itemize}
+
+\fw{Box}es grow in other dimensions merely if any children grow in
+that dimension.
+
+Consider these examples:
+
+\begin{itemize}
+\item A vertical \fw{Box} with a default size policy of \fw{BoxAuto} /
+  \fw{BoxAuto} will grow both vertically and horizontally if either
+  child grows respectively.
+\item A vertical \fw{Box} with fixed-size cells will never grow
+  vertically, but will grow horizontally if either child does.
+\item A horizontal \fw{Box} with one fixed-size cell will grow
+  horizontally if the child in the flexible cell grows horizontally.
+\end{itemize}

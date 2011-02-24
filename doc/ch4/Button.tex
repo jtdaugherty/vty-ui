@@ -1,0 +1,38 @@
+\section{Buttons}
+
+The \fw{Buttons} module provides a button-like widget, \fw{Button},
+which can accept the focus and produce a ``pressed'' event when the
+user presses \fw{Enter}.
+
+Unlike most widgets in the library, the \fw{Button} widget is a
+composite widget.  To extract the button's widget, use the
+\fw{buttonWidget} function.
+
+Buttons can be created with the \fw{newButton} function.  The function
+takes the text to be displayed on the button.
+
+\begin{haskellcode}
+ b <- newButton "OK"
+\end{haskellcode}
+
+To handle ``button-press'' events, use the \fw{onButtonPressed}
+function:
+
+\begin{haskellcode}
+ b `onButtonPressed` \this ->
+   ...
+\end{haskellcode}
+
+To change the text of the button, use the \fw{setButtonText} button.
+To ``press'' the button programmatically, call \fw{pressButton}.
+
+When you are ready to add the \fw{Button} to your interface, call its
+\fw{buttonWidget} function:
+
+\begin{haskellcode}
+ box <- (simpleText "Are you sure?") <--> (return (buttonWidget b))
+\end{haskellcode}
+
+\subsection{Growth Policy}
+
+\fw{Buttons} never grow in either dimension.
