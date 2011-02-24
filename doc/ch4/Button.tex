@@ -16,7 +16,8 @@ takes the text to be displayed on the button.
 \end{haskellcode}
 
 To handle ``button-press'' events, use the \fw{onButtonPressed}
-function:
+function.  Event handlers are passed a reference to the \fw{Button}
+itself.
 
 \begin{haskellcode}
  b `onButtonPressed` \this ->

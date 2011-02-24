@@ -1,1 +1,163 @@
 \section{Checkboxes and Radio Buttons}
+
+The \fw{CheckBox} module provides a rich API for creating ``check
+box'' and ``radio button'' widgets.  Radio button widgets can be
+grouped together into ``radio groups'' to determine their collective
+exclusion behavior.
+
+The \fw{CheckBox} module provides generalized, ``multi-state''
+checkboxes which may be in one of an arbitrary number of states, each
+having its own ``checked character'' visible in the checkbox along
+with an underlying value.  The ``binary'' checkbox provided by the
+module is of the traditional two-state variety that we usually mean
+when we say ``check box.''  Most of the \fw{CheckBox} module's
+functions are polymorphic on the \fw{CheckBox}'s value type.
+
+Add a \fw{CheckBox} to your interface and insert it into a
+\fw{FocusGroup} to use it.
+
+\subsection{Binary Checkboxes}
+
+Binary checkboxes can be created with the \fw{newCheckbox} function,
+which returns a \fw{Widget (CheckBox Bool)}.  Each checkbox has a text
+label, which is passed to the constructor:
+
+\begin{haskellcode}
+ cb <- newCheckbox "Fancy Graphics"
+\end{haskellcode}
+
+Binary \fw{CheckBox}es look like this:
+
+\begin{verbatim}
+[ ] Fancy Graphics
+[x] Fancy Graphics
+\end{verbatim}
+
+The user uses the \fw{Space} key to change the \fw{CheckBox} state.
+
+Event handlers for checkbox state changes can be registered with
+\fw{onCheckboxChange} and take a single parameter, which is the value
+of the checkbox after the state change occurs.  In general, for a
+checkbox of type \fw{Widget (CheckBox a)}, the parameter to the event
+handler is of type \fw{a}.
+
+\begin{haskellcode}
+ cb `onCheckboxChange` \val ->
+   ...
+\end{haskellcode}
+
+Binary \fw{CheckBox}es can be manipulated with the functions
+\fw{setCheckboxChecked}, \fw{setCheckboxUnchecked}, and
+\fw{toggleCheckbox}.
+
+\subsection{Radio Buttons}
+\label{sec:radio_buttons}
+
+A radio button is essentially a checkbox, but with restrictions.  We
+use the \fw{CheckBox} implementation to create radio buttons and use a
+``radio group'' type to enforce the mutual exclusion required to make
+radio buttons work.  As a result, only ``binary'' checkboxes (of type
+\fw{Widget (CheckBox Bool)}) may be used as radio buttons.
+
+Radio buttons may be created by creating normal binary \fw{CheckBoxes}
+and adding them to \fw{RadioGroup}s.  A \fw{RadioGroup} can be created
+with the \fw{newRadioGroup} function.
+
+\begin{haskellcode}
+ rg <- newRadioGroup
+ cb1 <- newCheckbox "Cake"
+ cb2 <- newCheckbox "Death"
+\end{haskellcode}
+
+Once you have created the checkboxes and \fw{RadioGroup}, you can add
+the checkboxes to the radio group with \fw{addToRadioGroup}:
+
+\begin{haskellcode}
+ addToRadioGroup rg cb1
+ addToRadioGroup rg cb2
+\end{haskellcode}
+
+Once a \fw{CheckBox} has been added to a \fw{RadioGroup}, its
+appearance will be changed to indicate that it has a different
+behavior.  \fw{CheckBox}es in \fw{RadioGroup}s look like this:
+
+\begin{verbatim}
+( ) Cake
+(*) Death
+\end{verbatim}
+
+If you'd like to know when a \fw{RadioGroup}'s currently-selected
+\fw{CheckBox} changes, you can register an event handler for this
+event with \fw{onRadioChange}.  Its parameter will be a reference to
+the \fw{CheckBox} that became selected:
+
+\begin{haskellcode}
+ rg `onRadioChange` \theCb ->
+   ...
+\end{haskellcode}
+
+Once you have a reference to a \fw{CheckBox}, you can get its state
+with \fw{getCheckboxState}.  For example, for binary checkboxes this
+value will be a \fw{Bool}.
+
+\begin{haskellcode}
+ rg `onRadioChange` \theCb ->
+   st <- getCheckboxState theCb
+   ...
+\end{haskellcode}
+
+A \fw{CheckBox}'s state can be changed, too, with the
+\fw{setCheckboxState} function.  If you attempt to set the state to an
+invalid value, a \fw{CheckBoxError} exception (\fw{BadCheckboxState})
+will be thrown.
+
+In addition to using an event handler to be notified when a
+\fw{RadioGroup} changes state, you can also use the
+\fw{getCurrentRadio} function to get a \fw{RadioGroup}'s current
+\fw{CheckBox} at any time.
+
+\subsection{Generalized, Multi-State Checkboxes}
+
+Although binary checkboxes may serve most purposes, they are a
+specific case of generalized checkboxes which associate characters
+(like \fw{'x'} and \fw{'*'} above) with values of any type.  A
+multi-state checkbox can have any number of these states, and the user
+can toggle between them in order.
+
+To create a new multi-state checkbox, you must specify the
+character/value mappings in addition to its text label:
+
+\begin{haskellcode}
+ -- cb :: Widget (CheckBox Int)
+ cb <- newMultiStateCheckbox "# of Cakes" [ (1, '1')
+                                          , (2, '2')
+                                          , (3, '3')
+                                          ]
+\end{haskellcode}
+
+When the user interacts with a multi-state \fw{CheckBox}, repeated
+state changes will cycle through the list of values specified in the
+constructor.  In all other respects, multi-state checkboxes are the
+same as binary checkboxes, and all polymorphic API functions can be
+used on them.
+
+\subsection{Customing a \fw{CheckBox}'s Appearance}
+
+We saw in Section \ref{sec:radio_buttons} that the appearance of a
+\fw{CheckBox} can be changed.  This is accomplished with the following
+functions:
+
+\begin{itemize}
+\item \fw{setStateChar} -- given a \fw{CheckBox} and a state value,
+  the character representation of that state will be set.  If the
+  state value is invalid, \fw{CheckBoxError} (\fw{BadStateArgument})
+  will be thrown.  As an example, the default state characters for
+  binary checkboxes for \fw{True} and \fw{False}, respectively, are
+  \fw{'x'} and \fw{' '}.
+\item \fw{setBracketChars} -- given a \fw{CheckBox} and two
+  \fw{Char}s, this sets the left and right characters, respectively,
+  which surround the state character.  The defaults are \fw{'['} and
+    \fw{']'}.
+\end{itemize}
+
+\subsection{Growth Policy}
