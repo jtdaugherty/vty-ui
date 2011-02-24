@@ -102,7 +102,7 @@ instance Show (List a b) where
                       , " }"
                       ]
 
--- |Create a new list.  Emtpy lists and empty scrolling windows are
+-- |Create a new list.  Empty lists and empty scrolling windows are
 -- not allowed.
 newList :: (MonadIO m) =>
            Attr -- ^The attribute of the selected item
