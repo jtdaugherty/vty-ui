@@ -1,0 +1,147 @@
+\section{The Directory Browser}
+
+The \fw{DirBrowser} module provides a rich interface for browsing the
+filesystem to select files.  The user is presented with an interface
+in which different file types are given different colors, and a status
+bar shows some information about the currently-selected file or
+directory.  If the user attempts to browse an unreadable directory or
+get information about an unreadable file, an error is displayed in the
+browser interface.
+
+The \fw{DirBrowser} uses a \fw{List} widget for selecting files and
+directories, so its keybindings apply here.  In total, the directory
+browser supports the following key bindings:
+
+\begin{itemize}
+\item \fw{Enter} -- descends into a directory or selects a file.
+\item \fw{Left} -- ascends to the parent directory.
+\item \fw{Right} -- descends into a directory.
+\item \fw{Up}, \fw{Down} -- changes the currently-selected entry.
+\item \fw{'q'}, \fw{Esc} -- cancels browsing.
+\item \fw{'r'} -- refreshes the browser's state of the current
+  directory.
+\end{itemize}
+
+\fw{DirBrowser}s are created as follows:
+
+\begin{haskellcode}
+ browser <- newDirBrowser defaultBrowserSkin
+\end{haskellcode}
+
+The browser's initial filesystem path will be the application's
+current directory.  You can change it with the \fw{setDirBrowserPath}
+function:
+
+\begin{haskellcode}
+ setDirBrowserPath browser "/"
+\end{haskellcode}
+
+To be notified when the user has selected a file, register an event
+handler with \fw{onBrowseAccept}.  The handler will be passed the
+\fw{FilePath} to the file which was selected.
+
+\begin{haskellcode}
+ browser `onBrowseAccept` \path -> ...
+\end{haskellcode}
+
+Similarly, to be notified when the user has cancelled browsing,
+register an event handler with \fw{onBrowseCancel}.  The handler will
+be passed the browser path at the time of cancellation.
+
+\begin{haskellcode}
+ browser `onBrowseCancel` \path -> ...
+\end{haskellcode}
+
+To be notified when the user changes the browser's current path, use
+\fw{onBrowserPathChange}.  The event handler will be passed the new
+browser path.
+
+\begin{haskellcode}
+ browser `onBrowserPathChange` \path -> ...
+\end{haskellcode}
+
+\subsection{Skinning}
+
+When creating a \fw{DirBrowser}, we pass it a \fw{BrowserSkin}.  This
+value affects how the browser colors the different types of filesystem
+entries it displays in addition to how it colors the rest of its
+interface.  You can customize the browser skin by updating any of its
+fields with Vty attributes of your choosing.
+
+\begin{haskellcode}
+ browser <- newDirBrowser $ defaultBrowserSkin { ... }
+\end{haskellcode}
+
+The attribute fields of the \fw{BrowserSkin} type are as follows:
+
+\begin{itemize}
+\item \fw{browserHeaderAttr} -- used for the header and footer of the
+  browser interface.
+\item \fw{browserUnfocusedSelAttr} -- used for the selected entry when
+  the browser is not focused.
+\item \fw{browserErrorAttr} -- used for the text widget which displays
+  errors encountered while browsing.
+\item \fw{browserDirAttr} -- used for directories.
+\item \fw{browserLinkAttr} -- used for symbolic links.
+\item \fw{browserBlockDevAttr} -- used for block device files.
+\item \fw{browserNamedPipeAttr} -- used for named pipes.
+\item \fw{browserCharDevAttr} -- used for character device files.
+\item \fw{browserSockAttr} -- used for sockets.
+\end{itemize}
+
+\subsection{Annotations}
+
+For each type of file on the filesystem, the browser displays the kind
+of file in addition to some information about it.  For example, for
+regular files, the size is displayed.  For symbolic links, the link
+target is displayed.
+
+It may be important to add your own such enhancements to the browser.
+For example, you may want to apply an attribute to files with a
+specific extension and make them easy to see in the browser.  In
+addition, you may wish to generate a description about the file in the
+status bar.  To accomplish this, the \fw{DirBrowser} provides
+\textit{annotations}.
+
+An annotation is made up of three components:
+
+\begin{itemize}
+\item A predicate to determine whether the annotation should apply to
+  a given file,
+\item A function to generate a description of the file such as its
+  size or application-specific metadata, and
+\item An attribute to apply to files of this type in the browser
+  listing.
+\end{itemize}
+
+Annotations are stored in the \fw{BrowserSkin} itself since they are
+used to influence the browser's appearance.  To add annotations to a
+skin, use \fw{withAnnotations}.  The following example adds an
+annotation for ``emacs backup files,'' which end in \fw{'\string~'}:
+
+\begin{haskellcode}
+ let mySkin = defaultBrowserSkin `withAnnotations` myAnnotations
+     myAnnotations = [ ( \path _ -> "~" `isSuffixOf` path
+                       , \_ _ -> return "emacs backup file"
+                       , green `on` blue
+                       )
+                     ]
+\end{haskellcode}
+
+\subsection{Error Reporting}
+
+When a user selects a file in the browser, your application may
+determine that the file does not meet certain requirements.  At this
+point it may be useful to report an error to the user without leaving
+the browser interface.  The \fw{DirBrowser} provides a function to do
+just this, called \fw{reportBrowserError}.  The function displays an
+error message in the browser's error message area.
+
+\begin{haskellcode}
+ browser `onBrowseAccept` \path ->
+   reportBrowserError browser $ "not a valid document: " ++ path
+\end{haskellcode}
+
+\subsection{Growth Policy}
+
+A \fw{DirBrowser} expands both vertically and horizontally.
