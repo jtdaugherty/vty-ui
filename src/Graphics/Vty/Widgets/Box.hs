@@ -144,14 +144,32 @@ box o spacing wa wb = do
                           if o == Vertical then vert_cat else horiz_cat
                       }
         , growHorizontal_ = \b -> do
-            h1 <- growHorizontal $ boxFirst b
-            h2 <- growHorizontal $ boxSecond b
-            return $ h1 || h2
+            case boxOrientation b of
+              Vertical -> do
+                h1 <- growHorizontal $ boxFirst b
+                h2 <- growHorizontal $ boxSecond b
+                return $ h1 || h2
+              Horizontal -> do
+                case boxChildSizePolicy b of
+                  Percentage _ -> return True
+                  PerChild s1 s2 -> do
+                    h1 <- growHorizontal $ boxFirst b
+                    h2 <- growHorizontal $ boxSecond b
+                    return $ (h1 && s1 == BoxAuto) || (h2 && s2 == BoxAuto)
 
         , growVertical_ = \b -> do
-            v1 <- growVertical $ boxFirst b
-            v2 <- growVertical $ boxSecond b
-            return $ v1 || v2
+            case boxOrientation b of
+              Horizontal -> do
+                h1 <- growVertical $ boxFirst b
+                h2 <- growVertical $ boxSecond b
+                return $ h1 || h2
+              Vertical -> do
+                case boxChildSizePolicy b of
+                  Percentage _ -> return True
+                  PerChild s1 s2 -> do
+                    h1 <- growVertical $ boxFirst b
+                    h2 <- growVertical $ boxSecond b
+                    return $ (h1 && s1 == BoxAuto) || (h2 && s2 == BoxAuto)
 
         , keyEventHandler =
             \this key mods -> do
