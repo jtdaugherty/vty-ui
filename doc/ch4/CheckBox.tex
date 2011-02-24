@@ -125,14 +125,16 @@ multi-state checkbox can have any number of these states, and the user
 can toggle between them in order.
 
 To create a new multi-state checkbox, you must specify the
-character/value mappings in addition to its text label:
+character/value mappings in addition to its text label.  The
+checkbox's initial state is the first one in the list passed to the
+constructor.
 
 \begin{haskellcode}
  -- cb :: Widget (CheckBox Int)
- cb <- newMultiStateCheckbox "# of Cakes" [ (1, '1')
-                                          , (2, '2')
-                                          , (3, '3')
-                                          ]
+ cb <- newMultiStateCheckbox "Number of Cakes" [ (1, '1')
+                                               , (2, '2')
+                                               , (3, '3')
+                                               ]
 \end{haskellcode}
 
 When the user interacts with a multi-state \fw{CheckBox}, repeated
