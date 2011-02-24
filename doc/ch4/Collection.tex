@@ -1,0 +1,43 @@
+\section{Collections}
+
+A \fw{Collection} is a container for multiple widgets with a pointer
+to a ``currently-selected'' widget.  \fw{Collection}s are used to
+construct interfaces as described in Section \ref{sec:collections}.
+
+To create a new collection:
+
+\begin{haskellcode}
+ c <- newCollection
+\end{haskellcode}
+
+A \fw{Collection} is not a widget itself, so it cannot be treated like
+one.  However, the primary operation of interest is the
+\fw{addToCollection} function, which adds an arbitrary \fw{Widget a}
+and \fw{FocusGroup} to the \fw{Collection} and returns an \fw{IO}
+action which, when run, will switch to that interface and focus group.
+
+\begin{haskellcode}
+ switchToFoo <- addToCollection c fooUi fooFocusGroup
+ someWidget `onEvent` (const switchToFoo)
+\end{haskellcode}
+
+If you choose not to use the \fw{IO} action returned by
+\fw{addToCollection}, you may instead call \fw{setCurrentEntry}.  This
+function takes a \fw{Collection} and a position and sets the
+\fw{Collection}'s current entry to the one at the specified position.
+The position is an index into the \fw{Collection}'s internal list
+interfaces.  If the position is invalid, a \fw{CollectionError} is
+thrown.  This method is not recommended but may be used with care.
+
+\begin{haskellcode}
+ _ <- addToCollection c fooUi fooFocusGroup
+ someWidget `onEvent` (const $ setCurrentEntry c 0)
+\end{haskellcode}
+
+If an empty \fw{Collection} is used in any way, a \fw{CollectionError}
+will be thrown.
+
+\subsection{Growth Policy}
+
+The growth policy of a \fw{Collection} is always inherited from its
+currently-selected interface widget.
