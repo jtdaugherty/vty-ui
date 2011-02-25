@@ -1,0 +1,28 @@
+\section{Centering}
+
+The \fw{Centering} module provides widgets for centering other widgets
+horizontally and vertically:
+
+\begin{itemize}
+\item \fw{hCentered} -- takes a \fw{Widget a} and centers it
+  horizontally.  Returns a value of type \fw{Widget (HCentered a)}.
+\item \fw{vCentered} -- takes a \fw{Widget a} and centers it
+  vertically.  Returns a value of type \fw{Widget (VCentered a)}.
+\item \fw{centered} -- takes a \fw{Widget a} and centers it both
+  horizontally and vertically using \fw{hCentered} and \fw{vcentered}.
+  Returns a value of type \fw{Widget (VCentered (HCentered a))}.
+\end{itemize}
+
+Horizontal and vertical centering are only useful if the widget being
+centered doesn't grow to fill the available space on its own, since it
+would be as large as the available space and thus already centered.
+To constrain a growing widget to make it centerable, see Section XXX
+(limits) and Section XXX (fixed).
+
+\subsection{Growth Policy}
+
+\fw{HCentered} widgets always grow horizontally and defer to their
+children for vertical growth policy.  Likewise, \fw{VCentered} widgets
+always grow vertically and defer to their children for horizontal
+growth policy.  The \fw{centered} function returns a widget which
+always grows in both directions.

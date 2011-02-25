@@ -1,0 +1,77 @@
+\section{Edit Widgets}
+
+The \fw{Edit} module provides a line-editing widget, \fw{Widget Edit}.
+This widget makes it possible to edit a single line of text with
+Emacs-style key bindings.
+
+An \fw{Edit} widget is simple to create:
+
+\begin{haskellcode}
+ e <- editWidget
+\end{haskellcode}
+
+\fw{Edit} widgets can be laid out in the usual way:
+
+\begin{haskellcode}
+ e <- editWidget
+ b <- (simpleText "Enter a string: ") <++> (return e)
+\end{haskellcode}
+
+To use an \fw{Edit} widget, add it to your interface and
+\fw{FocusGroup}.
+
+\fw{Edit} widgets support the following editing key bindings:
+
+\begin{itemize}
+\item \fw{Ctrl-a}, \fw{Home} -- go to the beginning of the line.
+\item \fw{Ctrl-e}, \fw{End} -- go to the end of the line.
+\item \fw{Ctrl-k} -- remove the text from the cursor position to the
+  end of the line.
+\item \fw{Ctrl-d}, \fw{Del} -- delete the character at the cursor
+  position.
+\item \fw{Left}, \fw{Right}, \fw{Up}, \fw{Down} -- change the cursor
+  position.
+\item \fw{Backspace} -- delete the character just before the cursor
+  position and move the cursor position back by one character.
+\item \fw{Enter} -- ``activate'' the \fw{Edit} widget.
+\end{itemize}
+
+An \fw{Edit} widget can be monitored for three events:
+
+\begin{itemize}
+\item ``Activation'' events -- triggered when the user presses
+  \fw{Enter} in the \fw{Edit} widget.  Handlers are registered with
+  the \fw{onActivate} function.  Event handlers receive the \fw{Edit}
+  widget as a parameter.
+\item Text change -- when the contents of the \fw{Edit} widget change.
+  Handlers are registered with the \fw{onChange} function.  Event
+  handlers receive the new \fw{String} value in the \fw{Edit} widget.
+\item Cursor movement -- when the cursor position within the \fw{Edit}
+  widget changes.  Handlers are registered with the \fw{onCursorMove}
+  function.  Event handlers receive the new cursor position as a
+  parameter.
+\end{itemize}
+
+The following example demonstrates the handling of all three types of
+events:
+
+\begin{haskellcode}
+ e `onActivate` \this -> ...
+ e `onCursorMove` \pos -> ...
+ e `onChange` \newVal -> ...
+\end{haskellcode}
+
+In addition to event handling, the \fw{Edit} widget API also provides
+other functions.  These functions trigger the respective events
+automatically.
+
+\begin{itemize}
+\item \fw{setEditText}, \fw{getEditText} -- change the current text
+  content of the \fw{Edit} widget.
+\item \fw{getEditCursorPosition}, \fw{setEditCursorPosition} --
+  manipulate the cursor position within the \fw{Edit} widget.
+\end{itemize}
+
+\subsection{Growth Policy}
+
+\fw{Edit} widgets grow only horizontally and are always one row high.
