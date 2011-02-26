@@ -1,0 +1,22 @@
+\section{Fills}
+
+The \fw{Fills} module provides space-filling widgets which can be used
+to add ``flexible'' space to control layout.  Fixed-size widgets often
+need flexible space to fill the terminal, so we use ``fill'' widgets
+to do this.
+
+There are two types of fills:
+
+\begin{haskellcode}
+\item Horizontal, created by the \fw{hFill} function.  \fw{hFill}
+  takes a fill character and a height and fills available space with
+  that character using the current attribute settings.
+\item Vertical, created by the \fw{vFill} function.  \fw{vFill} takes
+  a fill character and fills available space with that character using
+  the current attribute settings.
+\end{haskellcode}
+
+\subsection{Growth Policy}
+
+\fw{HFill}s always grow horizontally but not vertically.  \fw{VFill}s
+always grow vertically but not horizontally.
