@@ -36,7 +36,6 @@ module Graphics.Vty.Widgets.List
     , clearList
     -- ** List inspection
     , getSelected
-    , getVisibleItems
     )
 where
 
