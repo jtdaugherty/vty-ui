@@ -3,6 +3,16 @@
 The \fw{List} module provides a rich interface for displaying,
 navigating, and selecting from a list of elements.
 
+\fw{List}s support the following key bindings:
+
+\begin{itemize}
+\item \fw{Up}, \fw{Down} -- changes the currently-selected element by
+  one element in the respective direction.
+\item \fw{PageUp}, \fw{PageDown} -- changes the currently-selected
+  element by a page of elements, which depends on the number of
+  elements currently shown in the list.
+\end{itemize}
+
 Lists are implemented with the type \fw{List a b}.  This type's two
 parameters are as follows:
 
@@ -61,11 +71,66 @@ specification of how list items should be represented.  For a \fw{List
   likely to ensue.
 \end{itemize}
 
-xxx:
+Conversely, items may be removed from \fw{List}s with the
+\fw{removeFromList} function, which takes a \fw{Widget (List a b)} and
+an item position, removes the item at the specified position, and
+returns the removed item:
 
--- scrolling, other mutation
--- event handlers
--- interrogation
+\begin{haskellcode}
+ (val, w) <- removeFromList lst 0
+\end{haskellcode}
+
+If the position is invalid, a \fw{ListError} is thrown.
+\fw{removeFromList} returns the internal value (\fw{val}) and the
+corresponding widget (\fw{w}) of the removed list entry.
+
+All of the items can be removed with the \fw{clearList} function.
+Note that \fw{clearList} does \textit{not} invoke any event handlers
+for the removed items.
+
+\subsection{\fw{List} Inspection}
+
+The \fw{List} module provides some functions to get information about
+the state of a \fw{List}:
+
+\begin{itemize}
+\item \fw{getListSize} -- returns the number of elements in a
+  \fw{List}.
+\item \fw{getSelected} -- takes a \fw{Widget (List a b)} and returns
+  \fw{Nothing} if the \fw{List} is empty or returns \fw{Just (pos,
+    (val, widget))} corresponding to the list index, internal item
+  value, and widget of the currently-selected list item.
+\end{itemize}
+
+\subsection{Scrolling a \fw{List}}
+
+Although the list key bindings are bound to the \fw{List}'s scrolling
+behavior, the \fw{List} module exports the scrolling functions for
+programmatic manipulation of \fw{List}s.  Note that in all cases, the
+scrolling functions change the position of the currently-selected item
+and, if necessary, scroll the list in the terminal to reveal the
+newly-selected item.
+
+\begin{itemize}
+\item \fw{scrollUp} -- moves the selected item position toward the
+  beginning of the \fw{List} by one position.
+\item \fw{scrollDown} -- moves the selected item position toward the
+  end of the \fw{List} by one position.
+\item \fw{pageUp} -- moves the selected item position toward the
+  beginning of the \fw{List} by one page; the size of a page depends
+  on the height of the \fw{List}'s widgets and the amount of space
+  available to the rendered \fw{List}.
+\item \fw{pageDown} -- moves the selected item position toward the end
+  of the \fw{List} by one page; the size of a page depends on the
+  height of the \fw{List}'s widgets and the amount of space available
+  to the rendered \fw{List}.
+\item \fw{scrollBy} -- takes a number of positions and moves the
+  selected item position in the specified direction.  If the number is
+  negative, this scrolls toward the beginning of the \fw{List},
+  otherwise, it scrolls toward the end.
+\end{itemize}
+
+\subsection{Handling Events}
 
 \subsection{Growth Policy}
 
