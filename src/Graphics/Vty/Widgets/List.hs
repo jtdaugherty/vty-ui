@@ -18,6 +18,7 @@ module Graphics.Vty.Widgets.List
     , NewItemEvent(..)
     , RemoveItemEvent(..)
     , SelectionEvent(..)
+    , ActivateItemEvent(..)
     -- ** List creation
     , newStringList
     , newList
@@ -32,6 +33,8 @@ module Graphics.Vty.Widgets.List
     , onSelectionChange
     , onItemAdded
     , onItemRemoved
+    , onItemActivated
+    , activateCurrentItem
     , clearList
     -- ** List inspection
     , getListSize
@@ -64,6 +67,7 @@ data SelectionEvent a b = SelectionOn Int a (Widget b)
                         | SelectionOff
 data NewItemEvent a b = NewItemEvent Int a (Widget b)
 data RemoveItemEvent a b = RemoveItemEvent Int a (Widget b)
+data ActivateItemEvent a b = ActivateItemEvent Int a (Widget b)
 
 -- |The list widget type.  Lists are parameterized over the /internal/
 -- /identifier type/ @a@, the type of internal identifiers used to
@@ -83,6 +87,7 @@ data List a b = List { selectedUnfocusedAttr :: Attr
                      , selectionChangeHandlers :: Handlers (SelectionEvent a b)
                      , itemAddHandlers :: Handlers (NewItemEvent a b)
                      , itemRemoveHandlers :: Handlers (RemoveItemEvent a b)
+                     , itemActivateHandlers :: Handlers (ActivateItemEvent a b)
                      , itemHeight :: Int
                      , itemConstructor :: a -> IO (Widget b)
                      -- ^Function to construct new items
@@ -109,6 +114,7 @@ newListData selAttr f = do
   schs <- newHandlers
   iahs <- newHandlers
   irhs <- newHandlers
+  iacths <- newHandlers
 
   return $ List { selectedUnfocusedAttr = selAttr
                 , selectedIndex = -1
@@ -118,6 +124,7 @@ newListData selAttr f = do
                 , selectionChangeHandlers = schs
                 , itemAddHandlers = iahs
                 , itemRemoveHandlers = irhs
+                , itemActivateHandlers = iacths
                 , itemHeight = 0
                 , itemConstructor = f
                 }
@@ -222,6 +229,10 @@ onItemRemoved :: (MonadIO m) => Widget (List a b)
               -> (RemoveItemEvent a b -> IO ()) -> m ()
 onItemRemoved = addHandler (itemRemoveHandlers <~~)
 
+onItemActivated :: (MonadIO m) => Widget (List a b)
+            -> (ActivateItemEvent a b -> IO ()) -> m ()
+onItemActivated = addHandler (itemActivateHandlers <~~)
+
 clearList :: (MonadIO m) => Widget (List a b) -> m ()
 clearList w = do
   updateWidgetState w $ \l ->
@@ -282,6 +293,7 @@ listKeyEvent w KUp _ = scrollUp w >> return True
 listKeyEvent w KDown _ = scrollDown w >> return True
 listKeyEvent w KPageUp _ = pageUp w >> return True
 listKeyEvent w KPageDown _ = pageDown w >> return True
+listKeyEvent w KEnter _ = activateCurrentItem w >> return True
 listKeyEvent _ _ _ = return False
 
 renderListWidget :: (Show b) => Bool -> List a b -> DisplayRegion -> RenderContext -> IO Image
@@ -328,6 +340,14 @@ newStringList selAttr labels = do
   list <- newList selAttr plainText
   mapM_ (addToList list) labels
   return list
+
+activateCurrentItem :: (MonadIO m) => Widget (List a b) -> m ()
+activateCurrentItem wRef = do
+  mSel <- getSelected wRef
+  case mSel of
+    Nothing -> return ()
+    Just (pos, (val, w)) ->
+        fireEvent wRef (itemActivateHandlers <~~) $ ActivateItemEvent pos val w
 
 -- note that !! here will always succeed because selectedIndex will
 -- never be out of bounds and the list will always be non-empty.

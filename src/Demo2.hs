@@ -104,6 +104,8 @@ main = do
       case ev of
         SelectionOn _ k _ -> setText listHeader $ "You selected: " ++ k
         SelectionOff -> return ()
+  lst `onItemActivated` \(ActivateItemEvent _ s _) ->
+      setText listHeader $ "You activated: " ++ s
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
