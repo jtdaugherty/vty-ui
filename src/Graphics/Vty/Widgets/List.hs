@@ -19,9 +19,8 @@ module Graphics.Vty.Widgets.List
     , RemoveItemEvent(..)
     , SelectionEvent(..)
     -- ** List creation
+    , newStringList
     , newList
-    , newStringListWidget
-    , newListWidget
     , addToList
     , removeFromList
     , getListSize
@@ -103,11 +102,11 @@ instance Show (List a b) where
 
 -- |Create a new list.  Empty lists and empty scrolling windows are
 -- not allowed.
-newList :: (MonadIO m) =>
-           Attr -- ^The attribute of the selected item
-        -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
-        -> m (List a b)
-newList selAttr f = do
+newListData :: (MonadIO m) =>
+               Attr -- ^The attribute of the selected item
+            -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
+            -> m (List a b)
+newListData selAttr f = do
   schs <- newHandlers
   iahs <- newHandlers
   irhs <- newHandlers
@@ -232,8 +231,12 @@ clearList w = do
         , listItems = []
         }
 
-newListWidget :: (MonadIO m, Show b) => List a b -> m (Widget (List a b))
-newListWidget list = do
+newList :: (MonadIO m, Show b) =>
+           Attr -- ^The attribute of the selected item
+        -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
+        -> m (Widget (List a b))
+newList selAttr f = do
+  list <- newListData selAttr f
   wRef <- newWidget $ \w ->
       w { state = list
         , keyEventHandler = listKeyEvent
@@ -318,12 +321,12 @@ renderListWidget foc list s ctx = do
 
 -- |A convenience function to create a new list using 'String's as the
 -- internal identifiers and 'Text' widgets to represent those strings.
-newStringListWidget :: (MonadIO m) =>
-                       Attr -- ^The attribute of the selected item
-                    -> [String] -- ^The list items
-                    -> m (Widget (List String FormattedText))
-newStringListWidget selAttr labels = do
-  list <- newListWidget =<< newList selAttr plainText
+newStringList :: (MonadIO m) =>
+                 Attr -- ^The attribute of the selected item
+              -> [String] -- ^The list items
+              -> m (Widget (List String FormattedText))
+newStringList selAttr labels = do
+  list <- newList selAttr plainText
   mapM_ (addToList list) labels
   return list
 
