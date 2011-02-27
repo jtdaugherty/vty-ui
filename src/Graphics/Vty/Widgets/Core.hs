@@ -61,7 +61,6 @@ module Graphics.Vty.Widgets.Core
     , addToFocusGroup
     , focusNext
     , focusPrevious
-    , setCurrentFocus
     , setFocusGroupNextKey
     , setFocusGroupPrevKey
     , focus
