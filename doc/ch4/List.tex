@@ -1,0 +1,72 @@
+\section{Lists}
+
+The \fw{List} module provides a rich interface for displaying,
+navigating, and selecting from a list of elements.
+
+Lists are implemented with the type \fw{List a b}.  This type's two
+parameters are as follows:
+
+\begin{itemize}
+\item \textit{internal item type}, \fw{a} -- This is the type of the
+  application-specific value stored in each list item.  This is the
+  data that is represented by the visual aspect of the list element,
+  and it will not necessarily have anything to do with the visual
+  representation.
+\item \textit{item widget type}, \fw{b} -- This is the type of the
+  widget state of each element as it is represented in the interface.
+  For example, a simple list of strings might use \fw{String} as its
+  internal value and \fw{Widget FormattedText} (see Section XXX) as
+  its widget type, resulting in a list of type \fw{List String
+    FormattedText}.
+\end{itemize}
+
+Lists are created with the \fw{newList} function:
+
+\begin{haskellcode}
+ lst <- newList attr plainText
+\end{haskellcode}
+
+\fw{newList} takes two parameters: the attribute of the
+currently-selected item to be used when the list is \textit{not}
+focused, and the \textit{constructor function} to be used to create
+widgets when new items are added to the list.  The \fw{List} uses its
+own focus attribute (see Section XXX) as the attribute of the
+currently-selected item when it has the focus.
+
+Items may be added to a \fw{List} with the \fw{addToList} function,
+which takes an internal item value (e.g., \fw{String}) and uses it to
+construct a widget with the appropriate type (e.g. \fw{Widget
+  FormattedText}):
+
+\begin{haskellcode}
+ addToList lst "foobar"
+\end{haskellcode}
+
+The constructor function passed to \fw{newList} can be thought of as a
+specification of how list items should be represented.  For a \fw{List
+  a b}, it must take a value of type \fw{a} and return a \fw{Widget
+  b}.  There are two restrictions on what the constructor can return:
+
+\begin{itemize}
+\item The \fw{Widget b} type \textit{must not grow vertically}.  This
+  is because all \fw{List} item widgets must take up a fixed amount of
+  vertical space so the \fw{List} can manage scrolling, for example.
+  If the widget grows vertically, \fw{addToList} will throw a
+  \fw{ListError} exception.
+\item All widgets returned \textit{must have the same height}.  This
+  is because the list uses the item height to calculate how many items
+  can be displayed, given the space available to the rendered
+  \fw{List}.  If the constructor creates a widget whose doesn't match
+  that of the rest of the wigets of the list, layout problems are
+  likely to ensue.
+\end{itemize}
+
+xxx:
+
+-- scrolling, other mutation
+-- event handlers
+-- interrogation
+
+\subsection{Growth Policy}
+
+\fw{List}s always grow both horizontally and vertically.
