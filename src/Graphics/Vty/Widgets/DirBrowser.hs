@@ -88,16 +88,16 @@ withAnnotations sk as = sk { browserCustomAnnotations = browserCustomAnnotations
 newDirBrowser :: (MonadIO m) => BrowserSkin -> m (DirBrowser, Widget FocusGroup)
 newDirBrowser bSkin = do
   path <- liftIO $ getCurrentDirectory
-  pathWidget <- simpleText ""
-  errorText <- simpleText "" >>= withNormalAttribute (browserErrorAttr bSkin)
-  header <- ((simpleText " Path: ") <++> (return pathWidget) <++> (hFill ' ' 1))
+  pathWidget <- plainText ""
+  errorText <- plainText "" >>= withNormalAttribute (browserErrorAttr bSkin)
+  header <- ((plainText " Path: ") <++> (return pathWidget) <++> (hFill ' ' 1))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
-  fileInfo <- simpleText ""
-  footer <- ((simpleText " ") <++> (return fileInfo) <++> (hFill ' ' 1) <++> (return errorText))
+  fileInfo <- plainText ""
+  footer <- ((plainText " ") <++> (return fileInfo) <++> (hFill ' ' 1) <++> (return errorText))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
-  l <- newListWidget =<< newList (browserUnfocusedSelAttr bSkin) (\s -> simpleText " " <++> simpleText s)
+  l <- newListWidget =<< newList (browserUnfocusedSelAttr bSkin) (\s -> plainText " " <++> plainText s)
   ui <- vBox header =<< vBox l footer
 
   r <- liftIO $ newIORef ""

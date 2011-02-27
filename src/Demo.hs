@@ -50,8 +50,8 @@ mkAppState :: IO AppState
 mkAppState = do
   lw <- newStringListWidget selAttr []
   b <- textWidget wrap ""
-  f1 <- simpleText "" >>= withNormalAttribute titleAttr
-  f2 <- simpleText "[]" >>= withNormalAttribute titleAttr
+  f1 <- plainText "" >>= withNormalAttribute titleAttr
+  f2 <- plainText "[]" >>= withNormalAttribute titleAttr
   e <- editWidget
   ll <- vLimit 5 lw
 

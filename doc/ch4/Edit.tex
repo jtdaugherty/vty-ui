@@ -14,7 +14,7 @@ An \fw{Edit} widget is simple to create:
 
 \begin{haskellcode}
  e <- editWidget
- b <- (simpleText "Enter a string: ") <++> (return e)
+ b <- (plainText "Enter a string: ") <++> (return e)
 \end{haskellcode}
 
 To use an \fw{Edit} widget, add it to your interface and

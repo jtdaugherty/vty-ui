@@ -2,7 +2,7 @@
 -- |This module provides functionality for rendering 'String's as
 -- 'Widget's, including functionality to make structural and/or visual
 -- changes at rendering time.  To get started, turn your ordinary
--- 'String' into a 'Widget' with 'simpleText'; if you want access to
+-- 'String' into a 'Widget' with 'plainText'; if you want access to
 -- the 'Text' for formatting purposes, use 'prepareText' followed by
 -- 'textWidget'.
 module Graphics.Vty.Widgets.Text
@@ -13,7 +13,7 @@ module Graphics.Vty.Widgets.Text
     -- *Text Preparation
     , prepareText
     -- *Constructing Widgets
-    , simpleText
+    , plainText
     , textWidget
     -- *Formatting
     , (&.&)
@@ -73,8 +73,8 @@ prepareText s = Text { tokens = tokenize s def_attr
 
 -- |Construct a Widget directly from an attribute and a String.  This
 -- is recommended if you don't need to use a 'Formatter'.
-simpleText :: (MonadIO m) => String -> m (Widget FormattedText)
-simpleText s = textWidget nullFormatter s
+plainText :: (MonadIO m) => String -> m (Widget FormattedText)
+plainText s = textWidget nullFormatter s
 
 -- |A formatter for wrapping text into the available space.  This
 -- formatter will insert line breaks where appropriate so if you want

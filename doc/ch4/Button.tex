@@ -31,7 +31,7 @@ When you are ready to add the \fw{Button} to your interface, call its
 \fw{buttonWidget} function:
 
 \begin{haskellcode}
- box <- (simpleText "Are you sure?") <--> (return (buttonWidget b))
+ box <- (plainText "Are you sure?") <--> (return (buttonWidget b))
 \end{haskellcode}
 
 \subsection{Growth Policy}

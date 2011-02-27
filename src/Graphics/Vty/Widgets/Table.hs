@@ -407,7 +407,7 @@ autoWidth t sz = do
 
 addHeadingRow :: (MonadIO m) => Widget Table -> Attr -> [String] -> m [Widget FormattedText]
 addHeadingRow tbl attr labels = do
-  ws <- mapM (\s -> simpleText s >>= withNormalAttribute attr) labels
+  ws <- mapM (\s -> plainText s >>= withNormalAttribute attr) labels
   addRow tbl ws
   return ws
 
@@ -468,7 +468,7 @@ addRow t row = do
 
 renderCell :: DisplayRegion -> TableCell -> RenderContext -> IO Image
 renderCell region EmptyCell ctx = do
-  w <- simpleText ""
+  w <- plainText ""
   render w region ctx
 renderCell region (TableCell w _ _) ctx =
     render w region ctx

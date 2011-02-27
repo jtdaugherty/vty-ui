@@ -48,7 +48,7 @@ main = do
 
   r1 <- newCheckbox "Cake"
   r2 <- newCheckbox "Death"
-  radioHeader <- simpleText "" >>= withNormalAttribute headerAttr
+  radioHeader <- plainText "" >>= withNormalAttribute headerAttr
 
   rg <- newRadioGroup
   addToRadioGroup rg r1
@@ -65,18 +65,18 @@ main = do
   edit1Header <- textWidget wrap "" >>= withNormalAttribute headerAttr
   edit2Header <- textWidget wrap "" >>= withNormalAttribute headerAttr
 
-  lst <- newListWidget =<< newList (fgColor bright_green) simpleText
+  lst <- newListWidget =<< newList (fgColor bright_green) plainText
 
   selector <- vLimit 3 lst
-  listHeader <- simpleText ""
+  listHeader <- plainText ""
 
   rs <- vBox r1 r2
 
-  cbHeader <- simpleText ""
-  timeText <- simpleText ""
+  cbHeader <- plainText ""
+  timeText <- plainText ""
 
   prog <- newProgressBar red white
-  progLabel <- simpleText ""
+  progLabel <- plainText ""
 
   addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
   addRow table $ radioHeader .|. rs

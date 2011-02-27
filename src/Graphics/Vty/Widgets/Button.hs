@@ -38,7 +38,7 @@ instance HasFocusAttr Button where
 
 newButton :: (MonadIO m) => String -> m Button
 newButton msg = do
-  t <- simpleText msg
+  t <- plainText msg
 
   w <- return t >>=
        withPadding (padLeftRight 3) >>=

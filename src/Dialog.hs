@@ -12,7 +12,7 @@ main = do
   fg <- newFocusGroup
   addToFocusGroup fg e
 
-  u <- simpleText "Enter some text and press enter." <--> return e
+  u <- plainText "Enter some text and press enter." <--> return e
        >>= withBoxSpacing 1
 
   pe <- padded u (padLeftRight 2)

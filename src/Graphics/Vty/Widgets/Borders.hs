@@ -175,10 +175,10 @@ drawBordered this s ctx = do
   let adjusted = DisplayRegion (image_width childImage + 2)
                  (image_height childImage)
 
-  tlCorner <- simpleText [skinCornerTL sk] >>= withNormalAttribute attr'
-  trCorner <- simpleText [skinCornerTR sk] >>= withNormalAttribute attr'
-  blCorner <- simpleText [skinCornerBL sk] >>= withNormalAttribute attr'
-  brCorner <- simpleText [skinCornerBR sk] >>= withNormalAttribute attr'
+  tlCorner <- plainText [skinCornerTL sk] >>= withNormalAttribute attr'
+  trCorner <- plainText [skinCornerTR sk] >>= withNormalAttribute attr'
+  blCorner <- plainText [skinCornerBL sk] >>= withNormalAttribute attr'
+  brCorner <- plainText [skinCornerBR sk] >>= withNormalAttribute attr'
 
   hb <- hBorder >>= withHBorderLabel label
   setBorderAttribute hb attr'

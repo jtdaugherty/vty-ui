@@ -23,8 +23,8 @@ The following example creates an interface using all three border
 widget types.
 
 \begin{haskellcode}
- b1 <- (simpleText "foo") <--> hBorder <--> (simpleText "bar")
- b2 <- (return b1) <++> vBorder <++> (simpleText "baz")
+ b1 <- (plainText "foo") <--> hBorder <--> (plainText "bar")
+ b2 <- (return b1) <++> vBorder <++> (plainText "baz")
  b3 <- bordered b2
 \end{haskellcode}
 

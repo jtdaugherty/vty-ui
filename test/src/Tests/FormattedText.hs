@@ -19,7 +19,7 @@ sz = DisplayRegion 100 100
 textHeight :: Property
 textHeight =
     monadicIO $ forAllM textString $ \str -> do
-      w <- run $ simpleText str
+      w <- run $ plainText str
       img <- run $ render w sz defaultContext
       if region_height sz == 0 then
           return $ image_height img == 0 else
@@ -28,14 +28,14 @@ textHeight =
 textImageSize :: Property
 textImageSize =
     monadicIO $ forAllM textString $ \str ->
-        sizeTest (simpleText str)
+        sizeTest (plainText str)
 
 textSetText :: Property
 textSetText =
     monadicIO $ forAllM textString $ \s1 ->
       forAllM textString $ \s2 -> do
-        w1 <- run $ simpleText s1
-        w2 <- run $ simpleText s2
+        w1 <- run $ plainText s1
+        w2 <- run $ plainText s2
         img1 <- run $ render w1 sz defaultContext
         img2 <- run $ render w2 sz defaultContext
         run $ setText w2 s1

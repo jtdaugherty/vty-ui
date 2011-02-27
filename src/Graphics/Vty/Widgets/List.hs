@@ -324,7 +324,7 @@ newStringListWidget :: (MonadIO m) =>
                     -> [String] -- ^The list items
                     -> m (Widget (List String FormattedText))
 newStringListWidget selAttr labels = do
-  list <- newListWidget =<< newList selAttr simpleText
+  list <- newListWidget =<< newList selAttr plainText
   mapM_ (addToList list) labels
   return list
 

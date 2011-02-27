@@ -50,8 +50,8 @@ The following example creates a box of each type to lay out some text
 widgets:
 
 \begin{haskellcode}
- b1 <- (simpleText "foo") <++> (simpleText "bar") >>= withBoxSpacing 1
- b2 <- (return b1) <--> (simpleText "baz") >>= withBoxSpacing 1
+ b1 <- (plainText "foo") <++> (plainText "bar") >>= withBoxSpacing 1
+ b2 <- (return b1) <--> (plainText "baz") >>= withBoxSpacing 1
 \end{haskellcode}
 
 The result is an inner horizontal box, \fw{b1}, containing two
