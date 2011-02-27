@@ -23,7 +23,6 @@ module Graphics.Vty.Widgets.List
     , newList
     , addToList
     , removeFromList
-    , getListSize
     -- ** List manipulation
     , scrollBy
     , scrollUp
@@ -35,6 +34,7 @@ module Graphics.Vty.Widgets.List
     , onItemRemoved
     , clearList
     -- ** List inspection
+    , getListSize
     , getSelected
     )
 where
