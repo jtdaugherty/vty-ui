@@ -20,7 +20,7 @@ module Graphics.Vty.Widgets.List
     , SelectionEvent(..)
     -- ** List creation
     , newList
-    , newSimpleListWidget
+    , newStringListWidget
     , newListWidget
     , addToList
     , removeFromList
@@ -319,11 +319,11 @@ renderListWidget foc list s ctx = do
 
 -- |A convenience function to create a new list using 'String's as the
 -- internal identifiers and 'Text' widgets to represent those strings.
-newSimpleListWidget :: (MonadIO m) =>
+newStringListWidget :: (MonadIO m) =>
                        Attr -- ^The attribute of the selected item
                     -> [String] -- ^The list items
                     -> m (Widget (List String FormattedText))
-newSimpleListWidget selAttr labels = do
+newStringListWidget selAttr labels = do
   list <- newListWidget =<< newList selAttr simpleText
   mapM_ (addToList list) labels
   return list
