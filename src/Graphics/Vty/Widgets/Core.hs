@@ -459,14 +459,19 @@ currentEntry wRef = do
 addToFocusGroup :: (MonadIO m, Show a) => Widget FocusGroup -> Widget a -> m (Widget FocusEntry)
 addToFocusGroup cRef wRef = do
   eRef <- newFocusEntry wRef
+
+  entryPos <- (length . entries) <~~ cRef
   updateWidgetState cRef $ \s -> s { entries = (entries s) ++ [eRef] }
+
+  -- Add an event handler to the widget, NOT the entry wrapper, so
+  -- others can call 'focus' on the widget and affect this focus
+  -- group.
+  wRef `onGainFocus` \_ ->
+      setCurrentFocus cRef entryPos
 
   -- If we just added the first widget to the group, focus it so
   -- something has focus.
-  numEntries <- (length . entries) <~~ cRef
-  when (numEntries == 1) $ do
-    updateWidgetState cRef $ \s -> s { currentEntryNum = 0 }
-    focus eRef
+  when (entryPos == 0) $ focus eRef
 
   return eRef
 
@@ -475,19 +480,26 @@ focusNext wRef = do
   st <- getState wRef
   let cur = currentEntryNum st
   when (cur == -1) $ throw FocusGroupEmpty
-  if cur < length (entries st) - 1 then
-      setCurrentFocus wRef (cur + 1) else
-      setCurrentFocus wRef 0
+  let nextEntry = if cur < length (entries st) - 1 then
+                      (entries st) !! (cur + 1) else
+                      (entries st) !! 0
+  focus nextEntry
 
 focusPrevious :: (MonadIO m) => Widget FocusGroup -> m ()
 focusPrevious wRef = do
   st <- getState wRef
   let cur = currentEntryNum st
   when (cur == -1) $ throw FocusGroupEmpty
-  if cur > 0 then
-      setCurrentFocus wRef (cur - 1) else
-      setCurrentFocus wRef (length (entries st) - 1)
+  let prevEntry = if cur > 0 then
+                      (entries st) !! (cur - 1) else
+                      (entries st) !! (length (entries st) - 1)
+  focus prevEntry
 
+-- Note that this only 1) updates the focus index in the group and 2)
+-- calls unfocus on the previously-focused widget.  This does NOT call
+-- focus on the newly-focused widget, because this is intended to be
+-- callable from a focus event handler for the widget that got
+-- focused.
 setCurrentFocus :: (MonadIO m) => Widget FocusGroup -> Int -> m ()
 setCurrentFocus cRef i = do
   st <- state <~ cRef
@@ -501,6 +513,5 @@ setCurrentFocus cRef i = do
        do
          when (currentEntryNum st >= 0) $
               unfocus ((entries st) !! (currentEntryNum st))
-         focus ((entries st) !! i)
 
   updateWidgetState cRef $ \s -> s { currentEntryNum = i }
