@@ -30,6 +30,8 @@ hLimit :: (MonadIO m, Show a) => Int -> Widget a -> m (Widget (HLimit a))
 hLimit maxWidth child = do
   wRef <- newWidget $ \w ->
       w { state = HLimit maxWidth child
+        , growHorizontal_ = const $ return False
+        , growVertical_ = const $ growVertical child
         , render_ = \this s ctx -> do
                    HLimit width ch <- getState this
                    let region = s `withWidth` fromIntegral (min (toEnum width) (region_width s))
@@ -55,6 +57,7 @@ vLimit maxHeight child = do
   wRef <- newWidget $ \w ->
       w { state = VLimit maxHeight child
         , growHorizontal_ = const $ growHorizontal child
+        , growVertical_ = const $ return False
 
         , render_ = \this s ctx -> do
                    VLimit height ch <- getState this
