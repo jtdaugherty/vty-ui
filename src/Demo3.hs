@@ -1,19 +1,17 @@
 module Main where
 
+import Graphics.Vty
 import Graphics.Vty.Widgets.All
 
 main :: IO ()
 main = do
-  e <- editWidget
-  ui <- centered e
-
-  fg <- newFocusGroup
-  addToFocusGroup fg e
+  (b, fg) <- newDirBrowser defaultBrowserSkin
 
   c <- newCollection
-  addToCollection c ui fg
+  addToCollection c (dirBrowserWidget b) fg
 
-  e `onActivate` \this ->
-      getEditText this >>= (error . ("You entered: " ++))
+  b `onBrowseAccept` error
+  b `onBrowseCancel` error
 
-  runUi c defaultContext
+  runUi c $ defaultContext { focusAttr = white `on` blue
+                           }
