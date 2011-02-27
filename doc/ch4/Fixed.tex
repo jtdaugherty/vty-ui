@@ -1,0 +1,63 @@
+\section{Fixed-Size Widgets}
+\label{sec:fixed}
+
+The \fw{Fixed} module provides widget containers which fix the amount
+of spaced used to render the child.  This can be useful when you know
+that an element of your interface has the potential to fill available
+space but must be fixed to a specific size for some reason.
+
+The module provides widget types for constraining the horizontal or
+vertical size of a widget.  The fixed-size widget containers are
+created with the following functions:
+
+\begin{itemize}
+\item \fw{hFixed} -- takes a widget \fw{Widget a} and a width in
+  columns and constrains the widget to the specified width.  Returns a
+  widget of type \fw{Widget (HFixed a)}.  If the \fw{HFixed} widget
+  does not have enough space to enforce the specified width, the
+  available space is used instead.
+\item \fw{vFixed} -- takes a widget \fw{Widget a} and a height in rows
+  and constrains the widget to the specified height.  Returns a widget
+  of type \fw{Widget (VFixed a)}.  If the \fw{VFixed} widget does not
+  have enough space to enforce the specified height, the available
+  space is used instead.
+\item \fw{boxFixed} -- takes a widget \fw{Widget a}, a width in
+  columns, and a height in rows and constrains the widget in both
+  dimensions.  Returns a widget of type \fw{Widget (VFixed (HFixed
+    a))}.
+\end{itemize}
+
+In addition to widget creation, some manipulation functions are
+provided so that the fixed-size container settings can be manipulated
+as desired:
+
+\begin{itemize}
+\item \fw{setVFixed}, \fw{setHFixed} -- sets the constraint value for
+  a fixed-size widget.
+\item \fw{addToVFixed}, \fw{addToHFixed} -- adds a value to the
+  constraint value of a fixed-size widget.
+\item {getVFixedSize}, \fw{getHFixedSize} -- returns the constraint
+  value of a fixed-size widget.
+\end{itemize}
+
+For example, the \fw{List} widget type (Section XXX) grows vertically,
+but we may wish to dedicate most of the terminal to the rest of the
+interface.  We can use \fw{vFixed} to constrain the \fw{List} in this
+way.  Below, we constain the \fw{List} to five rows of space.
+Assuming the \fw{List} elements are one row high each, if the
+\fw{List} has fewer than five elements to display then the \fw{VFixed}
+widget will automatically pad the \fw{List} to ensure that it takes up
+the specified number of rows.  Fixed-size widgets thus provide both
+upper and lower bounds on the size of their children.
+
+\begin{haskellcode}
+ lst <- newListWidget =<< newList (green `on` black) plainText
+ ui <- vFixed 5 lst
+\end{haskellcode}
+
+\subsection{Growth Policy}
+
+Since \fw{VFixed} and \fw{HFixed} widgets are designed to constrain
+their children in a specific dimension, they never grow in the
+constrained dimension.  For the other dimension, fixed-size widgets
+always defer to their children for the growth policy.

@@ -1,0 +1,45 @@
+\section{Limits}
+
+The \fw{Limits} module provides widgets for setting upper bounds on
+the size of other widgets.  These widgets differ from the \fw{Fixed}
+module we saw in Section \ref{sec:fixed}; ``limit'' widgets do not pad
+their children if the children render to \fw{Image}s smaller than the
+specified space, whereas fixed-size widgets pad their children in,
+thus guaranteeing that the specified space will be consumed.
+
+The limiting widget API is similar to that of the \fw{Fixed} module.
+Limiting widgets are created as follows:
+
+\begin{itemize}
+\item \fw{hLimit} -- takes a widget \fw{Widget a} and a width in
+  columns and constrains the widget to the specified width.  Returns a
+  widget of type \fw{Widget (HLimit a)}.  If the \fw{HLimit} widget
+  does not have enough space to enforce the specified width, the child
+  widget is not padded.
+\item \fw{vLimit} -- takes a widget \fw{Widget a} and a height in rows
+  and constrains the widget to the specified height.  Returns a widget
+  of type \fw{Widget (VLimit a)}.  If the \fw{VLimit} widget does not
+  have enough space to enforce the specified height, the child widget
+  is not padded.
+\item \fw{boxLimit} -- takes a widget \fw{Widget a}, a width in
+  columns, and a height in rows and constrains the widget in both
+  dimensions.  Returns a widget of type \fw{Widget (VLimit (HLimit
+    a))}.  If the child widget is smaller, it is not padded.
+\end{itemize}
+
+In addition to widget creation, some manipulation functions are
+provided so that the limit settings can be manipulated as desired:
+
+\begin{itemize}
+\item \fw{setVLimit}, \fw{setHLimit} -- sets the constraint value for
+  a limiting widget.
+\item \fw{addToVLimit}, \fw{addToHLimit} -- adds a value to the
+  constraint value of a limiting widget.
+\item {getVLimitSize}, \fw{getHLimitSize} -- returns the constraint
+  value of a limiting widget.
+\end{itemize}
+
+\subsection{Growth Policy}
+
+Limiting widgets never grow in the constrained dimension, and defer to
+their children for growth policy otherwise.
