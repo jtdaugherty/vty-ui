@@ -240,6 +240,7 @@ newListWidget list = do
         , keyEventHandler = listKeyEvent
 
         , growVertical_ = const $ return True
+        , growHorizontal_ = const $ return True
 
         , getCursorPosition_ =
             \this -> do
