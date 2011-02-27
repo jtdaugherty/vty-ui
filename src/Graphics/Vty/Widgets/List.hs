@@ -31,7 +31,6 @@ module Graphics.Vty.Widgets.List
     , scrollDown
     , pageUp
     , pageDown
-    , resize
     , onSelectionChange
     , onItemAdded
     , onItemRemoved
