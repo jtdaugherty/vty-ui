@@ -18,6 +18,50 @@ License-File:        LICENSE
 Cabal-Version:       >= 1.2
 Homepage:            http://codevine.org/vty-ui/
 
+Data-Files:
+    doc/ch1/api_notes.tex
+    doc/ch1/getting_started.tex
+    doc/ch1/introduction.tex
+    doc/ch2/building_applications.tex
+    doc/ch2/collections.tex
+    doc/ch2/composing.tex
+    doc/ch2/event_loop.tex
+    doc/ch2/focus_groups.tex
+    doc/ch2/handling_user_input.tex
+    doc/ch3/cursor_positioning.tex
+    doc/ch3/deferring_to_children.tex
+    doc/ch3/growth_policy_functions.tex
+    doc/ch3/implementing_composite_widgets.tex
+    doc/ch3/implementing_event_handlers.tex
+    doc/ch3/implementing_widgets.tex
+    doc/ch3/new_widget_type.tex
+    doc/ch3/rendering.tex
+    doc/ch3/widget_positioning.tex
+    doc/ch3/widgetimpl_api.tex
+    doc/ch4/Borders.tex
+    doc/ch4/Box.tex
+    doc/ch4/Button.tex
+    doc/ch4/Centering.tex
+    doc/ch4/CheckBox.tex
+    doc/ch4/Collection.tex
+    doc/ch4/Dialog.tex
+    doc/ch4/DirBrowser.tex
+    doc/ch4/Edit.tex
+    doc/ch4/Fills.tex
+    doc/ch4/Fixed.tex
+    doc/ch4/FormattedText.tex
+    doc/ch4/guided_tour.tex
+    doc/ch4/Limits.tex
+    doc/ch4/List.tex
+    doc/ch4/Padded.tex
+    doc/ch4/ProgressBar.tex
+    doc/ch4/Table.tex
+    doc/macros.tex
+    doc/Makefile
+    doc/manual.tex
+    doc/title_page.tex
+    doc/toc.tex
+
 Flag testing
     Description:     Build for testing
     Default:         False
