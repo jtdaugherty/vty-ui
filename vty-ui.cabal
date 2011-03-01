@@ -49,7 +49,6 @@ Library
           Graphics.Vty.Widgets.Table
           Graphics.Vty.Widgets.CheckBox
           Graphics.Vty.Widgets.Padding
-          Graphics.Vty.Widgets.Alignment
           Graphics.Vty.Widgets.Limits
           Graphics.Vty.Widgets.Fixed
           Graphics.Vty.Widgets.Fills

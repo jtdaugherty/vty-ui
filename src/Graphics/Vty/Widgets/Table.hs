@@ -9,6 +9,8 @@ module Graphics.Vty.Widgets.Table
     , RowLike
     , TableError(..)
     , ColumnSpec
+    , Alignment(..)
+    , Alignable(..)
     , (.|.)
     , newTable
     , setDefaultCellAlignment
@@ -34,7 +36,6 @@ import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Centering
 import Graphics.Vty.Widgets.Padding
-import Graphics.Vty.Widgets.Alignment
 import Graphics.Vty.Widgets.Borders
 import Graphics.Vty.Widgets.Skins
 import Graphics.Vty.Widgets.Util
@@ -47,6 +48,12 @@ data TableError = ColumnCountMismatch
                   deriving (Show, Typeable)
 
 instance Exception TableError
+
+data Alignment = AlignCenter | AlignLeft | AlignRight
+                 deriving (Show)
+
+class Alignable a where
+    align :: a -> Alignment -> a
 
 data TableCell = forall a. (Show a) => TableCell (Widget a) (Maybe Alignment) (Maybe Padding)
                | EmptyCell
