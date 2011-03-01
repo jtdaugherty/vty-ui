@@ -8,7 +8,7 @@ main = do
   (b, fg) <- newDirBrowser defaultBrowserSkin
 
   c <- newCollection
-  addToCollection c (dirBrowserWidget b) fg
+  _ <- addToCollection c (dirBrowserWidget b) fg
 
   b `onBrowseAccept` error
   b `onBrowseCancel` error
