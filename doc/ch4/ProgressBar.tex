@@ -1,0 +1,44 @@
+\section{Progress Bars}
+
+The \fw{ProgressBar} module provides the \fw{ProgressBar} type which
+you can use to indicate task progression in your applications.
+
+\fw{ProgressBar}s can be created with the \fw{newProgressBar}
+function.  The function takes two \fw{Color} arguments indicating the
+colors to be used for the complete and incomplete portions of the
+progress bar, respectively:
+
+\begin{haskellcode}
+ bar <- newProgressBar blue white
+\end{haskellcode}
+
+\fw{ProgressBar}s are composite widgest; to lay them out in your
+applications, use the \fw{progressBarWidget} function:
+
+\begin{haskellcode}
+ ui <- (plainText "Progress: ") <--> (return $ progressBarWidget bar)
+\end{haskellcode}
+
+A \fw{ProgressBar} tracks progress as an \fw{Int} $0 \le n \le 100$.
+To set a \fw{ProgressBar}'s progress value, use \fw{setProgress} or
+\fw{addProgress}:
+
+\begin{haskellcode}
+ setProgress bar 35
+ addProgress bar 1
+\end{haskellcode}
+
+Calls to \fw{setProgress} and \fw{addProgress} resulting in a progress
+value outside the allowable range will have no effect.
+
+To be notified when a \fw{ProgressBar}'s value changes, use the
+\fw{onProgressChange} function.  Handlers for this event will receive
+the new progress value:
+
+\begin{haskellcode}
+ bar `onProgressChange` \newVal -> ...
+\end{haskellcode}
+
+\subsection{Growth Policy}
+
+\fw{ProgressBar}s grow horizontally but do not grow vertically.

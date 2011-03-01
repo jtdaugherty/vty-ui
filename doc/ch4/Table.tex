@@ -1,0 +1,226 @@
+\section{Tables}
+
+The \fw{Table} module provides a table layout widget which provides
+full control over column and cell padding, alignment, and cell
+borders.
+
+The \fw{Table} creation function \fw{newTable} requires two parameters
+which govern the overall table behavior:
+
+\begin{itemize}
+\item \textit{column specifications} -- a list of values specifying
+  how each column in the table is to behave, including its width
+  policy, alignment, and padding settings
+\item \textit{border configuration} -- a value specifying how the
+  table's borders are to be drawn (if any)
+\end{itemize}
+
+Here is an example of a table with two columns and full borders:
+
+\begin{haskellcode}
+ tbl <- newTable [column (ColFixed 10), column ColAuto] BorderFull
+\end{haskellcode}
+
+To add rows to the table, we use the \fw{addRow} function and the row
+constructor \fw{.|.} to construct rows:
+
+\begin{haskellcode}
+ n <- plainText "Name"
+ ph <- plainText "Phone Number"
+ addRow tbl $ n .|. ph
+\end{haskellcode}
+
+In the following sections we will go into more detail on the table
+API.
+
+\subsection{Column Specifications: the \fw{ColumnSpec} Type}
+\label{sec:columnspecs}
+
+The \fw{newTable}'s column specification list dictates how many
+columns the \fw{Table} will have and how they will behave.  The column
+specification type, \fw{ColumnSpec}, specifies three properties of a
+column:
+
+\begin{itemize}
+\item Width -- either a fixed number of columns, \fw{ColFixed}, or
+  automatically sized, \fw{ColAuto}.
+\item Alignment -- left-aligned by default.
+\item Padding -- no padding by default.
+\end{itemize}
+
+The width of a column dictates how many columns will be allocated to
+it at rendering time.  A \fw{ColFixed} column will be rendered in the
+specified number of columns.  A column with a \fw{ColAuto} width will
+be allocated a flexible amount of width at rendering time.
+
+For example, if a \fw{Table} with no borders is rendered in a region
+with 80 columns and has two \fw{ColFixed} columns with 10 and 20
+columns respectively and one \fw{ColAuto} column, the \fw{ColAuto}
+column will be given $80 - (10 + 20) = 50$ columns of space in the
+rendering process.  A \fw{Table} may have any number of \fw{ColAuto}
+columns; in general, the remaining space is divided evenly between the
+\fw{ColAuto} columns.
+
+The padding and alignment in the \fw{ColumnSpec} serve as the default
+properties for each cell in the column unless a cell has overridden
+either.
+
+The \fw{ColumnSpec} type is an instance of the \fw{Paddable} type
+class we saw in Section \ref{sec:padding}, so we can specify the
+default \fw{Padding} for a column with the \fw{pad} function:
+
+\begin{haskellcode}
+ newTable [column ColAuto `pad` (padAll 2)] BorderFull
+\end{haskellcode}
+
+The \fw{ColumnSpec} type is also an instance of the \fw{Alignable}
+type class provided by the \fw{Table} module.  This type class
+provides an \fw{align} function, which we can use to set the default
+cell alignment for the column:
+
+\begin{haskellcode}
+ newTable [column ColAuto `align` AlignRight] BorderFull
+\end{haskellcode}
+
+The \fw{align} function takes an \fw{Alignment} value.  Valid values
+are \fw{AlignLeft}, \fw{AlignCenter}, and \fw{AlignRight}.
+
+\subsection{Border Settings}
+
+\fw{Table}s support three border configurations using the
+\fw{BorderStyle} type.  A \fw{BorderStyle} value is passed to the
+\fw{newTable} function.  Valid values are as follows:
+
+\begin{itemize}
+\item \fw{BorderNone} -- no borders of any kind.
+\item \fw{BorderFull} -- full borders on all sides of the table and in
+  between all rows and columns.
+\item \fw{BorderPartial} -- borders around or in between some elements
+  of the table; this constructor takes a list of \fw{BorderFlag}s,
+  whose values are \fw{Rows}, \fw{Columns}, and \fw{Edges}.
+\end{itemize}
+
+A \fw{Table}'s border style cannot be changed once the \fw{Table} has
+been created.
+
+\subsection{Adding Rows}
+
+The \fw{addRow} function provides a flexible API for adding various
+types of values to table cells.  The function expects an instance of
+the \fw{RowLike} type class.  This type class is intended to be
+instanced by any type that contains a value that can be embedded in a
+table cell.  Any \fw{Widget a} is a \fw{RowLike}, so any widget can be
+added to a table in a straightforward way:
+
+\begin{haskellcode}
+ t <- plainText "foobar"
+ addRow tbl t
+\end{haskellcode}
+
+In addition, empty cells can be created with the \fw{emptyCell}
+function:
+
+\begin{haskellcode}
+ addRow tbl emptyCell
+\end{haskellcode}
+
+The above examples work in the case where the \fw{Table} has only one
+column; to construct rows for \fw{Table}s with multiple columns, we
+use the row constructor, \fw{.|.}, which takes any two \fw{RowLike}
+values and constructs a row from them:
+
+\begin{haskellcode}
+ t1 <- plainText "foo"
+ t2 <- plainText "bar"
+ addRow tbl1 $ t1 .|. t2 -- tbl1 has two columns
+
+ t3 <- plainText "baz"
+ addRow tbl2 $ t1 .|. t2 .|. t3 -- tbl2 has three columns
+\end{haskellcode}
+
+The only restriction on table cell content is that any widget added to
+a table cell \textit{must not grow vertically}.  If it does,
+\fw{addRow} will throw a \fw{TableError} exception.
+
+\subsection{Default Cell Alignment and Padding}
+
+The \fw{Table} stores default cell alignment and padding settings
+which apply to all cells in the table.  These settings are set with
+the following functions:
+
+\begin{itemize}
+\item \fw{setDefaultCellAlignment} -- sets the default \fw{Alignment}
+  used for all cells in the table.
+\item \fw{setDefaultCellPadding} -- sets the default \fw{Padding}
+  value used for all cells in the table.
+\end{itemize}
+
+We can override these settings on a per-column basis by setting
+\fw{Alignment} and \fw{Padding} on the \fw{ColumnSpec} values as we
+saw in Section \ref{sec:columnspecs}.
+
+\begin{haskellcode}
+ setDefaultCellPadding tbl (padLeft 1)
+ setDefaultCellAlignment tbl AlignCenter
+\end{haskellcode}
+
+As we will see in the following section, we can even override these
+settings on a per-cell basis.
+
+\subsection{Customizing Cell Alignment and Padding}
+
+By default, each table cell uses its column's alignment and padding
+settings.  If the column's \fw{ColumnSpec} has no alignment or padding
+settings, the table-wide defaults will be used instead.  However, it
+is possible to customize these settings on a per-cell basis.
+
+Every widget in a \fw{Table} is ultimately embedded in the
+\fw{TableCell} type.  This type holds the widget itself and any
+customized alignment and padding settings.  The \fw{TableCell} type is
+an instance of the \fw{Paddable} and \fw{Alignable} type classes, so
+we can use the familiar \fw{pad} and \fw{align} functions to pad and
+align the \fw{TableCell}.
+
+To customize a cell's properties, we must first wrap the cell widget
+in a \fw{TableCell} with the \fw{customCell} function:
+
+\begin{haskellcode}
+ t <- plainText "foobar"
+ addRow tbl $ customCell t
+\end{haskellcode}
+
+Then we can use \fw{pad} and \fw{align} on the \fw{TableCell}:
+
+\begin{haskellcode}
+ t <- plainText "foobar"
+ addRow tbl $ customCell t `pad` (padAll 1) `align` AlignRight
+\end{haskellcode}
+
+\subsubsection{How Cell Alignment Works}
+
+Cell alignment determines how remaining space will be used when a
+cell's widget is rendered.  The default poilcy, \fw{AlignLeft},
+indicates that when a cell's widget is rendered, it will be
+left-padded with a space-filling widget so that it takes up enough
+on-screen columns to fill the width specified by the \fw{Table}'s
+\fw{ColumnSpec}.  The \fw{AlignRight} and \fw{AlignCenter} settings
+behave similarly.
+
+What this means is that the alignment settings do not dictate
+\textit{how} the contents of each cell are laid out; they only dictate
+how the left-over space is used when a cell widget does not fill the
+table's column.  In most cases this distinction is effectively
+unimportant, but in some cases it may be helpful to understand.
+
+Consider a table cell which contains an \fw{Edit} widget.  \fw{Edit}
+widgets grow horizontally, so any \fw{Edit} widget placed in a table
+cell will always fill it, so alignment settings will not affect the
+result.  However, if the \fw{Edit} widget is constrained with a
+``fixed'' widget as described in Section \ref{sec:fixed}, if any space
+is left over, the widget will be padded according to the alignment
+setting.
+
+\subsection{Growth Policy}
+
+\fw{Table}s do not grow vertically but will grow horizontally if they
+contain any \fw{ColAuto} columns.

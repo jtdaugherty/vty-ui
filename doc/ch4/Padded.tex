@@ -1,0 +1,59 @@
+\section{Padding}
+\label{sec:padding}
+
+The \fw{Padding} module provides a wrapper widget type, \fw{Padded},
+which wraps another widget with a specified amount of padding on any
+or all four of its sides.
+
+We create padded widgets with the \fw{padded} function, which takes a
+child type \fw{Widget a} and a padding value.  In the following
+example, we create a \fw{FormattedText} widget and pad it on all sides
+by two rows (or columns, where appropriate):
+
+\begin{haskellcode}
+ w <- plainText "foobar"
+ w2 <- padded w (padAll 2)
+\end{haskellcode}
+
+The padding itself is expressed with the \fw{Padding} type, whose
+values store padding settings for the top, bottom, left, and right
+sides of an object in question.  \fw{Padding} values are created with
+one of the following functions:
+
+\begin{itemize}
+\item \fw{padNone} -- creates a \fw{Padding} value with no padding.
+\item \fw{padAll} -- takes a single parameter, \fw{p}, and creates a
+  \fw{Padding} value with \fw{p} rows or columns of padding on all
+  four sides.
+\item \fw{padLeft}, \fw{padRight}, \fw{padTop}, \fw{padBottom} -- each
+  takes a single parameter and creates a \fw{Padding} value with the
+  specified amount of padding on the specified side indicated by the
+  function name.
+\item \fw{padLeftRight}, \fw{padTopBottom} -- each takes a single
+  parameter and creates a \fw{Padding} value with the specified amount
+  of padding on both sides indicated by the function name.
+\end{itemize}
+
+With these basic \fw{Padding} constructors we can construct more
+interesting \fw{Padding} values with the \fw{pad} function:
+
+\begin{haskellcode}
+ let p = padNone `pad` (padAll 5) `pad` (padLeft 2)
+\end{haskellcode}
+
+The \fw{Padding} type is an instance of the \fw{Paddable} type class,
+of which \fw{pad} is the only method.  The \fw{Padding} instance of
+\fw{Paddable} just adds the padding values together.
+
+In addition to the \fw{padded} function, the \fw{Padding} module
+provides the \fw{withPadding} combinator to created a \fw{Padded}
+widget in the following way:
+
+\begin{haskellcode}
+ w <- plainText "foobar" >>= withPadding (padAll 2)
+\end{haskellcode}
+
+\subsection{Growth Policy}
+
+\fw{Padded} widgets always defer to their children for both horizontal
+and vertical growth policy.
