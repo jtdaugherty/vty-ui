@@ -10,9 +10,9 @@ created and populated a \fw{Collection}, you can invoke the main
 \end{haskellcode}
 
 The first parameter is the \fw{Collection} you have created; the
-second parameter is a \fw{RenderContext}.  Here we use the ``default''
-rendering context provided by the library.  The ``rendering context''
-provides three key pieces of functionality:
+second parameter is a \fw{Render\-Context}.  Here we use the
+``default'' rendering context provided by the library.  The
+``rendering context'' provides three key pieces of functionality:
 
 \begin{itemize}
 \item The "skin" to use when rendering ASCII lines, corners, and
@@ -46,7 +46,7 @@ The library provides \fw{Skin}s in the \fw{Skins} module.
 
 An attribute may consist of one or more settings of foreground and
 background color and text style, such as underline or blink.  The
-default attributes specified in the \fw{RenderContext} control how
+default attributes specified in the \fw{Render\-Context} control how
 widgets appear.
 
 Every widget has the ability to store its own normal and focused
@@ -60,10 +60,10 @@ can be highlighted, which requires the \fw{List} to override the
 item's default attribute configuration.
 
 Widgets provide an API for setting these attributes using the
-\fw{HasNormalAttr} and \fw{HasFocusAttr} type classes.  The reason we
-use type classes to provide this API is so that third-party widgets
-may also provide this functionality.  The API is defined in the
-\fw{Core} module and is as follows:
+\fw{Has\-Normal\-Attr} and \fw{Has\-Focus\-Attr} type classes.  The
+reason we use type classes to provide this API is so that third-party
+widgets may also provide this functionality.  The API is defined in
+the \fw{Core} module and is as follows:
 
 \begin{haskellcode}
  setNormalAttribute w attr

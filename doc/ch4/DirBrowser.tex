@@ -38,7 +38,7 @@ function:
 \end{haskellcode}
 
 To be notified when the user has selected a file, register an event
-handler with \fw{onBrowseAccept}.  The handler will be passed the
+handler with \fw{on\-Browse\-Accept}.  The handler will be passed the
 \fw{FilePath} to the file which was selected.
 
 \begin{haskellcode}
@@ -54,8 +54,8 @@ be passed the browser path at the time of cancellation.
 \end{haskellcode}
 
 To be notified when the user changes the browser's current path, use
-\fw{onBrowserPathChange}.  The event handler will be passed the new
-browser path.
+\fw{on\-Browser\-Path\-Change}.  The event handler will be passed the
+new browser path.
 
 \begin{haskellcode}
  browser `onBrowserPathChange` \path -> ...

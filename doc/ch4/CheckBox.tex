@@ -47,8 +47,8 @@ handler is of type \fw{a}.
 \end{haskellcode}
 
 Binary \fw{CheckBox}es can be manipulated with the functions
-\fw{setCheckboxChecked}, \fw{setCheckboxUnchecked}, and
-\fw{toggleCheckbox}.
+\fw{set\-Checkbox\-Checked}, \fw{set\-Checkbox\-Unchecked}, and
+\fw{toggle\-Checkbox}.
 
 \subsection{Radio Buttons}
 \label{sec:radio_buttons}
@@ -108,13 +108,13 @@ value will be a \fw{Bool}.
 
 A \fw{CheckBox}'s state can be changed, too, with the
 \fw{setCheckboxState} function.  If you attempt to set the state to an
-invalid value, a \fw{CheckBoxError} exception (\fw{BadCheckboxState})
-will be thrown.
+invalid value, a \fw{CheckBoxError} exception
+(\fw{Bad\-Checkbox\-State}) will be thrown.
 
 In addition to using an event handler to be notified when a
 \fw{RadioGroup} changes state, you can also use the
-\fw{getCurrentRadio} function to get a \fw{RadioGroup}'s current
-\fw{CheckBox} at any time.
+\fw{getCurrentRadio} function to get a \fw{Radio\-Group}'s current
+\fw{Check\-Box} at any time.
 
 \subsection{Generalized, Multi-State Checkboxes}
 
@@ -152,10 +152,10 @@ functions:
 \begin{itemize}
 \item \fw{setStateChar} -- given a \fw{CheckBox} and a state value,
   the character representation of that state will be set.  If the
-  state value is invalid, \fw{CheckBoxError} (\fw{BadStateArgument})
-  will be thrown.  As an example, the default state characters for
-  binary checkboxes for \fw{True} and \fw{False}, respectively, are
-  \fw{'x'} and \fw{' '}.
+  state value is invalid, \fw{CheckBoxError}
+  (\fw{Bad\-State\-Argument}) will be thrown.  As an example, the
+  default state characters for binary checkboxes for \fw{True} and
+  \fw{False}, respectively, are \fw{'x'} and \fw{' '}.
 \item \fw{setBracketChars} -- given a \fw{CheckBox} and two
   \fw{Char}s, this sets the left and right characters, respectively,
   which surround the state character.  The defaults are \fw{'['} and
