@@ -25,14 +25,15 @@ provides three key pieces of functionality:
 \subsection{Skinning}
 \label{sec:skinning}
 
-Some widgets, such as the \fw{Table} widget (see Section XXX) and the
-horizontal and vertical border widgets \fw{VBorder} and \fw{HBorder}
-(see Section XXX), use line-drawing characters to draw borders between
-interface elements.  Some terminal emulators are capable of drawing
-Unicode characters, which make for nicer-looking line-drawing.  Other
-terminal emulators work best only with ASCII.  The default rendering
-context uses a Unicode line-drawing skin, which you can change to any
-other skin (or your own) as follows:
+Some widgets, such as the \fw{Table} widget (see Section
+\ref{sec:tables}) and the horizontal and vertical border widgets
+\fw{VBorder} and \fw{HBorder} (see Section \ref{sec:borders}), use
+line-drawing characters to draw borders between interface elements.
+Some terminal emulators are capable of drawing Unicode characters,
+which make for nicer-looking line-drawing.  Other terminal emulators
+work best only with ASCII.  The default rendering context uses a
+Unicode line-drawing skin, which you can change to any other skin (or
+your own) as follows:
 
 \begin{haskellcode}
  runUi c $ defaultContext { skin = asciiSkin }
@@ -162,7 +163,7 @@ action to run.
 
 Some built-in widgets will almost always be used in this way; for an
 example, take a look at the \fw{ProgressBar} widget in the
-\fw{ProgressBar} module (see Section XXX).
+\fw{ProgressBar} module (see Section \ref{sec:progress_bars}).
 
 \subsection{Managing Your Own State}
 

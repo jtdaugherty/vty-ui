@@ -49,7 +49,8 @@ This line creates an \fw{Edit} widget.  This type of widget provides
 an editing interface for a single line of text and supports some
 Emacs-style editing keybindings.  The \fw{Edit} widget also takes care
 of horizontal scrolling when its input doesn't fit into the allowed
-space.  For more information on this widget type, see XXX.
+space.  For more information on this widget type, see Section
+\ref{sec:edit}.
 
 \begin{haskellcode}
  ui <- centered e
@@ -59,7 +60,7 @@ This creates a new \fw{Centered} widget, \fw{ui}, which centers the
 \fw{Edit} widget vertically and horizontally.  This is a common
 pattern: create one widget and wrap it in another to affect its
 behavior.  For more information on the \fw{Centered} widget type, see
-XXX.
+Section \ref{sec:centering}.
 
 \begin{haskellcode}
  fg <- newFocusGroup

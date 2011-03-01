@@ -1,4 +1,5 @@
 \section{Lists}
+\label{sec:lists}
 
 The \fw{List} module provides a rich interface for displaying,
 navigating, and selecting from a list of elements.
@@ -27,9 +28,9 @@ parameters are as follows:
 \item \textit{item widget type}, \fw{b} -- This is the type of the
   widget state of each element as it is represented in the interface.
   For example, a simple list of strings might use \fw{String} as its
-  internal value and \fw{Widget FormattedText} (see Section XXX) as
-  its widget type, resulting in a list of type \fw{List String
-    FormattedText}.
+  internal value and \fw{Widget FormattedText} (Section
+  \ref{sec:text}) as its widget type, resulting in a list of type
+  \fw{List String FormattedText}.
 \end{itemize}
 
 Lists are created with the \fw{newList} function:
@@ -42,8 +43,8 @@ Lists are created with the \fw{newList} function:
 currently-selected item to be used when the list is \textit{not}
 focused, and the \textit{constructor function} to be used to create
 widgets when new items are added to the list.  The \fw{List} uses its
-own focus attribute (see Section XXX) as the attribute of the
-currently-selected item when it has the focus.
+own focus attribute (Section \ref{sec:attributes}) as the attribute of
+the currently-selected item when it has the focus.
 
 Items may be added to a \fw{List} with the \fw{addToList} function,
 which takes an internal item value (e.g., \fw{String}) and uses it to
