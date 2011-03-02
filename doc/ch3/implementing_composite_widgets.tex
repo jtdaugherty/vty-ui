@@ -1,20 +1,27 @@
 \section{Composite Widgets}
 
 So far we have looked at single-purpose widgets which use the
-\fw{Widget} type directly.  However, that is not appropriate or
-straightforward for more complex, composite widgets.
+\fw{Widget} type directly.  However, embedding widget state in the
+\fw{Widget} type is not always appropriate or straightforward for more
+complex, composite widgets.
 
 The \vtyui\ library provides some ``widgets'' which don't fit this
-pattern: \fw{Dialog} and \fw{DirBrowser}.  These widgets are actually
-entire interfaces, complete with multiple focusable widgets and focus
-groups.  These widgets don't take the form of \fw{Widget Dialog} or
-\fw{Widget DirBrowser}; they \textit{could} be implemented that way,
-but we'd find that many of the \fw{WidgetImpl} functions would end up
-deferring to a child widget anyway, so there isn't much point.
+pattern: \fw{Dialog} and \fw{DirBrowser} are two examples.
+Furthermore, as the base set of widgets provided by the library
+becomes richer, fewer and fewer widgets should be implemented using
+the basic \fw{Widget} framework.
+
+These composite widgets are actually entire interfaces, complete with
+multiple focusable widgets and focus groups.  These widgets don't take
+the form of \fw{Widget Dialog} or \fw{Widget DirBrowser}; they
+\textit{could} be implemented that way, but we'd find that many of the
+\fw{WidgetImpl} functions would end up deferring to their child
+widgets anyway, and their \fw{render\_} implementations would be
+cumbersome at best.
 
 Instead, we invert the widget organization: we create a type (e.g.,
-\fw{Dialog}) which contains the actual widget to be rendered, as well
-as other book-keeping internals, and we return that from our
+\fw{Dialog}) which contains the actual widget(s) to be rendered, as
+well as other book-keeping internals, and we return that from our
 constructor.  This makes it easier to implement such widgets since we
 are less concerned with their inner workings and more concerned with
 returning something high-level that has the right behaviors.
@@ -22,7 +29,7 @@ returning something high-level that has the right behaviors.
 The pattern we use in these situations is to write a constructor which
 does all of the widget creation, layout, and event handler
 registration, and returns the concrete type of the interface along
-with a \fw{FocusGroup} that the caller can use to integrate the
+with a \fw{FocusGroup} which the caller can use to integrate the
 interface into an application.
 
 For example: suppose we want to create a ``phone number input'' widget
@@ -35,11 +42,14 @@ implementing \fw{WidgetImpl}'s interface.  First we provide the types:
 
 \begin{haskellcode}
  data PhoneNumber = PhoneNumber String String String
+                    deriving (Show)
 
  -- This type isn't pretty, but we have to specify the type
  -- of the complete interface.  Initially you can let the
  -- compiler tell you what it is.
- type T = Box (Box Edit Edit) Edit
+ type T = Box (Box
+               (Box (Box (HFixed Edit) FormattedText) (HFixed Edit))
+               FormattedText) (HFixed Edit)
 
  data PhoneInput =
    PhoneInput { phoneInputWidget :: Widget T
@@ -55,17 +65,23 @@ Then, we provide the constructor:
 % Let this block span a page boundary since it's so big that it's
 % likely, and we don't want to bump it down unless it looks good. :)
 \begin{haskellcode*}{samepage=false}
- newPhoneInput :: (MonadIO m) => (PhoneInput, FocusGroup)
+ newPhoneInput :: (MonadIO m) => m (PhoneInput, Widget FocusGroup)
  newPhoneInput = do
    ahs <- newHandlers
    e1 <- editWidget
    e2 <- editWidget
    e3 <- editWidget
-   ui <- (return e1) <++> (return e2) <++> (return e3)
+
+   ui <- (hFixed 5 e1) <++>
+         (plainText "-") <++>
+         (hFixed 5 e2) <++>
+         (plainText "-") <++>
+         (hFixed 5 e3)
 
    let w = PhoneInput ui e1 e2 e3 ahs
-       doFireEvent = const $
-         fireEvent w (return . activateHandlers) mkPhoneNumber
+       doFireEvent = const $ do
+         num <- mkPhoneNumber
+         fireEvent w (return . activateHandlers) num
 
        mkPhoneNumber = do
          s1 <- getEditText e1
@@ -87,8 +103,8 @@ Then we provide a function to register phone number handlers:
 \begin{haskellcode}
  onPhoneInputActivate :: (MonadIO m) => PhoneInput
                       -> (PhoneNumber -> IO ()) -> m ()
- onPhoneInputActivate pi handler =
-   addHandler (return . activateHandlers) pi handler
+ onPhoneInputActivate input handler =
+   addHandler (return . activateHandlers) input handler
 \end{haskellcode}
 
 When the user presses \fw{Enter} in one of the phone number input
