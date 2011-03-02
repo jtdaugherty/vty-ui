@@ -144,9 +144,7 @@ Executable vty-ui-list-demo
     mtl >= 2.0 && < 2.1,
     vty-ui >= 0.5 && < 0.6,
     vty >= 4.6 && < 4.7
-  if flag(demos)
-    Buildable: True
-  else
+  if !flag(demos)
     Buildable: False
 
 Executable vty-ui-complex-demo
@@ -164,9 +162,7 @@ Executable vty-ui-complex-demo
     pcre-light >= 0.3 && < 0.4,
     vty-ui >= 0.5 && < 0.6,
     vty >= 4.6 && < 4.7
-  if flag(demos)
-    Buildable: True
-  else
+  if !flag(demos)
     Buildable: False
 
 Executable vty-ui-dirbrowser-demo
@@ -180,9 +176,7 @@ Executable vty-ui-dirbrowser-demo
     mtl >= 2.0 && < 2.1,
     vty-ui >= 0.5 && < 0.6,
     vty >= 4.6 && < 4.7
-  if flag(demos)
-    Buildable: True
-  else
+  if !flag(demos)
     Buildable: False
 
 Executable vty-ui-phoneinput-demo
@@ -196,9 +190,7 @@ Executable vty-ui-phoneinput-demo
     mtl >= 2.0 && < 2.1,
     vty-ui >= 0.5 && < 0.6,
     vty >= 4.6 && < 4.7
-  if flag(demos)
-    Buildable: True
-  else
+  if !flag(demos)
     Buildable: False
 
 Executable vty-ui-dialog-demo
@@ -212,7 +204,5 @@ Executable vty-ui-dialog-demo
     mtl >= 2.0 && < 2.1,
     vty-ui >= 0.5 && < 0.6,
     vty >= 4.6 && < 4.7
-  if flag(demos)
-    Buildable: True
-  else
+  if !flag(demos)
     Buildable: False
