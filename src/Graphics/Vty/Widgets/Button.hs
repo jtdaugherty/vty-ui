@@ -1,7 +1,10 @@
+-- |This module provides a ''button'' widget type which has a
+-- button-like appearance and generates ''press'' events.  'Button's
+-- are pressed when a user presses Enter while the button has focus.
 module Graphics.Vty.Widgets.Button
     ( Button
-    , buttonWidget
     , newButton
+    , buttonWidget
     , onButtonPressed
     , pressButton
     , setButtonText
@@ -17,16 +20,21 @@ import Graphics.Vty.Widgets.Util
 import Graphics.Vty hiding (Button)
 
 data Button = Button { buttonWidget :: Widget Padded
+                     -- ^Get a reference to the button's widget to lay
+                     -- it out.
                      , buttonText :: Widget FormattedText
                      , buttonPressedHandlers :: Handlers Button
                      }
 
+-- |Register a handler for the button press event.
 onButtonPressed :: (MonadIO m) => Button -> (Button -> IO ()) -> m ()
 onButtonPressed = addHandler (return . buttonPressedHandlers)
 
+-- |Programmatically press a button to trigger its event handlers.
 pressButton :: (MonadIO m) => Button -> m ()
 pressButton b = fireEvent b (return . buttonPressedHandlers) b
 
+-- |Set the text label on a button.
 setButtonText :: (MonadIO m) => Button -> String -> m ()
 setButtonText b s = setText (buttonText b) s
 
@@ -36,6 +44,7 @@ instance HasNormalAttr Button where
 instance HasFocusAttr Button where
     setFocusAttribute b a = setFocusAttribute (buttonWidget b) a
 
+-- |Create a button.  Get its underlying widget with 'buttonWidget'.
 newButton :: (MonadIO m) => String -> m Button
 newButton msg = do
   t <- plainText msg
