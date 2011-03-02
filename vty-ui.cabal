@@ -59,7 +59,7 @@ Data-Files:
     doc/ch4/Table.tex
     doc/macros.tex
     doc/Makefile
-    doc/manual.tex
+    doc/vty-ui-users-manual.tex
     doc/title_page.tex
     doc/toc.tex
 
