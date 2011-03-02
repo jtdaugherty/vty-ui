@@ -1,18 +1,28 @@
 {-# LANGUAGE DeriveDataTypeable #-}
+-- |This module provides vertical and horizontal box layout widgets
+-- using the 'Box' type.  Box widgets use their child widgets' size
+-- policies and their space allocation settings to determine layout.
+--
+-- Box widgets propagate key and focus events to their children.
+--
+-- For more details, see the Vty-ui User's Manual.
 module Graphics.Vty.Widgets.Box
     ( Box
     , ChildSizePolicy(..)
     , IndividualPolicy(..)
     , BoxError(..)
-    , (<-->)
-    , (<++>)
+    -- * Box Constructors
     , hBox
     , vBox
+    , (<++>)
+    , (<-->)
+    -- * Box Configuration
     , setBoxSpacing
     , withBoxSpacing
     , defaultChildSizePolicy
     , setBoxChildSizePolicy
     , getBoxChildSizePolicy
+    -- * Child Widget References
     , getFirstChild
     , getSecondChild
     )
@@ -28,22 +38,35 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Util
 
 data BoxError = BadPercentage
+                -- ^Indicates that a given percentage value was
+                -- invalid.
                 deriving (Eq, Show, Typeable)
 
 instance Exception BoxError
 
--- |A simple orientation type.
 data Orientation = Horizontal | Vertical
                    deriving (Eq, Show)
 
+-- |Individual child widget policy applied to a child widget contained
+-- in a box.
 data IndividualPolicy = BoxAuto
+                      -- ^The child's growth policy will be used to
+                      -- determine layout.  The child widget layout
+                      -- will also be affected by the policy of the
+                      -- other widget in the box.
                       | BoxFixed Int
+                        -- ^A fixed number of rows or columns,
+                        -- depending on box type, will be allocated to
+                        -- the child.
                         deriving (Show, Eq)
 
+-- |Child size policy applied to a box.
 data ChildSizePolicy = PerChild IndividualPolicy IndividualPolicy
+                     -- ^A per-child policy.
                      | Percentage Int
-                       -- ^percent of space given to first child,
-                       -- which implies that given to the second.
+                       -- ^Percentage, p, of space given to first
+                       -- child, which implies that (100 - p) percent
+                       -- given to the second.
                        deriving (Show, Eq)
 
 data Box a b = Box { boxChildSizePolicy :: ChildSizePolicy
@@ -75,24 +98,26 @@ instance Show (Box a b) where
                     , " }"
                     ]
 
--- |Create a horizontal box layout widget containing two widgets side
--- by side.  Space consumed by the box will depend on its contents and
--- the available space.
+-- |Create a horizontal box widget containing two widgets side by
+-- side.  Space consumed by the box will depend on its contents,
+-- available space, and the box child size policy.
 hBox :: (MonadIO m, Show a, Show b) => Widget a -> Widget b -> m (Widget (Box a b))
 hBox = box Horizontal 0
 
--- |Create a vertical box layout widget containing two widgets.  Space
--- consumed by the box will depend on its contents and the available
--- space.
+-- |Create a vertical box widget containing two widgets, one above the
+-- other.  Space consumed by the box will depend on its contents,
+-- available space, and the box child size policy.
 vBox :: (MonadIO m, Show a, Show b) => Widget a -> Widget b -> m (Widget (Box a b))
 vBox = box Vertical 0
 
+-- |Create a vertical box widget using monadic widget constructors.
 (<-->) :: (MonadIO m, Show a, Show b) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
 (<-->) act1 act2 = do
   ch1 <- act1
   ch2 <- act2
   vBox ch1 ch2
 
+-- |Create a horizontal box widget using monadic widget constructors.
 (<++>) :: (MonadIO m, Show a, Show b) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
 (<++>) act1 act2 = do
   ch1 <- act1
@@ -102,24 +127,11 @@ vBox = box Vertical 0
 infixl 3 <-->
 infixl 3 <++>
 
+-- |The default box child size policy, which defers to the children to
+-- determine layout.
 defaultChildSizePolicy :: ChildSizePolicy
 defaultChildSizePolicy = PerChild BoxAuto BoxAuto
 
--- |A box layout widget capable of containing two 'Widget's
--- horizontally or vertically.  See 'hBox' and 'vBox'.  Boxes lay out
--- their children by using the growth properties of the children:
---
--- * If both children are expandable in the same dimension (i.e., both
---   vertically or both horizontally), the children are each given
---   half of the parent container's available space
---
--- * If one of the children is expandable and the other is static, the
---   static child is rendered first and the remaining space is given
---   to the expandable child
---
--- * Otherwise, both children are rendered in top-to-bottom or
---   left-to-right order and the resulting container uses only as much
---   space as its children combined
 box :: (MonadIO m, Show a, Show b) =>
        Orientation -> Int -> Widget a -> Widget b -> m (Widget (Box a b))
 box o spacing wa wb = do
@@ -205,6 +217,8 @@ getFirstChild = (boxFirst <~~)
 getSecondChild :: (MonadIO m) => Widget (Box a b) -> m (Widget b)
 getSecondChild = (boxSecond <~~)
 
+-- |Set the spacing in between a box's child widgets in rows or
+-- columns, depending on the box type.
 setBoxSpacing :: (MonadIO m) => Widget (Box a b) -> Int -> m ()
 setBoxSpacing wRef spacing =
     updateWidgetState wRef $ \b -> b { boxSpacing = spacing }
@@ -217,6 +231,9 @@ withBoxSpacing spacing wRef = do
 getBoxChildSizePolicy :: (MonadIO m) => Widget (Box a b) -> m ChildSizePolicy
 getBoxChildSizePolicy = (boxChildSizePolicy <~~)
 
+-- |Set the box child size policy.  Throws 'BadPercentage' if the size
+-- |policy uses an invalid percentage value, which must be between 0
+-- |and 100 inclusive.
 setBoxChildSizePolicy :: (MonadIO m) => Widget (Box a b) -> ChildSizePolicy -> m ()
 setBoxChildSizePolicy b spol = do
   case spol of
