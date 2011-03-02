@@ -1,5 +1,5 @@
 {-# LANGUAGE ExistentialQuantification, DeriveDataTypeable, TypeSynonymInstances #-}
--- |This module is the core of this package; it provides
+-- |This module is the core of this library; it provides
 -- infrastructure for creating new types of widgets and extending
 -- their functionality.  This module provides various bits of
 -- infrastructure, including:
@@ -10,7 +10,9 @@
 --
 -- * managing widget state
 --
--- This module does not provide any concrete widget types.
+-- This module does not provide any concrete widget types.  For
+-- in-depth discussion on this module's API and widget implementation
+-- in particular, see the Vty-ui User's Manual.
 module Graphics.Vty.Widgets.Core
     (
     -- ** Widget Infrastructure
@@ -120,56 +122,20 @@ getNormalAttr ctx = mergeAttrs [ overrideAttr ctx, normalAttr ctx ]
 defaultContext :: RenderContext
 defaultContext = RenderContext def_attr def_attr def_attr unicodeSkin
 
--- |The 'WidgetImpl' type is the central widget state type in this
--- library.  'WidgetImpl' is parameterized on one type variable, which
--- is the type of the user-defined state held by this widget.  In
--- addition to containing various state elements, this type provides
--- an interface to various aspects of widget functionality:
---
--- * 'growHorizontal_' and 'growVertical_', /growth properties/ which
---   provide information about how to allocate space to widgets
---   depending on their propensity to consume available space
---
--- * 'render_', a /rendering routine/ which converts the widget's
---   internal state, along with render-time context ('RenderContext'),
---   into a VTY 'Image'
---
--- * The widget's current size and position and focused state
---
--- * The widget's \'normal\' and \'focused\' attribute overrides
---
--- * Functions to handle keyboard input events and changes in focus
---   state
 data WidgetImpl a = WidgetImpl {
-    -- |User-defined state type.
       state :: a
-
-    -- |Render the widget with the given dimensions.  The result
-    -- /must/ not be larger than the specified dimensions, but may be
-    -- smaller.
     , render_ :: Widget a -> DisplayRegion -> RenderContext -> IO Image
-
-    -- |Will this widget expand to take advantage of available
-    -- horizontal space?
     , growHorizontal_ :: a -> IO Bool
-
-    -- |Will this widget expand to take advantage of available
-    -- vertical space?
     , growVertical_ :: a -> IO Bool
-
     , currentSize :: DisplayRegion
     , currentPosition :: DisplayRegion
     , normalAttribute :: Attr
     , focusAttribute :: Attr
-
     , setCurrentPosition_ :: Widget a -> DisplayRegion -> IO ()
-
     , keyEventHandler :: Widget a -> Key -> [Modifier] -> IO Bool
-
     , gainFocusHandlers :: Handlers (Widget a)
     , loseFocusHandlers :: Handlers (Widget a)
     , focused :: Bool
-
     , getCursorPosition_ :: Widget a -> IO (Maybe DisplayRegion)
     }
 
