@@ -73,7 +73,10 @@ automatically.
   manipulate the cursor position within the \fw{Edit} widget.
 \item \fw{setEditMaxLength} -- sets the maximum number of characters
   in the \fw{Edit} widget.  Once set, the limit cannot be removed but
-  it can be changed to a different value.
+  it can be changed to a different value.  If \fw{setEditMaxLength} is
+  called with a limit which is less than the limit already set, the
+  content of the \fw{Edit} widget will be truncated and any change
+  event handlers will be notified.
 \end{itemize}
 
 \subsubsection{Growth Policy}
