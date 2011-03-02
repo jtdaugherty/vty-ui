@@ -1,10 +1,13 @@
 {-# LANGUAGE ExistentialQuantification #-}
+-- |This module provides widgets to center other widgets horizontally
+-- |and vertically.  These centering widgets relay focus and key
+-- |events to their children.
 module Graphics.Vty.Widgets.Centering
     ( HCentered
     , VCentered
-    , centered
     , hCentered
     , vCentered
+    , centered
     )
 where
 
@@ -19,6 +22,7 @@ data HCentered a = (Show a) => HCentered (Widget a)
 instance Show (HCentered a) where
     show (HCentered _) = "HCentered { ... }"
 
+-- |Wrap another widget to center it horizontally.
 hCentered :: (MonadIO m, Show a) => Widget a -> m (Widget (HCentered a))
 hCentered ch = do
   wRef <- newWidget $ \w ->
@@ -59,6 +63,7 @@ data VCentered a = (Show a) => VCentered (Widget a)
 instance Show (VCentered a) where
     show (VCentered _) = "VCentered { ... }"
 
+-- |Wrap another widget to center it vertically.
 vCentered :: (MonadIO m, Show a) => Widget a -> m (Widget (VCentered a))
 vCentered ch = do
   wRef <- newWidget $ \w ->
@@ -93,6 +98,7 @@ vCentered ch = do
   wRef `relayFocusEvents` ch
   return wRef
 
+-- |Wrap another widget to center it both vertically and horizontally.
 centered :: (MonadIO m, Show a) => Widget a -> m (Widget (VCentered (HCentered a)))
 centered wRef = vCentered =<< hCentered wRef
 
