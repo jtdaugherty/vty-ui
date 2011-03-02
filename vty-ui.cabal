@@ -1,5 +1,5 @@
 Name:                vty-ui
-Version:             0.5
+Version:             1.0
 Synopsis:            An interactive terminal user interface library
                      for Vty
 Description:         An extensible library of user interface widgets
@@ -142,7 +142,7 @@ Executable vty-ui-list-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty-ui >= 0.5 && < 0.6,
+    vty-ui >= 1.0 && < 1.1,
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
@@ -160,7 +160,7 @@ Executable vty-ui-complex-demo
     time >= 1.1 && < 1.2,
     old-locale >= 1.0 && < 1.1,
     pcre-light >= 0.3 && < 0.4,
-    vty-ui >= 0.5 && < 0.6,
+    vty-ui >= 1.0 && < 1.1,
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
@@ -174,7 +174,7 @@ Executable vty-ui-dirbrowser-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty-ui >= 0.5 && < 0.6,
+    vty-ui >= 1.0 && < 1.1,
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
@@ -188,7 +188,7 @@ Executable vty-ui-phoneinput-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty-ui >= 0.5 && < 0.6,
+    vty-ui >= 1.0 && < 1.1,
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
@@ -202,7 +202,7 @@ Executable vty-ui-dialog-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty-ui >= 0.5 && < 0.6,
+    vty-ui >= 1.0 && < 1.1,
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
