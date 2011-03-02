@@ -6,6 +6,7 @@ module Graphics.Vty.Widgets.Edit
     , setEditText
     , setEditCursorPosition
     , getEditCursorPosition
+    , setEditMaxLength
     , onActivate
     , onChange
     , onCursorMove
@@ -26,6 +27,7 @@ data Edit = Edit { currentText :: String
                  , activateHandlers :: Handlers (Widget Edit)
                  , changeHandlers :: Handlers String
                  , cursorMoveHandlers :: Handlers Int
+                 , maxTextLength :: Maybe Int
                  }
 
 instance Show Edit where
@@ -51,6 +53,7 @@ editWidget = do
                        , activateHandlers = ahs
                        , changeHandlers = chs
                        , cursorMoveHandlers = cmhs
+                       , maxTextLength = Nothing
                        }
 
         , growHorizontal_ = const $ return True
@@ -89,6 +92,18 @@ editWidget = do
   setFocusAttribute wRef $ style underline
   return wRef
 
+setEditMaxLength :: (MonadIO m) => Widget Edit -> Int -> m ()
+setEditMaxLength wRef v = do
+  cur <- maxTextLength <~~ wRef
+  case cur of
+    Nothing -> return ()
+    Just oldMax ->
+        when (v < oldMax) $
+             do
+               s <- currentText <~~ wRef
+               setEditText wRef $ take v s
+  updateWidgetState wRef $ \s -> s { maxTextLength = Just v }
+
 onActivate :: (MonadIO m) => Widget Edit -> (Widget Edit -> IO ()) -> m ()
 onActivate = addHandler (activateHandlers <~~)
 
@@ -116,10 +131,16 @@ getEditText = (currentText <~~)
 
 setEditText :: (MonadIO m) => Widget Edit -> String -> m ()
 setEditText wRef str = do
-  updateWidgetState wRef $ \s -> s { currentText = str }
-  liftIO $ do
-    gotoBeginning wRef
-    notifyChangeHandlers wRef
+  oldS <- currentText <~~ wRef
+  maxLen <- maxTextLength <~~ wRef
+  s <- case maxLen of
+    Nothing -> return str
+    Just l -> return $ take l str
+  updateWidgetState wRef $ \st -> st { currentText = s }
+  when (oldS /= s) $
+       liftIO $ do
+         gotoBeginning wRef
+         notifyChangeHandlers wRef
 
 setEditCursorPosition :: (MonadIO m) => Widget Edit -> Int -> m ()
 setEditCursorPosition wRef pos = do
@@ -239,17 +260,26 @@ moveCursorRight wRef = do
 
 insertChar :: Widget Edit -> Char -> IO ()
 insertChar wRef ch = do
-  updateWidgetState wRef $ \st ->
-      let newContent = inject (cursorPosition st) ch (currentText st)
-          newViewStart =
-              if cursorPosition st == displayStart st + displayWidth st - 1
-              then displayStart st + 1
-              else displayStart st
-      in st { currentText = newContent
-            , displayStart = newViewStart
-            }
-  moveCursorRight wRef
-  notifyChangeHandlers wRef
+  maxLen <- maxTextLength <~~ wRef
+  curLen <- (length . currentText) <~~ wRef
+  let proceed = case maxLen of
+                  Nothing -> True
+                  Just v -> if curLen + 1 > v
+                            then False
+                            else True
+
+  when proceed $ do
+    updateWidgetState wRef $ \st ->
+        let newContent = inject (cursorPosition st) ch (currentText st)
+            newViewStart =
+                if cursorPosition st == displayStart st + displayWidth st - 1
+                then displayStart st + 1
+                else displayStart st
+        in st { currentText = newContent
+              , displayStart = newViewStart
+              }
+    moveCursorRight wRef
+    notifyChangeHandlers wRef
 
 delCurrentChar :: Widget Edit -> IO ()
 delCurrentChar wRef = do

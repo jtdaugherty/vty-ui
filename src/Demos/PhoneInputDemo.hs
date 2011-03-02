@@ -2,6 +2,7 @@ module Main where
 
 -- This demo is discussed in the vty-ui user's manual.
 
+import Control.Monad
 import Control.Monad.Trans
 
 import Graphics.Vty
@@ -31,11 +32,15 @@ newPhoneInput = do
    e1 <- editWidget
    e2 <- editWidget
    e3 <- editWidget
-   ui <- (hFixed 5 e1) <++>
+   ui <- (hFixed 4 e1) <++>
          (plainText "-") <++>
-         (hFixed 5 e2) <++>
+         (hFixed 4 e2) <++>
          (plainText "-") <++>
          (hFixed 5 e3)
+
+   setEditMaxLength e1 3
+   setEditMaxLength e2 3
+   setEditMaxLength e3 4
 
    let w = PhoneInput ui e1 e2 e3 ahs
        doFireEvent = const $ do
@@ -51,6 +56,9 @@ newPhoneInput = do
    e1 `onActivate` doFireEvent
    e2 `onActivate` doFireEvent
    e3 `onActivate` doFireEvent
+
+   e1 `onChange` \s -> when (length s == 3) $ focus e2
+   e2 `onChange` \s -> when (length s == 3) $ focus e3
 
    fg <- newFocusGroup
    mapM_ (addToFocusGroup fg) [e1, e2, e3]

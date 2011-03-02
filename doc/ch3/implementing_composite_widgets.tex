@@ -72,11 +72,18 @@ Then, we provide the constructor:
    e2 <- editWidget
    e3 <- editWidget
 
-   ui <- (hFixed 5 e1) <++>
+   ui <- (hFixed 4 e1) <++>
          (plainText "-") <++>
-         (hFixed 5 e2) <++>
+         (hFixed 4 e2) <++>
          (plainText "-") <++>
          (hFixed 5 e3)
+
+   setEditMaxLength e1 3
+   setEditMaxLength e2 3
+   setEditMaxLength e3 4
+
+   e1 `onChange` \s -> when (length s == 3) $ focus e2
+   e2 `onChange` \s -> when (length s == 3) $ focus e3
 
    let w = PhoneInput ui e1 e2 e3 ahs
        doFireEvent = const $ do
