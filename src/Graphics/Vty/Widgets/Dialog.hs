@@ -18,10 +18,6 @@ import Graphics.Vty.Widgets.Borders
 import Graphics.Vty.Widgets.Box
 import Graphics.Vty.Widgets.Core
 
-data DialogEvent = DialogAccept
-                 | DialogCancel
-                   deriving (Eq)
-
 data Dialog = Dialog { dialogWidget :: Widget (Bordered Padded)
                      , setDialogTitle :: String -> IO ()
                      , dialogAcceptHandlers :: Handlers Dialog
