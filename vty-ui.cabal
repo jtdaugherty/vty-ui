@@ -92,7 +92,6 @@ Library
           Graphics.Vty.Widgets.Box
           Graphics.Vty.Widgets.List
           Graphics.Vty.Widgets.Borders
-          Graphics.Vty.Widgets.Collections
           Graphics.Vty.Widgets.EventLoop
           Graphics.Vty.Widgets.Edit
           Graphics.Vty.Widgets.Util
