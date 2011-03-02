@@ -16,7 +16,7 @@ Maintainer:          Jonathan Daugherty <jtd@galois.com>
 Build-Type:          Simple
 License:             BSD3
 License-File:        LICENSE
-Cabal-Version:       >= 1.8
+Cabal-Version:       >= 1.2
 Homepage:            http://codevine.org/vty-ui/
 
 Data-Files:
@@ -134,7 +134,7 @@ Executable vty-ui-tests
         Tests.Tokenize
 
 Executable vty-ui-list-demo
-  Hs-Source-Dirs:  src/Demos
+  Hs-Source-Dirs:  src
   GHC-Options:     -Wall
   Main-is:         List.hs
   if os(darwin)
@@ -142,13 +142,12 @@ Executable vty-ui-list-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty-ui >= 1.0 && < 1.1,
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
 
 Executable vty-ui-complex-demo
-  Hs-Source-Dirs:  src/Demos
+  Hs-Source-Dirs:  src
   GHC-Options:     -Wall
   Main-is:         Complex.hs
   if os(darwin)
@@ -160,13 +159,12 @@ Executable vty-ui-complex-demo
     time >= 1.1 && < 1.2,
     old-locale >= 1.0 && < 1.1,
     pcre-light >= 0.3 && < 0.4,
-    vty-ui >= 1.0 && < 1.1,
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
 
 Executable vty-ui-dirbrowser-demo
-  Hs-Source-Dirs:  src/Demos
+  Hs-Source-Dirs:  src
   GHC-Options:     -Wall
   Main-is:         DirBrowser.hs
   if os(darwin)
@@ -174,13 +172,12 @@ Executable vty-ui-dirbrowser-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty-ui >= 1.0 && < 1.1,
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
 
 Executable vty-ui-phoneinput-demo
-  Hs-Source-Dirs:  src/Demos
+  Hs-Source-Dirs:  src
   GHC-Options:     -Wall
   Main-is:         PhoneInputDemo.hs
   if os(darwin)
@@ -188,13 +185,12 @@ Executable vty-ui-phoneinput-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty-ui >= 1.0 && < 1.1,
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
 
 Executable vty-ui-dialog-demo
-  Hs-Source-Dirs:  src/Demos
+  Hs-Source-Dirs:  src
   GHC-Options:     -Wall
   Main-is:         Dialog.hs
   if os(darwin)
@@ -202,7 +198,6 @@ Executable vty-ui-dialog-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty-ui >= 1.0 && < 1.1,
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
