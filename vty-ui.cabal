@@ -1,21 +1,22 @@
 Name:                vty-ui
 Version:             0.5
-Synopsis:            A user interface composition library for Vty
+Synopsis:            An interactive terminal user interface library
+                     for Vty
 Description:         An extensible library of user interface widgets
                      for composing and laying out Vty user interfaces.
-                     This library provides a collection of primitives
-                     for building and composing widgets and creating
-                     Vty Images.  This library is intended to make
-                     non-trivial user interfaces trivial to express
-                     and modify without having to worry about terminal
-                     size.
+                     This library provides a collection of widgets for
+                     building and composing interactive interactive,
+                     event-driven terminal interfaces.  This library
+                     is intended to make non-trivial user interfaces
+                     easy to express and modify without having to
+                     worry about terminal size.
 Category:            User Interfaces
 Author:              Jonathan Daugherty <jtd@galois.com>
 Maintainer:          Jonathan Daugherty <jtd@galois.com>
 Build-Type:          Simple
 License:             BSD3
 License-File:        LICENSE
-Cabal-Version:       >= 1.2
+Cabal-Version:       >= 1.8
 Homepage:            http://codevine.org/vty-ui/
 
 Data-Files:
@@ -66,6 +67,10 @@ Flag testing
     Description:     Build for testing
     Default:         False
 
+Flag demos
+    Description:     Build demonstration programs
+    Default:         False
+
 Library
   Build-Depends:
     base >= 4 && < 5,
@@ -74,7 +79,8 @@ Library
     pcre-light >= 0.3 && < 0.4,
     directory >= 1.0 && < 1.1,
     filepath >= 1.1 && < 1.2,
-    unix >= 2.4 && < 2.5
+    unix >= 2.4 && < 2.5,
+    mtl >= 2.0 && < 2.1
 
   GHC-Options:       -Wall
 
@@ -127,50 +133,86 @@ Executable vty-ui-tests
         Tests.FormattedText
         Tests.Tokenize
 
-Executable vty-ui-demo
-  Hs-Source-Dirs:  src
+Executable vty-ui-list-demo
+  Hs-Source-Dirs:  src/Demos
   GHC-Options:     -Wall
-  Main-is:         Demo.hs
+  Main-is:         List.hs
   if os(darwin)
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
-    mtl >= 2.0 && < 2.1
+    base >= 4 && < 5,
+    mtl >= 2.0 && < 2.1,
+    vty-ui >= 0.5 && < 0.6,
+    vty >= 4.6 && < 4.7
+  if flag(demos)
+    Buildable: True
+  else
+    Buildable: False
 
-Executable vty-ui-demo2
-  Hs-Source-Dirs:  src
+Executable vty-ui-complex-demo
+  Hs-Source-Dirs:  src/Demos
   GHC-Options:     -Wall
-  Main-is:         Demo2.hs
+  Main-is:         Complex.hs
   if os(darwin)
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
+    base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
     bytestring >= 0.9 && < 1.0,
     time >= 1.1 && < 1.2,
-    old-locale >= 1.0 && < 1.1
+    old-locale >= 1.0 && < 1.1,
+    pcre-light >= 0.3 && < 0.4,
+    vty-ui >= 0.5 && < 0.6,
+    vty >= 4.6 && < 4.7
+  if flag(demos)
+    Buildable: True
+  else
+    Buildable: False
 
-Executable vty-ui-demo3
-  Hs-Source-Dirs:  src
+Executable vty-ui-dirbrowser-demo
+  Hs-Source-Dirs:  src/Demos
   GHC-Options:     -Wall
-  Main-is:         Demo3.hs
+  Main-is:         DirBrowser.hs
   if os(darwin)
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
-    mtl >= 2.0 && < 2.1
+    base >= 4 && < 5,
+    mtl >= 2.0 && < 2.1,
+    vty-ui >= 0.5 && < 0.6,
+    vty >= 4.6 && < 4.7
+  if flag(demos)
+    Buildable: True
+  else
+    Buildable: False
 
-Executable vty-ui-phoneinputdemo
-  Hs-Source-Dirs:  src
+Executable vty-ui-phoneinput-demo
+  Hs-Source-Dirs:  src/Demos
   GHC-Options:     -Wall
   Main-is:         PhoneInputDemo.hs
   if os(darwin)
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
-    mtl >= 2.0 && < 2.1
+    base >= 4 && < 5,
+    mtl >= 2.0 && < 2.1,
+    vty-ui >= 0.5 && < 0.6,
+    vty >= 4.6 && < 4.7
+  if flag(demos)
+    Buildable: True
+  else
+    Buildable: False
 
-Executable vty-ui-dialog
-  Hs-Source-Dirs:  src
+Executable vty-ui-dialog-demo
+  Hs-Source-Dirs:  src/Demos
   GHC-Options:     -Wall
   Main-is:         Dialog.hs
   if os(darwin)
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
-    mtl >= 2.0 && < 2.1
+    base >= 4 && < 5,
+    mtl >= 2.0 && < 2.1,
+    vty-ui >= 0.5 && < 0.6,
+    vty >= 4.6 && < 4.7
+  if flag(demos)
+    Buildable: True
+  else
+    Buildable: False
