@@ -1,4 +1,8 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+-- |This module provides a simple ''dialog'' interface with an ''OK''
+-- button and a ''Cancel'' button.  The dialog itself is capable of
+-- embedding an arbitrary interface and it exposes ''accept'' and
+-- ''cancel'' events which are triggered by the dialog's buttons.
 module Graphics.Vty.Widgets.Dialog
     ( Dialog(dialogWidget, setDialogTitle)
     , newDialog
@@ -27,6 +31,9 @@ data Dialog = Dialog { dialogWidget :: Widget (Bordered Padded)
 instance HasNormalAttr Dialog where
     setNormalAttribute d a = setNormalAttribute (dialogWidget d) a
 
+-- |Create a new dialog with the specified embedded interface and
+-- title.  Returns the dialog itself and the 'FocusGroup' to which its
+-- buttons were added, for use in your application.
 newDialog :: (MonadIO m, Show a) => Widget a -> String -> m (Dialog, Widget FocusGroup)
 newDialog body title = do
   okB <- newButton "OK"
@@ -59,14 +66,18 @@ newDialog body title = do
 
   return (dlg, fg)
 
+-- |Register an event handler for the dialog's acceptance event.
 onDialogAccept :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
 onDialogAccept = addHandler (return . dialogAcceptHandlers)
 
+-- |Register an event handler for the dialog's cancellation event.
 onDialogCancel :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
 onDialogCancel = addHandler (return . dialogCancelHandlers)
 
+-- |Programmatically accept the dialog.
 acceptDialog :: (MonadIO m) => Dialog -> m ()
 acceptDialog dlg = fireEvent dlg (return . dialogAcceptHandlers) dlg
 
+-- |Programmatically cancel the dialog.
 cancelDialog :: (MonadIO m) => Dialog -> m ()
 cancelDialog dlg = fireEvent dlg (return . dialogCancelHandlers) dlg
