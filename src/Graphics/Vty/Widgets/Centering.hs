@@ -1,7 +1,7 @@
 {-# LANGUAGE ExistentialQuantification #-}
 -- |This module provides widgets to center other widgets horizontally
--- |and vertically.  These centering widgets relay focus and key
--- |events to their children.
+-- and vertically.  These centering widgets relay focus and key events
+-- to their children.
 module Graphics.Vty.Widgets.Centering
     ( HCentered
     , VCentered
