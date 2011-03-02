@@ -157,6 +157,15 @@ Executable vty-ui-demo3
   Build-Depends:
     mtl >= 2.0 && < 2.1
 
+Executable vty-ui-phoneinputdemo
+  Hs-Source-Dirs:  src
+  GHC-Options:     -Wall
+  Main-is:         PhoneInputDemo.hs
+  if os(darwin)
+    Extra-Lib-Dirs:  /usr/lib
+  Build-Depends:
+    mtl >= 2.0 && < 2.1
+
 Executable vty-ui-dialog
   Hs-Source-Dirs:  src
   GHC-Options:     -Wall
