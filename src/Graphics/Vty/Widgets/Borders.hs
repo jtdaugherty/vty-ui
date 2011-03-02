@@ -1,14 +1,17 @@
 {-# LANGUAGE ExistentialQuantification, TypeSynonymInstances, FlexibleInstances #-}
 -- |This module provides visual borders to be placed between and
--- around widgets.
+-- around widgets.  Border widgets in this module use the active
+-- 'Skin' in the 'RenderContext'.
 module Graphics.Vty.Widgets.Borders
     ( HasBorderAttr(..)
     , Bordered
     , HBorder
     , VBorder
+    -- * Border Widget Constructors
     , vBorder
     , hBorder
     , bordered
+    -- * Setting Attributes and Labels
     , withBorderAttribute
     , withHBorderLabel
     , withBorderedLabel
@@ -25,6 +28,8 @@ import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Skins
 
+-- |The class of types with a border attribute, which differs from the
+-- |normal and focused attributes.
 class HasBorderAttr a where
     setBorderAttribute :: (MonadIO m) => a -> Attr -> m ()
 
@@ -126,7 +131,7 @@ instance HasBorderAttr (Widget (Bordered a)) where
     setBorderAttribute t a =
         updateWidgetState t $ \(Bordered a' ch s) -> Bordered (mergeAttr a a') ch s
 
--- |Wrap a widget in a bordering box using the specified attribute.
+-- |Wrap a widget in a bordering box.
 bordered :: (MonadIO m, Show a) => Widget a -> m (Widget (Bordered a))
 bordered child = do
   wRef <- newWidget $ \w ->
