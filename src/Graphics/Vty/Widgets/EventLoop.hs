@@ -3,8 +3,7 @@
 -- library.  All vty-ui applications must use runUi to get anything
 -- done usefully.
 module Graphics.Vty.Widgets.EventLoop
-    ( EventLoopError(..)
-    , Collection
+    ( Collection
     , CollectionError(..)
     , runUi
     , schedule
@@ -22,11 +21,6 @@ import Control.Monad.Trans
 import System.IO.Unsafe ( unsafePerformIO )
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
-
-data EventLoopError = NoFocusGroup
-                      deriving (Show, Typeable)
-
-instance Exception EventLoopError
 
 data CombinedEvent = VTYEvent Event
                    | UserEvent UserEvent
