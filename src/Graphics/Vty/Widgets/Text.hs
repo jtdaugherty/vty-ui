@@ -3,14 +3,12 @@
 -- 'Widget's, including functionality to make structural and/or visual
 -- changes at rendering time.  To get started, turn your ordinary
 -- 'String' into a 'Widget' with 'plainText'; if you want access to
--- the 'Text' for formatting purposes, use 'prepareText' followed by
--- 'textWidget'.
+-- the 'Text' for formatting purposes, use 'textWidget'.
 module Graphics.Vty.Widgets.Text
     ( Text(tokens)
     , FormattedText
     , Formatter
     , setText
-    -- *Text Preparation
     , prepareText
     -- *Constructing Widgets
     , plainText
@@ -65,14 +63,13 @@ instance Show FormattedText where
                                       , ", formatter = ... }"
                                       ]
 
--- |Prepare a string for rendering and assign it the specified default
--- attribute.
+-- |Prepare a string for rendering.
 prepareText :: String -> Text
 prepareText s = Text { tokens = tokenize s def_attr
                      }
 
--- |Construct a Widget directly from an attribute and a String.  This
--- is recommended if you don't need to use a 'Formatter'.
+-- |Construct a Widget directly from a String.  This is recommended if
+-- you don't need to use a 'Formatter'.
 plainText :: (MonadIO m) => String -> m (Widget FormattedText)
 plainText s = textWidget nullFormatter s
 
@@ -120,6 +117,7 @@ textWidget format s = do
         }
   return wRef
 
+-- |Set the text value of a 'FormattedText' widget.
 setText :: (MonadIO m) => Widget FormattedText -> String -> m ()
 setText wRef s = do
   updateWidgetState wRef $ \st ->
