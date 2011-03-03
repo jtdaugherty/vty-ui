@@ -1,5 +1,8 @@
 {-# LANGUAGE ExistentialQuantification, MultiParamTypeClasses,
   TypeSynonymInstances, FlexibleInstances, DeriveDataTypeable #-}
+-- |This module provides a table layout widget capable of laying out
+-- columns of widgets with various padding and alignment properties.
+-- For complete details, please see the Vty-ui User's Manual.
 module Graphics.Vty.Widgets.Table
     ( Table
     , TableCell
@@ -43,18 +46,30 @@ import Graphics.Vty.Widgets.Fills
 import Graphics.Vty.Widgets.Box
 
 data TableError = ColumnCountMismatch
+                -- ^A row added to the table did not have the same
+                -- number of widgets as the table has columns.
                 | CellImageTooBig
+                -- ^The image rendered by a cell widget exceeded the
+                -- size permitted by the cell.
                 | BadTableWidgetSizePolicy Int
+                  -- ^A table cell contains a widget which grows
+                  -- vertically, which is not permitted.
                   deriving (Show, Typeable)
 
 instance Exception TableError
 
+-- |Column alignment values.
 data Alignment = AlignCenter | AlignLeft | AlignRight
                  deriving (Show)
 
+-- |The class of types whose values can be aligned.
 class Alignable a where
     align :: a -> Alignment -> a
 
+-- |The wrapper type for all table cells; stores the widgets
+-- themselves in addition to alignment and padding settings.
+-- Alignment and padding settings on a cell override the column- and
+-- table-wide defaults.
 data TableCell = forall a. (Show a) => TableCell (Widget a) (Maybe Alignment) (Maybe Padding)
                | EmptyCell
 
@@ -71,17 +86,35 @@ instance Show TableCell where
 
 data TableRow = TableRow [TableCell]
 
-data BorderFlag = Rows | Columns | Edges
+-- |The types of borders we can have in a table.
+data BorderFlag = Rows
+                -- ^Borders between rows.
+                | Columns
+                -- ^Borders between columns.
+                | Edges
+                  -- ^Borders around the outside edges of the table.
                   deriving (Eq, Show)
 
+-- |The border configuration of a table.
 data BorderStyle = BorderPartial [BorderFlag]
+                 -- |A partial set of border flags.
                  | BorderFull
+                 -- |Draw borders everywhere we support them.
                  | BorderNone
+                   -- ^Don't draw any borders anywhere.
                    deriving (Eq, Show)
 
-data ColumnSize = ColFixed Int | ColAuto
+-- |The type of column size policies.
+data ColumnSize = ColFixed Int
+                -- ^The column has the specified fixed width in
+                -- columns.
+                | ColAuto
+                  -- ^The column's width is a function of space
+                  -- available to the table at rendering time.
                   deriving (Eq, Show)
 
+-- |The specification of a column's settings.  The alignment and
+-- padding of a column specification override the table-wide default.
 data ColumnSpec = ColumnSpec { columnSize :: ColumnSize
                              , columnAlignment :: Maybe Alignment
                              , columnPadding :: Maybe Padding
@@ -102,6 +135,8 @@ instance Alignable TableCell where
     align (TableCell w _ p) a = TableCell w (Just a) p
     align EmptyCell _ = EmptyCell
 
+-- |The class of types whose values can be used to construct table
+-- rows.
 class RowLike a where
     mkRow :: a -> TableRow
 
@@ -120,6 +155,7 @@ instance (RowLike a) => RowLike [a] where
           cs = concat $ map (\(TableRow cells) -> cells) rs'
           rs' = map mkRow rs
 
+-- |Row constructor using 'RowLike' instances.
 (.|.) :: (RowLike a, RowLike b) => a -> b -> TableRow
 (.|.) a b = TableRow (cs ++ ds)
     where
@@ -153,21 +189,29 @@ instance Show Table where
                     , " }"
                     ]
 
+-- |Create a custom 'TableCell' to set its alignment and/or padding
+-- settings.
 customCell :: (Show a) => Widget a -> TableCell
 customCell w = TableCell w Nothing Nothing
 
+-- |Create an empty table cell.
 emptyCell :: TableCell
 emptyCell = EmptyCell
 
+-- |Set the default table-wide cell alignment.
 setDefaultCellAlignment :: (MonadIO m) => Widget Table -> Alignment -> m ()
 setDefaultCellAlignment t a = updateWidgetState t $ \s -> s { defaultCellAlignment = a }
 
+-- |Set the default table-wide cell padding.
 setDefaultCellPadding :: (MonadIO m) => Widget Table -> Padding -> m ()
 setDefaultCellPadding t p = updateWidgetState t $ \s -> s { defaultCellPadding = p }
 
+-- |Create a column.
 column :: ColumnSize -> ColumnSpec
 column sz = ColumnSpec sz Nothing Nothing
 
+-- |Create a table widget using a list of column specifications and a
+-- border style.
 newTable :: (MonadIO m) =>
             [ColumnSpec]
          -> BorderStyle
@@ -450,6 +494,10 @@ applyCellPadding padding (TableCell w a p) = do
   w' <- padded w padding
   return $ TableCell w' a p
 
+-- |Add a row to the table.  Use 'RowLike' instances to populate the
+-- row.  Throws 'BadTableWidgetSizePolicy' if any widgets in the row
+-- grow vertically; throws 'ColumnCountMismatch' if the row's number
+-- of columns does not match the table's column count.
 addRow :: (MonadIO m, RowLike a) => Widget Table -> a -> m ()
 addRow t row = do
   let (TableRow cells_) = mkRow row
