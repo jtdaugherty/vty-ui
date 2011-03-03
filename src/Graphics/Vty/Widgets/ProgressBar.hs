@@ -51,10 +51,11 @@ onProgressChange = addHandler (return . onChangeHandlers)
 -- |Set the progress bar's progress value.  Values outside the allowed
 -- range will be ignored.
 setProgress :: (MonadIO m) => ProgressBar -> Int -> m ()
-setProgress p amt = do
-  liftIO $ writeIORef (progressBarAmount p) amt
-  setBoxChildSizePolicy (progressBarWidget p) $ Percentage amt
-  fireEvent p (return . onChangeHandlers) amt
+setProgress p amt =
+    when (amt >= 0 && amt <= 100) $ do
+      liftIO $ writeIORef (progressBarAmount p) amt
+      setBoxChildSizePolicy (progressBarWidget p) $ Percentage amt
+      fireEvent p (return . onChangeHandlers) amt
 
 -- |Get the progress bar's current progress value.
 getProgress :: (MonadIO m) => ProgressBar -> m Int
