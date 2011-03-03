@@ -1,4 +1,8 @@
 {-# LANGUAGE ExistentialQuantification #-}
+-- |This module provides wrapper widgets for fixing the size of child
+-- widgets in one or more dimensions in rows or columns, respectively.
+-- This differs from the ''limit'' widgets in the Limits module in
+-- that Limits enforce an upper bound on size.
 module Graphics.Vty.Widgets.Fixed
     ( VFixed
     , HFixed
@@ -84,37 +88,43 @@ vFixed maxHeight child = do
   wRef `relayFocusEvents` child
   return wRef
 
+-- |Set the vertical fixed size of a child widget.
 setVFixed :: (MonadIO m) => Widget (VFixed a) -> Int -> m ()
 setVFixed wRef lim =
     when (lim >= 1) $
          updateWidgetState wRef $ \(VFixed _ ch) -> VFixed lim ch
 
+-- |Set the horizontal fixed size of a child widget.
 setHFixed :: (MonadIO m) => Widget (HFixed a) -> Int -> m ()
 setHFixed wRef lim =
     when (lim >= 1) $
          updateWidgetState wRef $ \(HFixed _  ch) -> HFixed lim ch
 
+-- |Add to the vertical fixed size of a child widget.
 addToVFixed :: (MonadIO m) => Widget (VFixed a) -> Int -> m ()
 addToVFixed wRef delta = do
   lim <- getVFixedSize wRef
   setVFixed wRef $ lim + delta
 
+-- |Add to the horizontal fixed size of a child widget.
 addToHFixed :: (MonadIO m) => Widget (HFixed a) -> Int -> m ()
 addToHFixed wRef delta = do
   lim <- getHFixedSize wRef
   setHFixed wRef $ lim + delta
 
+-- |Get the vertical fixed size of a child widget.
 getVFixedSize :: (MonadIO m) => Widget (VFixed a) -> m Int
 getVFixedSize wRef = do
   (VFixed lim _) <- state <~ wRef
   return lim
 
+-- |Get the horizontal fixed size of a child widget.
 getHFixedSize :: (MonadIO m) => Widget (HFixed a) -> m Int
 getHFixedSize wRef = do
   (HFixed lim _) <- state <~ wRef
   return lim
 
--- |Impose a maximum size (width, height) on a widget.
+-- |Impose a maximum horizontal and vertical size on a widget.
 boxFixed :: (MonadIO m, Show a) =>
             Int -- ^Maximum width in columns
          -> Int -- ^Maximum height in rows
