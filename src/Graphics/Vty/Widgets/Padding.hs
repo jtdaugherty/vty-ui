@@ -1,4 +1,6 @@
 {-# LANGUAGE ExistentialQuantification, FlexibleInstances, TypeSynonymInstances #-}
+-- |This module provides a ''padding'' mechanism for adding padding to
+-- a widget on one or more sides.
 module Graphics.Vty.Widgets.Padding
     ( Padded
     , Padding
@@ -24,7 +26,7 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Util
 
--- Top, right, bottom, left.
+-- |The type of padding on widgets.
 data Padding = Padding Int Int Int Int
                deriving (Show)
 
@@ -45,6 +47,7 @@ instance Monoid Padding where
 (+++) :: (Monoid a) => a -> a -> a
 (+++) = mappend
 
+-- |The class of types to which we can add padding.
 class Paddable a where
     pad :: a -> Padding -> a
 
@@ -63,34 +66,44 @@ bottomPadding (Padding _ _ b _) = toEnum b
 topPadding :: Padding -> Word
 topPadding (Padding t _ _ _) = toEnum t
 
--- Padding constructors
+-- |Padding constructor with no padding.
 padNone :: Padding
 padNone = Padding 0 0 0 0
 
+-- |Padding constructor with left padding in columns.
 padLeft :: Int -> Padding
 padLeft v = Padding 0 0 0 v
 
+-- |Padding constructor with right padding in columns.
 padRight :: Int -> Padding
 padRight v = Padding 0 v 0 0
 
+-- |Padding constructor with top padding in rows.
 padTop :: Int -> Padding
 padTop v = Padding v 0 0 0
 
+-- |Padding constructor with bottom padding in rows.
 padBottom :: Int -> Padding
 padBottom v = Padding 0 0 v 0
 
+-- |Padding constructor with padding on all sides in rows and
+-- columns.
 padAll :: Int -> Padding
 padAll v = Padding v v v v
 
+-- |Padding constructor with padding on top and bottom in rows.
 padTopBottom :: Int -> Padding
 padTopBottom v = Padding v 0 v 0
 
+-- |Padding constructor with padding on left and right in columns.
 padLeftRight :: Int -> Padding
 padLeftRight v = Padding 0 v 0 v
 
+-- |Monadic combinator to construct a 'Padded' wrapper.
 withPadding :: (MonadIO m, Show a) => Padding -> Widget a -> m (Widget Padded)
 withPadding = flip padded
 
+-- |Create a 'Padded' wrapper to add padding.
 padded :: (MonadIO m, Show a) => Widget a -> Padding -> m (Widget Padded)
 padded ch padding = do
   wRef <- newWidget $ \w ->
