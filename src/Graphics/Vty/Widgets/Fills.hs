@@ -1,4 +1,6 @@
 {-# LANGUAGE FlexibleInstances, TypeSynonymInstances #-}
+-- |This module provides ''space-filling'' widgets used to control
+-- layout.
 module Graphics.Vty.Widgets.Fills
     ( VFill
     , HFill
