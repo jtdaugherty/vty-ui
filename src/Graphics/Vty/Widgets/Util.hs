@@ -15,19 +15,29 @@ where
 import Data.Word
 import Graphics.Vty
 
+-- |Infix attribute constructor.  Use: foregroundColor `on`
+-- backgroundColor.
 on :: Color -> Color -> Attr
 on a b = def_attr `with_back_color` b `with_fore_color` a
 
+-- |Foreground-only attribute constructor.  Background color and style
+-- are defaulted.
 fgColor :: Color -> Attr
 fgColor = (def_attr `with_fore_color`)
 
+-- |Background-only attribute constructor.  Foreground color and style
+-- are defaulted.
 bgColor :: Color -> Attr
 bgColor = (def_attr `with_back_color`)
 
+-- |Style-only attribute constructor.  Colors are defaulted.
 style :: Style -> Attr
 style = (def_attr `with_style`)
 
 -- Left-most attribute's fields take precedence.
+-- |Merge two attributes.  Leftmost attribute takes precedence where
+-- it specifies any of the foreground color, background color, or
+-- style.
 mergeAttr :: Attr -> Attr -> Attr
 mergeAttr a b =
     let b1 = case attr_style a of
@@ -41,6 +51,7 @@ mergeAttr a b =
                _ -> b2
     in b3
 
+-- |List fold version of 'mergeAttr'.
 mergeAttrs :: [Attr] -> Attr
 mergeAttrs attrs = foldr mergeAttr def_attr attrs
 
