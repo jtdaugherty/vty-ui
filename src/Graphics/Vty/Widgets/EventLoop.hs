@@ -81,8 +81,7 @@ runUi' vty chan collection ctx = do
 
   runUi' vty chan collection ctx
 
-data CollectionError = EmptyCollection
-                     | BadCollectionIndex Int
+data CollectionError = BadCollectionIndex Int
                        deriving (Show, Typeable)
 
 instance Exception CollectionError
