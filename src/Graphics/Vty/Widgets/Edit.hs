@@ -1,4 +1,5 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+-- |This module provides a one-line editing interface.
 module Graphics.Vty.Widgets.Edit
     ( Edit
     , editWidget
@@ -39,6 +40,7 @@ instance Show Edit where
                     , " }"
                     ]
 
+-- |Create a new editing widget.
 editWidget :: (MonadIO m) => m (Widget Edit)
 editWidget = do
   ahs <- newHandlers
@@ -92,6 +94,7 @@ editWidget = do
   setFocusAttribute wRef $ style underline
   return wRef
 
+-- |Set the maximum length of the edit widget's content.
 setEditMaxLength :: (MonadIO m) => Widget Edit -> Int -> m ()
 setEditMaxLength wRef v = do
   cur <- maxTextLength <~~ wRef
@@ -104,6 +107,9 @@ setEditMaxLength wRef v = do
                setEditText wRef $ take v s
   updateWidgetState wRef $ \s -> s { maxTextLength = Just v }
 
+-- |Register handlers to be invoked when the edit widget has been
+-- ''activated'' (when the user presses Enter while the widget is
+-- focused).
 onActivate :: (MonadIO m) => Widget Edit -> (Widget Edit -> IO ()) -> m ()
 onActivate = addHandler (activateHandlers <~~)
 
@@ -120,15 +126,22 @@ notifyCursorMoveHandlers wRef = do
   pos <- getEditCursorPosition wRef
   fireEvent wRef (cursorMoveHandlers <~~) pos
 
+-- |Register handlers to be invoked when the edit widget's contents
+-- change.  Handlers will be passed the new contents.
 onChange :: (MonadIO m) => Widget Edit -> (String -> IO ()) -> m ()
 onChange = addHandler (changeHandlers <~~)
 
+-- |Register handlers to be invoked when the edit widget's cursor
+-- position changes.  Handlers will be passed the new cursor position,
+-- relative to the beginning of the string (position 0).
 onCursorMove :: (MonadIO m) => Widget Edit -> (Int -> IO ()) -> m ()
 onCursorMove = addHandler (cursorMoveHandlers <~~)
 
+-- |Get the current contents of the edit widget.
 getEditText :: (MonadIO m) => Widget Edit -> m String
 getEditText = (currentText <~~)
 
+-- |Set the contents of the edit widget.
 setEditText :: (MonadIO m) => Widget Edit -> String -> m ()
 setEditText wRef str = do
   oldS <- currentText <~~ wRef
@@ -142,6 +155,8 @@ setEditText wRef str = do
          gotoBeginning wRef
          notifyChangeHandlers wRef
 
+-- |Set the current edit widget cursor position.  Invalid cursor
+-- positions will be ignored.
 setEditCursorPosition :: (MonadIO m) => Widget Edit -> Int -> m ()
 setEditCursorPosition wRef pos = do
   oldPos <- getEditCursorPosition wRef
@@ -160,6 +175,7 @@ setEditCursorPosition wRef pos = do
                }
          liftIO $ notifyCursorMoveHandlers wRef
 
+-- |Get the edit widget's current cursor position.
 getEditCursorPosition :: (MonadIO m) => Widget Edit -> m Int
 getEditCursorPosition = (cursorPosition <~~)
 
