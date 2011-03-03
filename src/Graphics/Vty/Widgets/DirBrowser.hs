@@ -1,3 +1,5 @@
+-- |This module provides a directory browser interface widget.  For
+-- full details, please see the Vty-ui User's Manual.
 module Graphics.Vty.Widgets.DirBrowser
     ( DirBrowser(dirBrowserWidget)
     , BrowserSkin(..)
@@ -52,21 +54,37 @@ data DirBrowser = DirBrowser { dirBrowserWidget :: T
                              , dirBrowserPathChangeHandlers :: Handlers FilePath
                              }
 
+-- |The collection of attributes and annotations used to determine the
+-- browser's visual appearance.
 data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
+                               -- ^Used for the header and footer
+                               -- areas of the interface.
                                , browserUnfocusedSelAttr :: Attr
+                               -- ^Used for the selected entry when
+                               -- the browser does not have focus.
                                , browserErrorAttr :: Attr
+                               -- ^Used for the browser's
+                               -- error-reporting area.
                                , browserDirAttr :: Attr
+                               -- ^Used for directory entries.
                                , browserLinkAttr :: Attr
+                               -- ^Used for symbolic link entries.
                                , browserBlockDevAttr :: Attr
+                               -- ^Used for block device entries.
                                , browserNamedPipeAttr :: Attr
+                               -- ^Used for named pipe entries.
                                , browserCharDevAttr :: Attr
+                               -- ^Used for device entries.
                                , browserSockAttr :: Attr
+                               -- ^Used for socket entries.
                                , browserCustomAnnotations :: [ (FilePath -> FileStatus -> Bool
                                                                , FilePath -> FileStatus -> IO String
                                                                , Attr)
                                                              ]
+                               -- ^File annotations.
                                }
 
+-- |The default browser skin with (hopefully) sane attribute defaults.
 defaultBrowserSkin :: BrowserSkin
 defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
                                  , browserUnfocusedSelAttr = bgColor blue
@@ -80,11 +98,14 @@ defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
                                  , browserCustomAnnotations = []
                                  }
 
+-- |Apply annotations to a browser skin.
 withAnnotations :: BrowserSkin
                 -> [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String, Attr)]
                 -> BrowserSkin
 withAnnotations sk as = sk { browserCustomAnnotations = browserCustomAnnotations sk ++ as }
 
+-- |Create a directory browser widget with the specified skin.
+-- Returns the browser itself along with its focus group.
 newDirBrowser :: (MonadIO m) => BrowserSkin -> m (DirBrowser, Widget FocusGroup)
 newDirBrowser bSkin = do
   path <- liftIO $ getCurrentDirectory
@@ -130,18 +151,24 @@ newDirBrowser bSkin = do
   setDirBrowserPath b path
   return (b, fg)
 
+-- |Report an error in the browser's error-reporting area.  Useful for
+-- reporting application-specific errors with the user's file
+-- selection.
 reportBrowserError :: (MonadIO m) => DirBrowser -> String -> m ()
 reportBrowserError b msg = setText (dirBrowserErrorWidget b) $ "Error: " ++ msg
 
 clearError :: (MonadIO m) => DirBrowser -> m ()
 clearError b = setText (dirBrowserErrorWidget b) ""
 
+-- |Register handlers to be invoked when the user makes a selection.
 onBrowseAccept :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
 onBrowseAccept = addHandler (return . dirBrowserChooseHandlers)
 
+-- |Register handlers to be invoked when the user cancels browsing.
 onBrowseCancel :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
 onBrowseCancel = addHandler (return . dirBrowserCancelHandlers)
 
+-- |Register handlers to be invoked when the browser's path changes.
 onBrowserPathChange :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
 onBrowserPathChange = addHandler (return . dirBrowserPathChangeHandlers)
 
@@ -217,9 +244,12 @@ handleBrowserKey b _ (KASCII 'q') [] = cancelBrowse b >> return True
 handleBrowserKey b _ (KASCII 'r') [] = refreshBrowser b >> return True
 handleBrowserKey _ _ _ _ = return False
 
+-- |Refresh the browser by reloading and displaying the contents of
+-- the browser's current path.
 refreshBrowser :: (MonadIO m) => DirBrowser -> m ()
 refreshBrowser b = setDirBrowserPath b =<< getDirBrowserPath b
 
+-- |Set the browser's current path.
 setDirBrowserPath :: (MonadIO m) => DirBrowser -> FilePath -> m ()
 setDirBrowserPath b path = do
   cPath <- liftIO $ canonicalizePath path
@@ -255,6 +285,7 @@ setDirBrowserPath b path = do
 
     fireEvent b (return . dirBrowserPathChangeHandlers) cPath
 
+-- |Get the browser's current path.
 getDirBrowserPath :: (MonadIO m) => DirBrowser -> m FilePath
 getDirBrowserPath = liftIO . readIORef . dirBrowserPath
 
