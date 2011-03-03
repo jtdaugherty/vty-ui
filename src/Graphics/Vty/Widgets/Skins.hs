@@ -1,3 +1,8 @@
+-- |This module provides ''skins'' for line-drawing widgets such as
+-- borders.  Different skins may be suitable for terminals with
+-- different capabilities, but they are provided for greatest
+-- flexibility.  Unicode skins must be used with care, as not all
+-- terminals support unicode characters (but most do, these days).
 module Graphics.Vty.Widgets.Skins
     ( Skin(..)
     , asciiSkin
@@ -22,6 +27,7 @@ data Skin = Skin { skinCornerTL :: Char
                  , skinVertical :: Char
                  }
 
+-- |An ASCII skin which will work in any terminal.
 asciiSkin :: Skin
 asciiSkin = Skin { skinCornerTL = '+'
                  , skinCornerTR = '+'
