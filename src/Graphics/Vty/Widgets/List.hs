@@ -1,16 +1,10 @@
 {-# LANGUAGE DeriveDataTypeable, FlexibleInstances, TypeSynonymInstances #-}
 -- |This module provides a 'List' widget for rendering a list of
--- arbitrary widgets.  A 'List' has the following features:
---
--- * A style for the list elements
---
--- * A styled cursor indicating which element is selected
---
--- * A /window size/ indicating how many elements should be visible to
---   the user
---
--- * An internal pointer to the start of the visible window, which
---   automatically shifts as the list is scrolled
+-- arbitrary widgets.  A 'List' shows a number of elements and
+-- highlights the currently-selected widget.  It supports key events
+-- to navigate the list and will automatically scroll based on the
+-- space available to the list along with the size of the widgets in
+-- the list.
 module Graphics.Vty.Widgets.List
     ( List
     , ListItem
@@ -53,27 +47,44 @@ import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
 data ListError = BadItemIndex Int
+               -- ^The specified position could not be used to remove
+               -- an item from the list.
                | ResizeError
                | BadListWidgetSizePolicy
+               -- ^The type of widgets added to the list grow
+               -- vertically, which is not permitted.
                  deriving (Show, Typeable)
 
 instance Exception ListError
 
--- |A list item. Each item contains an arbitrary internal identifier
--- @a@ and a 'Widget' representing it.
+-- |A list item. Each item contains an arbitrary internal value @a@
+-- and a 'Widget' representing it.
 type ListItem a b = (a, Widget b)
 
 data SelectionEvent a b = SelectionOn Int a (Widget b)
+                        -- ^An item at the specified position with the
+                        -- specified internal value and widget was
+                        -- selected.
                         | SelectionOff
+                          -- ^No item was selected, which means the
+                          -- list is empty.
+
+-- |A new item was added to the list at the specified position with
+-- the specified value and widget.
 data NewItemEvent a b = NewItemEvent Int a (Widget b)
+
+-- |An item was removed from the list at the specified position with
+-- the specified value and widget.
 data RemoveItemEvent a b = RemoveItemEvent Int a (Widget b)
+
+-- |An item in the list was activated at the specified position with
+-- the specified value and widget.
 data ActivateItemEvent a b = ActivateItemEvent Int a (Widget b)
 
 -- |The list widget type.  Lists are parameterized over the /internal/
--- /identifier type/ @a@, the type of internal identifiers used to
--- refer to the visible representations of the list contents, and the
--- /widget type/ @b@, the type of widgets used to represent the list
--- visually.
+-- /value type/ @a@, the type of internal values used to refer to the
+-- visible representations of the list contents, and the /widget type/
+-- @b@, the type of widgets used to represent the list visually.
 data List a b = List { selectedUnfocusedAttr :: Attr
                      , selectedIndex :: Int
                      -- ^The currently selected list index.
@@ -104,8 +115,6 @@ instance Show (List a b) where
                       , " }"
                       ]
 
--- |Create a new list.  Empty lists and empty scrolling windows are
--- not allowed.
 newListData :: (MonadIO m) =>
                Attr -- ^The attribute of the selected item
             -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
@@ -129,9 +138,12 @@ newListData selAttr f = do
                 , itemConstructor = f
                 }
 
+-- |Get the length of the list in elements.
 getListSize :: (MonadIO m) => Widget (List a b) -> m Int
 getListSize = ((length . listItems) <~~)
 
+-- |Remove an element from the list at the specified position.  May
+-- throw 'BadItemIndex'.
 removeFromList :: (MonadIO m) => Widget (List a b) -> Int -> m (ListItem a b)
 removeFromList list pos = do
   st <- getState list
@@ -178,6 +190,9 @@ removeFromList list pos = do
   -- Return the removed item.
   return (label, w)
 
+-- |Add an item to the list.  Its widget will be constructed from the
+-- specified internal value using the widget constructor passed to
+-- 'newList'.
 addToList :: (MonadIO m, Show b) => Widget (List a b) -> a -> m (ListItem a b)
 addToList list key = do
   numItems <- (length . listItems) <~~ list
@@ -215,24 +230,35 @@ addToList list key = do
 
   return (key, w)
 
+-- |Register event handlers to be invoked when the list's selected
+-- item changes.
 onSelectionChange :: (MonadIO m) =>
                      Widget (List a b)
                   -> (SelectionEvent a b -> IO ())
                   -> m ()
 onSelectionChange = addHandler (selectionChangeHandlers <~~)
 
+-- |Register event handlers to be invoked when a new item is added to
+-- the list.
 onItemAdded :: (MonadIO m) => Widget (List a b)
             -> (NewItemEvent a b -> IO ()) -> m ()
 onItemAdded = addHandler (itemAddHandlers <~~)
 
+-- |Register event handlers to be invoked when an item is removed from
+-- the list.
 onItemRemoved :: (MonadIO m) => Widget (List a b)
               -> (RemoveItemEvent a b -> IO ()) -> m ()
 onItemRemoved = addHandler (itemRemoveHandlers <~~)
 
+-- |Register event handlers to be invoked when an item is activated,
+-- which happens when the user presses Enter on a selected element
+-- while the list has the focus.
 onItemActivated :: (MonadIO m) => Widget (List a b)
             -> (ActivateItemEvent a b -> IO ()) -> m ()
 onItemActivated = addHandler (itemActivateHandlers <~~)
 
+-- |Clear the list, removing all elements.  Does not invoke any
+-- handlers.
 clearList :: (MonadIO m) => Widget (List a b) -> m ()
 clearList w = do
   updateWidgetState w $ \l ->
@@ -241,6 +267,10 @@ clearList w = do
         , listItems = []
         }
 
+-- |Create a new list using the specified attribute for the
+-- currently-selected element when the list does NOT have focus.  Use
+-- the specified constructor function to create widgets for new items
+-- in the list.
 newList :: (MonadIO m, Show b) =>
            Attr -- ^The attribute of the selected item
         -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
@@ -331,7 +361,8 @@ renderListWidget foc list s ctx = do
   return $ vert_cat (visible_imgs ++ [filler])
 
 -- |A convenience function to create a new list using 'String's as the
--- internal identifiers and 'Text' widgets to represent those strings.
+-- internal values and 'FormattedText' widgets to represent those
+-- strings.
 newStringList :: (MonadIO m) =>
                  Attr -- ^The attribute of the selected item
               -> [String] -- ^The list items
@@ -341,6 +372,8 @@ newStringList selAttr labels = do
   mapM_ (addToList list) labels
   return list
 
+-- |Programmatically activate the currently-selected item in the list,
+-- if any.
 activateCurrentItem :: (MonadIO m) => Widget (List a b) -> m ()
 activateCurrentItem wRef = do
   mSel <- getSelected wRef
@@ -351,7 +384,7 @@ activateCurrentItem wRef = do
 
 -- note that !! here will always succeed because selectedIndex will
 -- never be out of bounds and the list will always be non-empty.
--- |Get the currently selected list item.
+-- |Get the currently-selected list item.
 getSelected :: (MonadIO m) => Widget (List a b) -> m (Maybe (Int, ListItem a b))
 getSelected wRef = do
   list <- state <~ wRef
@@ -359,8 +392,6 @@ getSelected wRef = do
     (-1) -> return Nothing
     i -> return $ Just (i, (listItems list) !! i)
 
--- |Set the window size of the list.  This automatically adjusts the
--- window position to keep the selected item visible.
 resize :: (MonadIO m) => Widget (List a b) -> Int -> m ()
 resize wRef newSize = do
   when (newSize == 0) $ throw ResizeError
@@ -391,23 +422,15 @@ resize wRef newSize = do
                                             , scrollTopIndex = newScrollTopIndex
                                             }
 
--- |Scroll a list up or down by the specified number of positions and
--- return the new scrolled list.  Scrolling by a positive amount
--- scrolls downward and scrolling by a negative amount scrolls upward.
--- This automatically takes care of managing internal list state:
---
--- * Moves the cursor by the specified amount and clamps the cursor
---   position to the beginning or the end of the list where
---   appropriate
---
--- * Moves the scrolling window position if necessary (i.e., if the
---   cursor moves to an item not currently in view)
+-- |Scroll a list up or down by the specified number of positions.
+-- Scrolling by a positive amount scrolls downward and scrolling by a
+-- negative amount scrolls upward.  This automatically takes care of
+-- managing internal list state and invoking event handlers.
 scrollBy :: (MonadIO m) => Widget (List a b) -> Int -> m ()
 scrollBy wRef amount = do
   updateWidgetState wRef $ scrollBy' amount
   notifySelectionHandler wRef
 
--- Pure interface; should be used internally to the widget.
 scrollBy' :: Int -> List a b -> List a b
 scrollBy' amount list =
   let sel = selectedIndex list
@@ -474,9 +497,6 @@ pageUp wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy wRef (-1 * amt)
 
--- |Given a 'List', return the items that are currently visible
--- according to the state of the list.  Returns the visible items and
--- flags indicating whether each is selected.
 getVisibleItems :: (MonadIO m) => Widget (List a b) -> m [(ListItem a b, Bool)]
 getVisibleItems wRef = do
   list <- state <~ wRef
