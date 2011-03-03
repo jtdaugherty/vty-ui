@@ -1,4 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable, ExistentialQuantification #-}
+-- |This module provides the main event loop functionality for this
+-- library.  All vty-ui applications must use runUi to get anything
+-- done usefully.
 module Graphics.Vty.Widgets.EventLoop
     ( EventLoopError(..)
     , Collection
@@ -34,6 +37,11 @@ eventChan :: Chan CombinedEvent
 {-# NOINLINE eventChan #-}
 eventChan = unsafePerformIO newChan
 
+-- |Run the main vty-ui event loop using the specified interface
+-- collection and initial rendering context.  The rendering context
+-- provides the default attributes and 'Skin' to use for the
+-- application.  Throws 'BadCollectionIndex' if the specified
+-- 'Collection' is empty.
 runUi :: (MonadIO m) => Collection -> RenderContext -> m ()
 runUi collection ctx =
     liftIO $ do
@@ -52,6 +60,9 @@ vtyEventListener vty chan =
       e <- next_event vty
       writeChan chan $ VTYEvent e
 
+-- |Schedule a widget-mutating 'IO' action to be run by the main event
+-- loop.  Use of this function is required to guarantee consistency
+-- between interface presentation and internal state.
 schedule :: (MonadIO m) => IO () -> m ()
 schedule act = liftIO $ writeChan eventChan $ UserEvent $ ScheduledAction act
 
@@ -93,6 +104,7 @@ data CollectionData =
                    , currentEntryNum :: Int
                    }
 
+-- |The type of user interface collections.
 type Collection = IORef CollectionData
 
 instance Show CollectionData where
@@ -108,6 +120,7 @@ entryRenderAndPosition (Entry w _) = renderAndPosition w
 entryFocusGroup :: Entry -> Widget FocusGroup
 entryFocusGroup (Entry _ fg) = fg
 
+-- |Create a new collection.
 newCollection :: (MonadIO m) => m Collection
 newCollection =
     liftIO $ newIORef $ CollectionData { entries = []
@@ -124,6 +137,9 @@ getCurrentEntry cRef = do
           return $ es !! cur else
           throw $ BadCollectionIndex cur
 
+-- |Add a widget and its focus group to a collection.  Returns an
+-- action which, when invoked, will switch to the interface specified
+-- in the call.
 addToCollection :: (MonadIO m, Show a) => Collection -> Widget a -> Widget FocusGroup -> m (m ())
 addToCollection cRef wRef fg = do
   i <- (length . entries) <~ cRef
