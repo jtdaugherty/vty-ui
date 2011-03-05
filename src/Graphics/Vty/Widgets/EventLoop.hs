@@ -9,6 +9,7 @@ module Graphics.Vty.Widgets.EventLoop
     , schedule
     , newCollection
     , addToCollection
+    , setCurrentEntry
     )
 where
 
