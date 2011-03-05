@@ -22,8 +22,8 @@ Homepage:            http://codevine.org/vty-ui/
 Data-Files:
     doc/ch1/api_notes.tex
     doc/ch1/getting_started.tex
-    doc/ch1/introduction.tex
-    doc/ch2/building_applications.tex
+    doc/ch1/main.tex
+    doc/ch2/main.tex
     doc/ch2/collections.tex
     doc/ch2/composing.tex
     doc/ch2/event_loop.tex
@@ -34,7 +34,7 @@ Data-Files:
     doc/ch3/growth_policy_functions.tex
     doc/ch3/implementing_composite_widgets.tex
     doc/ch3/implementing_event_handlers.tex
-    doc/ch3/implementing_widgets.tex
+    doc/ch3/main.tex
     doc/ch3/new_widget_type.tex
     doc/ch3/rendering.tex
     doc/ch3/widget_positioning.tex
@@ -51,7 +51,7 @@ Data-Files:
     doc/ch4/Fills.tex
     doc/ch4/Fixed.tex
     doc/ch4/FormattedText.tex
-    doc/ch4/guided_tour.tex
+    doc/ch4/main.tex
     doc/ch4/Limits.tex
     doc/ch4/List.tex
     doc/ch4/Padded.tex
