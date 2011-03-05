@@ -135,7 +135,7 @@ Executable vty-ui-tests
 Executable vty-ui-list-demo
   Hs-Source-Dirs:  src
   GHC-Options:     -Wall
-  Main-is:         List.hs
+  Main-is:         ListDemo.hs
   if os(darwin)
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
@@ -148,7 +148,7 @@ Executable vty-ui-list-demo
 Executable vty-ui-complex-demo
   Hs-Source-Dirs:  src
   GHC-Options:     -Wall
-  Main-is:         Complex.hs
+  Main-is:         ComplexDemo.hs
   if os(darwin)
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
@@ -165,7 +165,7 @@ Executable vty-ui-complex-demo
 Executable vty-ui-dirbrowser-demo
   Hs-Source-Dirs:  src
   GHC-Options:     -Wall
-  Main-is:         DirBrowser.hs
+  Main-is:         DirBrowserDemo.hs
   if os(darwin)
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
@@ -191,7 +191,7 @@ Executable vty-ui-phoneinput-demo
 Executable vty-ui-dialog-demo
   Hs-Source-Dirs:  src
   GHC-Options:     -Wall
-  Main-is:         Dialog.hs
+  Main-is:         DialogDemo.hs
   if os(darwin)
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
