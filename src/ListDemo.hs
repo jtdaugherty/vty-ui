@@ -5,17 +5,15 @@ import System.Exit ( exitSuccess )
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
 
--- The application state; this contains references to widgets that
--- need to be updated when events occur.
-data AppState =
-    AppState { theList :: Widget (List String FormattedText)
-             , theBody :: Widget FormattedText
-             , theFooter1 :: Widget FormattedText
-             , theFooter2 :: Widget FormattedText
-             , theEdit :: Widget Edit
-             , theListLimit :: Widget (VLimit (List String FormattedText))
-             , uis :: Collection
-             }
+data AppElements =
+    AppElements { theList :: Widget (List String FormattedText)
+                , theBody :: Widget FormattedText
+                , theFooter1 :: Widget FormattedText
+                , theFooter2 :: Widget FormattedText
+                , theEdit :: Widget Edit
+                , theListLimit :: Widget (VLimit (List String FormattedText))
+                , uis :: Collection
+                }
 
 -- Visual attributes.
 titleAttr = bright_white `on` blue
@@ -46,8 +44,8 @@ buildUi2 appst =
                   <--> (vFill ' '))
 
 -- Construct the application state using the message map.
-mkAppState :: IO AppState
-mkAppState = do
+mkAppElements :: IO AppElements
+mkAppElements = do
   lw <- newStringList selAttr []
   b <- textWidget wrap ""
   f1 <- plainText "" >>= withNormalAttribute titleAttr
@@ -57,21 +55,21 @@ mkAppState = do
 
   c <- newCollection
 
-  return $ AppState { theList = lw
-                    , theBody = b
-                    , theFooter1 = f1
-                    , theFooter2 = f2
-                    , theEdit = e
-                    , theListLimit = ll
-                    , uis = c
-                    }
+  return $ AppElements { theList = lw
+                       , theBody = b
+                       , theFooter1 = f1
+                       , theFooter2 = f2
+                       , theEdit = e
+                       , theListLimit = ll
+                       , uis = c
+                       }
 
-updateBody :: AppState -> Int -> IO ()
+updateBody :: AppElements -> Int -> IO ()
 updateBody st i = do
   let msg = "This is the text for list entry " ++ (show $ i + 1)
   setText (theBody st) msg
 
-updateFooterNums :: AppState -> Widget (List a b) -> IO ()
+updateFooterNums :: AppElements -> Widget (List a b) -> IO ()
 updateFooterNums st w = do
   result <- getSelected w
   sz <- getListSize w
@@ -82,12 +80,12 @@ updateFooterNums st w = do
                           (show sz) ++ "-"
   setText (theFooter1 st) msg
 
-updateFooterText :: AppState -> Widget Edit -> String -> IO ()
+updateFooterText :: AppElements -> Widget Edit -> String -> IO ()
 updateFooterText st _ t = setText (theFooter2 st) ("[" ++ t ++ "]")
 
 main :: IO ()
 main = do
-  st <- mkAppState
+  st <- mkAppElements
 
   ui1 <- buildUi1 st
   ui2 <- buildUi2 st
