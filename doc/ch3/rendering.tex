@@ -60,11 +60,3 @@ process works correctly; as a result, whenever you are rendering other
 widgets inside your \fw{render\_} implementation, you \textit{must}
 use \fw{render} to do it instead of extracting and calling the
 \fw{render\_} function on your child widgets.
-
-\label{note:api_convention_1}
-(XXX make this a nice note box or something)
-Note: this is an example of a trend in the API: whenever a
-\fw{WidgetImpl} function ends with an underscore, there is a
-top-level function with the same name without the underscore that
-you should use to invoke the respective functionality on any widget
-reference you hold.
