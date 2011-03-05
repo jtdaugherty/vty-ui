@@ -7,11 +7,11 @@ exclusion behavior.
 
 The \fw{CheckBox} module provides generalized, ``multi-state''
 checkboxes which may be in one of an arbitrary number of states, each
-having its own ``checked character'' visible in the checkbox along
-with an underlying value.  The ``binary'' checkbox provided by the
-module is of the traditional two-state variety that we usually mean
-when we say ``check box.''  Most of the \fw{CheckBox} module's
-functions are polymorphic on the \fw{CheckBox}'s value type.
+having its own ``checked character'' visible in the checkbox.  The
+``binary'' checkbox provided by the module is of the traditional
+two-state variety that we usually mean when we say ``check box.''
+Most of the \fw{CheckBox} module's functions are polymorphic on the
+\fw{CheckBox}'s value type.
 
 Add a \fw{CheckBox} to your interface and insert it into a
 \fw{FocusGroup} to use it.
@@ -20,7 +20,7 @@ Add a \fw{CheckBox} to your interface and insert it into a
 
 Binary checkboxes can be created with the \fw{newCheckbox} function,
 which returns a \fw{Widget (CheckBox Bool)}.  Each checkbox has a text
-label, which is passed to the constructor:
+label which is passed to the constructor:
 
 \begin{haskellcode}
  cb <- newCheckbox "Fancy Graphics"
@@ -101,15 +101,15 @@ with \fw{getCheckboxState}.  For example, for binary checkboxes this
 value will be a \fw{Bool}.
 
 \begin{haskellcode}
- rg `onRadioChange` \theCb ->
+ rg `onRadioChange` \theCb -> do
    st <- getCheckboxState theCb
    ...
 \end{haskellcode}
 
-A \fw{CheckBox}'s state can be changed, too, with the
-\fw{setCheckboxState} function.  If you attempt to set the state to an
-invalid value, a \fw{CheckBoxError} exception
-(\fw{Bad\-Checkbox\-State}) will be thrown.
+A \fw{CheckBox}'s state can be changed with the \fw{setCheckboxState}
+function.  If you attempt to set the state to an invalid value, a
+\fw{CheckBoxError} exception (\fw{Bad\-Checkbox\-State}) will be
+thrown.
 
 In addition to using an event handler to be notified when a
 \fw{RadioGroup} changes state, you can also use the
@@ -119,15 +119,14 @@ In addition to using an event handler to be notified when a
 \subsection{Generalized, Multi-State Checkboxes}
 
 Although binary checkboxes may serve most purposes, they are a
-specific case of generalized checkboxes which associate characters
+specific case of generalized checkboxes which associated characters
 (like \fw{'x'} and \fw{'*'} above) with values of any type.  A
 multi-state checkbox can have any number of these states, and the user
 can toggle between them in order.
 
-To create a new multi-state checkbox, you must specify the
-character/value mappings in addition to its text label.  The
-checkbox's initial state is the first one in the list passed to the
-constructor.
+To create a new multi-state checkbox, you must specify value-character
+mappings in addition to a text label.  The checkbox's initial state is
+the first one in the list passed to the constructor.
 
 \begin{haskellcode}
  -- cb :: Widget (CheckBox Int)

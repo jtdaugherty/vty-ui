@@ -2,7 +2,7 @@
 \label{sec:edit}
 
 The \fw{Edit} module provides a line-editing widget, \fw{Widget Edit}.
-This widget makes it possible to edit a single line of text with
+This widget makes it possible to edit a single line of text with some
 Emacs-style key bindings.
 
 An \fw{Edit} widget is simple to create:
@@ -52,15 +52,6 @@ An \fw{Edit} widget can be monitored for three events:
   function.  Event handlers receive the new cursor position as a
   parameter.
 \end{itemize}
-
-The following example demonstrates the handling of all three types of
-events:
-
-\begin{haskellcode}
- e `onActivate` \this -> ...
- e `onCursorMove` \pos -> ...
- e `onChange` \newVal -> ...
-\end{haskellcode}
 
 In addition to event handling, the \fw{Edit} widget API also provides
 other functions.  These functions trigger the respective events

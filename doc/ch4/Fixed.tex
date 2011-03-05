@@ -36,19 +36,19 @@ as desired:
   a fixed-size widget.
 \item \fw{addToVFixed}, \fw{addToHFixed} -- adds a value to the
   constraint value of a fixed-size widget.
-\item {getVFixedSize}, \fw{getHFixedSize} -- returns the constraint
+\item \fw{getVFixedSize}, \fw{getHFixedSize} -- returns the constraint
   value of a fixed-size widget.
 \end{itemize}
 
 For example, the \fw{List} widget type (Section \ref{sec:lists}) grows
-vertically, but we may wish to dedicate most of the terminal to the
+vertically but we may wish to dedicate most of the terminal to the
 rest of the interface.  We can use \fw{vFixed} to constrain the
-\fw{List} in this way.  Below, we constain the \fw{List} to five rows
-of space.  Assuming the \fw{List} elements are one row high each, if
+\fw{List} in this way.  Below, we constrain the \fw{List} to five rows
+of height.  Assuming the \fw{List} elements are each one row high, if
 the \fw{List} has fewer than five elements to display then the
 \fw{VFixed} widget will automatically pad the \fw{List} to ensure that
 it takes up the specified number of rows.  Fixed-size widgets thus
-provide both upper and lower bounds on the size of their children.
+guarantee that the specified space is consumed.
 
 \begin{haskellcode}
  lst <- newList (green `on` black) plainText

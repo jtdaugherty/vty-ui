@@ -10,15 +10,15 @@ horizontally and vertically:
 \item \fw{vCentered} -- takes a \fw{Widget a} and centers it
   vertically.  Returns a value of type \fw{Widget (VCentered a)}.
 \item \fw{centered} -- takes a \fw{Widget a} and centers it both
-  horizontally and vertically using \fw{hCentered} and \fw{vcentered}.
+  horizontally and vertically using \fw{hCentered} and \fw{vCentered}.
   Returns a value of type \fw{Widget (VCentered (HCentered a))}.
 \end{itemize}
 
 Horizontal and vertical centering are only useful if the widget being
 centered doesn't grow to fill the available space on its own, since it
-would be as large as the available space and thus already centered.
-To constrain a growing widget to make it centerable, see Section
-\ref{sec:limits} and Section \ref{sec:fixed}.
+would be as large as the available space and thus would be centered
+implicitly.  To constrain a growing widget to make it centerable, see
+Sections \ref{sec:limits} and \ref{sec:fixed}.
 
 \subsubsection{Growth Policy}
 

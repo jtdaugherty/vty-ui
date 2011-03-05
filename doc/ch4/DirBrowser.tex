@@ -10,13 +10,13 @@ get information about an unreadable file, an error is displayed in the
 browser interface.
 
 The \fw{DirBrowser} uses a \fw{List} widget for selecting files and
-directories, so its keybindings apply here.  In total, the directory
-browser supports the following key bindings:
+directories, so the \fw{List} keybindings apply here.  In total, the
+directory browser supports the following key bindings:
 
 \begin{itemize}
 \item \fw{Enter} -- descends into a directory or selects a file.
 \item \fw{Left} -- ascends to the parent directory.
-\item \fw{Right} -- descends into a directory.
+\item \fw{Right} -- descends into a selected directory.
 \item \fw{Up}, \fw{Down} -- changes the currently-selected entry.
 \item \fw{'q'}, \fw{Esc} -- cancels browsing.
 \item \fw{'r'} -- refreshes the browser's state of the current
@@ -47,7 +47,7 @@ handler with \fw{on\-Browse\-Accept}.  The handler will be passed the
 
 Similarly, to be notified when the user has cancelled browsing,
 register an event handler with \fw{onBrowseCancel}.  The handler will
-be passed the browser path at the time of cancellation.
+be passed the browser's path at the time of cancellation.
 
 \begin{haskellcode}
  browser `onBrowseCancel` \path -> ...
@@ -91,7 +91,7 @@ The attribute fields of the \fw{BrowserSkin} type are as follows:
 \end{itemize}
 
 When the browser is focused, it uses the \fw{RenderContext}'s
-\fw{focusAttr} for the currently-selected entry.
+\fw{focusAttr} for the currently-selected entry in the \fw{List}.
 
 \subsection{Annotations}
 
@@ -102,8 +102,8 @@ target is displayed.
 
 It may be important to add your own such enhancements to the browser.
 For example, you may want to apply an attribute to files with a
-specific extension and make them easy to see in the browser.  In
-addition, you may wish to generate a description about the file in the
+specific extension to make them easy to see in the browser.  In
+addition you may wish to generate a description about the file in the
 status bar.  To accomplish this, the \fw{DirBrowser} provides
 \textit{annotations}.
 
@@ -132,13 +132,16 @@ annotation for ``emacs backup files,'' which end in \fw{'\string~'}:
                      ]
 \end{haskellcode}
 
+For the full specification of the annotation's type, please see the
+API documentation.
+
 \subsection{Error Reporting}
 
 When a user selects a file in the browser, your application may
 determine that the file does not meet certain requirements.  At this
 point it may be useful to report an error to the user without leaving
 the browser interface.  The \fw{DirBrowser} provides a function to do
-just this, called \fw{reportBrowserError}.  The function displays an
+just this called \fw{reportBrowserError}.  The function displays an
 error message in the browser's error message area.
 
 \begin{haskellcode}

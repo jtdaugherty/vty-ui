@@ -16,19 +16,19 @@ navigating, and selecting from a list of elements.
   currently-selected item has been ``activated.''
 \end{itemize}
 
-Lists are implemented with the type \fw{List a b}.  This type's two
+Lists are implemented with the type \fw{List a b}.  Its two type
 parameters are as follows:
 
 \begin{itemize}
 \item \textit{internal item type}, \fw{a} -- This is the type of the
   application-specific value stored in each list item.  This is the
-  data that is represented by the visual aspect of the list element,
+  data that is represented by the visual aspect of the list element
   and it will not necessarily have anything to do with the visual
   representation.
 \item \textit{item widget type}, \fw{b} -- This is the type of the
   widget state of each element as it is represented in the interface.
   For example, a simple list of strings might use \fw{String} as its
-  internal value and \fw{Widget FormattedText} (Section
+  internal value type and \fw{Widget FormattedText} (Section
   \ref{sec:text}) as its widget type, resulting in a list of type
   \fw{List String FormattedText}.
 \end{itemize}
@@ -47,37 +47,37 @@ own focus attribute (Section \ref{sec:attributes}) as the attribute of
 the currently-selected item when it has the focus.
 
 Items may be added to a \fw{List} with the \fw{addToList} function,
-which takes an internal item value (e.g., \fw{String}) and uses it to
-construct a widget with the appropriate type (e.g. \fw{Widget
+which takes an internal value (e.g., \fw{String}) and uses it to
+construct a widget with the appropriate type (e.g., \fw{Widget
   FormattedText}):
 
 \begin{haskellcode}
  addToList lst "foobar"
 \end{haskellcode}
 
-The constructor function passed to \fw{newList} can be thought of as a
+The constructor function passed to \fw{newList} is essentially a
 specification of how list items should be represented.  For a \fw{List
   a b}, it must take a value of type \fw{a} and return a \fw{Widget
-  b}.  There are two restrictions on what the constructor can return:
+  b}.  There are two restrictions on the constructor's return value:
 
 \begin{itemize}
 \item The \fw{Widget b} type \textit{must not grow vertically}.  This
   is because all \fw{List} item widgets must take up a fixed amount of
-  vertical space so the \fw{List} can manage scrolling, for example.
-  If the widget grows vertically, \fw{addToList} will throw a
-  \fw{ListError} exception.
+  vertical space so the \fw{List} can manage scrolling.  If the widget
+  grows vertically, \fw{addToList} will throw a \fw{ListError}
+  exception.
 \item All widgets returned \textit{must have the same height}.  This
   is because the list uses the item height to calculate how many items
   can be displayed, given the space available to the rendered
-  \fw{List}.  If the constructor creates a widget whose doesn't match
-  that of the rest of the wigets of the list, layout problems are
-  likely to ensue.
+  \fw{List}.  If the constructor creates a widget whose rendered size
+  doesn't match that of the rest of the wigets of the list, layout
+  problems are likely to ensue.
 \end{itemize}
 
-Conversely, items may be removed from \fw{List}s with the
-\fw{removeFromList} function, which takes a \fw{Widget (List a b)} and
-an item position, removes the item at the specified position, and
-returns the removed item:
+Items may be removed from \fw{List}s with the \fw{removeFromList}
+function, which takes a \fw{Widget (List a b)} and an item position,
+removes the item at the specified position, and returns the removed
+item:
 
 \begin{haskellcode}
  (val, w) <- removeFromList lst 0
@@ -87,9 +87,9 @@ If the position is invalid, a \fw{ListError} is thrown.
 \fw{removeFromList} returns the internal value (\fw{val}) and the
 corresponding widget (\fw{w}) of the removed list entry.
 
-All of the items can be removed with the \fw{clearList} function.
-Note that \fw{clearList} does \textit{not} invoke any event handlers
-for the removed items.
+All of the items can be removed from a \fw{List} with the
+\fw{clearList} function.  \fw{clearList} does \textit{not} invoke any
+event handlers for the removed items.
 
 \subsection{\fw{List} Inspection}
 

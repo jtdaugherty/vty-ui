@@ -13,16 +13,16 @@ progress bar, respectively:
  bar <- newProgressBar blue white
 \end{haskellcode}
 
-\fw{ProgressBar}s are composite widgest; to lay them out in your
+\fw{ProgressBar}s are composite widgets; to lay them out in your
 applications, use the \fw{progressBarWidget} function:
 
 \begin{haskellcode}
  ui <- (plainText "Progress: ") <--> (return $ progressBarWidget bar)
 \end{haskellcode}
 
-A \fw{ProgressBar} tracks progress as an \fw{Int} $0 \le n \le 100$.
-To set a \fw{ProgressBar}'s progress value, use \fw{setProgress} or
-\fw{addProgress}:
+A \fw{ProgressBar} tracks progress as an \fw{Int} n ($0 \le n \le
+100$).  To set a \fw{ProgressBar}'s progress value, use
+\fw{setProgress} or \fw{addProgress}:
 
 \begin{haskellcode}
  setProgress bar 35

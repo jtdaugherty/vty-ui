@@ -1,9 +1,9 @@
 \section{Tables}
 \label{sec:tables}
 
-The \fw{Table} module provides a table layout widget which provides
-full control over column and cell padding, alignment, and cell
-borders.
+The \fw{Table} module provides a table layout widget which embeds
+other widgets and provides full control over column and cell padding,
+alignment, and cell borders.
 
 The \fw{Table} creation function \fw{newTable} requires two parameters
 which govern the overall table behavior:
@@ -37,7 +37,7 @@ API.
 \subsection{Column Specifications: the \fw{ColumnSpec} Type}
 \label{sec:columnspecs}
 
-The \fw{newTable}'s column specification list dictates how many
+\fw{newTable}'s column specification list dictates how many terminal
 columns the \fw{Table} will have and how they will behave.  The column
 specification type, \fw{ColumnSpec}, specifies three properties of a
 column:
@@ -59,8 +59,8 @@ with 80 columns and has two \fw{ColFixed} columns with 10 and 20
 columns respectively and one \fw{ColAuto} column, the \fw{ColAuto}
 column will be given $80 - (10 + 20) = 50$ columns of space in the
 rendering process.  A \fw{Table} may have any number of \fw{ColAuto}
-columns; in general, the remaining space is divided evenly between the
-\fw{ColAuto} columns.
+columns; in general, the remaining space is divided evenly between
+them.
 
 The padding and alignment in the \fw{ColumnSpec} serve as the default
 properties for each cell in the column unless a cell has overridden
@@ -76,7 +76,7 @@ default \fw{Padding} for a column with the \fw{pad} function:
 
 The \fw{ColumnSpec} type is also an instance of the \fw{Alignable}
 type class provided by the \fw{Table} module.  This type class
-provides an \fw{align} function, which we can use to set the default
+provides an \fw{align} function which we can use to set the default
 cell alignment for the column:
 
 \begin{haskellcode}
@@ -89,8 +89,7 @@ are \fw{Align\-Left}, \fw{Align\-Center}, and \fw{Align\-Right}.
 \subsection{Border Settings}
 
 \fw{Table}s support three border configurations using the
-\fw{BorderStyle} type.  A \fw{Border\-Style} value is passed to the
-\fw{newTable} function.  Valid values are as follows:
+\fw{BorderStyle} type.  Valid values are as follows:
 
 \begin{itemize}
 \item \fw{BorderNone} -- no borders of any kind.
@@ -178,8 +177,8 @@ is possible to customize these settings on a per-cell basis.
 Every widget in a \fw{Table} is ultimately embedded in the
 \fw{TableCell} type.  This type holds the widget itself and any
 customized alignment and padding settings.  The \fw{TableCell} type is
-an instance of the \fw{Paddable} and \fw{Alignable} type classes, so
-we can use the familiar \fw{pad} and \fw{align} functions to pad and
+an instance of the \fw{Paddable} and \fw{Alignable} type classes so we
+can use the familiar \fw{pad} and \fw{align} functions to pad and
 align the \fw{TableCell}.
 
 To customize a cell's properties, we must first wrap the cell widget
@@ -202,7 +201,7 @@ Then we can use \fw{pad} and \fw{align} on the \fw{TableCell}:
 Cell alignment determines how remaining space will be used when a
 cell's widget is rendered.  The default poilcy, \fw{AlignLeft},
 indicates that when a cell's widget is rendered, it will be
-left-padded with a space-filling widget so that it takes up enough
+right-padded with a space-filling widget so that it takes up enough
 on-screen columns to fill the width specified by the \fw{Table}'s
 \fw{ColumnSpec}.  The \fw{AlignRight} and \fw{AlignCenter} settings
 behave similarly.
@@ -214,12 +213,11 @@ table's column.  In most cases this distinction is effectively
 unimportant, but in some cases it may be helpful to understand.
 
 Consider a table cell which contains an \fw{Edit} widget.  \fw{Edit}
-widgets grow horizontally, so any \fw{Edit} widget placed in a table
-cell will always fill it, so alignment settings will not affect the
-result.  However, if the \fw{Edit} widget is constrained with a
-``fixed'' widget as described in Section \ref{sec:fixed}, if any space
-is left over, the widget will be padded according to the alignment
-setting.
+widgets grow horizontall.  Any \fw{Edit} widget placed in a table cell
+will always fill it, so alignment settings will not affect the result.
+However, if the \fw{Edit} widget is constrained with a ``fixed''
+widget as described in Section \ref{sec:fixed}, if any space is left
+over, the widget will be padded according to the alignment setting.
 
 \subsubsection{Growth Policy}
 

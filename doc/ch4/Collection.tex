@@ -12,11 +12,11 @@ To create a new collection:
  c <- newCollection
 \end{haskellcode}
 
-A \fw{Collection} is not a widget itself, so it cannot be treated like
-one.  However, the primary operation of interest is the
-\fw{addToCollection} function, which adds an arbitrary \fw{Widget a}
-and \fw{FocusGroup} to the \fw{Collection} and returns an \fw{IO}
-action which, when run, will switch to that interface and focus group.
+A \fw{Collection} is not a widget so it cannot be treated like one.
+However, the primary operation of interest is the \fw{addToCollection}
+function, which adds an arbitrary \fw{Widget a} and \fw{FocusGroup} to
+the \fw{Collection} and returns an \fw{IO} action which, when run,
+will switch to that interface and focus group.
 
 \begin{haskellcode}
  switchToFoo <- addToCollection c fooUi fooFocusGroup
@@ -27,9 +27,9 @@ If you choose not to use the \fw{IO} action returned by
 \fw{addToCollection}, you may instead call \fw{setCurrentEntry}.  This
 function takes a \fw{Collection} and a position and sets the
 \fw{Collection}'s current entry to the one at the specified position.
-The position is an index into the \fw{Collection}'s internal list
+The position is an index into the \fw{Collection}'s internal list of
 interfaces.  If the position is invalid, a \fw{CollectionError} is
-thrown.  This method is not recommended but may be used with care.
+thrown.
 
 \begin{haskellcode}
  _ <- addToCollection c fooUi fooFocusGroup
@@ -38,8 +38,3 @@ thrown.  This method is not recommended but may be used with care.
 
 If an empty \fw{Collection} is used in any way, a \fw{CollectionError}
 will be thrown.
-
-\subsubsection{Growth Policy}
-
-The growth policy of a \fw{Collection} is always inherited from its
-currently-selected interface widget.

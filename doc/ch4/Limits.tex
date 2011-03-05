@@ -2,11 +2,11 @@
 \label{sec:limits}
 
 The \fw{Limits} module provides widgets for setting upper bounds on
-the size of other widgets.  These widgets differ from the \fw{Fixed}
+the sizes of other widgets.  These widgets differ from the \fw{Fixed}
 module we saw in Section \ref{sec:fixed}; ``limit'' widgets do not pad
 their children if the children render to \fw{Image}s smaller than the
-specified space, whereas fixed-size widgets pad their children in,
-thus guaranteeing that the specified space will be consumed.
+specified space, whereas fixed-size widgets pad their children, thus
+guaranteeing that the specified space will be consumed.
 
 The limiting widget API is similar to that of the \fw{Fixed} module.
 Limiting widgets are created as follows:
@@ -36,11 +36,11 @@ provided so that the limit settings can be manipulated as desired:
   a limiting widget.
 \item \fw{addToVLimit}, \fw{addToHLimit} -- adds a value to the
   constraint value of a limiting widget.
-\item {getVLimitSize}, \fw{getHLimitSize} -- returns the constraint
+\item \fw{getVLimitSize}, \fw{getHLimitSize} -- returns the constraint
   value of a limiting widget.
 \end{itemize}
 
 \subsubsection{Growth Policy}
 
-Limiting widgets never grow in the constrained dimension, and defer to
+Limiting widgets never grow in the constrained dimension and defer to
 their children for growth policy otherwise.

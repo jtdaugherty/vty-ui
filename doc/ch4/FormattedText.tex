@@ -18,8 +18,8 @@ A \fw{FormattedText} widget can be created from a \fw{String} with the
 
 In addition to rendering plain text strings, we can use ``formatters''
 to change the arrangement and attributes of text.  Formatters can
-manipulate the the token lists and attributes to change the text
-layout and appearance.
+manipulate structure and attributes to change the text layout and
+appearance.
 
 To use a formatter with a text widget, we must use a different
 constructor function, \fw{text\-Widget}:
@@ -29,37 +29,37 @@ constructor function, \fw{text\-Widget}:
 \end{haskellcode}
 
 When formatters are applied, the text is automatically broken up into
-``tokens,'' each of which indicates sequences of whitespace and
-non-whitespace characters.  Each token stores its own attribute, and
-it is these tokens on which formatters operate.
+``tokens,'' each of which indicates sequences of whitespace or
+non-whitespace characters.  Each token stores its own attribute and it
+is these tokens on which formatters operate.
 
 The \fw{Text} module provides two formatters: \fw{wrap} and
 \fw{highlight}.  \fw{wrap} wraps the text to fit into the
 \fw{DisplayRegion} available at rendering time.  \fw{highlight} uses
 the \fw{pcre-light}\footnote{\fw{pcre-light} on Hackage:
   \href{http://hackage.haskell.org/package/pcre-light-0.3.1.1}{http://hackage.haskell.org/package/pcre-light-0.3.1.1}}
-to highlight text using a regular ``Perl-compatible'' expression.  To
-construct a highlighting formatter, we must provide the regular
-expression used to match strings as well as the attribute that should
-be applied to the matching strings:\footnote{Since formatters operate
-  on individual tokens, the \fw{highlight} formatter applies its
-  regular expression to each token individually, so it will only ever
-  match sequences of characters in each token rather than matching
-  more than one token.}
+library to highlight text using ``Perl-compatible'' regular
+expressions.  To construct a highlighting formatter, we must provide
+the regular expression used to match strings as well as the attribute
+that should be applied to the matches:\footnote{Since
+  formatters operate on individual tokens, the \fw{highlight}
+  formatter applies its regular expression to each token individually,
+  so it will only ever match sequences of characters in each token
+  rather than matching more than one token.}
 
 \begin{haskellcode}
- let doHighlight = highlight (compile (BS8.pack "bar") [])
+ let doHighlight = highlight (compile (pack "bar") [])
                      (fgColor bright_green)
  t <- textWidget "Foo bar baz" doHighlight
 \end{haskellcode}
 
 Formatters can be composed with the \fw{\&.\&} operator.  This
-operation results in a new formatter which will apply the operand
+operator constructs a new formatter which will apply the operand
 formatters in the specified order.  We can use this operator to
 compose the built-in formatters on a single \fw{FormattedText} widget:
 
 \begin{haskellcode}
- t <- textWidget "Foo bar baz" (doHighlight \&.\& wrap)
+ t <- textWidget "Foo bar baz" (doHighlight &.& wrap)
 \end{haskellcode}
 
 \subsubsection{Growth Policy}

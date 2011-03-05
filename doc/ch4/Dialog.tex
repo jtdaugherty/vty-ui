@@ -2,15 +2,11 @@
 \label{sec:dialogs}
 
 The \fw{Dialog} module provides a basic accept/cancel dialog widget
-interface.  This type of dialog is capable of embedding arbitrary
-widgets, so as long as you're interested in providing an
-``accept/cancel'' workflow in your interface, this dialog type is a
-suitable choice.
+interface and is capable of embedding arbitrary widgets.
 
-Creating a dialog is straightforward.  Assuming you have some
-interface to embed in the dialog, \fw{ui}, the following will create a
-new dialog with an embedded \fw{Edit} widget and with its title set
-accordingly:
+Dialog creation is straightforward.  The following example will create
+a new dialog with an embedded \fw{Edit} widget and will set the
+\fw{Dialog}'s title:
 
 \begin{haskellcode}
  fg1 <- newFocusGroup
@@ -21,7 +17,7 @@ accordingly:
  fg <- mergeFocusGroups fg1 fg2
 \end{haskellcode}
 
-The \fw{newDialog} function returns a \fw{Dialog} value and a
+The \fw{newDialog} function returns a \fw{Dialog} and a
 \fw{FocusGroup}.  The \fw{Dialog} includes two \fw{Button}s -- an
 ``OK'' button and a ``Cancel'' button -- and the returned
 \fw{Focus\-Group} contains those buttons in that order.  You can merge
