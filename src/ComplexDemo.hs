@@ -15,14 +15,15 @@ import qualified Data.ByteString.Char8 as BS8
 -- Visual attributes.
 fg = white
 bg = black
-
 focAttr = black `on` yellow
 headerAttr = fgColor bright_green
 msgAttr = fgColor blue
 
+-- Formatter to apply a color to "<...>"
 color :: Formatter
 color = highlight (compile (BS8.pack "<.*>") []) (fgColor bright_green)
 
+-- Multi-state checkbox value type
 data FrostingType = Chocolate
                   | Vanilla
                   | Lemon
@@ -104,6 +105,7 @@ main = do
       case ev of
         SelectionOn _ k _ -> setText listHeader $ "You selected: " ++ k
         SelectionOff -> return ()
+
   lst `onItemActivated` \(ActivateItemEvent _ s _) ->
       setText listHeader $ "You activated: " ++ s
 
@@ -154,7 +156,6 @@ main = do
                act $ i + 4
          act 0
 
-  -- Enter the event loop.
   c <- newCollection
   _ <- addToCollection c ui fgr
 
