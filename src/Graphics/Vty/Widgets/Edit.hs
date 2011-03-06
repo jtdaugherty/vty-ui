@@ -305,10 +305,3 @@ delCurrentChar wRef = do
          let newContent = remove (cursorPosition st) (currentText st)
          updateWidgetState wRef $ \s -> s { currentText = newContent }
          notifyChangeHandlers wRef
-
-remove :: Int -> [a] -> [a]
-remove pos as = (take pos as) ++ (drop (pos + 1) as)
-
-inject :: Int -> a -> [a] -> [a]
-inject pos a as = let (h, t) = splitAt pos as
-                  in h ++ (a:t)

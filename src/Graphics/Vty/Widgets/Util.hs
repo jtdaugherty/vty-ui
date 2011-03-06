@@ -9,6 +9,8 @@ module Graphics.Vty.Widgets.Util
     , withHeight
     , plusWidth
     , plusHeight
+    , remove
+    , inject
     )
 where
 
@@ -77,3 +79,10 @@ plusHeight (DisplayRegion w h') h =
     if (fromEnum h' + fromEnum h < 0)
     then error $ "plusHeight: would overflow on " ++ (show h') ++ " + " ++ (show h)
     else DisplayRegion w (h + h')
+
+remove :: Int -> [a] -> [a]
+remove pos as = (take pos as) ++ (drop (pos + 1) as)
+
+inject :: Int -> a -> [a] -> [a]
+inject pos a as = let (h, t) = splitAt pos as
+                  in h ++ (a:t)
