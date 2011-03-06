@@ -262,7 +262,7 @@ onItemActivated = addHandler (itemActivateHandlers <~~)
 clearList :: (MonadIO m) => Widget (List a b) -> m ()
 clearList w = do
   updateWidgetState w $ \l ->
-      l { selectedIndex = 0
+      l { selectedIndex = (-1)
         , scrollTopIndex = 0
         , listItems = []
         }
