@@ -228,7 +228,10 @@ addToList list key = do
   notifyItemAddHandler list (numItems + 1) key w
 
   when (numItems == 0) $
-       notifySelectionHandler list
+       do
+         foc <- focused <~ list
+         when foc $ focus w
+         notifySelectionHandler list
 
   return (key, w)
 
@@ -288,12 +291,10 @@ newList selAttr f = do
 
         , getCursorPosition_ =
             \this -> do
-              st <- getState this
-              pos <- getCurrentPosition this
-              sz <- getCurrentSize this
-              let newCol = max 0 (region_width pos + region_width sz - 1)
-                  newRow = region_height pos + toEnum (max 0 $ selectedIndex st - scrollTopIndex st)
-              return $ Just (pos `withWidth` newCol `withHeight` newRow)
+              sel <- getSelected this
+              case sel of
+                Nothing -> return Nothing
+                Just (_, (_, e)) -> getCursorPosition e
 
         , render_ =
             \this sz ctx -> do
@@ -318,6 +319,21 @@ newList selAttr f = do
               forM_ (zip [0..] items) $ \(i, ((_, iw), _)) ->
                   setCurrentPosition iw (pos `plusHeight` (toEnum $ i * ih))
         }
+
+  wRef `onGainFocus` \_ ->
+      do
+        val <- getSelected wRef
+        case val of
+          Nothing -> return ()
+          Just (_, (_, w)) -> focus w
+
+  wRef `onLoseFocus` \_ ->
+      do
+        val <- getSelected wRef
+        case val of
+          Nothing -> return ()
+          Just (_, (_, w)) -> unfocus w
+
   return wRef
 
 listKeyEvent :: Widget (List a b) -> Key -> [Modifier] -> IO Bool
@@ -326,7 +342,11 @@ listKeyEvent w KDown _ = scrollDown w >> return True
 listKeyEvent w KPageUp _ = pageUp w >> return True
 listKeyEvent w KPageDown _ = pageDown w >> return True
 listKeyEvent w KEnter _ = activateCurrentItem w >> return True
-listKeyEvent _ _ _ = return False
+listKeyEvent w k mods = do
+  val <- getSelected w
+  case val of
+    Nothing -> return False
+    Just (_, (_, e)) -> handleKeyEvent e k mods
 
 renderListWidget :: (Show b) => Bool -> List a b -> DisplayRegion -> RenderContext -> IO Image
 renderListWidget foc list s ctx = do
@@ -446,7 +466,22 @@ resize wRef newSize = do
 -- managing internal list state and invoking event handlers.
 scrollBy :: (MonadIO m) => Widget (List a b) -> Int -> m ()
 scrollBy wRef amount = do
+  foc <- focused <~ wRef
+
+  -- Unfocus the currently-selected item.
+  old <- getSelected wRef
+  case old of
+    Nothing -> return ()
+    Just (_, (_, w)) -> when foc $ unfocus w
+
   updateWidgetState wRef $ scrollBy' amount
+
+  -- Focus the newly-selected item.
+  new <- getSelected wRef
+  case new of
+    Nothing -> return ()
+    Just (_, (_, w)) -> when foc $ focus w
+
   notifySelectionHandler wRef
 
 scrollBy' :: Int -> List a b -> List a b
