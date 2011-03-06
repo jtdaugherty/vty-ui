@@ -227,7 +227,7 @@ insertIntoList list key pos = do
   oldSel <- selectedIndex <~~ list
   let newSelIndex = if numItems == 0
                     then 0
-                    else if pos < oldSel
+                    else if pos <= oldSel
                          then oldSel + 1
                          else oldSel
 
