@@ -129,7 +129,9 @@ setupEditWidget e w = do
 loadDocument :: (MonadIO m) => Editor -> String -> m ()
 loadDocument e doc = do
   clearList (editorList e)
-  forM_ (lines doc) $ addToList (editorList e)
+  let ls = lines doc
+      ls' = if null ls then [""] else ls
+  forM_ ls' $ addToList (editorList e)
 
 getDocument :: (MonadIO m) => Editor -> m String
 getDocument e = do
