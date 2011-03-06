@@ -37,11 +37,12 @@ style = (def_attr `with_style`)
 -- Left-most attribute's fields take precedence.
 -- |Merge two attributes.  Leftmost attribute takes precedence where
 -- it specifies any of the foreground color, background color, or
--- style.
+-- style.  Note that the style precedence is total: all bits of the
+-- style mask will take precedence if any are set.
 mergeAttr :: Attr -> Attr -> Attr
 mergeAttr a b =
     let b1 = case attr_style a of
-               SetTo v -> b `with_style` v
+               SetTo v -> b { attr_style = SetTo v }
                _ -> b
         b2 = case attr_fore_color a of
                SetTo v -> b1 `with_fore_color` v
