@@ -200,3 +200,17 @@ Executable vty-ui-dialog-demo
     vty >= 4.6 && < 4.7
   if !flag(demos)
     Buildable: False
+
+Executable vty-ui-editor-demo
+  Hs-Source-Dirs:  src
+  GHC-Options:     -Wall
+  Main-is:         EditorDemo.hs
+  if os(darwin)
+    Extra-Lib-Dirs:  /usr/lib
+  Build-Depends:
+    base >= 4 && < 5,
+    mtl >= 2.0 && < 2.1,
+    vty >= 4.6 && < 4.7,
+    haskell98
+  if !flag(demos)
+    Buildable: False
