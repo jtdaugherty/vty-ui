@@ -17,6 +17,7 @@ module Graphics.Vty.Widgets.List
     , newStringList
     , newList
     , addToList
+    , insertIntoList
     , removeFromList
     -- ** List manipulation
     , scrollBy
@@ -198,7 +199,11 @@ removeFromList list pos = do
 addToList :: (MonadIO m, Show b) => Widget (List a b) -> a -> m (ListItem a b)
 addToList list key = do
   numItems <- (length . listItems) <~~ list
+  insertIntoList list key numItems
 
+insertIntoList :: (MonadIO m, Show b) => Widget (List a b) -> a -> Int -> m (ListItem a b)
+insertIntoList list key pos = do
+  numItems <- (length . listItems) <~~ list
   makeWidget <- itemConstructor <~~ list
   w <- liftIO $ makeWidget key
 
@@ -218,11 +223,17 @@ addToList list key = do
            return $ fromEnum $ image_height img
          _ -> itemHeight <~~ list
 
+  -- Calculate the new selected index.
+  oldSel <- selectedIndex <~~ list
+  let newSelIndex = if numItems == 0
+                    then 0
+                    else if pos < oldSel
+                         then oldSel + 1
+                         else oldSel
+
   updateWidgetState list $ \s -> s { itemHeight = h
-                                   , listItems = listItems s ++ [(key, w)]
-                                   , selectedIndex = if numItems == 0
-                                                     then 0
-                                                     else selectedIndex s
+                                   , listItems = inject pos (key, w) (listItems s)
+                                   , selectedIndex = newSelIndex
                                    }
 
   notifyItemAddHandler list (numItems + 1) key w
@@ -231,7 +242,8 @@ addToList list key = do
        do
          foc <- focused <~ list
          when foc $ focus w
-         notifySelectionHandler list
+
+  when (oldSel /= newSelIndex) $ notifySelectionHandler list
 
   return (key, w)
 
