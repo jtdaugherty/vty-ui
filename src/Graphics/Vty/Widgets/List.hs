@@ -162,7 +162,7 @@ removeFromList list pos = do
 
       -- If that item is currently selected, select a different item.
       newSelectedIndex = if pos > sel
-                         then pos
+                         then sel
                          else if pos < sel
                               then if sel == 0
                                    then 0
