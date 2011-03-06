@@ -30,9 +30,11 @@ module Graphics.Vty.Widgets.List
     , onItemActivated
     , activateCurrentItem
     , clearList
+    , setSelected
     -- ** List inspection
     , getListSize
     , getSelected
+    , getListItem
     )
 where
 
@@ -391,6 +393,22 @@ getSelected wRef = do
   case selectedIndex list of
     (-1) -> return Nothing
     i -> return $ Just (i, (listItems list) !! i)
+
+-- |Get the list item at the specified position.
+getListItem :: (MonadIO m) => Widget (List a b) -> Int -> m (Maybe (ListItem a b))
+getListItem wRef pos = do
+  list <- state <~ wRef
+  case pos >= 0 && pos < (length $ listItems list) of
+    False ->  return Nothing
+    True -> return $ Just ((listItems list) !! pos)
+
+-- |Set the currently-selected list index.
+setSelected :: (MonadIO m) => Widget (List a b) -> Int -> m ()
+setSelected wRef newPos = do
+  list <- state <~ wRef
+  case selectedIndex list of
+    (-1) -> return ()
+    curPos -> scrollBy wRef (newPos - curPos)
 
 resize :: (MonadIO m) => Widget (List a b) -> Int -> m ()
 resize wRef newSize = do

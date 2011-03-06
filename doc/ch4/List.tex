@@ -91,6 +91,12 @@ All of the items can be removed from a \fw{List} with the
 \fw{clearList} function.  \fw{clearList} does \textit{not} invoke any
 event handlers for the removed items.
 
+In addition to \fw{addToList}, the \fw{List} API provides the
+\fw{setSelected} function.  This function takes a \fw{List} widget and
+an index and scrolls the list so that the item at the specified
+position is selected.  If the position is out of bounds, the \fw{List}
+is scrolled as much as possible.
+
 \subsection{\fw{List} Inspection}
 
 The \fw{List} module provides some functions to get information about
@@ -103,6 +109,10 @@ the state of a \fw{List}:
   \fw{Nothing} if the \fw{List} is empty or returns \fw{Just (pos,
     (val, widget))} corresponding to the list index, internal item
   value, and widget of the currently-selected list item.
+\item \fw{getListItem} -- takes a \fw{Widget (List a b)} and an index
+  and returns \fw{Nothing} if the \fw{List} has no item at the
+  specified index item or returns \fw{Just (pos, (val, widget))}
+  corresponding to the list index.
 \end{itemize}
 
 \subsection{Scrolling a \fw{List}}
