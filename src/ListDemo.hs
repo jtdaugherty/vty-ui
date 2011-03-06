@@ -152,6 +152,7 @@ main = do
            _ -> return False
 
   setEditText (theEdit st) "edit me"
+  focus (theEdit st)
 
   -- We need to call these handlers manually because while they will
   -- be called automatically as items are added to the list in the
