@@ -150,6 +150,7 @@ getListSize = ((length . listItems) <~~)
 removeFromList :: (MonadIO m) => Widget (List a b) -> Int -> m (ListItem a b)
 removeFromList list pos = do
   st <- getState list
+  foc <- focused <~ list
 
   let numItems = length $ listItems st
 
@@ -179,6 +180,17 @@ removeFromList list pos = do
                                    , listItems = take pos (listItems st) ++
                                                  drop (pos + 1) (listItems st)
                                    }
+
+  when foc $ do
+    -- Unfocus the item we are about to remove if it's currently
+    -- selected
+    when (pos == sel) $ do
+               unfocus w
+               -- Focus the newly-selected item, if any
+               cur <- getSelected list
+               case cur of
+                 Nothing -> return ()
+                 Just (_, (_, w')) -> focus w'
 
   -- Notify the removal handler.
   notifyItemRemoveHandler list pos label w
