@@ -237,15 +237,24 @@ insertIntoList list key pos = do
 
   -- Calculate the new selected index.
   oldSel <- selectedIndex <~~ list
+  oldScr <- scrollTopIndex <~~ list
+  swSize <- scrollWindowSize <~~ list
+
   let newSelIndex = if numItems == 0
                     then 0
                     else if pos <= oldSel
                          then oldSel + 1
                          else oldSel
+      newScrollTop = if pos <= oldSel
+                     then if (oldSel - oldScr + 1) == swSize
+                          then oldScr + 1
+                          else oldScr
+                     else oldScr
 
   updateWidgetState list $ \s -> s { itemHeight = h
                                    , listItems = inject pos (key, w) (listItems s)
                                    , selectedIndex = newSelIndex
+                                   , scrollTopIndex = newScrollTop
                                    }
 
   notifyItemAddHandler list (numItems + 1) key w
