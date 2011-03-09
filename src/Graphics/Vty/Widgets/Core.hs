@@ -399,6 +399,21 @@ mergeFocusGroups a b = do
                                 , currentEntryNum = 0
                                 }
 
+  -- Now we need to be sure that we have the event handlers set
+  -- correctly on each widget.  The reason we don't just call
+  -- addToFocusGroup on each entry's widget is because the user may
+  -- have added event handlers to the FocusEntries themselves, and we
+  -- want to preserve those, so we extract the widget from the focus
+  -- entry to add the onGainFocus handler, but use the existing
+  -- FocusEntries when constructing the new focus group.
+  forM_ (zip [0..] aEntries) $ \(i, e) -> do
+    (FocusEntry w) <- state <~ e
+    w `onGainFocus` (const $ setCurrentFocus c i)
+
+  forM_ (zip [(length aEntries)..] bEntries) $ \(i, e) -> do
+    (FocusEntry w) <- state <~ e
+    w `onGainFocus` (const $ setCurrentFocus c i)
+
   return c
 
 resetFocusGroup :: (MonadIO m) => Widget FocusGroup -> m ()
