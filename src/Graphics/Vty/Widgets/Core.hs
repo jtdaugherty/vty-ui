@@ -405,7 +405,7 @@ resetFocusGroup :: (MonadIO m) => Widget FocusGroup -> m ()
 resetFocusGroup fg = do
   cur <- currentEntryNum <~~ fg
   es <- entries <~~ fg
-  forM_ (zip [1..] es) $ \(i, e) ->
+  forM_ (zip [0..] es) $ \(i, e) ->
       when (i /= cur) $ unfocus e
   when (cur >= 0) $
        focus =<< currentEntry fg
