@@ -149,6 +149,7 @@ removeFromList list pos = do
   st <- getState list
 
   let numItems = length $ listItems st
+      oldScr = scrollTopIndex st
 
   when (pos < 0 || pos >= numItems) $
        throw $ BadItemIndex pos
@@ -156,6 +157,12 @@ removeFromList list pos = do
   -- Get the item from the list.
   let (label, w) = listItems st !! pos
       sel = selectedIndex st
+
+      newScrollTop = if pos <= oldScr
+                     then if oldScr == 0
+                          then oldScr
+                          else oldScr - 1
+                     else oldScr
 
       -- If that item is currently selected, select a different item.
       newSelectedIndex = if pos > sel
@@ -175,6 +182,7 @@ removeFromList list pos = do
   updateWidgetState list $ \s -> s { selectedIndex = newSelectedIndex
                                    , listItems = take pos (listItems st) ++
                                                  drop (pos + 1) (listItems st)
+                                   , scrollTopIndex = newScrollTop
                                    }
 
   -- Notify the removal handler.
