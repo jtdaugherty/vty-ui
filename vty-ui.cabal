@@ -1,5 +1,5 @@
 Name:                vty-ui
-Version:             1.0
+Version:             1.0.1
 Synopsis:            An interactive terminal user interface library
                      for Vty
 Description:         An extensible library of user interface widgets
