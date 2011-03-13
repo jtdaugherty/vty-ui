@@ -1,0 +1,16 @@
+
+1.0 -> 1.0.1
+------------
+
+Bug fixes:
+
+  List:
+    * removeFromList now recomputes scrolling window info correctly.
+    * removeFromList fixes new selected index when pos > sel.
+    * clearList now sets the selectedIndex correctly.
+
+  Core:
+    * mergeFocusGroups now correctly preserves existing handlers and
+      establishes new FocusGroup manipulation handlers.
+    * resetFocusGroup now uses the right index range (was resetting
+      the focused element to zero, now -1)
