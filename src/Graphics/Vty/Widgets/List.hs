@@ -240,7 +240,7 @@ insertIntoList list key pos = do
            -- same size.  If you violate this, you'll have interesting
            -- results!
            img <- render w (DisplayRegion 100 100) defaultContext
-           return $ fromEnum $ image_height img
+           return $ max 1 $ fromEnum $ image_height img
          _ -> itemHeight <~~ list
 
   -- Calculate the new selected index.
