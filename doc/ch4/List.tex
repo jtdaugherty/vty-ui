@@ -36,29 +36,28 @@ parameters are as follows:
 Lists are created with the \fw{newList} function:
 
 \begin{haskellcode}
- lst <- newList attr plainText
+ lst <- newList attr
 \end{haskellcode}
 
-\fw{newList} takes two parameters: the attribute of the
+\fw{newList} takes one parameter: the attribute of the
 currently-selected item to be used when the list is \textit{not}
-focused, and the \textit{constructor function} to be used to create
-widgets when new items are added to the list.  The \fw{List} uses its
-own focus attribute (Section \ref{sec:attributes}) as the attribute of
-the currently-selected item when it has the focus.
+focused.  The \fw{List} uses its own focus attribute (Section
+\ref{sec:attributes}) as the attribute of the currently-selected item
+when it has the focus.  The widget type of the list (\fw{b} above)
+won't be chosen by the type system until you actually add something to
+the list.
 
 Items may be added to a \fw{List} with the \fw{addToList} function,
-which takes an internal value (e.g., \fw{String}) and uses it to
-construct a widget with the appropriate type (e.g., \fw{Widget
-  FormattedText}):
+which takes an internal value (e.g., \fw{String}) and a widget of the
+appropriate type:
 
 \begin{haskellcode}
- addToList lst "foobar"
+ let s = "foobar"
+ addToList lst s =<< plainText s
 \end{haskellcode}
 
-The constructor function passed to \fw{newList} is essentially a
-specification of how list items should be represented.  For a \fw{List
-  a b}, it must take a value of type \fw{a} and return a \fw{Widget
-  b}.  There are two restrictions on the constructor's return value:
+There are two restrictions on the widget type that can be used with
+\fw{List}s:
 
 \begin{itemize}
 \item The \fw{Widget b} type \textit{must not grow vertically}.  This
@@ -66,10 +65,10 @@ specification of how list items should be represented.  For a \fw{List
   vertical space so the \fw{List} can manage scrolling.  If the widget
   grows vertically, \fw{addToList} will throw a \fw{ListError}
   exception.
-\item All widgets returned \textit{must have the same height}.  This
-  is because the list uses the item height to calculate how many items
-  can be displayed, given the space available to the rendered
-  \fw{List}.  If the constructor creates a widget whose rendered size
+\item All widgets added to the \fw{List} \textit{must have the same
+  height}.  This is because the list uses the item height to calculate
+  how many items can be displayed, given the space available to the
+  rendered \fw{List}.  If you specify a widget whose rendered size
   doesn't match that of the rest of the wigets of the list, layout
   problems are likely to ensue.
 \end{itemize}

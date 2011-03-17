@@ -103,7 +103,6 @@ data List a b = List { selectedUnfocusedAttr :: Attr
                      , itemRemoveHandlers :: Handlers (RemoveItemEvent a b)
                      , itemActivateHandlers :: Handlers (ActivateItemEvent a b)
                      , itemHeight :: Int
-                     , itemConstructor :: a -> IO (Widget b)
                      -- ^Function to construct new items
                      }
 
@@ -118,11 +117,9 @@ instance Show (List a b) where
                       , " }"
                       ]
 
-newListData :: 
-               Attr -- ^The attribute of the selected item
-            -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
+newListData :: Attr -- ^The attribute of the selected item
             -> IO (List a b)
-newListData selAttr f = do
+newListData selAttr = do
   schs <- newHandlers
   iahs <- newHandlers
   irhs <- newHandlers
@@ -138,7 +135,6 @@ newListData selAttr f = do
                 , itemRemoveHandlers = irhs
                 , itemActivateHandlers = iacths
                 , itemHeight = 0
-                , itemConstructor = f
                 }
 
 -- |Get the length of the list in elements.
@@ -216,16 +212,14 @@ removeFromList list pos = do
 -- |Add an item to the list.  Its widget will be constructed from the
 -- specified internal value using the widget constructor passed to
 -- 'newList'.
-addToList :: (Show b) => Widget (List a b) -> a -> IO (ListItem a b)
-addToList list key = do
+addToList :: (Show b) => Widget (List a b) -> a -> Widget b -> IO ()
+addToList list key w = do
   numItems <- (length . listItems) <~~ list
-  insertIntoList list key numItems
+  insertIntoList list key w numItems
 
-insertIntoList :: (Show b) => Widget (List a b) -> a -> Int -> IO (ListItem a b)
-insertIntoList list key pos = do
+insertIntoList :: (Show b) => Widget (List a b) -> a -> Widget b -> Int -> IO ()
+insertIntoList list key w pos = do
   numItems <- (length . listItems) <~~ list
-  makeWidget <- itemConstructor <~~ list
-  w <- liftIO $ makeWidget key
 
   v <- growVertical w
   when (v) $ throw BadListWidgetSizePolicy
@@ -274,12 +268,9 @@ insertIntoList list key pos = do
 
   when (oldSel /= newSelIndex) $ notifySelectionHandler list
 
-  return (key, w)
-
 -- |Register event handlers to be invoked when the list's selected
 -- item changes.
-onSelectionChange :: 
-                     Widget (List a b)
+onSelectionChange :: Widget (List a b)
                   -> (SelectionEvent a b -> IO ())
                   -> IO ()
 onSelectionChange = addHandler (selectionChangeHandlers <~~)
@@ -314,15 +305,12 @@ clearList w = do
         }
 
 -- |Create a new list using the specified attribute for the
--- currently-selected element when the list does NOT have focus.  Use
--- the specified constructor function to create widgets for new items
--- in the list.
+-- currently-selected element when the list does NOT have focus.
 newList :: (Show b) =>
            Attr -- ^The attribute of the selected item
-        -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
         -> IO (Widget (List a b))
-newList selAttr f = do
-  list <- newListData selAttr f
+newList selAttr = do
+  list <- newListData selAttr
   wRef <- newWidget $ \w ->
       w { state = list
         , keyEventHandler = listKeyEvent
@@ -426,13 +414,13 @@ renderListWidget foc list s ctx = do
 -- |A convenience function to create a new list using 'String's as the
 -- internal values and 'FormattedText' widgets to represent those
 -- strings.
-newStringList :: 
-                 Attr -- ^The attribute of the selected item
+newStringList :: Attr -- ^The attribute of the selected item
               -> [String] -- ^The list items
               -> IO (Widget (List String FormattedText))
 newStringList selAttr labels = do
-  list <- newList selAttr plainText
-  mapM_ (addToList list) labels
+  list <- newList selAttr
+  forM_ labels $ \l ->
+      (addToList list l =<< plainText l)
   return list
 
 -- |Programmatically activate the currently-selected item in the list,

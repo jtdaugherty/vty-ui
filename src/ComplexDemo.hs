@@ -66,7 +66,7 @@ main = do
   edit1Header <- textWidget wrap "" >>= withNormalAttribute headerAttr
   edit2Header <- textWidget wrap "" >>= withNormalAttribute headerAttr
 
-  lst <- newList (fgColor bright_green) plainText
+  lst <- newList (fgColor bright_green)
 
   selector <- vLimit 3 lst
   listHeader <- plainText ""
@@ -126,13 +126,16 @@ main = do
            KEsc -> exitSuccess
            _ -> return False
 
-  mapM_ (addToList lst) [ "Cookies"
-                        , "Cupcakes"
-                        , "Twinkies"
-                        , "M&Ms"
-                        , "Fritos"
-                        , "Cheetos"
-                        ]
+  let strs = [ "Cookies"
+             , "Cupcakes"
+             , "Twinkies"
+             , "M&Ms"
+             , "Fritos"
+             , "Cheetos"
+             ]
+
+  forM_ strs $ \s ->
+      (addToList lst s =<< plainText s)
 
   addToFocusGroup fgr r1
   addToFocusGroup fgr r2

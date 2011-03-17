@@ -117,7 +117,7 @@ newDirBrowser bSkin = do
   footer <- ((plainText " ") <++> (return fileInfo) <++> (hFill ' ' 1) <++> (return errorText))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
-  l <- newList (browserUnfocusedSelAttr bSkin) (\s -> plainText " " <++> plainText s)
+  l <- newList (browserUnfocusedSelAttr bSkin)
   ui <- vBox header =<< vBox l footer
 
   r <- newIORef ""
@@ -302,7 +302,8 @@ load b cur entries =
       let fullPath = cur </> entry
       f <- getSymbolicLinkStatus fullPath
       (attr, _) <- fileAnnotation (dirBrowserSkin b) f cur entry
-      (_, w) <- addToList (dirBrowserList b) entry
+      w <- plainText " " <++> plainText entry
+      addToList (dirBrowserList b) entry w
       ch <- getSecondChild w
       setNormalAttribute ch attr
 

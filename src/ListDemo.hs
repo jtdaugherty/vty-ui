@@ -106,7 +106,8 @@ main = do
   -- context.
   (theEdit st) `onChange` (updateFooterText st (theEdit st))
   (theEdit st) `onActivate` \e -> do
-         addToList (theList st) =<< getEditText e
+         s <- getEditText e
+         addToList (theList st) s =<< plainText s
          setEditText e ""
 
   let doBodyUpdate (SelectionOn i _ _) = updateBody st i
