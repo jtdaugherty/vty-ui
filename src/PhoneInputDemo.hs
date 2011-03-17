@@ -3,7 +3,6 @@ module Main where
 -- This demo is discussed in the vty-ui user's manual.
 
 import Control.Monad
-import Control.Monad.Trans
 
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
@@ -26,7 +25,7 @@ data PhoneInput =
               , activateHandlers :: Handlers PhoneNumber
               }
 
-newPhoneInput :: (MonadIO m) => m (PhoneInput, Widget FocusGroup)
+newPhoneInput :: IO (PhoneInput, Widget FocusGroup)
 newPhoneInput = do
    ahs <- newHandlers
    e1 <- editWidget
@@ -64,8 +63,8 @@ newPhoneInput = do
    mapM_ (addToFocusGroup fg) [e1, e2, e3]
    return (w, fg)
 
-onPhoneInputActivate :: (MonadIO m) => PhoneInput
-                     -> (PhoneNumber -> IO ()) -> m ()
+onPhoneInputActivate :: PhoneInput
+                     -> (PhoneNumber -> IO ()) -> IO ()
 onPhoneInputActivate input handler =
     addHandler (return . activateHandlers) input handler
 

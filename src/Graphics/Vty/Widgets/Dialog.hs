@@ -13,7 +13,6 @@ module Graphics.Vty.Widgets.Dialog
     )
 where
 
-import Control.Monad.Trans
 import Graphics.Vty.Widgets.Centering
 import Graphics.Vty.Widgets.Button
 import Graphics.Vty.Widgets.Padding
@@ -34,7 +33,7 @@ instance HasNormalAttr Dialog where
 -- |Create a new dialog with the specified embedded interface and
 -- title.  Returns the dialog itself and the 'FocusGroup' to which its
 -- buttons were added, for use in your application.
-newDialog :: (MonadIO m, Show a) => Widget a -> String -> m (Dialog, Widget FocusGroup)
+newDialog :: (Show a) => Widget a -> String -> IO (Dialog, Widget FocusGroup)
 newDialog body title = do
   okB <- newButton "OK"
   cancelB <- newButton "Cancel"
@@ -67,17 +66,17 @@ newDialog body title = do
   return (dlg, fg)
 
 -- |Register an event handler for the dialog's acceptance event.
-onDialogAccept :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
+onDialogAccept :: Dialog -> (Dialog -> IO ()) -> IO ()
 onDialogAccept = addHandler (return . dialogAcceptHandlers)
 
 -- |Register an event handler for the dialog's cancellation event.
-onDialogCancel :: (MonadIO m) => Dialog -> (Dialog -> IO ()) -> m ()
+onDialogCancel :: Dialog -> (Dialog -> IO ()) -> IO ()
 onDialogCancel = addHandler (return . dialogCancelHandlers)
 
 -- |Programmatically accept the dialog.
-acceptDialog :: (MonadIO m) => Dialog -> m ()
+acceptDialog :: Dialog -> IO ()
 acceptDialog dlg = fireEvent dlg (return . dialogAcceptHandlers) dlg
 
 -- |Programmatically cancel the dialog.
-cancelDialog :: (MonadIO m) => Dialog -> m ()
+cancelDialog :: Dialog -> IO ()
 cancelDialog dlg = fireEvent dlg (return . dialogCancelHandlers) dlg

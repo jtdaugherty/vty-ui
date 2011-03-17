@@ -21,7 +21,6 @@ where
 
 import Data.Word
 import Data.Monoid
-import Control.Monad.Trans
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Util
@@ -100,11 +99,11 @@ padLeftRight :: Int -> Padding
 padLeftRight v = Padding 0 v 0 v
 
 -- |Monadic combinator to construct a 'Padded' wrapper.
-withPadding :: (MonadIO m, Show a) => Padding -> Widget a -> m (Widget Padded)
+withPadding :: (Show a) => Padding -> Widget a -> IO (Widget Padded)
 withPadding = flip padded
 
 -- |Create a 'Padded' wrapper to add padding.
-padded :: (MonadIO m, Show a) => Widget a -> Padding -> m (Widget Padded)
+padded :: (Show a) => Widget a -> Padding -> IO (Widget Padded)
 padded ch padding = do
   wRef <- newWidget $ \w ->
       w { state = Padded ch padding

@@ -118,10 +118,10 @@ instance Show (List a b) where
                       , " }"
                       ]
 
-newListData :: (MonadIO m) =>
+newListData :: 
                Attr -- ^The attribute of the selected item
             -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
-            -> m (List a b)
+            -> IO (List a b)
 newListData selAttr f = do
   schs <- newHandlers
   iahs <- newHandlers
@@ -142,12 +142,12 @@ newListData selAttr f = do
                 }
 
 -- |Get the length of the list in elements.
-getListSize :: (MonadIO m) => Widget (List a b) -> m Int
+getListSize :: Widget (List a b) -> IO Int
 getListSize = ((length . listItems) <~~)
 
 -- |Remove an element from the list at the specified position.  May
 -- throw 'BadItemIndex'.
-removeFromList :: (MonadIO m) => Widget (List a b) -> Int -> m (ListItem a b)
+removeFromList :: Widget (List a b) -> Int -> IO (ListItem a b)
 removeFromList list pos = do
   st <- getState list
   foc <- focused <~ list
@@ -216,12 +216,12 @@ removeFromList list pos = do
 -- |Add an item to the list.  Its widget will be constructed from the
 -- specified internal value using the widget constructor passed to
 -- 'newList'.
-addToList :: (MonadIO m, Show b) => Widget (List a b) -> a -> m (ListItem a b)
+addToList :: (Show b) => Widget (List a b) -> a -> IO (ListItem a b)
 addToList list key = do
   numItems <- (length . listItems) <~~ list
   insertIntoList list key numItems
 
-insertIntoList :: (MonadIO m, Show b) => Widget (List a b) -> a -> Int -> m (ListItem a b)
+insertIntoList :: (Show b) => Widget (List a b) -> a -> Int -> IO (ListItem a b)
 insertIntoList list key pos = do
   numItems <- (length . listItems) <~~ list
   makeWidget <- itemConstructor <~~ list
@@ -278,34 +278,34 @@ insertIntoList list key pos = do
 
 -- |Register event handlers to be invoked when the list's selected
 -- item changes.
-onSelectionChange :: (MonadIO m) =>
+onSelectionChange :: 
                      Widget (List a b)
                   -> (SelectionEvent a b -> IO ())
-                  -> m ()
+                  -> IO ()
 onSelectionChange = addHandler (selectionChangeHandlers <~~)
 
 -- |Register event handlers to be invoked when a new item is added to
 -- the list.
-onItemAdded :: (MonadIO m) => Widget (List a b)
-            -> (NewItemEvent a b -> IO ()) -> m ()
+onItemAdded :: Widget (List a b)
+            -> (NewItemEvent a b -> IO ()) -> IO ()
 onItemAdded = addHandler (itemAddHandlers <~~)
 
 -- |Register event handlers to be invoked when an item is removed from
 -- the list.
-onItemRemoved :: (MonadIO m) => Widget (List a b)
-              -> (RemoveItemEvent a b -> IO ()) -> m ()
+onItemRemoved :: Widget (List a b)
+              -> (RemoveItemEvent a b -> IO ()) -> IO ()
 onItemRemoved = addHandler (itemRemoveHandlers <~~)
 
 -- |Register event handlers to be invoked when an item is activated,
 -- which happens when the user presses Enter on a selected element
 -- while the list has the focus.
-onItemActivated :: (MonadIO m) => Widget (List a b)
-            -> (ActivateItemEvent a b -> IO ()) -> m ()
+onItemActivated :: Widget (List a b)
+            -> (ActivateItemEvent a b -> IO ()) -> IO ()
 onItemActivated = addHandler (itemActivateHandlers <~~)
 
 -- |Clear the list, removing all elements.  Does not invoke any
 -- handlers.
-clearList :: (MonadIO m) => Widget (List a b) -> m ()
+clearList :: Widget (List a b) -> IO ()
 clearList w = do
   updateWidgetState w $ \l ->
       l { selectedIndex = (-1)
@@ -317,10 +317,10 @@ clearList w = do
 -- currently-selected element when the list does NOT have focus.  Use
 -- the specified constructor function to create widgets for new items
 -- in the list.
-newList :: (MonadIO m, Show b) =>
+newList :: (Show b) =>
            Attr -- ^The attribute of the selected item
         -> (a -> IO (Widget b)) -- ^Constructor for new item widgets
-        -> m (Widget (List a b))
+        -> IO (Widget (List a b))
 newList selAttr f = do
   list <- newListData selAttr f
   wRef <- newWidget $ \w ->
@@ -426,10 +426,10 @@ renderListWidget foc list s ctx = do
 -- |A convenience function to create a new list using 'String's as the
 -- internal values and 'FormattedText' widgets to represent those
 -- strings.
-newStringList :: (MonadIO m) =>
+newStringList :: 
                  Attr -- ^The attribute of the selected item
               -> [String] -- ^The list items
-              -> m (Widget (List String FormattedText))
+              -> IO (Widget (List String FormattedText))
 newStringList selAttr labels = do
   list <- newList selAttr plainText
   mapM_ (addToList list) labels
@@ -437,7 +437,7 @@ newStringList selAttr labels = do
 
 -- |Programmatically activate the currently-selected item in the list,
 -- if any.
-activateCurrentItem :: (MonadIO m) => Widget (List a b) -> m ()
+activateCurrentItem :: Widget (List a b) -> IO ()
 activateCurrentItem wRef = do
   mSel <- getSelected wRef
   case mSel of
@@ -448,7 +448,7 @@ activateCurrentItem wRef = do
 -- note that !! here will always succeed because selectedIndex will
 -- never be out of bounds and the list will always be non-empty.
 -- |Get the currently-selected list item.
-getSelected :: (MonadIO m) => Widget (List a b) -> m (Maybe (Int, ListItem a b))
+getSelected :: Widget (List a b) -> IO (Maybe (Int, ListItem a b))
 getSelected wRef = do
   list <- state <~ wRef
   case selectedIndex list of
@@ -456,7 +456,7 @@ getSelected wRef = do
     i -> return $ Just (i, (listItems list) !! i)
 
 -- |Get the list item at the specified position.
-getListItem :: (MonadIO m) => Widget (List a b) -> Int -> m (Maybe (ListItem a b))
+getListItem :: Widget (List a b) -> Int -> IO (Maybe (ListItem a b))
 getListItem wRef pos = do
   list <- state <~ wRef
   case pos >= 0 && pos < (length $ listItems list) of
@@ -464,14 +464,14 @@ getListItem wRef pos = do
     True -> return $ Just ((listItems list) !! pos)
 
 -- |Set the currently-selected list index.
-setSelected :: (MonadIO m) => Widget (List a b) -> Int -> m ()
+setSelected :: Widget (List a b) -> Int -> IO ()
 setSelected wRef newPos = do
   list <- state <~ wRef
   case selectedIndex list of
     (-1) -> return ()
     curPos -> scrollBy wRef (newPos - curPos)
 
-resize :: (MonadIO m) => Widget (List a b) -> Int -> m ()
+resize :: Widget (List a b) -> Int -> IO ()
 resize wRef newSize = do
   when (newSize == 0) $ throw ResizeError
 
@@ -505,7 +505,7 @@ resize wRef newSize = do
 -- Scrolling by a positive amount scrolls downward and scrolling by a
 -- negative amount scrolls upward.  This automatically takes care of
 -- managing internal list state and invoking event handlers.
-scrollBy :: (MonadIO m) => Widget (List a b) -> Int -> m ()
+scrollBy :: Widget (List a b) -> Int -> IO ()
 scrollBy wRef amount = do
   foc <- focused <~ wRef
 
@@ -554,7 +554,7 @@ scrollBy' amount list =
      else list { scrollTopIndex = adjustedTop
                , selectedIndex = newSelected }
 
-notifySelectionHandler :: (MonadIO m) => Widget (List a b) -> m ()
+notifySelectionHandler :: Widget (List a b) -> IO ()
 notifySelectionHandler wRef = do
   sel <- getSelected wRef
   case sel of
@@ -563,35 +563,35 @@ notifySelectionHandler wRef = do
     Just (pos, (a, b)) ->
         fireEvent wRef (selectionChangeHandlers <~~) $ SelectionOn pos a b
 
-notifyItemRemoveHandler :: (MonadIO m) => Widget (List a b) -> Int -> a -> Widget b -> m ()
+notifyItemRemoveHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
 notifyItemRemoveHandler wRef pos k w =
     fireEvent wRef (itemRemoveHandlers <~~) $ RemoveItemEvent pos k w
 
-notifyItemAddHandler :: (MonadIO m) => Widget (List a b) -> Int -> a -> Widget b -> m ()
+notifyItemAddHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
 notifyItemAddHandler wRef pos k w =
     fireEvent wRef (itemAddHandlers <~~) $ NewItemEvent pos k w
 
 -- |Scroll a list down by one position.
-scrollDown :: (MonadIO m) => Widget (List a b) -> m ()
+scrollDown :: Widget (List a b) -> IO ()
 scrollDown wRef = scrollBy wRef 1
 
 -- |Scroll a list up by one position.
-scrollUp :: (MonadIO m) => Widget (List a b) -> m ()
+scrollUp :: Widget (List a b) -> IO ()
 scrollUp wRef = scrollBy wRef (-1)
 
 -- |Scroll a list down by one page from the current cursor position.
-pageDown :: (MonadIO m) => Widget (List a b) -> m ()
+pageDown :: Widget (List a b) -> IO ()
 pageDown wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy wRef amt
 
 -- |Scroll a list up by one page from the current cursor position.
-pageUp :: (MonadIO m) => Widget (List a b) -> m ()
+pageUp :: Widget (List a b) -> IO ()
 pageUp wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy wRef (-1 * amt)
 
-getVisibleItems :: (MonadIO m) => Widget (List a b) -> m [(ListItem a b, Bool)]
+getVisibleItems :: Widget (List a b) -> IO [(ListItem a b, Bool)]
 getVisibleItems wRef = do
   list <- state <~ wRef
   return $ getVisibleItems_ list

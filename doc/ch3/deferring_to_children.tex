@@ -22,7 +22,7 @@ Then the implementation of the constructor:\footnote{This widget
   Section \ref{sec:containers_and_input}.}
 
 \begin{haskellcode}
- newWrapper :: (MonadIO m) => Widget a -> m (Widget (Wrapper a))
+ newWrapper :: Widget a -> IO (Widget (Wrapper a))
  newWrapper child = do
    wRef <- newWidget $ \w ->
      w { state = Wrapper child

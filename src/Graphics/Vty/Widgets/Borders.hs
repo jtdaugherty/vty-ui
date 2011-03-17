@@ -20,7 +20,6 @@ module Graphics.Vty.Widgets.Borders
     )
 where
 
-import Control.Monad.Trans
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Box
@@ -31,7 +30,7 @@ import Graphics.Vty.Widgets.Skins
 -- |The class of types with a border attribute, which differs from the
 -- |normal and focused attributes.
 class HasBorderAttr a where
-    setBorderAttribute :: (MonadIO m) => a -> Attr -> m ()
+    setBorderAttribute :: a -> Attr -> IO ()
 
 data HBorder = HBorder Attr String
                deriving (Show)
@@ -40,26 +39,26 @@ instance HasBorderAttr (Widget HBorder) where
     setBorderAttribute t a =
         updateWidgetState t $ \(HBorder a' s) -> HBorder (mergeAttr a a') s
 
-withBorderAttribute :: (MonadIO m, HasBorderAttr a) => Attr -> a -> m a
+withBorderAttribute :: (HasBorderAttr a) => Attr -> a -> IO a
 withBorderAttribute att w = setBorderAttribute w att >> return w
 
-withHBorderLabel :: (MonadIO m) => String -> Widget HBorder -> m (Widget HBorder)
+withHBorderLabel :: String -> Widget HBorder -> IO (Widget HBorder)
 withHBorderLabel label w = setHBorderLabel w label >> return w
 
-setHBorderLabel :: (MonadIO m) => Widget HBorder -> String -> m ()
+setHBorderLabel :: Widget HBorder -> String -> IO ()
 setHBorderLabel w label =
     updateWidgetState w $ \(HBorder a _) -> HBorder a label
 
-withBorderedLabel :: (MonadIO m) => String -> Widget (Bordered a) -> m (Widget (Bordered a))
+withBorderedLabel :: String -> Widget (Bordered a) -> IO (Widget (Bordered a))
 withBorderedLabel label w = setBorderedLabel w label >> return w
 
-setBorderedLabel :: (MonadIO m) => Widget (Bordered a) -> String -> m ()
+setBorderedLabel :: Widget (Bordered a) -> String -> IO ()
 setBorderedLabel w label =
     updateWidgetState w $ \(Bordered a ch _) -> Bordered a ch label
 
 -- |Create a single-row horizontal border using the specified
 -- attribute and character.
-hBorder :: (MonadIO m) => m (Widget HBorder)
+hBorder :: IO (Widget HBorder)
 hBorder = do
   wRef <- newWidget $ \w ->
       w { state = HBorder def_attr ""
@@ -102,7 +101,7 @@ instance HasBorderAttr (Widget VBorder) where
 
 -- |Create a single-column vertical border using the specified
 -- attribute and character.
-vBorder :: (MonadIO m) => m (Widget VBorder)
+vBorder :: IO (Widget VBorder)
 vBorder = do
   wRef <- newWidget $ \w ->
       w { state = VBorder def_attr
@@ -132,7 +131,7 @@ instance HasBorderAttr (Widget (Bordered a)) where
         updateWidgetState t $ \(Bordered a' ch s) -> Bordered (mergeAttr a a') ch s
 
 -- |Wrap a widget in a bordering box.
-bordered :: (MonadIO m, Show a) => Widget a -> m (Widget (Bordered a))
+bordered :: (Show a) => Widget a -> IO (Widget (Bordered a))
 bordered child = do
   wRef <- newWidget $ \w ->
       w { state = Bordered def_attr child ""

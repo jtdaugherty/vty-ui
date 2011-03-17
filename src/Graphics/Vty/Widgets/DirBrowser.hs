@@ -106,7 +106,7 @@ withAnnotations sk as = sk { browserCustomAnnotations = browserCustomAnnotations
 
 -- |Create a directory browser widget with the specified skin.
 -- Returns the browser itself along with its focus group.
-newDirBrowser :: (MonadIO m) => BrowserSkin -> m (DirBrowser, Widget FocusGroup)
+newDirBrowser :: BrowserSkin -> IO (DirBrowser, Widget FocusGroup)
 newDirBrowser bSkin = do
   path <- liftIO $ getCurrentDirectory
   pathWidget <- plainText ""
@@ -154,28 +154,28 @@ newDirBrowser bSkin = do
 -- |Report an error in the browser's error-reporting area.  Useful for
 -- reporting application-specific errors with the user's file
 -- selection.
-reportBrowserError :: (MonadIO m) => DirBrowser -> String -> m ()
+reportBrowserError :: DirBrowser -> String -> IO ()
 reportBrowserError b msg = setText (dirBrowserErrorWidget b) $ "Error: " ++ msg
 
-clearError :: (MonadIO m) => DirBrowser -> m ()
+clearError :: DirBrowser -> IO ()
 clearError b = setText (dirBrowserErrorWidget b) ""
 
 -- |Register handlers to be invoked when the user makes a selection.
-onBrowseAccept :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
+onBrowseAccept :: DirBrowser -> (FilePath -> IO ()) -> IO ()
 onBrowseAccept = addHandler (return . dirBrowserChooseHandlers)
 
 -- |Register handlers to be invoked when the user cancels browsing.
-onBrowseCancel :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
+onBrowseCancel :: DirBrowser -> (FilePath -> IO ()) -> IO ()
 onBrowseCancel = addHandler (return . dirBrowserCancelHandlers)
 
 -- |Register handlers to be invoked when the browser's path changes.
-onBrowserPathChange :: (MonadIO m) => DirBrowser -> (FilePath -> IO ()) -> m ()
+onBrowserPathChange :: DirBrowser -> (FilePath -> IO ()) -> IO ()
 onBrowserPathChange = addHandler (return . dirBrowserPathChangeHandlers)
 
-cancelBrowse :: (MonadIO m) => DirBrowser -> m ()
+cancelBrowse :: DirBrowser -> IO ()
 cancelBrowse b = fireEvent b (return . dirBrowserCancelHandlers) =<< getDirBrowserPath b
 
-chooseCurrentEntry :: (MonadIO m) => DirBrowser -> m ()
+chooseCurrentEntry :: DirBrowser -> IO ()
 chooseCurrentEntry b = do
   p <- getDirBrowserPath b
   mCur <- getSelected (dirBrowserList b)
@@ -189,7 +189,7 @@ handleSelectionChange b ev = do
     SelectionOff -> setText (dirBrowserFileInfo b) "-"
     SelectionOn _ path _ -> setText (dirBrowserFileInfo b) =<< getFileInfo b path
 
-getFileInfo :: (MonadIO m) => DirBrowser -> FilePath -> m String
+getFileInfo :: DirBrowser -> FilePath -> IO String
 getFileInfo b path = do
   cur <- getDirBrowserPath b
   let newPath = cur </> path
@@ -220,7 +220,7 @@ builtInAnnotations cur sk =
     , (\_ s -> isSocket s, \_ _ -> return "socket", browserSockAttr sk)
     ]
 
-fileAnnotation :: (MonadIO m) => BrowserSkin -> FileStatus -> FilePath -> FilePath -> m (Attr, IO String)
+fileAnnotation :: BrowserSkin -> FileStatus -> FilePath -> FilePath -> IO (Attr, IO String)
 fileAnnotation sk st cur shortPath = do
   let fullPath = cur </> shortPath
 
@@ -246,11 +246,11 @@ handleBrowserKey _ _ _ _ = return False
 
 -- |Refresh the browser by reloading and displaying the contents of
 -- the browser's current path.
-refreshBrowser :: (MonadIO m) => DirBrowser -> m ()
+refreshBrowser :: DirBrowser -> IO ()
 refreshBrowser b = setDirBrowserPath b =<< getDirBrowserPath b
 
 -- |Set the browser's current path.
-setDirBrowserPath :: (MonadIO m) => DirBrowser -> FilePath -> m ()
+setDirBrowserPath :: DirBrowser -> FilePath -> IO ()
 setDirBrowserPath b path = do
   cPath <- liftIO $ canonicalizePath path
 
@@ -286,14 +286,14 @@ setDirBrowserPath b path = do
     fireEvent b (return . dirBrowserPathChangeHandlers) cPath
 
 -- |Get the browser's current path.
-getDirBrowserPath :: (MonadIO m) => DirBrowser -> m FilePath
+getDirBrowserPath :: DirBrowser -> IO FilePath
 getDirBrowserPath = liftIO . readIORef . dirBrowserPath
 
-storeSelection :: (MonadIO m) => DirBrowser -> FilePath -> Int -> m ()
+storeSelection :: DirBrowser -> FilePath -> Int -> IO ()
 storeSelection b path i =
     liftIO $ modifyIORef (dirBrowserSelectionMap b) $ \m -> Map.insert path i m
 
-getSelection :: (MonadIO m) => DirBrowser -> FilePath -> m (Maybe Int)
+getSelection :: DirBrowser -> FilePath -> IO (Maybe Int)
 getSelection b path =
     liftIO $ do
       st <- readIORef (dirBrowserSelectionMap b)
@@ -309,7 +309,7 @@ load b cur entries =
       ch <- getSecondChild w
       setNormalAttribute ch attr
 
-descend :: (MonadIO m) => DirBrowser -> Bool -> m ()
+descend :: DirBrowser -> Bool -> IO ()
 descend b shouldSelect = do
   base <- getDirBrowserPath b
   mCur <- getSelected (dirBrowserList b)
@@ -329,7 +329,7 @@ descend b shouldSelect = do
 
                 False -> when shouldSelect $ chooseCurrentEntry b
 
-ascend :: (MonadIO m) => DirBrowser -> m ()
+ascend :: DirBrowser -> IO ()
 ascend b = do
   cur <- liftIO $ getDirBrowserPath b
   let newPath = takeDirectory cur

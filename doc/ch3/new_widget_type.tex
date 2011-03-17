@@ -24,7 +24,7 @@ We'll allow the constructor to take the counter's initial value.
 Here's what the function will look like in full:
 
 \begin{haskellcode}
- newCounter :: (MonadIO m) => Int -> m (Widget Counter)
+ newCounter :: Int -> IO (Widget Counter)
  newCounter initialValue = do
    wRef <- newWidget $ \w ->
      w { state = Counter initialValue
@@ -141,11 +141,11 @@ type; to make it useful, we'll need to add some functions to manage
 its state:
 
 \begin{haskellcode}
- setCounterValue :: (MonadIO m) => Widget Counter -> Int -> m ()
+ setCounterValue :: Widget Counter -> Int -> IO ()
  setCounterValue wRef val =
     updateWidgetState wRef $ const $ Counter val
 
- getCounterValue :: (MonadIO m) => Widget Counter -> m Int
+ getCounterValue :: Widget Counter -> IO Int
  getCounterValue wRef = do
     Counter val <- getState wRef
     return val

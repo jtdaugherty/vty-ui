@@ -18,7 +18,6 @@ import Data.Typeable
 import Control.Concurrent
 import Control.Exception
 import Control.Monad
-import Control.Monad.Trans
 import System.IO.Unsafe ( unsafePerformIO )
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
@@ -37,17 +36,16 @@ eventChan = unsafePerformIO newChan
 -- provides the default attributes and 'Skin' to use for the
 -- application.  Throws 'BadCollectionIndex' if the specified
 -- 'Collection' is empty.
-runUi :: (MonadIO m) => Collection -> RenderContext -> m ()
-runUi collection ctx =
-    liftIO $ do
-      vty <- mkVty
+runUi :: Collection -> RenderContext -> IO ()
+runUi collection ctx = do
+  vty <- mkVty
 
-      -- Create VTY event listener thread
-      _ <- forkIO $ vtyEventListener vty eventChan
+  -- Create VTY event listener thread
+  _ <- forkIO $ vtyEventListener vty eventChan
 
-      runUi' vty eventChan collection ctx `finally` do
-               reserve_display $ terminal vty
-               shutdown vty
+  runUi' vty eventChan collection ctx `finally` do
+                         reserve_display $ terminal vty
+                         shutdown vty
 
 vtyEventListener :: Vty -> Chan CombinedEvent -> IO ()
 vtyEventListener vty chan =
@@ -58,8 +56,8 @@ vtyEventListener vty chan =
 -- |Schedule a widget-mutating 'IO' action to be run by the main event
 -- loop.  Use of this function is required to guarantee consistency
 -- between interface presentation and internal state.
-schedule :: (MonadIO m) => IO () -> m ()
-schedule act = liftIO $ writeChan eventChan $ UserEvent $ ScheduledAction act
+schedule :: IO () -> IO ()
+schedule act = writeChan eventChan $ UserEvent $ ScheduledAction act
 
 runUi' :: Vty -> Chan CombinedEvent -> Collection -> RenderContext -> IO ()
 runUi' vty chan collection ctx = do
@@ -82,7 +80,7 @@ runUi' vty chan collection ctx = do
 
   case evt of
     VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return ()
-    UserEvent (ScheduledAction act) -> liftIO act
+    UserEvent (ScheduledAction act) -> act
     _ -> return ()
 
   runUi' vty chan collection ctx
@@ -109,20 +107,20 @@ instance Show CollectionData where
                                           , " }"
                                           ]
 
-entryRenderAndPosition :: (MonadIO m) => Entry -> DisplayRegion -> DisplayRegion -> RenderContext -> m Image
+entryRenderAndPosition :: Entry -> DisplayRegion -> DisplayRegion -> RenderContext -> IO Image
 entryRenderAndPosition (Entry w _) = renderAndPosition w
 
 entryFocusGroup :: Entry -> Widget FocusGroup
 entryFocusGroup (Entry _ fg) = fg
 
 -- |Create a new collection.
-newCollection :: (MonadIO m) => m Collection
+newCollection :: IO Collection
 newCollection =
-    liftIO $ newIORef $ CollectionData { entries = []
-                                       , currentEntryNum = -1
-                                       }
+    newIORef $ CollectionData { entries = []
+                              , currentEntryNum = -1
+                              }
 
-getCurrentEntry :: (MonadIO m) => Collection -> m Entry
+getCurrentEntry :: Collection -> IO Entry
 getCurrentEntry cRef = do
   cur <- currentEntryNum <~ cRef
   es <- entries <~ cRef
@@ -135,10 +133,10 @@ getCurrentEntry cRef = do
 -- |Add a widget and its focus group to a collection.  Returns an
 -- action which, when invoked, will switch to the interface specified
 -- in the call.
-addToCollection :: (MonadIO m, Show a) => Collection -> Widget a -> Widget FocusGroup -> m (m ())
+addToCollection :: (Show a) => Collection -> Widget a -> Widget FocusGroup -> IO (IO ())
 addToCollection cRef wRef fg = do
   i <- (length . entries) <~ cRef
-  liftIO $ modifyIORef cRef $ \st ->
+  modifyIORef cRef $ \st ->
       st { entries = (entries st) ++ [Entry wRef fg]
          , currentEntryNum = if currentEntryNum st == -1
                              then 0
@@ -147,11 +145,11 @@ addToCollection cRef wRef fg = do
   resetFocusGroup fg
   return $ setCurrentEntry cRef i
 
-setCurrentEntry :: (MonadIO m) => Collection -> Int -> m ()
+setCurrentEntry :: Collection -> Int -> IO ()
 setCurrentEntry cRef i = do
-  st <- liftIO $ readIORef cRef
+  st <- readIORef cRef
   if i < length (entries st) && i >= 0 then
-      (liftIO $ modifyIORef cRef $ \s -> s { currentEntryNum = i }) else
+      (modifyIORef cRef $ \s -> s { currentEntryNum = i }) else
       throw $ BadCollectionIndex i
 
   e <- getCurrentEntry cRef

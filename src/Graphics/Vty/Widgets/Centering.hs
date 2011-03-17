@@ -12,7 +12,6 @@ module Graphics.Vty.Widgets.Centering
 where
 
 import GHC.Word ( Word )
-import Control.Monad.Trans
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty
 import Graphics.Vty.Widgets.Util
@@ -23,7 +22,7 @@ instance Show (HCentered a) where
     show (HCentered _) = "HCentered { ... }"
 
 -- |Wrap another widget to center it horizontally.
-hCentered :: (MonadIO m, Show a) => Widget a -> m (Widget (HCentered a))
+hCentered :: (Show a) => Widget a -> IO (Widget (HCentered a))
 hCentered ch = do
   wRef <- newWidget $ \w ->
       w { state = HCentered ch
@@ -64,7 +63,7 @@ instance Show (VCentered a) where
     show (VCentered _) = "VCentered { ... }"
 
 -- |Wrap another widget to center it vertically.
-vCentered :: (MonadIO m, Show a) => Widget a -> m (Widget (VCentered a))
+vCentered :: (Show a) => Widget a -> IO (Widget (VCentered a))
 vCentered ch = do
   wRef <- newWidget $ \w ->
       w { state = VCentered ch
@@ -99,7 +98,7 @@ vCentered ch = do
   return wRef
 
 -- |Wrap another widget to center it both vertically and horizontally.
-centered :: (MonadIO m, Show a) => Widget a -> m (Widget (VCentered (HCentered a)))
+centered :: (Show a) => Widget a -> IO (Widget (VCentered (HCentered a)))
 centered wRef = vCentered =<< hCentered wRef
 
 centered_halves :: (DisplayRegion -> Word) -> DisplayRegion -> Word -> (Word, Word)
