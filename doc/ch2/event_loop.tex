@@ -22,6 +22,24 @@ second parameter is a \fw{Ren\-der\-Con\-text}.  Here we use the
 \item The current ``override'' attribute
 \end{itemize}
 
+The event loop will run until one of two conditions occurs:
+
+\begin{itemize}
+\item An exception of any kind is thrown; if an exception is thrown,
+  the event loop will shut down Vty cleanly and re-throw the
+  exception.
+\item An event handler or thread calls \fw{shutdownUi}; the
+  \fw{shutdownUi} function sends a signal to stop the event loop, at
+  which point control will be returned to your program.  The shutdown
+  signal goes into a queue with all of the other signals processed by
+  the event loop, such as key input events and scheduled actions (see
+  Section \ref{sec:concurrency}), but it will preempt them.  Note that
+  there is no \textit{guarantee} that there won't be some other signal
+  placed into the queue before you run \fw{shutdownUi}, such as when
+  another thread is running in parallel with an event handler which
+  calls \fw{shutdownUi}.
+\end{itemize}
+
 \subsection{Skinning}
 \label{sec:skinning}
 

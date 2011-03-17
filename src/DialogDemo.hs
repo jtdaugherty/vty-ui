@@ -29,10 +29,12 @@ main = do
   e `onActivate` (const $ acceptDialog d)
 
   -- Exit either way.
-  d `onDialogAccept` const exitSuccess
-  d `onDialogCancel` const exitSuccess
+  d `onDialogAccept` const shutdownUi
+  d `onDialogCancel` const shutdownUi
 
   coll <- newCollection
   _ <- addToCollection coll c =<< (mergeFocusGroups fg dFg)
 
   runUi coll $ defaultContext { focusAttr = black `on` yellow }
+
+  (putStrLn . ("You entered: " ++)) =<< getEditText e

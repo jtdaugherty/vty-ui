@@ -7,6 +7,7 @@ module Graphics.Vty.Widgets.EventLoop
     , CollectionError(..)
     , runUi
     , schedule
+    , shutdownUi
     , newCollection
     , addToCollection
     , setCurrentEntry
@@ -24,6 +25,7 @@ import Graphics.Vty.Widgets.Core
 
 data CombinedEvent = VTYEvent Event
                    | UserEvent UserEvent
+                   | ShutdownUi
 
 data UserEvent = ScheduledAction (IO ())
 
@@ -59,6 +61,11 @@ vtyEventListener vty chan =
 schedule :: IO () -> IO ()
 schedule act = writeChan eventChan $ UserEvent $ ScheduledAction act
 
+-- |Schedule a vty-ui event loop shutdown.  This event will preempt
+-- others so that it will be processed next.
+shutdownUi :: IO ()
+shutdownUi = unGetChan eventChan ShutdownUi
+
 runUi' :: Vty -> Chan CombinedEvent -> Collection -> RenderContext -> IO ()
 runUi' vty chan collection ctx = do
   sz <- display_bounds $ terminal vty
@@ -78,12 +85,13 @@ runUi' vty chan collection ctx = do
 
   evt <- readChan chan
 
-  case evt of
-    VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return ()
-    UserEvent (ScheduledAction act) -> act
-    _ -> return ()
+  cont <- case evt of
+            VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return True
+            VTYEvent _ -> return True
+            UserEvent (ScheduledAction act) -> act >> return True
+            ShutdownUi -> return False
 
-  runUi' vty chan collection ctx
+  when cont $ runUi' vty chan collection ctx
 
 data CollectionError = BadCollectionIndex Int
                        deriving (Show, Typeable)
