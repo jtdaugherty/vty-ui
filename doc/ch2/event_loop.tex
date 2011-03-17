@@ -164,26 +164,3 @@ action to run.
 Some built-in widgets will almost always be used in this way; for an
 example, take a look at the \fw{ProgressBar} widget in the
 \fw{ProgressBar} module (see Section \ref{sec:progress_bars}).
-
-\subsection{Managing Your Own State}
-
-If your applications have their own state management needs, then that
-state management can be done in parallel with the \vtyui\ event loop
-with proper use of \fw{schedule}.
-
-A typical design for applications using \vtyui\ is:
-
-\begin{itemize}
-\item The application defines its own state type, call it
-  \fw{AppState}.
-\item The \fw{AppState} type has fields for the various widgets that
-  need to be mutated over the course of the application's execution;
-  for example, lists, progress bars, radio buttons, check boxes, edit
-  widgets, etc.
-\item Various event handlers are set up on these and other widgets.
-\item The application spawns one or more threads to manage events from
-  external sources, and when these events occur, actions are scheduled
-  with \fw{schedule} to update the interface state accordingly.
-\item The main event loop is executed and control is passed to the
-  library.
-\end{itemize}
