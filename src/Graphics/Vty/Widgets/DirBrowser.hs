@@ -19,7 +19,6 @@ where
 import Data.IORef
 import qualified Data.Map as Map
 import Control.Monad
-import Control.Monad.Trans
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.List
@@ -108,7 +107,7 @@ withAnnotations sk as = sk { browserCustomAnnotations = browserCustomAnnotations
 -- Returns the browser itself along with its focus group.
 newDirBrowser :: BrowserSkin -> IO (DirBrowser, Widget FocusGroup)
 newDirBrowser bSkin = do
-  path <- liftIO $ getCurrentDirectory
+  path <- getCurrentDirectory
   pathWidget <- plainText ""
   errorText <- plainText "" >>= withNormalAttribute (browserErrorAttr bSkin)
   header <- ((plainText " Path: ") <++> (return pathWidget) <++> (hFill ' ' 1))
@@ -121,8 +120,8 @@ newDirBrowser bSkin = do
   l <- newList (browserUnfocusedSelAttr bSkin) (\s -> plainText " " <++> plainText s)
   ui <- vBox header =<< vBox l footer
 
-  r <- liftIO $ newIORef ""
-  r2 <- liftIO $ newIORef Map.empty
+  r <- newIORef ""
+  r2 <- newIORef Map.empty
 
   hs <- newHandlers
   chs <- newHandlers
@@ -193,9 +192,9 @@ getFileInfo :: DirBrowser -> FilePath -> IO String
 getFileInfo b path = do
   cur <- getDirBrowserPath b
   let newPath = cur </> path
-  st <- liftIO $ getSymbolicLinkStatus newPath
+  st <- getSymbolicLinkStatus newPath
   (_, mkAnn) <- fileAnnotation (dirBrowserSkin b) st cur path
-  ann <- liftIO mkAnn
+  ann <- mkAnn
   return $ path ++ ": " ++ ann
 
 builtInAnnotations :: FilePath -> BrowserSkin -> [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String, Attr)]
@@ -209,8 +208,8 @@ builtInAnnotations cur sk =
           linkDest <- if not $ isSymbolicLink stat
                       then return ""
                       else do
-                        linkPath <- liftIO $ readSymbolicLink p
-                        liftIO $ canonicalizePath $ cur </> linkPath
+                        linkPath <- readSymbolicLink p
+                        canonicalizePath $ cur </> linkPath
           return $ "symbolic link to " ++ linkDest)
       , browserLinkAttr sk)
     , (\_ s -> isDirectory s, \_ _ -> return "directory", browserDirAttr sk)
@@ -252,15 +251,14 @@ refreshBrowser b = setDirBrowserPath b =<< getDirBrowserPath b
 -- |Set the browser's current path.
 setDirBrowserPath :: DirBrowser -> FilePath -> IO ()
 setDirBrowserPath b path = do
-  cPath <- liftIO $ canonicalizePath path
+  cPath <- canonicalizePath path
 
   -- If for some reason we can't load the directory, report an error
   -- and don't change the browser state.
-  (res, entries) <-
-      liftIO $ (do
-                 entries <- getDirectoryContents cPath
-                 return (True, entries))
-                `catch` \e -> do
+  (res, entries) <- (do
+                      entries <- getDirectoryContents cPath
+                      return (True, entries))
+                     `catch` \e -> do
                              reportBrowserError b (ioeGetErrorString e)
                              return (False, [])
 
@@ -274,9 +272,9 @@ setDirBrowserPath b path = do
       Just (i, _) -> storeSelection b cur i
 
     clearList (dirBrowserList b)
-    liftIO $ modifyIORef (dirBrowserPath b) $ const cPath
+    modifyIORef (dirBrowserPath b) $ const cPath
 
-    liftIO $ load b cPath entries
+    load b cPath entries
 
     sel <- getSelection b path
     case sel of
@@ -287,17 +285,16 @@ setDirBrowserPath b path = do
 
 -- |Get the browser's current path.
 getDirBrowserPath :: DirBrowser -> IO FilePath
-getDirBrowserPath = liftIO . readIORef . dirBrowserPath
+getDirBrowserPath = readIORef . dirBrowserPath
 
 storeSelection :: DirBrowser -> FilePath -> Int -> IO ()
 storeSelection b path i =
-    liftIO $ modifyIORef (dirBrowserSelectionMap b) $ \m -> Map.insert path i m
+    modifyIORef (dirBrowserSelectionMap b) $ \m -> Map.insert path i m
 
 getSelection :: DirBrowser -> FilePath -> IO (Maybe Int)
-getSelection b path =
-    liftIO $ do
-      st <- readIORef (dirBrowserSelectionMap b)
-      return $ Map.lookup path st
+getSelection b path = do
+  st <- readIORef (dirBrowserSelectionMap b)
+  return $ Map.lookup path st
 
 load :: DirBrowser -> FilePath -> [FilePath] -> IO ()
 load b cur entries =
@@ -317,10 +314,10 @@ descend b shouldSelect = do
     Nothing -> return ()
     Just (_, (p, _)) -> do
               let newPath = base </> p
-              e <- liftIO $ doesDirectoryExist newPath
+              e <- doesDirectoryExist newPath
               case e of
                 True -> do
-                       cPath <- liftIO $ canonicalizePath newPath
+                       cPath <- canonicalizePath newPath
                        cur <- getDirBrowserPath b
                        when (cur /= cPath) $ do
                           case takeDirectory cur == cPath of
@@ -331,7 +328,7 @@ descend b shouldSelect = do
 
 ascend :: DirBrowser -> IO ()
 ascend b = do
-  cur <- liftIO $ getDirBrowserPath b
+  cur <- getDirBrowserPath b
   let newPath = takeDirectory cur
   when (newPath /= cur) $
        setDirBrowserPath b newPath
