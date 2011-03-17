@@ -42,7 +42,6 @@ where
 import Data.Typeable
 import Control.Exception hiding (Handler)
 import Control.Monad
-import Control.Monad.Trans
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
