@@ -33,7 +33,6 @@ import Data.List
 import Control.Applicative hiding ((<|>))
 import Control.Exception
 import Control.Monad
-import Control.Monad.Trans
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
@@ -199,11 +198,11 @@ emptyCell :: TableCell
 emptyCell = EmptyCell
 
 -- |Set the default table-wide cell alignment.
-setDefaultCellAlignment :: (MonadIO m) => Widget Table -> Alignment -> m ()
+setDefaultCellAlignment :: Widget Table -> Alignment -> IO ()
 setDefaultCellAlignment t a = updateWidgetState t $ \s -> s { defaultCellAlignment = a }
 
 -- |Set the default table-wide cell padding.
-setDefaultCellPadding :: (MonadIO m) => Widget Table -> Padding -> m ()
+setDefaultCellPadding :: Widget Table -> Padding -> IO ()
 setDefaultCellPadding t p = updateWidgetState t $ \s -> s { defaultCellPadding = p }
 
 -- |Create a column.
@@ -212,10 +211,10 @@ column sz = ColumnSpec sz Nothing Nothing
 
 -- |Create a table widget using a list of column specifications and a
 -- border style.
-newTable :: (MonadIO m) =>
+newTable :: 
             [ColumnSpec]
          -> BorderStyle
-         -> m (Widget Table)
+         -> IO (Widget Table)
 newTable specs borderSty = do
   t <- newWidget $ \w ->
       w { state = Table { rows = []
@@ -298,7 +297,7 @@ newTable specs borderSty = do
         }
   return t
 
-getCellAlignment :: (MonadIO m) => Widget Table -> Int -> TableCell -> m Alignment
+getCellAlignment :: Widget Table -> Int -> TableCell -> IO Alignment
 getCellAlignment _ _ (TableCell _ (Just p) _) = return p
 getCellAlignment t columnNumber _ = do
   -- If the column for this cell has properties, use those; otherwise
@@ -310,7 +309,7 @@ getCellAlignment t columnNumber _ = do
     Nothing -> defaultCellAlignment <~~ t
     Just p -> return p
 
-getCellPadding :: (MonadIO m) => Widget Table -> Int -> TableCell -> m Padding
+getCellPadding :: Widget Table -> Int -> TableCell -> IO Padding
 getCellPadding _ _ (TableCell _ _ (Just p)) = return p
 getCellPadding t columnNumber _ = do
   -- If the column for this cell has properties, use those; otherwise
@@ -439,7 +438,7 @@ positionRow t bs pos cells = do
 
   doPositioning 0 $ zip szs cells
 
-autoWidth :: (MonadIO m) => Widget Table -> DisplayRegion -> m Word
+autoWidth :: Widget Table -> DisplayRegion -> IO Word
 autoWidth t sz = do
   specs <- columnSpecs <~~ t
   bs <- borderStyle <~~ t
@@ -456,16 +455,16 @@ autoWidth t sz = do
   return $ toEnum ((max 0 ((fromEnum $ region_width sz) - totalFixed - edgeWidth - colWidth))
                    `div` numAuto)
 
-addHeadingRow :: (MonadIO m) => Widget Table -> Attr -> [String] -> m [Widget FormattedText]
+addHeadingRow :: Widget Table -> Attr -> [String] -> IO [Widget FormattedText]
 addHeadingRow tbl attr labels = do
   ws <- mapM (\s -> plainText s >>= withNormalAttribute attr) labels
   addRow tbl ws
   return ws
 
-addHeadingRow_ :: (MonadIO m) => Widget Table -> Attr -> [String] -> m ()
+addHeadingRow_ :: Widget Table -> Attr -> [String] -> IO ()
 addHeadingRow_ tbl attr labels = addHeadingRow tbl attr labels >> return ()
 
-applyCellAlignment :: (MonadIO m) => Alignment -> TableCell -> m TableCell
+applyCellAlignment :: Alignment -> TableCell -> IO TableCell
 applyCellAlignment _ EmptyCell = return EmptyCell
 applyCellAlignment al (TableCell w a p) = do
   case al of
@@ -488,7 +487,7 @@ applyCellAlignment al (TableCell w a p) = do
                   return $ TableCell w' a p
         True -> return $ TableCell w a p
 
-applyCellPadding :: (MonadIO m) => Padding -> TableCell -> m TableCell
+applyCellPadding :: Padding -> TableCell -> IO TableCell
 applyCellPadding _ EmptyCell = return EmptyCell
 applyCellPadding padding (TableCell w a p) = do
   w' <- padded w padding
@@ -498,7 +497,7 @@ applyCellPadding padding (TableCell w a p) = do
 -- row.  Throws 'BadTableWidgetSizePolicy' if any widgets in the row
 -- grow vertically; throws 'ColumnCountMismatch' if the row's number
 -- of columns does not match the table's column count.
-addRow :: (MonadIO m, RowLike a) => Widget Table -> a -> m ()
+addRow :: (RowLike a) => Widget Table -> a -> IO ()
 addRow t row = do
   let (TableRow cells_) = mkRow row
 

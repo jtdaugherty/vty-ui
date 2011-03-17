@@ -32,7 +32,6 @@ import GHC.Word ( Word )
 import Data.Typeable
 import Control.Exception
 import Control.Monad
-import Control.Monad.Trans
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty
 import Graphics.Vty.Widgets.Util
@@ -101,24 +100,24 @@ instance Show (Box a b) where
 -- |Create a horizontal box widget containing two widgets side by
 -- side.  Space consumed by the box will depend on its contents,
 -- available space, and the box child size policy.
-hBox :: (MonadIO m, Show a, Show b) => Widget a -> Widget b -> m (Widget (Box a b))
+hBox :: (Show a, Show b) => Widget a -> Widget b -> IO (Widget (Box a b))
 hBox = box Horizontal 0
 
 -- |Create a vertical box widget containing two widgets, one above the
 -- other.  Space consumed by the box will depend on its contents,
 -- available space, and the box child size policy.
-vBox :: (MonadIO m, Show a, Show b) => Widget a -> Widget b -> m (Widget (Box a b))
+vBox :: (Show a, Show b) => Widget a -> Widget b -> IO (Widget (Box a b))
 vBox = box Vertical 0
 
 -- |Create a vertical box widget using monadic widget constructors.
-(<-->) :: (MonadIO m, Show a, Show b) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
+(<-->) :: (Show a, Show b) => IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
 (<-->) act1 act2 = do
   ch1 <- act1
   ch2 <- act2
   vBox ch1 ch2
 
 -- |Create a horizontal box widget using monadic widget constructors.
-(<++>) :: (MonadIO m, Show a, Show b) => m (Widget a) -> m (Widget b) -> m (Widget (Box a b))
+(<++>) :: (Show a, Show b) => IO (Widget a) -> IO (Widget b) -> IO (Widget (Box a b))
 (<++>) act1 act2 = do
   ch1 <- act1
   ch2 <- act2
@@ -132,8 +131,8 @@ infixl 3 <++>
 defaultChildSizePolicy :: ChildSizePolicy
 defaultChildSizePolicy = PerChild BoxAuto BoxAuto
 
-box :: (MonadIO m, Show a, Show b) =>
-       Orientation -> Int -> Widget a -> Widget b -> m (Widget (Box a b))
+box :: (Show a, Show b) =>
+       Orientation -> Int -> Widget a -> Widget b -> IO (Widget (Box a b))
 box o spacing wa wb = do
   wRef <- newWidget $ \w ->
       w { state = Box { boxChildSizePolicy = defaultChildSizePolicy
@@ -211,30 +210,30 @@ box o spacing wa wb = do
 
   return wRef
 
-getFirstChild :: (MonadIO m) => Widget (Box a b) -> m (Widget a)
+getFirstChild :: Widget (Box a b) -> IO (Widget a)
 getFirstChild = (boxFirst <~~)
 
-getSecondChild :: (MonadIO m) => Widget (Box a b) -> m (Widget b)
+getSecondChild :: Widget (Box a b) -> IO (Widget b)
 getSecondChild = (boxSecond <~~)
 
 -- |Set the spacing in between a box's child widgets in rows or
 -- columns, depending on the box type.
-setBoxSpacing :: (MonadIO m) => Widget (Box a b) -> Int -> m ()
+setBoxSpacing :: Widget (Box a b) -> Int -> IO ()
 setBoxSpacing wRef spacing =
     updateWidgetState wRef $ \b -> b { boxSpacing = spacing }
 
-withBoxSpacing :: (MonadIO m) => Int -> Widget (Box a b) -> m (Widget (Box a b))
+withBoxSpacing :: Int -> Widget (Box a b) -> IO (Widget (Box a b))
 withBoxSpacing spacing wRef = do
   setBoxSpacing wRef spacing
   return wRef
 
-getBoxChildSizePolicy :: (MonadIO m) => Widget (Box a b) -> m ChildSizePolicy
+getBoxChildSizePolicy :: Widget (Box a b) -> IO ChildSizePolicy
 getBoxChildSizePolicy = (boxChildSizePolicy <~~)
 
 -- |Set the box child size policy.  Throws 'BadPercentage' if the size
 -- |policy uses an invalid percentage value, which must be between 0
 -- |and 100 inclusive.
-setBoxChildSizePolicy :: (MonadIO m) => Widget (Box a b) -> ChildSizePolicy -> m ()
+setBoxChildSizePolicy :: Widget (Box a b) -> ChildSizePolicy -> IO ()
 setBoxChildSizePolicy b spol = do
   case spol of
     Percentage v -> when (v < 0 || v > 100) $ throw BadPercentage

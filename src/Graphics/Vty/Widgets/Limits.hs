@@ -21,7 +21,6 @@ module Graphics.Vty.Widgets.Limits
 where
 
 import Control.Monad
-import Control.Monad.Trans
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Util
@@ -32,7 +31,7 @@ instance Show (HLimit a) where
     show (HLimit i _) = "HLimit { width = " ++ show i ++ ", ... }"
 
 -- |Impose a maximum horizontal size, in columns, on a 'Widget'.
-hLimit :: (MonadIO m, Show a) => Int -> Widget a -> m (Widget (HLimit a))
+hLimit :: (Show a) => Int -> Widget a -> IO (Widget (HLimit a))
 hLimit maxWidth child = do
   wRef <- newWidget $ \w ->
       w { state = HLimit maxWidth child
@@ -58,7 +57,7 @@ instance Show (VLimit a) where
     show (VLimit i _) = "VLimit { height = " ++ show i ++ ", ... }"
 
 -- |Impose a maximum vertical size, in columns, on a 'Widget'.
-vLimit :: (MonadIO m, Show a) => Int -> Widget a -> m (Widget (VLimit a))
+vLimit :: (Show a) => Int -> Widget a -> IO (Widget (VLimit a))
 vLimit maxHeight child = do
   wRef <- newWidget $ \w ->
       w { state = VLimit maxHeight child
@@ -80,48 +79,48 @@ vLimit maxHeight child = do
   return wRef
 
 -- |Set the vertical limit of a child widget's size.
-setVLimit :: (MonadIO m) => Widget (VLimit a) -> Int -> m ()
+setVLimit :: Widget (VLimit a) -> Int -> IO ()
 setVLimit wRef lim =
     when (lim >= 1) $
          updateWidgetState wRef $ \(VLimit _ ch) -> VLimit lim ch
 
 -- |Set the horizontal limit of a child widget's size.
-setHLimit :: (MonadIO m) => Widget (HLimit a) -> Int -> m ()
+setHLimit :: Widget (HLimit a) -> Int -> IO ()
 setHLimit wRef lim =
     when (lim >= 1) $
          updateWidgetState wRef $ \(HLimit _  ch) -> HLimit lim ch
 
 -- |Add to the vertical limit of a child widget's size.
-addToVLimit :: (MonadIO m) => Widget (VLimit a) -> Int -> m ()
+addToVLimit :: Widget (VLimit a) -> Int -> IO ()
 addToVLimit wRef delta = do
   lim <- getVLimit wRef
   setVLimit wRef $ lim + delta
 
 -- |Add to the horizontal limit of a child widget's size.
-addToHLimit :: (MonadIO m) => Widget (HLimit a) -> Int -> m ()
+addToHLimit :: Widget (HLimit a) -> Int -> IO ()
 addToHLimit wRef delta = do
   lim <- getHLimit wRef
   setHLimit wRef $ lim + delta
 
 -- |Get the vertical limit of a child widget's size.
-getVLimit :: (MonadIO m) => Widget (VLimit a) -> m Int
+getVLimit :: Widget (VLimit a) -> IO Int
 getVLimit wRef = do
   (VLimit lim _) <- state <~ wRef
   return lim
 
 -- |Get the horizontal limit of a child widget's size.
-getHLimit :: (MonadIO m) => Widget (HLimit a) -> m Int
+getHLimit :: Widget (HLimit a) -> IO Int
 getHLimit wRef = do
   (HLimit lim _) <- state <~ wRef
   return lim
 
 -- |Impose a horizontal and vertical upper bound on the size of a
 -- widget.
-boxLimit :: (MonadIO m, Show a) =>
+boxLimit :: (Show a) =>
             Int -- ^Maximum width in columns
          -> Int -- ^Maximum height in rows
          -> Widget a
-         -> m (Widget (VLimit (HLimit a)))
+         -> IO (Widget (VLimit (HLimit a)))
 boxLimit maxWidth maxHeight w = do
   ch <- hLimit maxWidth w
   vLimit maxHeight ch

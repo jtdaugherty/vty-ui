@@ -21,7 +21,6 @@ module Graphics.Vty.Widgets.Text
     )
 where
 
-import Control.Monad.Trans
 import Data.Maybe
 import Data.Word
 import Graphics.Vty
@@ -70,7 +69,7 @@ prepareText s = Text { tokens = tokenize s def_attr
 
 -- |Construct a Widget directly from a String.  This is recommended if
 -- you don't need to use a 'Formatter'.
-plainText :: (MonadIO m) => String -> m (Widget FormattedText)
+plainText :: String -> IO (Widget FormattedText)
 plainText s = textWidget nullFormatter s
 
 -- |A formatter for wrapping text into the available space.  This
@@ -103,7 +102,7 @@ matchesRegex r t = isJust $ match r (tokenString t) [exec_anchored]
 -- |Construct a text widget formatted with the specified formatters.
 -- the formatters will be applied in the order given here, so be aware
 -- of how the formatters will modify the text (and affect each other).
-textWidget :: (MonadIO m) => Formatter -> String -> m (Widget FormattedText)
+textWidget :: Formatter -> String -> IO (Widget FormattedText)
 textWidget format s = do
   wRef <- newWidget $ \w ->
       w { state = FormattedText { text = prepareText s
@@ -119,7 +118,7 @@ textWidget format s = do
   return wRef
 
 -- |Set the text value of a 'FormattedText' widget.
-setText :: (MonadIO m) => Widget FormattedText -> String -> m ()
+setText :: Widget FormattedText -> String -> IO ()
 setText wRef s = do
   updateWidgetState wRef $ \st ->
       st { text = (prepareText s) }

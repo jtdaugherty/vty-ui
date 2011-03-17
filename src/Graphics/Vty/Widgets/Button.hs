@@ -11,7 +11,6 @@ module Graphics.Vty.Widgets.Button
     )
 where
 
-import Control.Monad.Trans
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Padding
@@ -27,15 +26,15 @@ data Button = Button { buttonWidget :: Widget Padded
                      }
 
 -- |Register a handler for the button press event.
-onButtonPressed :: (MonadIO m) => Button -> (Button -> IO ()) -> m ()
+onButtonPressed :: Button -> (Button -> IO ()) -> IO ()
 onButtonPressed = addHandler (return . buttonPressedHandlers)
 
 -- |Programmatically press a button to trigger its event handlers.
-pressButton :: (MonadIO m) => Button -> m ()
+pressButton :: Button -> IO ()
 pressButton b = fireEvent b (return . buttonPressedHandlers) b
 
 -- |Set the text label on a button.
-setButtonText :: (MonadIO m) => Button -> String -> m ()
+setButtonText :: Button -> String -> IO ()
 setButtonText b s = setText (buttonText b) s
 
 instance HasNormalAttr Button where
@@ -45,7 +44,7 @@ instance HasFocusAttr Button where
     setFocusAttribute b a = setFocusAttribute (buttonWidget b) a
 
 -- |Create a button.  Get its underlying widget with 'buttonWidget'.
-newButton :: (MonadIO m) => String -> m Button
+newButton :: String -> IO Button
 newButton msg = do
   t <- plainText msg
 

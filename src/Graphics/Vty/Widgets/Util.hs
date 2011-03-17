@@ -11,6 +11,7 @@ module Graphics.Vty.Widgets.Util
     , plusHeight
     , remove
     , inject
+    , repl
     )
 where
 
@@ -86,3 +87,6 @@ remove pos as = (take pos as) ++ (drop (pos + 1) as)
 inject :: Int -> a -> [a] -> [a]
 inject pos a as = let (h, t) = splitAt pos as
                   in h ++ (a:t)
+
+repl :: Int -> a -> [a] -> [a]
+repl pos a as = inject pos a (remove pos as)

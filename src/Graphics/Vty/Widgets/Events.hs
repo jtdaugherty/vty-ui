@@ -10,7 +10,6 @@ module Graphics.Vty.Widgets.Events
     )
 where
 
-import Control.Monad.Trans
 import Control.Monad
 import Data.IORef
 
@@ -23,23 +22,23 @@ newtype Handlers a = Handlers (IORef [Handler a])
 -- |Given an event handler collection projection combinator, a target,
 -- and a handler, add the handler to the target's event handler
 -- collection.
-addHandler :: (MonadIO m) => (w -> m (Handlers a)) -> w -> Handler a -> m ()
+addHandler :: (w -> IO (Handlers a)) -> w -> Handler a -> IO ()
 addHandler getRef w handler = do
   (Handlers r) <- getRef w
-  liftIO $ modifyIORef r $ \s -> s ++ [handler]
+  modifyIORef r $ \s -> s ++ [handler]
 
 -- |Fire an event by extracting an event handler collection from a
 -- target and invoking all of its handlers with the specified
 -- parameter value.
-fireEvent :: (MonadIO m) => w -> (w -> m (Handlers a)) -> a -> m ()
+fireEvent :: w -> (w -> IO (Handlers a)) -> a -> IO ()
 fireEvent w getRef ev = do
   (Handlers r) <- getRef w
-  handlers <- liftIO $ readIORef r
+  handlers <- readIORef r
   forM_ handlers $ \handler ->
-      liftIO $ handler ev
+      handler ev
 
 -- |Create a new event handler collection.
-newHandlers :: (MonadIO m) => m (Handlers a)
+newHandlers :: IO (Handlers a)
 newHandlers = do
-  r <- liftIO $ newIORef []
+  r <- newIORef []
   return $ Handlers r

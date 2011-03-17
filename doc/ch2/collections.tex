@@ -50,13 +50,12 @@ To add an interface and a \fw{FocusGroup} to the \fw{Collection}:
  changeToW <- addToCollection c ui fg
 \end{haskellcode}
 
-As a convenience, \fw{addToCollection} returns a \fw{MonadIO} action
-which, when run, will switch to the specified interface.  In the
-example above, \fw{changeToW} is an action which will switch to the
-interface with \fw{ui} as its top-level widget and \fw{fg} as its
-focus group.  You can use this action in event handlers that change
-your interface state.  If you prefer, you can use the
-\fw{setCurrentEntry} function instead, which allows you to set the
-\fw{Collection}'s interface by number.  Use of \fw{setCurrentEntry} is
-not recommended, however, since a bad index can cause an exception to
-be thrown.
+As a convenience, \fw{addToCollection} returns a \fw{IO} action which,
+when run, will switch to the specified interface.  In the example
+above, \fw{changeToW} is an action which will switch to the interface
+with \fw{ui} as its top-level widget and \fw{fg} as its focus group.
+You can use this action in event handlers that change your interface
+state.  If you prefer, you can use the \fw{setCurrentEntry} function
+instead, which allows you to set the \fw{Collection}'s interface by
+number.  Use of \fw{setCurrentEntry} is not recommended, however,
+since a bad index can cause an exception to be thrown.
