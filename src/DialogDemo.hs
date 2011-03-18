@@ -1,5 +1,4 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
 module Main where
 
 import System.Exit
