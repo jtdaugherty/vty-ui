@@ -1,7 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
 module Main where
 
-import System.Exit
 import Graphics.Vty hiding (Button)
 import Graphics.Vty.Widgets.All
 
