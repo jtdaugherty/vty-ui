@@ -193,6 +193,14 @@ box o spacing wa wb = do
                       b <- getState this
                       renderBox s ctx b
 
+        , getCursorPosition_ =
+            \this -> do
+              b <- getState this
+              ch1_pos <- getCursorPosition $ boxFirst b
+              case ch1_pos of
+                Just v -> return $ Just v
+                Nothing -> getCursorPosition $ boxSecond b
+
         , setCurrentPosition_ =
             \this pos -> do
               b <- getState this
