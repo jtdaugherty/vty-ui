@@ -216,6 +216,8 @@ addToList list key w = do
   numItems <- (length . listItems) <~~ list
   insertIntoList list key w numItems
 
+-- |Insert an element into the list at the specified position.  If the
+-- position exceeds the length of the list, it is inserted at the end.
 insertIntoList :: (Show b) => Widget (List a b) -> a -> Widget b -> Int -> IO ()
 insertIntoList list key w pos = do
   numItems <- (length . listItems) <~~ list
