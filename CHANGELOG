@@ -1,4 +1,40 @@
 
+1.0.1 -> 1.1
+------------
+
+API changes:
+  * Interface change: List: newList no longer takes a widget
+    constructor; addToList and friends take the widget instead
+  * Interface change: stop using MonadIO, use IO instead.  The real
+    issue here was that the library was failing to make good on an
+    attempted promise of sequencing vty-ui actions with an arbitrary
+    IO-based monad transformer stack, in particular because event
+    handlers could not be sequenced in the same MonadIO instance as
+    everything else.
+
+API additions:
+  * Add shutdownUi signal to stop event loop (fixes issue #3)
+  * List: add setSelected and getListItem functions
+  * List: add insertIntoList for arbitrary insertion
+
+Internal changes:
+  * Box: query child widgets for cursor position info
+  * List: use at least a one-row-high item height to support emtpy list
+    items (e.g., empty text widgets)
+  * List: removeFromList: when the list is focused, manage focus state
+    of widgets involved
+  * List: forward key events to currently-selected item; also focus and
+    unfocus items as selection changes
+  * Edit: move {remove,inject} to Util
+  * FormattedText: do not provide cursor positioning info.
+
+Misc:
+  * Util.mergeAttr: Vty uses bitwise OR to merge styles, but that means
+    we cannot turn style bits off, so we just replace the style mask
+    entirely
+  * cabal file: loosen library dependencies a bit.
+  * ListDemo: focus the edit widget initially.
+
 1.0 -> 1.0.1
 ------------
 
