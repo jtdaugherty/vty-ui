@@ -102,7 +102,6 @@ data List a b = List { selectedUnfocusedAttr :: Attr
                      , itemRemoveHandlers :: Handlers (RemoveItemEvent a b)
                      , itemActivateHandlers :: Handlers (ActivateItemEvent a b)
                      , itemHeight :: Int
-                     -- ^Function to construct new items
                      }
 
 instance Show (List a b) where
