@@ -16,7 +16,9 @@ where
 
 import Data.IORef
 import Data.Typeable
-import Control.Concurrent
+import Control.Concurrent ( forkIO )
+import Control.Concurrent.STM ( atomically )
+import Control.Concurrent.STM.TChan
 import Control.Exception
 import Control.Monad
 import System.IO.Unsafe ( unsafePerformIO )
@@ -29,9 +31,9 @@ data CombinedEvent = VTYEvent Event
 
 data UserEvent = ScheduledAction (IO ())
 
-eventChan :: Chan CombinedEvent
+eventChan :: TChan CombinedEvent
 {-# NOINLINE eventChan #-}
-eventChan = unsafePerformIO newChan
+eventChan = unsafePerformIO newTChanIO
 
 -- |Run the main vty-ui event loop using the specified interface
 -- collection and initial rendering context.  The rendering context
@@ -49,24 +51,24 @@ runUi collection ctx = do
                          reserve_display $ terminal vty
                          shutdown vty
 
-vtyEventListener :: Vty -> Chan CombinedEvent -> IO ()
+vtyEventListener :: Vty -> TChan CombinedEvent -> IO ()
 vtyEventListener vty chan =
     forever $ do
       e <- next_event vty
-      writeChan chan $ VTYEvent e
+      atomically $ writeTChan chan $ VTYEvent e
 
 -- |Schedule a widget-mutating 'IO' action to be run by the main event
 -- loop.  Use of this function is required to guarantee consistency
 -- between interface presentation and internal state.
 schedule :: IO () -> IO ()
-schedule act = writeChan eventChan $ UserEvent $ ScheduledAction act
+schedule act = atomically $ writeTChan eventChan $ UserEvent $ ScheduledAction act
 
 -- |Schedule a vty-ui event loop shutdown.  This event will preempt
 -- others so that it will be processed next.
 shutdownUi :: IO ()
-shutdownUi = unGetChan eventChan ShutdownUi
+shutdownUi = atomically $ unGetTChan eventChan ShutdownUi
 
-runUi' :: Vty -> Chan CombinedEvent -> Collection -> RenderContext -> IO ()
+runUi' :: Vty -> TChan CombinedEvent -> Collection -> RenderContext -> IO ()
 runUi' vty chan collection ctx = do
   sz <- display_bounds $ terminal vty
 
@@ -83,7 +85,7 @@ runUi' vty chan collection ctx = do
                         set_cursor_pos (terminal vty) w h
     Nothing -> hide_cursor $ terminal vty
 
-  evt <- readChan chan
+  evt <- atomically $ readTChan chan
 
   cont <- case evt of
             VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return True
