@@ -135,16 +135,16 @@ highlight regex attr =
                           , map (\(start, len, hl) ->
                                      ((take len $ drop start str), if hl then attr else old_attr))
                             (intervals matches)
-                          -- ^ For each match, compute the string
+                          -- For each match, compute the string
                           -- between the match's start and end
                           -- positions and return that with the
                           -- desired attribute.
                           , if last_match_end < (length str - 1)
                             then [(drop last_match_end str, def_attr)]
                             else []
-                          -- ^For the string indices prior to the
-                          -- first match (and after the last match),
-                          -- return an unformatted token.
+                          -- For the string indices prior to the first
+                          -- match (and after the last match), return
+                          -- an unformatted token.
                           ]
                   where
                     matches = map ((!! 0) . A.elems) $ matchAll regex str
