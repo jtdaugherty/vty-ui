@@ -5,12 +5,13 @@ import System.Exit ( exitSuccess )
 import System.Locale
 import Control.Monad
 import Control.Concurrent
+import qualified Data.Bits as B
 import Data.Time.Clock
 import Data.Time.Format
-import Text.Regex.PCRE.Light
+import Text.Regex.PCRE
+import Text.Regex.PCRE.String
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
-import qualified Data.ByteString.Char8 as BS8
 
 -- Visual attributes.
 fg = white
@@ -21,7 +22,9 @@ msgAttr = fgColor blue
 
 -- Formatter to apply a color to "<...>"
 color :: Formatter
-color = highlight (compile (BS8.pack "<.*>") []) (fgColor bright_green)
+color sz t = do
+  Right r <- compile (compUngreedy B..|. compMultiline) execBlank "<.*>"
+  highlight r (fgColor bright_green) sz t
 
 -- Multi-state checkbox value type
 data FrostingType = Chocolate
@@ -44,7 +47,7 @@ main = do
            withNormalAttribute (bgColor blue) >>=
            withBorderAttribute (fgColor green)
 
-  tw <- (textWidget (wrap &.& color) msg) >>= withNormalAttribute msgAttr
+  tw <- (textWidget (wrap &.& color) [(msg, def_attr)]) >>= withNormalAttribute msgAttr
   mainBox <- vBox table tw >>= withBoxSpacing 1
 
   r1 <- newCheckbox "Cake"
@@ -63,8 +66,8 @@ main = do
   edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- editWidget
 
-  edit1Header <- textWidget wrap "" >>= withNormalAttribute headerAttr
-  edit2Header <- textWidget wrap "" >>= withNormalAttribute headerAttr
+  edit1Header <- textWidget wrap [] >>= withNormalAttribute headerAttr
+  edit2Header <- textWidget wrap [] >>= withNormalAttribute headerAttr
 
   lst <- newList (fgColor bright_green)
 
