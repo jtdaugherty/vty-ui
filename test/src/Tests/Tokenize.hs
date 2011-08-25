@@ -4,58 +4,71 @@ module Tests.Tokenize where
 import Data.Char ( isPrint )
 import Control.Applicative ( (<$>), (<*>), pure )
 import Test.QuickCheck
+import Test.QuickCheck.Instances.Tuple
 
 import Text.Trans.Tokenize
 
 import Tests.Util
 
-instance (Arbitrary a) => Arbitrary (Token a) where
-    arbitrary = oneof [ Whitespace <$> ws <*> arbitrary
-                      , Token <$> s <*> arbitrary
-                      ]
-        where
-          ws = oneof [ pure " ", pure "\t" ]
-          s = replicate <$> choose (1, 10) <*> pure 'a'
+serialize :: [(String, a)] -> String
+serialize [] = ""
+serialize ((s, _):ss) = s ++ serialize ss
 
-tokenGen :: Gen [[Token ()]]
-tokenGen = listOf $ listOf arbitrary
+lineGen :: Gen [(String, ())]
+lineGen = listOf1 $ stringGen >*< arbitrary
 
-lineGen :: Gen [Token ()]
-lineGen = listOf1 arbitrary
+nonEmptyLineGen :: Gen [(String, ())]
+nonEmptyLineGen = listOf1 $ (listOf1 charGen) >*< arbitrary
+
+wrapLineGen :: Gen [(String, ())]
+wrapLineGen = do
+  t <- token
+  ts <- listOf1 token
+  return $ t:ts
+    where
+      token = str >*< arbitrary
+      str = do
+        c <- arbitrary
+        cs <- listOf1 charGen
+        return $ c:cs
 
 stringGen :: Gen String
-stringGen = listOf (arbitrary `suchThat` (\c -> isPrint c))
+stringGen = listOf charGen
 
-checkToken :: Token a -> Bool
-checkToken (Whitespace s _) = all (`elem` " \t") s
-checkToken (Token s _) = all (not . (`elem` " \t")) s
-
-collapse :: [Token a] -> String
-collapse = concat . map tokenString
+charGen :: Gen Char
+charGen = arbitrary `suchThat` (\c -> isPrint c)
 
 tests :: [Property]
-tests = [ label "tokenize: round trip test" $ property $ forAll tokenGen $
-                    \ts -> serialize ts == (serialize $ tokenize (serialize ts) ())
+tests = [ label "truncLine leaves short lines unchanged" $ property $ forAll lineGen $
+                    \ts -> ts == truncLine (length $ serialize ts) ts
 
-        , label "tokenize: token contents consistent with constructors" $
-                property $ forAll stringGen $
-                    \s -> all (all checkToken) $ tokenize s undefined
+        -- Bound the truncation width at twice the size of the input
+        -- since huge cases are silly.
+        , label "truncLine truncates long lines" $ property $ forAll nonEmptyLineGen $
+                    \ts -> forAll (choose (0, 2 * (length $ serialize ts))) $
+                           \width -> length (serialize $ truncLine width ts) <= width
 
-        , label "tokenize: newlines handled properly" $ property $ forAll stringGen $
-                    \s -> numNewlines s + 1 == (length $ tokenize s undefined)
+        , label "wrapLine leaves short lines unchanged" $ property $ forAll nonEmptyLineGen $
+                    \ts -> forAll (arbitrary `suchThat` (> (length $ serialize ts))) $
+                           \width -> [ts] == wrapLine width ts
 
-        , label "tokenize: line truncation works" $ property $ forAll lineGen $
-                    \ts -> forAll (arbitrary :: Gen (Positive Int)) $
-                    \width -> let l = truncLine (fromIntegral width) ts
-                              in length (collapse l) <= fromIntegral width
+        , label "wrapLine leaves equal lines unchanged" $ property $ forAll nonEmptyLineGen $
+                    \ts -> [ts] == wrapLine (length $ serialize ts) ts
 
-        -- wrapping: a single line wrapped should always result in
-        -- lines that are no greater than the wrapping width, unless
-        -- they have a single token.
-        , label "tokenize: line-wrapping works" $ property $ forAll lineGen $
-                    \ts -> forAll (choose (0, length ts + 10)) $
-                    \width -> let ls = wrapLine w ts
-                                  w = fromIntegral width
-                                  f l = length (serialize [l]) <= w || length l == 1
-                              in all f ls
+        , label "wrapLine does nothing if unable to wrap" $
+                property $ and [ wrapLine 2 [("FOO", ())] == [[("FOO", ())]]
+                               , wrapLine 1 [("FOO", ())] == [[("FOO", ())]]
+                               , wrapLine 2 [("FOO", ()), ("BAR", ())] ==
+                                              [[("FOO", ())], [("BAR", ())]]
+                               ]
+
+        -- Each line must be wrapped and be no longer than the
+        -- wrapping width OR it must be one token in length, assuming
+        -- that token was longer than the wrapping width and couldn't
+        -- be broken up.
+        , label "wrapLine wraps long lines when possible" $
+                property $ forAll wrapLineGen $
+                    \ts -> forAll (choose ((length $ fst $ ts !! 0), (length $ serialize ts) - 1)) $
+                           \width -> let lines = wrapLine width ts
+                                     in all (\l -> (length $ serialize l) <= width || (length l == 1)) lines
         ]

@@ -31,14 +31,21 @@ isWhitespace = and . map isWs
 -- |Given a list of tokens, truncate the list so that its underlying
 -- string representation does not exceed the specified column width.
 truncLine :: Int -> [(String, a)] -> [(String, a)]
+truncLine l _ | l < 0 = error $ "truncLine cannot truncate at length = " ++ show l
+truncLine _ [] = []
 truncLine width ts =
     -- If we are returning all tokens, we didn't have to do any
     -- truncation.  But if we *did* have to truncate, return exactly
     -- 'width' characters' worth of tokens by constructing a new final
     -- token with the same attribute data.
-    if length tokens == length ts
-                     then tokens
-                     else tokens ++ [lastToken]
+    --
+    -- If there are no passing cases (i.e., remaining is null), just
+    -- return 'width' characters of the first token.
+    if null remaining
+    then [(take width first_str, first_a)]
+    else if length tokens == length ts
+         then tokens
+         else tokens ++ [lastToken]
     where
       lengths = map (length . fst) ts
       cases = reverse $ inits lengths
@@ -46,6 +53,7 @@ truncLine width ts =
       tokens = take (length $ head remaining) ts
       truncLength = sum $ head remaining
 
+      (first_str, first_a) = ts !! 0
       (last_str, last_a) = ts !! (length tokens)
       lastToken = (take (width - truncLength) last_str, last_a)
 
@@ -53,6 +61,7 @@ truncLine width ts =
 -- list to the specified column width.
 wrapLine :: Int -> [(String, a)] -> [[(String, a)]]
 wrapLine _ [] = []
+wrapLine width _ | width <= 0 = error "wrapLine requires width >= 1"
 wrapLine width ts =
     -- If there were no passing cases, that means the line can't be
     -- wrapped so just return it as-is (e.g., one long unbroken
