@@ -66,6 +66,10 @@ tests = [ label "truncLine leaves short lines unchanged" $ property $ forAll lin
         -- wrapping width OR it must be one token in length, assuming
         -- that token was longer than the wrapping width and couldn't
         -- be broken up.
+        --
+        -- XXX note that this is in need of some improvement, since we
+        -- *should* be breaking tokens up on whitespace when possible
+        -- but the current implementation does not do that.
         , label "wrapLine wraps long lines when possible" $
                 property $ forAll wrapLineGen $
                     \ts -> forAll (choose ((length $ fst $ ts !! 0), (length $ serialize ts) - 1)) $
