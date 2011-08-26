@@ -10,6 +10,7 @@ module Text.Trans.Tokenize
     , tokenize
     , serialize
     , findLines
+    , streamEntities
 #ifdef TESTING
     , isWhitespace
     , partitions
@@ -32,6 +33,9 @@ data TextStreamEntity a = T (Token a)
                         | NL
 
 data TextStream a = TS [TextStreamEntity a]
+
+streamEntities :: TextStream a -> [TextStreamEntity a]
+streamEntities (TS es) = es
 
 instance (Show a) => Show (TextStream a) where
     show (TS ts) = "TS " ++ show ts

@@ -115,8 +115,11 @@ setText wRef s = do
 -- |Set the text value of a 'FormattedText' widget directly, in case
 -- you have done formatting elsewhere and already have text with
 -- attributes.
-setTextWithAttrs :: Widget FormattedText -> [TextStreamEntity Attr] -> IO ()
-setTextWithAttrs wRef ts = do
+setTextWithAttrs :: Widget FormattedText -> [(String, Attr)] -> IO ()
+setTextWithAttrs wRef pairs = do
+  let streams = map (\(s, a) -> tokenize s a) pairs
+      ts = concat $ map streamEntities streams
+
   updateWidgetState wRef $ \st ->
       st { text = TS ts }
 
