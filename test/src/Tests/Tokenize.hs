@@ -2,12 +2,9 @@
 module Tests.Tokenize where
 
 import Data.Char ( isPrint )
-import Control.Applicative ( (<$>), (<*>), pure )
 import Test.QuickCheck
 
 import Text.Trans.Tokenize
-
-import Tests.Util
 
 lineGen :: Gen [Token ()]
 lineGen = listOf1 $ oneof [wsgen, strgen]
@@ -94,7 +91,7 @@ tests = [ label "tokenize and serialize work" $ property $ forAll stringGen $
         , label "wrapLine wraps long lines when possible" $
                 property $ forAll lineGen $
                     \ts -> forAll (choose ((length $ tokenStr $ ts !! 0), (length $ serialize (TS $ map T ts)) - 1)) $
-                           \width -> let lines = findLines new
+                           \width -> let ls = findLines new
                                          TS new = wrapStream width $ TS $ map T ts
-                                     in all (\l -> (length (serialize $ TS l)) <= width || (length l == 1)) lines
+                                     in all (\l -> (length (serialize $ TS l)) <= width || (length l == 1)) ls
         ]
