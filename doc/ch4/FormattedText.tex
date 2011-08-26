@@ -25,7 +25,7 @@ To use a formatter with a text widget, we must use a different
 constructor function, \fw{text\-Widget}:
 
 \begin{haskellcode}
- t <- textWidget "foobar" wrap
+ t <- textWidget wrap "foobar"
 \end{haskellcode}
 
 When formatters are applied, the text is automatically broken up into
@@ -50,7 +50,7 @@ that should be applied to the matches:\footnote{Since
 \begin{haskellcode}
  let doHighlight = highlight (compile (pack "bar") [])
                      (fgColor bright_green)
- t <- textWidget "Foo bar baz" doHighlight
+ t <- textWidget doHighlight "Foo bar baz"
 \end{haskellcode}
 
 Formatters can be composed with the \fw{\&.\&} operator.  This
@@ -59,7 +59,7 @@ formatters in the specified order.  We can use this operator to
 compose the built-in formatters on a single \fw{FormattedText} widget:
 
 \begin{haskellcode}
- t <- textWidget "Foo bar baz" (doHighlight &.& wrap)
+ t <- textWidget (doHighlight &.& wrap) "Foo bar baz"
 \end{haskellcode}
 
 \subsubsection{Growth Policy}

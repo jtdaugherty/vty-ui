@@ -1,4 +1,11 @@
 
+1.1 -> 1.2
+----------
+
+Manual fixes:
+  * The 'Text' material had the arguments to 'textWidget' in the wrong
+    order.
+
 1.0.1 -> 1.1
 ------------
 
