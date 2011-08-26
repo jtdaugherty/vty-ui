@@ -142,8 +142,8 @@ renderText t foc format sz ctx = do
                                  ]
 
       lineImgs = map mkLineImg ls
-      ls = map truncateLine $ map (map entityToken) $ findLines newText
-      truncateLine = truncLine (fromEnum $ region_width sz)
+      ls = map truncLine $ map (map entityToken) $ findLines newText
+      truncLine = truncateLine (fromEnum $ region_width sz)
       mkLineImg line = if null line
                        then char_fill attr' ' ' (region_width sz) (1::Word)
                        else horiz_cat $ map mkTokenImg line

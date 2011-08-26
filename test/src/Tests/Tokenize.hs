@@ -27,14 +27,14 @@ tests :: [Property]
 tests = [ label "tokenize and serialize work" $ property $ forAll stringGen $
                     \s -> (serialize $ tokenize s ()) == s
 
-        , label "truncLine leaves short lines unchanged" $ property $ forAll lineGen $
-                    \ts -> ts == truncLine (length $ serialize (TS (map T ts))) ts
+        , label "truncateLine leaves short lines unchanged" $ property $ forAll lineGen $
+                    \ts -> ts == truncateLine (length $ serialize (TS (map T ts))) ts
 
         -- Bound the truncation width at twice the size of the input
         -- since huge cases are silly.
-        , label "truncLine truncates long lines" $ property $ forAll lineGen $
+        , label "truncateLine truncates long lines" $ property $ forAll lineGen $
                     \ts -> forAll (choose (0, 2 * (length $ serialize (TS (map T ts))))) $
-                           \width -> length (serialize $ (TS (map T $ truncLine width ts))) <= width
+                           \width -> length (serialize $ (TS (map T $ truncateLine width ts))) <= width
 
         , label "wrapStream does the right thing with whitespace" $ property $
                 and [ wrapStream 5 (TS [T (S "foo" ()), T (WS " " ()), T (S "bar" ())]) ==

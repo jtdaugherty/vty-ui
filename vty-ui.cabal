@@ -111,7 +111,6 @@ Library
           Graphics.Vty.Widgets.Button
           Graphics.Vty.Widgets.ProgressBar
           Graphics.Vty.Widgets.DirBrowser
-  Other-Modules:
           Text.Trans.Tokenize
 
 Executable vty-ui-tests

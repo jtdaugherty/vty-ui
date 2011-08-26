@@ -5,7 +5,7 @@ module Text.Trans.Tokenize
     , Token(..)
     , tokenLen
     , entityToken
-    , truncLine
+    , truncateLine
     , wrapStream
     , tokenize
     , serialize
@@ -109,10 +109,10 @@ tokenize s def = TS $ findEntities s
 
 -- |Given a list of tokens, truncate the list so that its underlying
 -- string representation does not exceed the specified column width.
-truncLine :: Int -> [Token a] -> [Token a]
-truncLine l _ | l < 0 = error $ "truncLine cannot truncate at length = " ++ show l
-truncLine _ [] = []
-truncLine width ts =
+truncateLine :: Int -> [Token a] -> [Token a]
+truncateLine l _ | l < 0 = error $ "truncateLine cannot truncate at length = " ++ show l
+truncateLine _ [] = []
+truncateLine width ts =
     -- If we are returning all tokens, we didn't have to do any
     -- truncation.  But if we *did* have to truncate, return exactly
     -- 'width' characters' worth of tokens by constructing a new final
