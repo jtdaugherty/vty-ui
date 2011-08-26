@@ -47,7 +47,7 @@ main = do
            withNormalAttribute (bgColor blue) >>=
            withBorderAttribute (fgColor green)
 
-  tw <- (textWidget (wrap &.& color) [(msg, def_attr)]) >>= withNormalAttribute msgAttr
+  tw <- (textWidget (wrap &.& color) msg) >>= withNormalAttribute msgAttr
   mainBox <- vBox table tw >>= withBoxSpacing 1
 
   r1 <- newCheckbox "Cake"

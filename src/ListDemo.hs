@@ -47,7 +47,7 @@ buildUi2 appst =
 mkAppElements :: IO AppElements
 mkAppElements = do
   lw <- newStringList selAttr []
-  b <- textWidget wrap []
+  b <- textWidget wrap ""
   f1 <- plainText "" >>= withNormalAttribute titleAttr
   f2 <- plainText "[]" >>= withNormalAttribute titleAttr
   e <- editWidget
