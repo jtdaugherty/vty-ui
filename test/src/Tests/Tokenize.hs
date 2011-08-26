@@ -4,7 +4,6 @@ module Tests.Tokenize where
 import Data.Char ( isPrint )
 import Control.Applicative ( (<$>), (<*>), pure )
 import Test.QuickCheck
-import Test.QuickCheck.Instances.Tuple
 
 import Text.Trans.Tokenize
 
