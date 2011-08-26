@@ -2,17 +2,18 @@
 -- |This module provides functionality for rendering 'String's as
 -- 'Widget's, including functionality to make structural and/or visual
 -- changes at rendering time.  To get started, turn your ordinary
--- 'String' into a 'Widget' with 'plainText'; if you want access to
--- the 'Text' for formatting purposes, use 'textWidget'.
+-- 'String' into a 'Widget' with 'plainText'; for more control, use
+-- 'textWidget'.
 module Graphics.Vty.Widgets.Text
     ( FormattedText
-    , Formatter
-    , setText
-    , setTextWithAttrs
-    -- *Constructing Widgets
+    -- *Constructing Text Widgets
     , plainText
     , textWidget
+    -- *Setting Widget Contents
+    , setText
+    , setTextWithAttrs
     -- *Formatting
+    , Formatter
     , (&.&)
     , highlight
     , nullFormatter
@@ -27,21 +28,23 @@ import Text.Trans.Tokenize
 import Text.Regex.PCRE
 import Graphics.Vty.Widgets.Util
 
--- |A formatter makes changes to text at rendering time.
---
--- It'd be nice if formatters were just @:: 'Text' -> 'Text'@, but
--- some formatting use cases involve knowing the size of the rendering
+-- |A formatter makes changes to text at rendering time.  Some
+-- formatting use cases involve knowing the size of the rendering
 -- area, which is not known until render time (e.g., text wrapping).
--- Thus, a formatter takes a 'DisplayRegion' and runs at render time.
+-- Thus, a formatter takes a 'DisplayRegion' which indicates the size
+-- of screen area available for formatting.
 type Formatter = DisplayRegion -> TextStream Attr -> IO (TextStream Attr)
 
 -- |Formatter composition: @a &.& b@ applies @a@ followed by @b@.
 (&.&) :: Formatter -> Formatter -> Formatter
 f1 &.& f2 = \sz t -> f1 sz t >>= f2 sz
 
+-- |The null formatter which has no effect on text streams.
 nullFormatter :: Formatter
 nullFormatter = \_ t -> return t
 
+-- |The type of formatted text widget state.  Stores the text itself
+-- and the formatter used to apply attributes to the text.
 data FormattedText =
     FormattedText { text :: TextStream Attr
                   , formatter :: Formatter
@@ -68,8 +71,12 @@ wrap sz ts = do
   return $ wrapStream width ts
 
 -- |A highlight formatter takes a regular expression used to scan the
--- text and an attribute to assign to matches.  Highlighters only scan
--- non-whitespace tokens in the text stream.
+-- text and an attribute to assign to matches.  The regular expression
+-- is only applied to individual string tokens (individual words,
+-- whitespace strings, etc.); it is NOT applied to whole lines,
+-- paragraphs, or text spanning multiple lines.  If you have need of
+-- that kind of functionality, apply your own attributes with your own
+-- regular expression prior to calling 'setTextWithAttrs'.
 highlight :: Regex -> Attr -> Formatter
 highlight regex attr =
     \_ (TS ts) -> return $ TS $ map highlightToken ts
@@ -87,9 +94,9 @@ highlight regex attr =
               then t
               else t { tokenAttr = attr }
 
--- |Construct a text widget formatted with the specified formatters.
--- the formatters will be applied in the order given here, so be aware
--- of how the formatters will modify the text (and affect each other).
+-- |Construct a text widget formatted with the specified formatters
+-- and initial content.  The formatters will be applied in the order
+-- given here (and, depending on the formatter, order might matter).
 textWidget :: Formatter -> String -> IO (Widget FormattedText)
 textWidget format s = do
   wRef <- newWidget $ \w ->
@@ -106,13 +113,16 @@ textWidget format s = do
   setText wRef s
   return wRef
 
--- |Set the text value of a 'FormattedText' widget.
+-- |Set the text value of a 'FormattedText' widget.  The specified
+-- string will be 'tokenize'd.
 setText :: Widget FormattedText -> String -> IO ()
 setText wRef s = setTextWithAttrs wRef [(s, def_attr)]
 
 -- |Set the text value of a 'FormattedText' widget directly, in case
 -- you have done formatting elsewhere and already have text with
--- attributes.
+-- attributes.  The specified strings will each be 'tokenize'd, and
+-- tokens resulting from each 'tokenize' operation will be given the
+-- specified attribute in the tuple.
 setTextWithAttrs :: Widget FormattedText -> [(String, Attr)] -> IO ()
 setTextWithAttrs wRef pairs = do
   let streams = map (\(s, a) -> tokenize s a) pairs
