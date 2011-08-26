@@ -108,9 +108,7 @@ textWidget format s = do
 
 -- |Set the text value of a 'FormattedText' widget.
 setText :: Widget FormattedText -> String -> IO ()
-setText wRef s = do
-  updateWidgetState wRef $ \st ->
-      st { text = tokenize s def_attr }
+setText wRef s = setTextWithAttrs wRef [(s, def_attr)]
 
 -- |Set the text value of a 'FormattedText' widget directly, in case
 -- you have done formatting elsewhere and already have text with
