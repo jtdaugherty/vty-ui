@@ -2,9 +2,39 @@
 1.1 -> 1.2
 ----------
 
-Manual fixes:
-  * The 'Text' material had the arguments to 'textWidget' in the wrong
-    order.
+API changes:
+  * 'highlight' now takes any regular expression that is an instance
+    of 'RegexLike' and matches Strings.  This means we don't depend on
+    pcre-light any more, but just Text.Regex.Base.  One of the demo
+    programs now depends on the 'regex-pcre' package since pcre-light
+    didn't provide any instances of RegexLike.
+  * Text.Trans.Tokenize, the module used to tokenize text and operate
+    on token streams for the FormattedText widget, is now part of the
+    public API.  This is because anyone wishing to write a Formatter
+    will need access to its types, and it contains other nifty
+    functionality.
+  * The 'Text' type has been removed in favor of types from
+    Text.Trans.Tokenize.
+  * Formatters (defined in the Text module) now take TextStreams
+    (defined in Text.Trans.Tokenize).
+  * The implementation of the wrapping and truncation logic in
+    Text.Trans.Tokenize has been greatly simplified thanks to the type
+    refactoring in that module.
+  * The implementation of the 'wrap' Formatter has been greatly
+    simplified thanks to the type refactoring in Text.Trans.Tokenize.
+    It should also be a bit easier to write Formatters now.
+  * Text.Trans.Tokenize.truncLine is now called truncateLine.
+  * Text.Trans.Tokenize.wrapLine is now called wrapStream.
+  * The test suite for Text.Trans.Tokenize has been bulked up a bit.
+  * The event loop implementation now uses TChans from STM instead of
+    Chans from Control.Concurrent; we also depend in 'stm' as a
+    result.
+
+Manual changes:
+  * The 'Text' material was updated with information on text widget
+    update functions.
+  * The 'Text' material was fixed to document the arguments to
+    'textWidget' in the correct order.
 
 1.0.1 -> 1.1
 ------------
