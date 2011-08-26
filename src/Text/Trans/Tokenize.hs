@@ -1,4 +1,8 @@
 {-# LANGUAGE CPP #-}
+-- |This module provides functionality for tokenizing text streams to
+-- differentiate between printed characters and structural elements
+-- such as newlines.  Once tokenized, such text streams can be
+-- manipulated with the functions in this module.
 module Text.Trans.Tokenize
     ( TextStream(..)
     , TextStreamEntity(..)
@@ -22,20 +26,34 @@ import Data.List
     ( inits
     )
 
+-- |The type of text tokens.  These should consist of printable
+-- characters and NOT presentation characters (e.g., newlines).  Each
+-- type of token should have as its contents a string of characters
+-- all of the same type.  Tokens are generalized over an attribute
+-- type which can be used to annotate each token.
 data Token a = S { tokenStr :: String
+                 -- ^The token's string.
                  , tokenAttr :: a
+                 -- ^The token's attribute.
                  }
+             -- ^Non-whitespace tokens.
              | WS { tokenStr :: String
+                  -- ^The token's string.
                   , tokenAttr :: a
+                  -- ^The token's attribute.
                   }
+               -- ^Whitespace tokens.
 
+-- |A text stream entity is either a token or a structural element.
 data TextStreamEntity a = T (Token a)
+                        -- ^Constructor for ordinary tokens.
                         | NL
+                          -- ^Newline.
 
+-- |A text stream is a list of text stream entities.  A text stream
+-- |combines structural elements of the text (e.g., newlines) with the
+-- |text itself (words, whitespace, etc.).
 data TextStream a = TS [TextStreamEntity a]
-
-streamEntities :: TextStream a -> [TextStreamEntity a]
-streamEntities (TS es) = es
 
 instance (Show a) => Show (TextStream a) where
     show (TS ts) = "TS " ++ show ts
@@ -60,6 +78,11 @@ instance (Eq a) => Eq (TextStreamEntity a) where
 instance (Eq a) => Eq (TextStream a) where
     (TS as) == (TS bs) = as == bs
 
+-- |Get the entities in a stream.
+streamEntities :: TextStream a -> [TextStreamEntity a]
+streamEntities (TS es) = es
+
+-- |Get the length of a token's string.
 tokenLen :: Token a -> Int
 tokenLen (S s _) = length s
 tokenLen (WS s _) = length s
@@ -74,6 +97,10 @@ isNL :: TextStreamEntity a -> Bool
 isNL NL = True
 isNL _ = False
 
+-- |Gets a 'Token' from an entity or raises an exception if the entity
+-- does not contain a token.  Used primarily for convenience
+-- transformations in which the parameter is known to be a token
+-- entity.
 entityToken :: TextStreamEntity a -> Token a
 entityToken (T t) = t
 entityToken _ = error "Cannot get token from non-token entity"
@@ -86,6 +113,8 @@ isWsEnt :: TextStreamEntity a -> Bool
 isWsEnt (T (WS _ _)) = True
 isWsEnt _ = False
 
+-- |Given a text stream, serialize the stream to its original textual
+-- representation.  This discards token attribute metadata.
 serialize :: TextStream a -> String
 serialize (TS es) = concat $ map serializeEntity es
     where
@@ -93,6 +122,8 @@ serialize (TS es) = concat $ map serializeEntity es
       serializeEntity (T (WS s _)) = s
       serializeEntity (T (S s _)) = s
 
+-- |Tokenize a string and apply a default attribute to every token in
+-- the resulting text stream.
 tokenize :: String -> a -> TextStream a
 tokenize s def = TS $ findEntities s
     where
@@ -138,6 +169,12 @@ truncateLine width ts =
       last_tok = ts !! (length tokens)
       lastToken = last_tok { tokenStr = take (width - truncLength) $ tokenStr last_tok }
 
+-- |Given a text stream and a wrapping width, return a new
+-- 'TextStream' with newlines inserted in appropriate places to wrap
+-- the text at the specified column.  This function results in text
+-- wrapped without leading or trailing whitespace on wrapped lines,
+-- although it preserves leading whitespace in the text which was not
+-- the cause of the wrapping transformation.
 wrapStream :: (Eq a) => Int -> TextStream a -> TextStream a
 wrapStream width (TS stream) = TS $ reverse $ dropWhile (== NL) $ reverse $ wrapAll' 0 stream
     where
@@ -159,5 +196,9 @@ partitions f as = p : partitions f (drop (length p + 1) as)
     where
       p = takeWhile f as
 
+-- |Given a list of text stream entities, split up the list wherever
+-- newlines occur.  Returns a list of lines of entities, such that all
+-- entities wrap tokens and none are newlines.  (Safe for use with
+-- 'entityToken'.)
 findLines :: [TextStreamEntity a] -> [[TextStreamEntity a]]
 findLines = partitions (not . isNL)
