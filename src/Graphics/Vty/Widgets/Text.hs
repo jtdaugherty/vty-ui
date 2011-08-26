@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, FlexibleContexts #-}
 -- |This module provides functionality for rendering 'String's as
 -- 'Widget's, including functionality to make structural and/or visual
 -- changes at rendering time.  To get started, turn your ordinary
@@ -25,7 +25,7 @@ import Data.Word
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Text.Trans.Tokenize
-import Text.Regex.PCRE
+import Text.Regex.Base
 import Graphics.Vty.Widgets.Util
 
 -- |A formatter makes changes to text at rendering time.  Some
@@ -77,7 +77,7 @@ wrap sz ts = do
 -- paragraphs, or text spanning multiple lines.  If you have need of
 -- that kind of functionality, apply your own attributes with your own
 -- regular expression prior to calling 'setTextWithAttrs'.
-highlight :: Regex -> Attr -> Formatter
+highlight :: (RegexLike r String) => r -> Attr -> Formatter
 highlight regex attr =
     \_ (TS ts) -> return $ TS $ map highlightToken ts
         where
