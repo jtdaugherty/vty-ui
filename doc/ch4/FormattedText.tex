@@ -94,7 +94,7 @@ the \fw{regex-pcre} package:
 
 \begin{haskellcode}
  let doHighlight sz t = do
-   Right r <- compile (compUngreedy .|. compMultiline) execBlank "<.*>"
+   Right r <- compile compUngreedy execBlank "<.*>"
    highlight r (fgColor bright_green) sz t
  t <- textWidget doHighlight "foo <bar> baz"
 \end{haskellcode}
