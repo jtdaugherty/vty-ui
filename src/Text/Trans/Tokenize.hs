@@ -7,14 +7,20 @@ module Text.Trans.Tokenize
     ( TextStream(..)
     , TextStreamEntity(..)
     , Token(..)
-    , tokenLen
-    , entityToken
-    , truncateLine
-    , wrapStream
+
+    -- * To and from strings
     , tokenize
     , serialize
-    , findLines
+
+    -- * Inspection
+    , tokenLen
+    , entityToken
     , streamEntities
+
+    -- * Manipulation
+    , truncateLine
+    , wrapStream
+    , findLines
 #ifdef TESTING
     , isWhitespace
     , partitions
