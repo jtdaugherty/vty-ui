@@ -69,6 +69,13 @@ constructor function, \fw{text\-Widget}:
  t <- textWidget wrap "foobar"
 \end{haskellcode}
 
+In addition, the formatter for a text widget can be set at any time
+with \fw{setTextFormatter}:
+
+\begin{haskellcode}
+ setTextFormatter t wrap
+\end{haskellcode}
+
 When a text widget's contents are updated, the text is automatically
 broken up into tokens (see Section \ref{sec:updatingText}).  It is
 these tokens on which formatters operate.
