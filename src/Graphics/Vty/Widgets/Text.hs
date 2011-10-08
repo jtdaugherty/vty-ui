@@ -15,6 +15,7 @@ module Graphics.Vty.Widgets.Text
     , setTextFormatter
     -- *Formatting
     , Formatter
+    , getTextFormatter
     , (&.&)
     , highlight
     , nullFormatter
@@ -118,6 +119,10 @@ textWidget format s = do
 setTextFormatter :: Widget FormattedText -> Formatter -> IO ()
 setTextFormatter wRef f = updateWidgetState wRef $ \st ->
                           st { formatter = f }
+
+-- |Get the formatter for the text.
+getTextFormatter :: Widget FormattedText -> IO Formatter
+getTextFormatter = (formatter <~~)
 
 -- |Set the text value of a 'FormattedText' widget.  The specified
 -- string will be 'tokenize'd.
