@@ -59,6 +59,7 @@ module Graphics.Vty.Widgets.Core
     , FocusGroupError(..)
     , newFocusGroup
     , mergeFocusGroups
+    , appendFocusGroup
     , resetFocusGroup
     , addToFocusGroup
     , focusNext
@@ -413,6 +414,29 @@ mergeFocusGroups a b = do
     w `onGainFocus` (const $ setCurrentFocus c i)
 
   return c
+
+appendFocusGroup :: Widget FocusGroup -> Widget FocusGroup -> IO ()
+appendFocusGroup a b = do
+  aEntries <- entries <~~ a
+  bEntries <- entries <~~ b
+
+  when (null bEntries) $
+       throw FocusGroupEmpty
+
+  updateWidgetState a $ \s -> s { entries = (entries s) ++ bEntries
+                                , currentEntryNum = 0
+                                }
+
+  -- Now we need to be sure that we have the event handlers set
+  -- correctly on each widget.  The reason we don't just call
+  -- addToFocusGroup on each entry's widget is because the user may
+  -- have added event handlers to the FocusEntries themselves, and we
+  -- want to preserve those, so we extract the widget from the focus
+  -- entry to add the onGainFocus handler, but use the existing
+  -- FocusEntries when constructing the new focus group.
+  forM_ (zip [(length aEntries)..] bEntries) $ \(i, e) -> do
+    (FocusEntry w) <- state <~ e
+    w `onGainFocus` (const $ setCurrentFocus a i)
 
 resetFocusGroup :: Widget FocusGroup -> IO ()
 resetFocusGroup fg = do
