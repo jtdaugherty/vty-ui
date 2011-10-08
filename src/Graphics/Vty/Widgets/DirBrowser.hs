@@ -3,6 +3,7 @@
 module Graphics.Vty.Widgets.DirBrowser
     ( DirBrowser(dirBrowserWidget)
     , BrowserSkin(..)
+    , DirBrowserWidgetType
     , newDirBrowser
     , withAnnotations
     , setDirBrowserPath
@@ -32,15 +33,16 @@ import System.FilePath
 import System.Posix.Files
 import System.IO.Error
 
-type T = Widget (Box
-                 (Box (Box FormattedText FormattedText) HFill)
-                 (Box
-                  (List [Char] (Box FormattedText FormattedText))
-                  (Box
-                   (Box (Box FormattedText FormattedText) HFill)
-                   FormattedText)))
+type DirBrowserWidgetType =
+    Widget (Box
+            (Box (Box FormattedText FormattedText) HFill)
+            (Box
+             (List [Char] (Box FormattedText FormattedText))
+             (Box
+              (Box (Box FormattedText FormattedText) HFill)
+              FormattedText)))
 
-data DirBrowser = DirBrowser { dirBrowserWidget :: T
+data DirBrowser = DirBrowser { dirBrowserWidget :: DirBrowserWidgetType
                              , dirBrowserList :: Widget (List String (Box FormattedText FormattedText))
                              , dirBrowserPath :: IORef FilePath
                              , dirBrowserPathDisplay :: Widget FormattedText
