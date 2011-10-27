@@ -151,7 +151,7 @@ defaultContext :: RenderContext
 defaultContext = RenderContext def_attr (white `on` blue) def_attr unicodeSkin
 
 -- |The type of widget implementations, parameterized on the type of
--- |the widget's state.
+-- the widget's state.
 data WidgetImpl a = WidgetImpl {
       state :: a
     -- ^The state of the widget.
@@ -203,8 +203,8 @@ data WidgetImpl a = WidgetImpl {
 type Widget a = IORef (WidgetImpl a)
 
 -- |Show a widget.  Most widget show instances aren't going to contain
--- |all of the widget state, but this at least gives an indication of
--- |the widget type, which can be crucial for debugging.
+-- all of the widget state, but this at least gives an indication of
+-- the widget type, which can be crucial for debugging.
 showWidget :: (Show a) => Widget a -> IO String
 showWidget wRef = show <$> readIORef wRef
 
@@ -235,10 +235,10 @@ growVertical w = do
   act st
 
 -- |Render a widget.  This function should be called by widget
--- |implementations, since it does more than 'render_'; this function
--- |takes care of setting up attributes in the rendering context,
--- |setting the size of the widget after it has been rendered, and
--- |checking for size violations.  May throw a 'RenderError'.
+-- implementations, since it does more than 'render_'; this function
+-- takes care of setting up attributes in the rendering context,
+-- setting the size of the widget after it has been rendered, and
+-- checking for size violations.  May throw a 'RenderError'.
 render :: (Show a) =>
           Widget a -- ^The widget to render.
        -> DisplayRegion -- ^The amount of space in which to render the
@@ -267,8 +267,8 @@ render wRef sz ctx = do
   return img
 
 -- |Render a widget and set its position after rendering is complete.
--- |This is exported for internal use; widget implementations should
--- |call 'render' instead.
+-- This is exported for internal use; widget implementations should
+-- call 'render' instead.
 renderAndPosition :: (Show a) =>
                      Widget a -- ^The widget to render.
                   -> DisplayRegion -- ^The position at which to render
@@ -289,7 +289,7 @@ setCurrentSize wRef newSize =
     modifyIORef wRef $ \w -> w { currentSize = newSize }
 
 -- |Get the current size of the widget (its size after its most recent
--- |rendering).
+-- rendering).
 getCurrentSize :: Widget a -> IO DisplayRegion
 getCurrentSize wRef = (return . currentSize) =<< (readIORef wRef)
 
@@ -305,8 +305,8 @@ setCurrentPosition wRef pos = do
   (setCurrentPosition_ w) wRef pos
 
 -- |Create a new widget.  Takes a widget implementation function and
--- |passes it an implementation with default values.  The caller MUST
--- |set the 'state' and 'render_' functions of the implementation!
+-- passes it an implementation with default values.  The caller MUST
+-- set the 'state' and 'render_' functions of the implementation!
 newWidget :: (WidgetImpl a -> WidgetImpl a) -> IO (Widget a)
 newWidget f = do
   gfhs <- newHandlers
@@ -342,34 +342,34 @@ defaultCursorInfo w = do
       return Nothing
 
 -- |Given a widget and key event information, invoke the widget's key
--- |event handler with the event information.  Returns whether the
--- |event was handled.
+-- event handler with the event information.  Returns whether the
+-- event was handled.
 handleKeyEvent :: Widget a -> Key -> [Modifier] -> IO Bool
 handleKeyEvent wRef keyEvent mods = do
   act <- keyEventHandler <~ wRef
   act wRef keyEvent mods
 
 -- |Given widgets A and B, causes any key events on widget A to be
--- |relayed to widget B.  Note that this does behavior constitutes an
--- |ordinary key event handler from A's perspective, so if B does not
--- |handle a given key event, subsequent key event handlers on A will
--- |still get a chance to handle the event.  This function is mostly
--- |useful for wrapper widgets which don't do any event handling of
--- |their own but want to ensure that all key events are relayed to
--- |the wrapped widget.
+-- relayed to widget B.  Note that this does behavior constitutes an
+-- ordinary key event handler from A's perspective, so if B does not
+-- handle a given key event, subsequent key event handlers on A will
+-- still get a chance to handle the event.  This function is mostly
+-- useful for wrapper widgets which don't do any event handling of
+-- their own but want to ensure that all key events are relayed to the
+-- wrapped widget.
 relayKeyEvents :: Widget a -> Widget b -> IO ()
 relayKeyEvents a b = a `onKeyPressed` \_ k mods -> handleKeyEvent b k mods
 
 -- |Given widgets A and B, cause all focus gain and loss events on A
--- |to cause focus gain and loss for B.
+-- to cause focus gain and loss for B.
 relayFocusEvents :: Widget a -> Widget b -> IO ()
 relayFocusEvents a b = do
   a `onGainFocus` \_ -> focus b
   a `onLoseFocus` \_ -> unfocus b
 
 -- |Given a widget and a key event handler, add the handler to the
--- |widget's key event handler structure.  The event handler is added
--- |last, so any preexisting handlers will run before this one.
+-- widget's key event handler structure.  The event handler is added
+-- last, so any preexisting handlers will run before this one.
 onKeyPressed :: Widget a -> (Widget a -> Key -> [Modifier] -> IO Bool) -> IO ()
 onKeyPressed wRef handler = do
   -- Create a new handler that calls this one but defers to the old
@@ -398,14 +398,14 @@ unfocus wRef = do
   fireEvent wRef (loseFocusHandlers <~) wRef
 
 -- |Given a widget and a focus gain event handler, add the handler to
--- |the widget.  The handler will be invoked when the widget receives
--- |focus.
+-- the widget.  The handler will be invoked when the widget receives
+-- focus.
 onGainFocus :: Widget a -> (Widget a -> IO ()) -> IO ()
 onGainFocus = addHandler (gainFocusHandlers <~)
 
 -- |Given a widget and a focus loss event handler, add the handler to
--- |the widget.  The handler will be invoked when the widget loses
--- |focus.
+-- the widget.  The handler will be invoked when the widget loses
+-- focus.
 onLoseFocus :: Widget a -> (Widget a -> IO ()) -> IO ()
 onLoseFocus = addHandler (loseFocusHandlers <~)
 
@@ -418,7 +418,7 @@ onLoseFocus = addHandler (loseFocusHandlers <~)
 (<~~) f wRef = (return . f . state) =<< (readIORef wRef)
 
 -- |Given a widget and an implementation transformer, apply the
--- |transformer to the widget's implementation.
+-- transformer to the widget's implementation.
 updateWidget :: Widget a -> (WidgetImpl a -> WidgetImpl a) -> IO ()
 updateWidget wRef f = modifyIORef wRef f
 
@@ -447,7 +447,7 @@ instance Exception FocusGroupError
 data FocusEntry = forall a. FocusEntry (Widget a)
 
 -- |Focus group.  Represents an cycle of widgets which receive input
--- |focus.
+-- focus.
 data FocusGroup = FocusGroup { entries :: [Widget FocusEntry]
                              , currentEntryNum :: Int
                              , nextKey :: (Key, [Modifier])
@@ -477,9 +477,8 @@ newFocusEntry chRef = do
   return wRef
 
 -- |Create a new focus group.  Note that the focus group is itself a
--- |widget; any input event handlers added to the focus group will
--- |fire before input events are handled by the currently-focused
--- |widget.
+-- widget; any input event handlers added to the focus group will fire
+-- before input events are handled by the currently-focused widget.
 newFocusGroup :: IO (Widget FocusGroup)
 newFocusGroup = do
   wRef <- newWidget $ \w ->
@@ -519,21 +518,21 @@ newFocusGroup = do
   return wRef
 
 -- |Set the keyboard event information used to change focus to the
--- |next widget in a focus group.
+-- next widget in a focus group.
 setFocusGroupNextKey :: Widget FocusGroup -> Key -> [Modifier] -> IO ()
 setFocusGroupNextKey fg k mods =
     updateWidgetState fg $ \s -> s { nextKey = (k, mods) }
 
 -- |Set the keyboard event information used to change focus to the
--- |previous widget in a focus group.
+-- previous widget in a focus group.
 setFocusGroupPrevKey :: Widget FocusGroup -> Key -> [Modifier] -> IO ()
 setFocusGroupPrevKey fg k mods =
     updateWidgetState fg $ \s -> s { prevKey = (k, mods) }
 
 -- |Merge two focus groups.  Given two focus groups A and B, this
--- |returns a new focus group with all of the entries from A and B
--- |added to it, in that order.  Both A and B must be non-empty or
--- |'FocusGroupEmpty' will be thrown.
+-- returns a new focus group with all of the entries from A and B
+-- added to it, in that order.  Both A and B must be non-empty or
+-- 'FocusGroupEmpty' will be thrown.
 mergeFocusGroups :: Widget FocusGroup -> Widget FocusGroup -> IO (Widget FocusGroup)
 mergeFocusGroups a b = do
   c <- newFocusGroup
@@ -566,8 +565,7 @@ mergeFocusGroups a b = do
   return c
 
 -- |Given two focus groups A and B, append the entries of B to A,
--- |mutating A in the process.  Throws 'FocusGroupEmpty' if B is
--- |empty.
+-- mutating A in the process.  Throws 'FocusGroupEmpty' if B is empty.
 appendFocusGroup :: Widget FocusGroup -> Widget FocusGroup -> IO ()
 appendFocusGroup a b = do
   aEntries <- entries <~~ a
@@ -592,10 +590,10 @@ appendFocusGroup a b = do
     w `onGainFocus` (const $ setCurrentFocus a i)
 
 -- |Reset a focus group.  This ensures that the focus group's state is
--- |coherent by calling 'focus' on the group's focused entry and
--- |'unfocus' on all the rest.  This is for internal use, but is used
--- |by the 'Collection' switching implementation to ensure that focus
--- |state is sane.
+-- coherent by calling 'focus' on the group's focused entry and
+-- 'unfocus' on all the rest.  This is for internal use, but is used
+-- by the 'Collection' switching implementation to ensure that focus
+-- state is sane.
 resetFocusGroup :: Widget FocusGroup -> IO ()
 resetFocusGroup fg = do
   cur <- currentEntryNum <~~ fg
@@ -620,12 +618,12 @@ currentEntry wRef = do
   return (es !! i)
 
 -- |Add a widget to a focus group.  This returns a focus group entry
--- |which wraps the specified widget; the focus group entry is also a
--- |widget and can take key event handlers and the like.  During input
--- |event processing, the focus group entry receives keyboard events
--- |and passes them on to the wrapped widget.  If you want a widget to
--- |have specific event handling in a particular interface, add event
--- |handlers to its focus entry/entries instead of the widget itself.
+-- which wraps the specified widget; the focus group entry is also a
+-- widget and can take key event handlers and the like.  During input
+-- event processing, the focus group entry receives keyboard events
+-- and passes them on to the wrapped widget.  If you want a widget to
+-- have specific event handling in a particular interface, add event
+-- handlers to its focus entry/entries instead of the widget itself.
 addToFocusGroup :: (Show a) => Widget FocusGroup -> Widget a -> IO (Widget FocusEntry)
 addToFocusGroup cRef wRef = do
   eRef <- newFocusEntry wRef

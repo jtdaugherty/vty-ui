@@ -28,7 +28,7 @@ import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Skins
 
 -- |The class of types with a border attribute, which differs from the
--- |normal and focused attributes.
+-- normal and focused attributes.
 class HasBorderAttr a where
     setBorderAttribute :: a -> Attr -> IO ()
 
@@ -44,23 +44,23 @@ withBorderAttribute :: (HasBorderAttr a) => Attr -> a -> IO a
 withBorderAttribute att w = setBorderAttribute w att >> return w
 
 -- | Adds a label to a horizontal border.  The label will be
--- | horizontally centered.
+-- horizontally centered.
 withHBorderLabel :: String -> Widget HBorder -> IO (Widget HBorder)
 withHBorderLabel label w = setHBorderLabel w label >> return w
 
 -- | Adds a label to a horizontal border.  The label will be
--- | horizontally centered.
+-- horizontally centered.
 setHBorderLabel :: Widget HBorder -> String -> IO ()
 setHBorderLabel w label =
     updateWidgetState w $ \(HBorder a _) -> HBorder a label
 
 -- | Adds a label to the top border of a bordered widget.  The label
--- | will be horizontally centered.
+-- will be horizontally centered.
 withBorderedLabel :: String -> Widget (Bordered a) -> IO (Widget (Bordered a))
 withBorderedLabel label w = setBorderedLabel w label >> return w
 
 -- | Adds a label to the top border of a bordered widget.  The label
--- | will be horizontally centered.
+-- will be horizontally centered.
 setBorderedLabel :: Widget (Bordered a) -> String -> IO ()
 setBorderedLabel w label =
     updateWidgetState w $ \(Bordered a ch _) -> Bordered a ch label

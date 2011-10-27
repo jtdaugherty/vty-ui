@@ -242,8 +242,8 @@ getBoxChildSizePolicy :: Widget (Box a b) -> IO ChildSizePolicy
 getBoxChildSizePolicy = (boxChildSizePolicy <~~)
 
 -- |Set the box child size policy.  Throws 'BadPercentage' if the size
--- |policy uses an invalid percentage value, which must be between 0
--- |and 100 inclusive.
+-- policy uses an invalid percentage value, which must be between 0
+-- and 100 inclusive.
 setBoxChildSizePolicy :: Widget (Box a b) -> ChildSizePolicy -> IO ()
 setBoxChildSizePolicy b spol = do
   case spol of

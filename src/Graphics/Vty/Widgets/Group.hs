@@ -1,3 +1,9 @@
+-- |Widget groups.  Useful for when you need to swap out many
+-- instances of the same widget type in a specific location in an
+-- interface.  A group has a currently active widget which can be
+-- changed with 'setCurrentGroupEntry'.  Add a widget to a group with
+-- 'addToGroup'; 'addToGroup' returns an action which can be used to
+-- set the specified widget as the group's active widget.
 module Graphics.Vty.Widgets.Group
     ( Group
     , newGroup
@@ -10,6 +16,7 @@ import Control.Monad ( when )
 import Graphics.Vty ( empty_image )
 import Graphics.Vty.Widgets.Core
 
+-- |A group of widgets of a specified type.
 data Group a = Group { entries :: [Widget a]
                      , currentEntryNum :: Int
                      }
@@ -21,6 +28,7 @@ instance Show (Group a) where
                       , "}"
                       ]
 
+-- |Create a new empty widget group.
 newGroup :: (Show a) => IO (Widget (Group a))
 newGroup = do
   wRef <- newWidget $ \w ->
@@ -78,6 +86,9 @@ currentEntry' st = do
     (-1) -> error "currentEntry should not be called on an empty group"
     i -> entries st !! i
 
+-- |Add a widget to a group.  Returns an action which, when evaluated,
+-- will update the group state so that its currently-active widget is
+-- the one passed to this function.
 addToGroup :: Widget (Group a) -> Widget a -> IO (IO ())
 addToGroup grp w = do
   numEntries <- (length . entries) <~~ grp
@@ -88,6 +99,8 @@ addToGroup grp w = do
                                   }
   return $ setCurrentGroupEntry grp numEntries
 
+-- |Set a group's current entry to the specified index.  Use with
+-- care.
 setCurrentGroupEntry :: Widget (Group a) -> Int -> IO ()
 setCurrentGroupEntry grp i = do
   num <- (length . entries) <~~ grp
