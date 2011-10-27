@@ -455,12 +455,17 @@ autoWidth t sz = do
   return $ toEnum ((max 0 ((fromEnum $ region_width sz) - totalFixed - edgeWidth - colWidth))
                    `div` numAuto)
 
+-- |Add a heading row to a table.  Adds a row using the specified
+-- |labels and attribute.  Returns the widgets it constructed as a
+-- |side-effect in case you want to do something with them.
 addHeadingRow :: Widget Table -> Attr -> [String] -> IO [Widget FormattedText]
 addHeadingRow tbl attr labels = do
   ws <- mapM (\s -> plainText s >>= withNormalAttribute attr) labels
   addRow tbl ws
   return ws
 
+-- |Add a heading row to a table.  Adds a row using the specified
+-- |labels and attribute.
 addHeadingRow_ :: Widget Table -> Attr -> [String] -> IO ()
 addHeadingRow_ tbl attr labels = addHeadingRow tbl attr labels >> return ()
 

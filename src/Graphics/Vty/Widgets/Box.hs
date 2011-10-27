@@ -218,9 +218,11 @@ box o spacing wa wb = do
 
   return wRef
 
+-- |Get a reference to the first (left or top) widget in a box.
 getFirstChild :: Widget (Box a b) -> IO (Widget a)
 getFirstChild = (boxFirst <~~)
 
+-- |Get a reference to the second (right or bottom) widget in a box.
 getSecondChild :: Widget (Box a b) -> IO (Widget b)
 getSecondChild = (boxSecond <~~)
 
@@ -235,6 +237,7 @@ withBoxSpacing spacing wRef = do
   setBoxSpacing wRef spacing
   return wRef
 
+-- |Get the child size policy for a box.
 getBoxChildSizePolicy :: Widget (Box a b) -> IO ChildSizePolicy
 getBoxChildSizePolicy = (boxChildSizePolicy <~~)
 

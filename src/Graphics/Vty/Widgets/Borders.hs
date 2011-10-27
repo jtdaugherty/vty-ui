@@ -39,19 +39,28 @@ instance HasBorderAttr (Widget HBorder) where
     setBorderAttribute t a =
         updateWidgetState t $ \(HBorder a' s) -> HBorder (mergeAttr a a') s
 
+-- | Sets the border attribute of a thing with a border attribute.
 withBorderAttribute :: (HasBorderAttr a) => Attr -> a -> IO a
 withBorderAttribute att w = setBorderAttribute w att >> return w
 
+-- | Adds a label to a horizontal border.  The label will be
+-- | horizontally centered.
 withHBorderLabel :: String -> Widget HBorder -> IO (Widget HBorder)
 withHBorderLabel label w = setHBorderLabel w label >> return w
 
+-- | Adds a label to a horizontal border.  The label will be
+-- | horizontally centered.
 setHBorderLabel :: Widget HBorder -> String -> IO ()
 setHBorderLabel w label =
     updateWidgetState w $ \(HBorder a _) -> HBorder a label
 
+-- | Adds a label to the top border of a bordered widget.  The label
+-- | will be horizontally centered.
 withBorderedLabel :: String -> Widget (Bordered a) -> IO (Widget (Bordered a))
 withBorderedLabel label w = setBorderedLabel w label >> return w
 
+-- | Adds a label to the top border of a bordered widget.  The label
+-- | will be horizontally centered.
 setBorderedLabel :: Widget (Bordered a) -> String -> IO ()
 setBorderedLabel w label =
     updateWidgetState w $ \(Bordered a ch _) -> Bordered a ch label
