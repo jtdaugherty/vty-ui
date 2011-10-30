@@ -325,7 +325,12 @@ renderBoxFixed :: (Show a, Show b) =>
                -> Int
                -> Int
                -> IO (Image, Image)
-renderBoxFixed s ctx this firstDim secondDim = do
+renderBoxFixed s ctx this firstDim secondDim
+    -- If the box is too large to fit in the available space (since it
+    -- has fixed dimensions and can't be scaled), return the empty
+    -- image.
+    | toEnum firstDim + toEnum secondDim > regDimension this s = return (empty_image, empty_image)
+    | otherwise = do
   let withDim = withDimension this
   img1 <- render (boxFirst this) (s `withDim` (toEnum firstDim)) ctx
   img2 <- render (boxSecond this) (s `withDim` (toEnum secondDim)) ctx
