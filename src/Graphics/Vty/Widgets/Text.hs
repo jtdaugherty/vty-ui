@@ -8,6 +8,7 @@ module Graphics.Vty.Widgets.Text
     ( FormattedText
     -- *Constructing Text Widgets
     , plainText
+    , plainTextWithAttrs
     , textWidget
     -- *Setting Widget Contents
     , setText
@@ -66,6 +67,14 @@ instance Show FormattedText where
 -- you don't need to use a 'Formatter'.
 plainText :: String -> IO (Widget FormattedText)
 plainText = textWidget nullFormatter
+
+-- |Construct a Widget directly from a list of strings and their
+-- attributes.
+plainTextWithAttrs :: [(String, Attr)] -> IO (Widget FormattedText)
+plainTextWithAttrs pairs = do
+  w <- textWidget nullFormatter ""
+  setTextWithAttrs w pairs
+  return w
 
 -- |A formatter for wrapping text into the available space.  This
 -- formatter will insert line breaks where appropriate so if you want
