@@ -120,7 +120,7 @@ getNormalAttr :: RenderContext -> Attr
 getNormalAttr ctx = mergeAttrs [ overrideAttr ctx, normalAttr ctx ]
 
 defaultContext :: RenderContext
-defaultContext = RenderContext def_attr def_attr def_attr unicodeSkin
+defaultContext = RenderContext def_attr (white `on` blue) def_attr unicodeSkin
 
 data WidgetImpl a = WidgetImpl {
       state :: a
