@@ -355,9 +355,13 @@ newFocusGroup = do
 
         , getCursorPosition_ =
             \this -> do
-              eRef <- currentEntry this
-              (FocusEntry e) <- state <~ eRef
-              getCursorPosition e
+              cur <- currentEntryNum <~~ this
+              case cur of
+                (-1) -> return Nothing
+                _ -> do
+                  eRef <- currentEntry this
+                  (FocusEntry e) <- state <~ eRef
+                  getCursorPosition e
 
         , keyEventHandler =
             \this key mods -> do
