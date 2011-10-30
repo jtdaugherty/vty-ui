@@ -34,15 +34,15 @@ import System.Posix.Files
 import System.IO.Error
 
 type DirBrowserWidgetType =
-    Widget (Box
-            (Box (Box FormattedText FormattedText) HFill)
-            (Box
-             (List [Char] (Box FormattedText FormattedText))
-             (Box
-              (Box (Box FormattedText FormattedText) HFill)
-              FormattedText)))
+    Box
+    (Box (Box FormattedText FormattedText) HFill)
+    (Box
+     (List [Char] (Box FormattedText FormattedText))
+     (Box
+      (Box (Box FormattedText FormattedText) HFill)
+      FormattedText))
 
-data DirBrowser = DirBrowser { dirBrowserWidget :: DirBrowserWidgetType
+data DirBrowser = DirBrowser { dirBrowserWidget :: Widget DirBrowserWidgetType
                              , dirBrowserList :: Widget (List String (Box FormattedText FormattedText))
                              , dirBrowserPath :: IORef FilePath
                              , dirBrowserPathDisplay :: Widget FormattedText
