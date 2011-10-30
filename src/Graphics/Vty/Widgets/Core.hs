@@ -243,7 +243,9 @@ defaultCursorInfo :: Widget a -> IO (Maybe DisplayRegion)
 defaultCursorInfo w = do
   sz <- getCurrentSize w
   pos <- getCurrentPosition w
-  return $ Just $ pos `plusWidth` (region_width sz - 1)
+  if region_width sz > 0 then
+      return $ Just $ pos `plusWidth` (region_width sz - 1) else
+      return Nothing
 
 handleKeyEvent :: Widget a -> Key -> [Modifier] -> IO Bool
 handleKeyEvent wRef keyEvent mods = do
