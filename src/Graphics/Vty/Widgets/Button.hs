@@ -47,6 +47,7 @@ instance HasFocusAttr Button where
 newButton :: String -> IO Button
 newButton msg = do
   t <- plainText msg
+  setTextAppearFocused t True
 
   w <- return t >>=
        withPadding (padLeftRight 3) >>=

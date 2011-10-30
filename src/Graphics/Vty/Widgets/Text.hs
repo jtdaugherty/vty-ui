@@ -13,6 +13,7 @@ module Graphics.Vty.Widgets.Text
     , setText
     , setTextWithAttrs
     , setTextFormatter
+    , setTextAppearFocused
     -- *Formatting
     , Formatter
     , getTextFormatter
@@ -50,13 +51,16 @@ nullFormatter = \_ t -> return t
 data FormattedText =
     FormattedText { text :: TextStream Attr
                   , formatter :: Formatter
+                  , useFocusAttribute :: Bool
                   }
 
 instance Show FormattedText where
-    show (FormattedText t _) = concat [ "FormattedText { "
-                                      , "text = ", show t
-                                      , ", formatter = ... }"
-                                      ]
+    show (FormattedText t _ f) = concat [ "FormattedText { "
+                                        , "text = ", show t
+                                        , ", formatter = ..."
+                                        , ", useFocusAttribute = " ++ show f
+                                        , " }"
+                                        ]
 
 -- |Construct a Widget directly from a String.  This is recommended if
 -- you don't need to use a 'Formatter'.
@@ -104,13 +108,15 @@ textWidget format s = do
   wRef <- newWidget $ \w ->
       w { state = FormattedText { text = TS []
                                 , formatter = format
+                                , useFocusAttribute = False
                                 }
         , getCursorPosition_ = const $ return Nothing
         , render_ =
             \this size ctx -> do
               ft <- getState this
               f <- focused <~ this
-              renderText (text ft) f (formatter ft) size ctx
+              appearFocused <- useFocusAttribute <~~ this
+              renderText (text ft) (f && appearFocused) (formatter ft) size ctx
         }
   setText wRef s
   return wRef
@@ -123,6 +129,14 @@ setTextFormatter wRef f = updateWidgetState wRef $ \st ->
 -- |Get the formatter for the text.
 getTextFormatter :: Widget FormattedText -> IO Formatter
 getTextFormatter = (formatter <~~)
+
+-- |Set whether a text widget can appear focused by using the
+-- context-specific focus attribute when the widget has the focus.
+-- This setting defaults to False; some widgets which embed text
+-- widgets may need to turn this on.
+setTextAppearFocused :: Widget FormattedText -> Bool -> IO ()
+setTextAppearFocused wRef val = updateWidgetState wRef $ \st ->
+                                st { useFocusAttribute = val }
 
 -- |Set the text value of a 'FormattedText' widget.  The specified
 -- string will be 'tokenize'd.
