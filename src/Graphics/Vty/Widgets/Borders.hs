@@ -161,7 +161,9 @@ bordered child = do
 
 drawBordered :: (Show a) =>
                 Bordered a -> DisplayRegion -> RenderContext -> IO Image
-drawBordered this s ctx = do
+drawBordered this s ctx
+    | region_width s < 2 || region_height s < 2 = return empty_image
+    | otherwise = do
   let Bordered attr child label = this
       attr' = mergeAttrs [ overrideAttr ctx
                          , attr
