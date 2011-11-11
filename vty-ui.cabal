@@ -74,7 +74,7 @@ Flag demos
 Library
   Build-Depends:
     base >= 4 && < 5,
-    vty >= 4.6 && < 4.7,
+    vty >= 4.6 && < 4.8,
     containers >= 0.2 && < 0.5,
     regex-pcre >= 0.94 && < 0.95,
     regex-base >= 0.93 && < 0.94,
@@ -144,7 +144,7 @@ Executable vty-ui-list-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty >= 4.6 && < 4.7
+    vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
 
@@ -161,7 +161,7 @@ Executable vty-ui-complex-demo
     time >= 1.1 && < 1.3,
     old-locale >= 1.0 && < 1.1,
     regex-pcre >= 0.94 && < 0.95,
-    vty >= 4.6 && < 4.7
+    vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
 
@@ -174,7 +174,7 @@ Executable vty-ui-dirbrowser-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty >= 4.6 && < 4.7
+    vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
 
@@ -187,7 +187,7 @@ Executable vty-ui-phoneinput-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty >= 4.6 && < 4.7
+    vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
 
@@ -200,6 +200,6 @@ Executable vty-ui-dialog-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.1,
-    vty >= 4.6 && < 4.7
+    vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
