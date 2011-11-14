@@ -26,6 +26,9 @@ Internal changes:
   * Default render context now has a somewhat more reasonable default
     focus attribute
 
+Manual changes:
+  * Fixed ordering of sections in Chapter 4
+
 Bug fixes:
   * Default cursor location is hidden for empty widgets, fixes case
     where an empty widget showed the cursor and resulted in a
