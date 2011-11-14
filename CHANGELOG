@@ -42,7 +42,9 @@ Bug fixes:
     the focus group itself)
 
 Package changes:
-  * Allow dependency on Vty 4.7
+  * Allow dependency on Vty 4.7.  NOTE: if you are importing Vty
+    unqualified, 4.7 now exports a "pad" function which conflicts with
+    the "pad" function exported by the "All" and "Padding" modules.
 
 1.1 -> 1.2
 ----------
