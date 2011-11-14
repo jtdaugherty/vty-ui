@@ -1,4 +1,45 @@
 
+1.2 -> 1.3
+----------
+
+API changes:
+  * Added Graphics.Vty.Widgets.Group module to provide an abstraction
+    for a collection of widgets with the same role in the interface.
+  * Add Graphics.Vty.Widgets.Text.setTextFormatter function
+  * Add Graphics.Vty.Widgets.Text.getTextFormatter function
+  * Add Graphics.Vty.Widgets.Core.appendFocusGroup function
+  * Graphics.Vty.Widgets.DirBrowser: name and export the type of the
+    directory browser's internal widget (DirBrowserWidgetType)
+  * Add Graphics.Vty.Widgets.Text.setTextAppearFocused function;
+    change the default behavior of text widgets so that by default,
+    they do NOT use the focused attribute when focused.  The previous
+    behavior was such that a focused text widget would use the focused
+    attribute in effect when being rendered, but this doesn't make
+    sense in all cases.  Now there is a specific API for turning that
+    on, and the default is to supress the behavior.  Use cases for
+    turning it on include cases where a text widget is part of a
+    larger widget which has a meaningful focused appearance (e.g.,
+    buttons).
+  * Add Text.plainTextWithAttrs convenience constructor
+
+Internal changes:
+  * Default render context now has a somewhat more reasonable default
+    focus attribute
+
+Bug fixes:
+  * Default cursor location is hidden for empty widgets, fixes case
+    where an empty widget showed the cursor and resulted in a
+    Data.Word crash
+  * Boxes with fixed-size children now refuse to draw without enough
+    space
+  * Bordered widgets now refuse to draw without enough space
+  * Focus groups can now be empty for interfaces where no widgets need
+    focus (still, if you want to do this, add key event handlers to
+    the focus group itself)
+
+Package changes:
+  * Allow dependency on Vty 4.7
+
 1.1 -> 1.2
 ----------
 
