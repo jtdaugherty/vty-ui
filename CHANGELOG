@@ -40,6 +40,7 @@ Bug fixes:
   * Focus groups can now be empty for interfaces where no widgets need
     focus (still, if you want to do this, add key event handlers to
     the focus group itself)
+  * Minted LaTeX style wasn't being included in the sdist.
 
 Package changes:
   * Allow dependency on Vty 4.7.  NOTE: if you are importing Vty

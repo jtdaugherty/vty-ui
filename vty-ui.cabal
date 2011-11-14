@@ -49,6 +49,7 @@ Data-Files:
     doc/ch4/DirBrowser.tex
     doc/ch4/Edit.tex
     doc/ch4/Fills.tex
+    doc/ch4/Groups.tex
     doc/ch4/Fixed.tex
     doc/ch4/FormattedText.tex
     doc/ch4/main.tex
@@ -62,6 +63,7 @@ Data-Files:
     doc/vty-ui-users-manual.tex
     doc/title_page.tex
     doc/toc.tex
+    doc/minted.sty
 
 Flag testing
     Description:     Build for testing
