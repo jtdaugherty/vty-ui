@@ -1,0 +1,42 @@
+\section{Groups}
+\label{sec:groups}
+
+The \fw{Group} module provides a widget for containing a group of
+widgets of the same type, together with a pointer to the ``current''
+widget for the group.  This can be used to embed a collection of
+widgets in the interface while being able to change which of the
+widgets is being displayed.  This prevents users from having to
+construct new interfaces around each new widget, and the group can be
+modified at runtime.
+
+To create a group, use the \fw{newGroup} function:
+
+\begin{haskellcode}
+ g <- newGroup
+\end{haskellcode}
+
+A group contains one or more widgets of any type, although they must
+all have the same type within the group.  To add widgets to a group,
+use \fw{addToGroup}:
+
+\begin{haskellcode}
+ switchToT1 <- addToGroup g =<< plainText "first"
+ switchToT2 <- addToGroup g =<< plainText "second"
+\end{haskellcode}
+
+The \fw{addToGroup} function returns an \fw{IO} action.  This action,
+when evaluated, will change the group's currently-active widget to the
+one passed to \fw{addToGroup}.  In the above example, evaluating
+\fw{switchToT2} would cause group \fw{g} to show the text widget
+containing \fw{"second"}.
+
+\subsubsection{Input and Focus Events}
+
+Group widgets relay all key events received to the currently-active
+widget in the group, if any.  Focus events on the group propagate to
+the currently-active widget.
+
+\subsubsection{Growth Policy}
+
+Group widgets act as wrappers for the widgets they contain, so they
+delegate all growth policy settings from the widgets being wrapped.

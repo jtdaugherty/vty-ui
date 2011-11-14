@@ -28,6 +28,7 @@ Internal changes:
 
 Manual changes:
   * Fixed ordering of sections in Chapter 4
+  * Added section on the Group module
 
 Bug fixes:
   * Default cursor location is hidden for empty widgets, fixes case
