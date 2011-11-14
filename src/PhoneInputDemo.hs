@@ -4,7 +4,7 @@ module Main where
 
 import Control.Monad
 
-import Graphics.Vty
+import Graphics.Vty hiding (pad)
 import Graphics.Vty.Widgets.All
 
 data PhoneNumber = PhoneNumber String String String
