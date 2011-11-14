@@ -9,7 +9,7 @@ import Data.Time.Clock
 import Data.Time.Format
 import Text.Regex.PCRE
 import Text.Regex.PCRE.String
-import Graphics.Vty
+import Graphics.Vty hiding (pad)
 import Graphics.Vty.Widgets.All
 
 -- Visual attributes.
