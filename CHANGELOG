@@ -5,12 +5,12 @@
 API changes:
   * Added Graphics.Vty.Widgets.Group module to provide an abstraction
     for a collection of widgets with the same role in the interface.
-  * Add Graphics.Vty.Widgets.Text.setTextFormatter function
-  * Add Graphics.Vty.Widgets.Text.getTextFormatter function
-  * Add Graphics.Vty.Widgets.Core.appendFocusGroup function
+  * Added Graphics.Vty.Widgets.Text.setTextFormatter function
+  * Added Graphics.Vty.Widgets.Text.getTextFormatter function
+  * Added Graphics.Vty.Widgets.Core.appendFocusGroup function
   * Graphics.Vty.Widgets.DirBrowser: name and export the type of the
     directory browser's internal widget (DirBrowserWidgetType)
-  * Add Graphics.Vty.Widgets.Text.setTextAppearFocused function;
+  * Added Graphics.Vty.Widgets.Text.setTextAppearFocused function;
     change the default behavior of text widgets so that by default,
     they do NOT use the focused attribute when focused.  The previous
     behavior was such that a focused text widget would use the focused
@@ -20,7 +20,7 @@ API changes:
     turning it on include cases where a text widget is part of a
     larger widget which has a meaningful focused appearance (e.g.,
     buttons).
-  * Add Text.plainTextWithAttrs convenience constructor
+  * Added Text.plainTextWithAttrs convenience constructor
 
 Internal changes:
   * Default render context now has a somewhat more reasonable default
