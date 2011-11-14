@@ -6,7 +6,7 @@ import Control.Applicative ( (<*>), (<$>), pure )
 
 import Graphics.Vty
 
-instance (Arbitrary a, Eq a) => Arbitrary (MaybeDefault a) where
+instance (Show a, Arbitrary a, Eq a) => Arbitrary (MaybeDefault a) where
     arbitrary = oneof [ pure Default
                       , pure KeepCurrent
                       , SetTo <$> arbitrary
