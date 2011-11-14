@@ -47,6 +47,8 @@ Package changes:
     unqualified, 4.7 now exports a "pad" function which conflicts with
     the "pad" function exported by the "All" and "Padding" modules.
   * Extend 'unix' dependency range to 2.5
+  * Add source-repository to the package description
+  * Depend on Cabal >= 1.6
 
 1.1 -> 1.2
 ----------

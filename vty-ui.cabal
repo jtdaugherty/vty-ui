@@ -16,7 +16,7 @@ Maintainer:          Jonathan Daugherty <jtd@galois.com>
 Build-Type:          Simple
 License:             BSD3
 License-File:        LICENSE
-Cabal-Version:       >= 1.2
+Cabal-Version:       >= 1.6
 Homepage:            http://codevine.org/vty-ui/
 
 Data-Files:
@@ -64,6 +64,10 @@ Data-Files:
     doc/title_page.tex
     doc/toc.tex
     doc/minted.sty
+
+Source-Repository head
+  type:     git
+  location: git://github.com/jtdaugherty/vty-ui.git
 
 Flag testing
     Description:     Build for testing
