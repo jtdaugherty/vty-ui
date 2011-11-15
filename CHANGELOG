@@ -1,4 +1,18 @@
 
+1.3 -> 1.3.1
+------------
+
+Bug fixes:
+  * Now builds on GHC 7.2, due to addition of FlexibleInstances pragma
+    to Core
+
+Warning fixes:
+  * DirBrowser now uses Control.Exception.catch
+
+Package fixes:
+  * Data-Files no longer lists unshipped minted.sty; you'll have to
+    install Minted yourself
+
 1.2 -> 1.3
 ----------
 
