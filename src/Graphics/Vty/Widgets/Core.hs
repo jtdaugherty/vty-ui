@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification, DeriveDataTypeable, TypeSynonymInstances #-}
+{-# LANGUAGE ExistentialQuantification, DeriveDataTypeable, TypeSynonymInstances, FlexibleInstances #-}
 -- |This module is the core of this library; it provides
 -- infrastructure for creating new types of widgets and extending
 -- their functionality.  This module provides various bits of
