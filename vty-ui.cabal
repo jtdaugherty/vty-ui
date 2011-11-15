@@ -63,7 +63,6 @@ Data-Files:
     doc/vty-ui-users-manual.tex
     doc/title_page.tex
     doc/toc.tex
-    doc/minted.sty
 
 Source-Repository head
   type:     git
