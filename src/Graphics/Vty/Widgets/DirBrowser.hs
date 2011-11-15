@@ -19,6 +19,7 @@ where
 
 import Data.IORef
 import qualified Data.Map as Map
+import qualified Control.Exception as E
 import Control.Monad
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
@@ -260,7 +261,7 @@ setDirBrowserPath b path = do
   (res, entries) <- (do
                       entries <- getDirectoryContents cPath
                       return (True, entries))
-                     `catch` \e -> do
+                     `E.catch` \e -> do
                              reportBrowserError b (ioeGetErrorString e)
                              return (False, [])
 
