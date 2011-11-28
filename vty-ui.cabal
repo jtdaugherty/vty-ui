@@ -1,15 +1,22 @@
 Name:                vty-ui
 Version:             1.3.1
-Synopsis:            An interactive terminal user interface library
-                     for Vty
-Description:         An extensible library of user interface widgets
-                     for composing and laying out Vty user interfaces.
-                     This library provides a collection of widgets for
-                     building and composing interactive interactive,
-                     event-driven terminal interfaces.  This library
-                     is intended to make non-trivial user interfaces
-                     easy to express and modify without having to
-                     worry about terminal size.
+Synopsis:
+  An interactive terminal user interface library for Vty
+
+Description:
+  An extensible library of user interface widgets for composing and
+  laying out Vty user interfaces.  This library provides a collection
+  of widgets for building and composing interactive interactive,
+  event-driven terminal interfaces.  This library is intended to make
+  non-trivial user interfaces easy to express and modify without
+  having to worry about terminal size.
+  .
+  Be sure to check out the user manual for the version you're using
+  at: <http://codevine.org/vty-ui/>
+  .
+  Build with the 'demos' flag to get a set of demonstration programs
+  to see some of the things the library can do!
+
 Category:            User Interfaces
 Author:              Jonathan Daugherty <jtd@galois.com>
 Maintainer:          Jonathan Daugherty <jtd@galois.com>
