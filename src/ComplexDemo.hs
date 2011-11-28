@@ -5,6 +5,7 @@ import System.Exit ( exitSuccess )
 import System.Locale
 import Control.Monad
 import Control.Concurrent
+import Data.Monoid
 import Data.Time.Clock
 import Data.Time.Format
 import Text.Regex.PCRE
@@ -21,9 +22,10 @@ msgAttr = fgColor blue
 
 -- Formatter to apply a color to "<...>"
 color :: Formatter
-color sz t = do
-  Right r <- compile compUngreedy execBlank "<.*>"
-  highlight r (fgColor bright_green) sz t
+color =
+    Formatter $ \sz t -> do
+      Right r <- compile compUngreedy execBlank "<.*>"
+      applyFormatter (highlight r (fgColor bright_green)) sz t
 
 -- Multi-state checkbox value type
 data FrostingType = Chocolate
@@ -46,7 +48,7 @@ main = do
            withNormalAttribute (bgColor blue) >>=
            withBorderAttribute (fgColor green)
 
-  tw <- (textWidget (wrap &.& color) msg) >>= withNormalAttribute msgAttr
+  tw <- (textWidget (wrap `mappend` color) msg) >>= withNormalAttribute msgAttr
   mainBox <- vBox table tw >>= withBoxSpacing 1
 
   r1 <- newCheckbox "Cake"

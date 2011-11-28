@@ -16,15 +16,16 @@ module Graphics.Vty.Widgets.Text
     , setTextFormatter
     , setTextAppearFocused
     -- *Formatting
-    , Formatter
+    , Formatter(Formatter)
+    , applyFormatter
     , getTextFormatter
-    , (&.&)
     , highlight
     , nullFormatter
     , wrap
     )
 where
 
+import Data.Monoid
 import Data.Word
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
@@ -37,15 +38,19 @@ import Graphics.Vty.Widgets.Util
 -- area, which is not known until render time (e.g., text wrapping).
 -- Thus, a formatter takes a 'DisplayRegion' which indicates the size
 -- of screen area available for formatting.
-type Formatter = DisplayRegion -> TextStream Attr -> IO (TextStream Attr)
+newtype Formatter = Formatter (DisplayRegion -> TextStream Attr -> IO (TextStream Attr))
 
--- |Formatter composition: @a &.& b@ applies @a@ followed by @b@.
-(&.&) :: Formatter -> Formatter -> Formatter
-f1 &.& f2 = \sz t -> f1 sz t >>= f2 sz
+instance Monoid Formatter where
+    mempty = nullFormatter
+    mappend (Formatter f1) (Formatter f2) =
+        Formatter (\sz t -> f1 sz t >>= f2 sz)
+
+applyFormatter :: Formatter -> DisplayRegion -> TextStream Attr -> IO (TextStream Attr)
+applyFormatter (Formatter f) sz t = f sz t
 
 -- |The null formatter which has no effect on text streams.
 nullFormatter :: Formatter
-nullFormatter = \_ t -> return t
+nullFormatter = Formatter (\_ t -> return t)
 
 -- |The type of formatted text widget state.  Stores the text itself
 -- and the formatter used to apply attributes to the text.
@@ -81,9 +86,10 @@ plainTextWithAttrs pairs = do
 -- to use other structure-sensitive formatters, run this formatter
 -- last.
 wrap :: Formatter
-wrap sz ts = do
-  let width = fromEnum $ region_width sz
-  return $ wrapStream width ts
+wrap =
+    Formatter $ \sz ts -> do
+      let width = fromEnum $ region_width sz
+      return $ wrapStream width ts
 
 -- |A highlight formatter takes a regular expression used to scan the
 -- text and an attribute to assign to matches.  The regular expression
@@ -93,7 +99,7 @@ wrap sz ts = do
 -- that kind of functionality, apply your own attributes with your own
 -- regular expression prior to calling 'setTextWithAttrs'.
 highlight :: (RegexLike r String) => r -> Attr -> Formatter
-highlight regex attr =
+highlight regex attr = Formatter $
     \_ (TS ts) -> return $ TS $ map highlightToken ts
         where
           highlightToken :: TextStreamEntity Attr -> TextStreamEntity Attr
@@ -172,7 +178,7 @@ renderText :: TextStream Attr
            -> DisplayRegion
            -> RenderContext
            -> IO Image
-renderText t foc format sz ctx = do
+renderText t foc (Formatter format) sz ctx = do
   TS newText <- format sz t
 
   -- Truncate the tokens at the specified column and split them up
