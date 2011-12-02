@@ -27,6 +27,7 @@ module Graphics.Vty.Widgets.Table
     )
 where
 
+import Data.Monoid
 import Data.Typeable
 import Data.Word
 import Data.List
@@ -160,6 +161,10 @@ instance (RowLike a) => RowLike [a] where
     where
       (TableRow cs) = mkRow a
       (TableRow ds) = mkRow b
+
+instance Monoid TableRow where
+    mempty = TableRow []
+    (TableRow as) `mappend` (TableRow bs) = TableRow $ as ++ bs
 
 infixl 2 .|.
 
