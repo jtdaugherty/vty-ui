@@ -9,9 +9,9 @@ module Graphics.Vty.Widgets.Table
     , ColumnSize(..)
     , BorderStyle(..)
     , BorderFlag(..)
-    , RowLike
+    , RowLike(..)
     , TableError(..)
-    , ColumnSpec
+    , ColumnSpec(..)
     , Alignment(..)
     , Alignable(..)
     , (.|.)
