@@ -1,4 +1,16 @@
 
+1.3.1 -> 1.4
+------------
+
+API changes:
+  * The "highlight" text formatter has been moved to a separate
+    package, vty-ui-extras, so that vty-ui doesn't depend on any
+    concrete regular expression implementations.
+  * The "Formatter" type now forms a monoid.
+  * The "TableRow" type now forms a monoid.
+  * The fields of the "ColumnSpec" type are now exported.
+  * The methods of the "RowLike" type class are now exported.
+
 1.3 -> 1.3.1
 ------------
 
