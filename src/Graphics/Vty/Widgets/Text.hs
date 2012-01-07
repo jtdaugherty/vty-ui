@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, FlexibleContexts #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 -- |This module provides functionality for rendering 'String's as
 -- 'Widget's, including functionality to make structural and/or visual
 -- changes at rendering time.  To get started, turn your ordinary
@@ -19,7 +19,6 @@ module Graphics.Vty.Widgets.Text
     , Formatter(Formatter)
     , applyFormatter
     , getTextFormatter
-    , highlight
     , nullFormatter
     , wrap
     )
@@ -30,7 +29,6 @@ import Data.Word
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Text.Trans.Tokenize
-import Text.Regex.Base
 import Graphics.Vty.Widgets.Util
 
 -- |A formatter makes changes to text at rendering time.  Some
@@ -90,30 +88,6 @@ wrap =
     Formatter $ \sz ts -> do
       let width = fromEnum $ region_width sz
       return $ wrapStream width ts
-
--- |A highlight formatter takes a regular expression used to scan the
--- text and an attribute to assign to matches.  The regular expression
--- is only applied to individual string tokens (individual words,
--- whitespace strings, etc.); it is NOT applied to whole lines,
--- paragraphs, or text spanning multiple lines.  If you have need of
--- that kind of functionality, apply your own attributes with your own
--- regular expression prior to calling 'setTextWithAttrs'.
-highlight :: (RegexLike r String) => r -> Attr -> Formatter
-highlight regex attr = Formatter $
-    \_ (TS ts) -> return $ TS $ map highlightToken ts
-        where
-          highlightToken :: TextStreamEntity Attr -> TextStreamEntity Attr
-          highlightToken NL = NL
-          highlightToken (T t) =
-              if tokenAttr t /= def_attr
-              then T t
-              else T (highlightToken' t)
-
-          highlightToken' :: Token Attr -> Token Attr
-          highlightToken' t =
-              if null $ matchAll regex $ tokenStr t
-              then t
-              else t { tokenAttr = attr }
 
 -- |Construct a text widget formatted with the specified formatters
 -- and initial content.  The formatters will be applied in the order
