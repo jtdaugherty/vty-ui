@@ -1,4 +1,4 @@
-{-# LANGUAGE ExistentialQuantification, DeriveDataTypeable, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE ExistentialQuantification, DeriveDataTypeable, TypeSynonymInstances, FlexibleInstances, BangPatterns #-}
 -- |This module is the core of this library; it provides
 -- infrastructure for creating new types of widgets and extending
 -- their functionality.  This module provides various bits of
@@ -286,7 +286,9 @@ renderAndPosition wRef pos sz ctx = do
 -- |Set the current size of a widget.  Exported for internal use.
 setCurrentSize :: Widget a -> DisplayRegion -> IO ()
 setCurrentSize wRef newSize =
-    modifyIORef wRef $ \w -> w { currentSize = newSize }
+    modifyIORef wRef $ \w ->
+        let new =  w { currentSize = newSize }
+        in seq new new
 
 -- |Get the current size of the widget (its size after its most recent
 -- rendering).
@@ -420,7 +422,8 @@ onLoseFocus = addHandler (loseFocusHandlers <~)
 -- |Given a widget and an implementation transformer, apply the
 -- transformer to the widget's implementation.
 updateWidget :: Widget a -> (WidgetImpl a -> WidgetImpl a) -> IO ()
-updateWidget wRef f = modifyIORef wRef f
+updateWidget wRef f = modifyIORef wRef $ \val -> let new = f val
+                                                 in seq new new
 
 -- |Get the state value of a widget.
 getState :: Widget a -> IO a
@@ -430,7 +433,8 @@ getState wRef = state <~ wRef
 updateWidgetState :: Widget a -> (a -> a) -> IO ()
 updateWidgetState wRef f = do
   w <- readIORef wRef
-  writeIORef wRef $ w { state = f (state w) }
+  writeIORef wRef $ let new = w { state = f (state w) }
+                    in seq new new
 
 -- |Focus group handling errors.
 data FocusGroupError = FocusGroupEmpty
