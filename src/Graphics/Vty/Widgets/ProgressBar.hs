@@ -1,6 +1,7 @@
 -- |This module provides a ''progress bar'' widget which stores a
--- progress value between 0 and 100 inclusive.  Use the 'schedule'
--- function to modify the progress bar's state from a thread.
+-- progress value between 0 and 100 inclusive and supports a text
+-- label.  Use the 'schedule' function to modify the progress bar's
+-- state from a thread.
 module Graphics.Vty.Widgets.ProgressBar
     ( ProgressBar
     , newProgressBar
@@ -33,7 +34,8 @@ instance Show ProgressBar where
                     ]
 
 -- |Create a new progress bar with the specified completed and
--- uncompleted colors, respectively.
+-- uncompleted attributes, respectively.  The foreground of the
+-- attributes will be used to show the progress bar's label, if any.
 newProgressBar :: Attr -> Attr -> IO (Widget ProgressBar)
 newProgressBar completeAttr incompleteAttr = do
   chs <- newHandlers
@@ -93,7 +95,7 @@ setProgress p amt =
       updateWidgetState p $ \st -> st { progressBarAmount = amt }
       fireEvent p (onChangeHandlers <~~) amt
 
--- |Set the progress bar's text alignment.
+-- |Set the progress bar's text label alignment.
 setProgressTextAlignment :: Widget ProgressBar -> Alignment -> IO ()
 setProgressTextAlignment p al =
     updateWidgetState p $ \st -> st { progressBarTextAlignment = al }
