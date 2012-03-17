@@ -42,6 +42,7 @@ where
 import Data.Typeable
 import Control.Exception hiding (Handler)
 import Control.Monad
+import qualified Data.Vector as V
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
@@ -87,21 +88,21 @@ data ActivateItemEvent a b = ActivateItemEvent Int a (Widget b)
 -- /value type/ @a@, the type of internal values used to refer to the
 -- visible representations of the list contents, and the /widget type/
 -- @b@, the type of widgets used to represent the list visually.
-data List a b = List { selectedUnfocusedAttr :: Attr
-                     , selectedIndex :: Int
+data List a b = List { selectedUnfocusedAttr :: !Attr
+                     , selectedIndex :: !Int
                      -- ^The currently selected list index.
-                     , scrollTopIndex :: Int
+                     , scrollTopIndex :: !Int
                      -- ^The start index of the window of visible list
                      -- items.
-                     , scrollWindowSize :: Int
+                     , scrollWindowSize :: !Int
                      -- ^The size of the window of visible list items.
-                     , listItems :: [ListItem a b]
+                     , listItems :: V.Vector (ListItem a b)
                      -- ^The items in the list.
                      , selectionChangeHandlers :: Handlers (SelectionEvent a b)
                      , itemAddHandlers :: Handlers (NewItemEvent a b)
                      , itemRemoveHandlers :: Handlers (RemoveItemEvent a b)
                      , itemActivateHandlers :: Handlers (ActivateItemEvent a b)
-                     , itemHeight :: Int
+                     , itemHeight :: !Int
                      }
 
 instance Show (List a b) where
@@ -110,7 +111,7 @@ instance Show (List a b) where
                       , ", selectedIndex = ", show $ selectedIndex lst
                       , ", scrollTopIndex = ", show $ scrollTopIndex lst
                       , ", scrollWindowSize = ", show $ scrollWindowSize lst
-                      , ", listItems = <", show $ length $ listItems lst, " items>"
+                      , ", listItems = <", show $ V.length $ listItems lst, " items>"
                       , ", itemHeight = ", show $ itemHeight lst
                       , " }"
                       ]
@@ -127,7 +128,7 @@ newListData selAttr = do
                 , selectedIndex = -1
                 , scrollTopIndex = 0
                 , scrollWindowSize = 0
-                , listItems = []
+                , listItems = V.empty
                 , selectionChangeHandlers = schs
                 , itemAddHandlers = iahs
                 , itemRemoveHandlers = irhs
@@ -137,7 +138,7 @@ newListData selAttr = do
 
 -- |Get the length of the list in elements.
 getListSize :: Widget (List a b) -> IO Int
-getListSize = ((length . listItems) <~~)
+getListSize = ((V.length . listItems) <~~)
 
 -- |Remove an element from the list at the specified position.  May
 -- throw 'BadItemIndex'.
@@ -146,14 +147,14 @@ removeFromList list pos = do
   st <- getState list
   foc <- focused <~ list
 
-  let numItems = length $ listItems st
+  let numItems = V.length $ listItems st
       oldScr = scrollTopIndex st
 
   when (pos < 0 || pos >= numItems) $
        throw $ BadItemIndex pos
 
   -- Get the item from the list.
-  let (label, w) = listItems st !! pos
+  let (label, w) = (listItems st) V.! pos
       sel = selectedIndex st
 
       newScrollTop = if pos <= oldScr
@@ -178,8 +179,8 @@ removeFromList list pos = do
                                         else sel
 
   updateWidgetState list $ \s -> s { selectedIndex = newSelectedIndex
-                                   , listItems = take pos (listItems st) ++
-                                                 drop (pos + 1) (listItems st)
+                                   , listItems = V.take pos (listItems st) V.++
+                                                 V.drop (pos + 1) (listItems st)
                                    , scrollTopIndex = newScrollTop
                                    }
 
@@ -212,14 +213,14 @@ removeFromList list pos = do
 -- 'newList'.
 addToList :: (Show b) => Widget (List a b) -> a -> Widget b -> IO ()
 addToList list key w = do
-  numItems <- (length . listItems) <~~ list
+  numItems <- (V.length . listItems) <~~ list
   insertIntoList list key w numItems
 
 -- |Insert an element into the list at the specified position.  If the
 -- position exceeds the length of the list, it is inserted at the end.
 insertIntoList :: (Show b) => Widget (List a b) -> a -> Widget b -> Int -> IO ()
 insertIntoList list key w pos = do
-  numItems <- (length . listItems) <~~ list
+  numItems <- (V.length . listItems) <~~ list
 
   v <- growVertical w
   when (v) $ throw BadListWidgetSizePolicy
@@ -253,8 +254,16 @@ insertIntoList list key w pos = do
                           else oldScr
                      else oldScr
 
+  let vInject atPos a as = let (hd, t) = (V.take atPos as, V.drop atPos as)
+                           in hd V.++ (V.cons a t)
+
+  -- Optimize the append case.
+  let newItems s = if pos >= numItems
+                   then V.snoc (listItems s) (key, w)
+                   else vInject pos (key, w) (listItems s)
+
   updateWidgetState list $ \s -> s { itemHeight = h
-                                   , listItems = inject pos (key, w) (listItems s)
+                                   , listItems = V.force $ newItems s
                                    , selectedIndex = newSelIndex
                                    , scrollTopIndex = newScrollTop
                                    }
@@ -301,7 +310,7 @@ clearList w = do
   updateWidgetState w $ \l ->
       l { selectedIndex = (-1)
         , scrollTopIndex = 0
-        , listItems = []
+        , listItems = V.empty
         }
 
 -- |Create a new list using the specified attribute for the
@@ -440,15 +449,15 @@ getSelected wRef = do
   list <- state <~ wRef
   case selectedIndex list of
     (-1) -> return Nothing
-    i -> return $ Just (i, (listItems list) !! i)
+    i -> return $ Just (i, (listItems list) V.! i)
 
 -- |Get the list item at the specified position.
 getListItem :: Widget (List a b) -> Int -> IO (Maybe (ListItem a b))
 getListItem wRef pos = do
   list <- state <~ wRef
-  case pos >= 0 && pos < (length $ listItems list) of
+  case pos >= 0 && pos < (V.length $ listItems list) of
     False ->  return Nothing
-    True -> return $ Just ((listItems list) !! pos)
+    True -> return $ Just ((listItems list) V.! pos)
 
 -- |Set the currently-selected list index.
 setSelected :: Widget (List a b) -> Int -> IO ()
@@ -515,7 +524,7 @@ scrollBy wRef amount = do
 scrollBy' :: Int -> List a b -> List a b
 scrollBy' amount list =
   let sel = selectedIndex list
-      lastPos = (length $ listItems list) - 1
+      lastPos = (V.length $ listItems list) - 1
       validPositions = [0..lastPos]
       newPosition = sel + amount
 
@@ -526,7 +535,7 @@ scrollBy' amount list =
                          else 0
 
       bottomPosition = min (scrollTopIndex list + scrollWindowSize list - 1)
-                       ((length $ listItems list) - 1)
+                       ((V.length $ listItems list) - 1)
       topPosition = scrollTopIndex list
       windowPositions = [topPosition..bottomPosition]
 
@@ -587,6 +596,6 @@ getVisibleItems_ :: List a b -> [(ListItem a b, Bool)]
 getVisibleItems_ list =
     let start = scrollTopIndex list
         stop = scrollTopIndex list + scrollWindowSize list
-        adjustedStop = (min stop $ length $ listItems list) - 1
-    in [ (listItems list !! i, i == selectedIndex list)
+        adjustedStop = (min stop $ V.length $ listItems list) - 1
+    in [ (listItems list V.! i, i == selectedIndex list)
              | i <- [start..adjustedStop] ]
