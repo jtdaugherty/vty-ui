@@ -33,9 +33,9 @@ instance Show (HLimit a) where
 -- |Impose a maximum horizontal size, in columns, on a 'Widget'.
 hLimit :: (Show a) => Int -> Widget a -> IO (Widget (HLimit a))
 hLimit maxWidth child = do
-  wRef <- newWidget $ \w ->
-      w { state = HLimit maxWidth child
-        , growHorizontal_ = const $ return False
+  let initSt = HLimit maxWidth child
+  wRef <- newWidget initSt $ \w ->
+      w { growHorizontal_ = const $ return False
         , growVertical_ = const $ growVertical child
         , render_ = \this s ctx -> do
                    HLimit width ch <- getState this
@@ -59,9 +59,9 @@ instance Show (VLimit a) where
 -- |Impose a maximum vertical size, in columns, on a 'Widget'.
 vLimit :: (Show a) => Int -> Widget a -> IO (Widget (VLimit a))
 vLimit maxHeight child = do
-  wRef <- newWidget $ \w ->
-      w { state = VLimit maxHeight child
-        , growHorizontal_ = const $ growHorizontal child
+  let initSt = VLimit maxHeight child
+  wRef <- newWidget initSt $ \w ->
+      w { growHorizontal_ = const $ growHorizontal child
         , growVertical_ = const $ return False
 
         , render_ = \this s ctx -> do

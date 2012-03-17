@@ -20,9 +20,8 @@ data VFill = VFill Char
 -- specified character and attribute.
 vFill :: Char -> IO (Widget VFill)
 vFill c = do
-  wRef <- newWidget $ \w ->
-      w { state = VFill c
-        , growVertical_ = const $ return True
+  wRef <- newWidget (VFill c) $ \w ->
+      w { growVertical_ = const $ return True
         , render_ = \this s ctx -> do
                    foc <- focused <~ this
                    VFill ch <- getState this
@@ -40,9 +39,8 @@ data HFill = HFill Char Int
 -- one row high, using the specified character and attribute.
 hFill :: Char -> Int -> IO (Widget HFill)
 hFill c h = do
-  wRef <- newWidget $ \w ->
-      w { state = HFill c h
-        , growHorizontal_ = const $ return True
+  wRef <- newWidget (HFill c h) $ \w ->
+      w { growHorizontal_ = const $ return True
         , render_ = \this s ctx -> do
                    foc <- focused <~ this
                    HFill ch height <- getState this

@@ -40,9 +40,9 @@ newProgressBar :: Attr -> Attr -> IO (Widget ProgressBar)
 newProgressBar completeAttr incompleteAttr = do
   chs <- newHandlers
   t <- plainText ""
-  wRef <- newWidget $ \w ->
-          w { state = ProgressBar 0 chs "" AlignCenter
-            , growHorizontal_ = const $ return True
+  let initSt = ProgressBar 0 chs "" AlignCenter
+  wRef <- newWidget initSt $ \w ->
+          w { growHorizontal_ = const $ return True
             , render_ =
                 \this size ctx -> do
                   -- Divide the available width according to the

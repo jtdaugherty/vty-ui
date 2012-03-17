@@ -69,9 +69,9 @@ setBorderedLabel w label =
 -- attribute and character.
 hBorder :: IO (Widget HBorder)
 hBorder = do
-  wRef <- newWidget $ \w ->
-      w { state = HBorder def_attr ""
-        , growHorizontal_ = const $ return True
+  let initSt = HBorder def_attr ""
+  wRef <- newWidget initSt $ \w ->
+      w { growHorizontal_ = const $ return True
         , render_ = renderHBorder
         }
   return wRef
@@ -112,9 +112,9 @@ instance HasBorderAttr (Widget VBorder) where
 -- attribute and character.
 vBorder :: IO (Widget VBorder)
 vBorder = do
-  wRef <- newWidget $ \w ->
-      w { state = VBorder def_attr
-        , growVertical_ = const $ return True
+  let initSt = VBorder def_attr
+  wRef <- newWidget initSt $ \w ->
+      w { growVertical_ = const $ return True
         , render_ = \this s ctx -> do
                    VBorder attr <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx
@@ -142,10 +142,9 @@ instance HasBorderAttr (Widget (Bordered a)) where
 -- |Wrap a widget in a bordering box.
 bordered :: (Show a) => Widget a -> IO (Widget (Bordered a))
 bordered child = do
-  wRef <- newWidget $ \w ->
-      w { state = Bordered def_attr child ""
-
-        , growVertical_ = const $ growVertical child
+  let initSt = Bordered def_attr child ""
+  wRef <- newWidget initSt $ \w ->
+      w { growVertical_ = const $ growVertical child
         , growHorizontal_ = const $ growHorizontal child
 
         , keyEventHandler =

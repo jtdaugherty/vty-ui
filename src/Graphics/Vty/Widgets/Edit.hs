@@ -46,18 +46,18 @@ editWidget = do
   chs <- newHandlers
   cmhs <- newHandlers
 
-  wRef <- newWidget $ \w ->
-      w { state = Edit { currentText = ""
-                       , cursorPosition = 0
-                       , displayStart = 0
-                       , displayWidth = 0
-                       , activateHandlers = ahs
-                       , changeHandlers = chs
-                       , cursorMoveHandlers = cmhs
-                       , maxTextLength = Nothing
-                       }
+  let initSt = Edit { currentText = ""
+                    , cursorPosition = 0
+                    , displayStart = 0
+                    , displayWidth = 0
+                    , activateHandlers = ahs
+                    , changeHandlers = chs
+                    , cursorMoveHandlers = cmhs
+                    , maxTextLength = Nothing
+                    }
 
-        , growHorizontal_ = const $ return True
+  wRef <- newWidget initSt $ \w ->
+      w { growHorizontal_ = const $ return True
         , getCursorPosition_ =
             \this -> do
               f <- focused <~ this

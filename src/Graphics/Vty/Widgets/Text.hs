@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, BangPatterns #-}
 -- |This module provides functionality for rendering 'String's as
 -- 'Widget's, including functionality to make structural and/or visual
 -- changes at rendering time.  To get started, turn your ordinary
@@ -54,8 +54,8 @@ nullFormatter = Formatter (\_ t -> return t)
 -- and the formatter used to apply attributes to the text.
 data FormattedText =
     FormattedText { text :: TextStream Attr
-                  , formatter :: Formatter
-                  , useFocusAttribute :: Bool
+                  , formatter :: !Formatter
+                  , useFocusAttribute :: !Bool
                   }
 
 instance Show FormattedText where
@@ -94,12 +94,13 @@ wrap =
 -- given here (and, depending on the formatter, order might matter).
 textWidget :: Formatter -> String -> IO (Widget FormattedText)
 textWidget format s = do
-  wRef <- newWidget $ \w ->
-      w { state = FormattedText { text = TS []
-                                , formatter = format
-                                , useFocusAttribute = False
-                                }
-        , getCursorPosition_ = const $ return Nothing
+  let initSt = FormattedText { text = TS []
+                             , formatter = format
+                             , useFocusAttribute = False
+                             }
+
+  wRef <- newWidget initSt $ \w ->
+      w { getCursorPosition_ = const $ return Nothing
         , render_ =
             \this size ctx -> do
               ft <- getState this

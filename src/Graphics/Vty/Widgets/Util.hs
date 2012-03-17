@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 module Graphics.Vty.Widgets.Util
     ( on
     , fgColor
@@ -85,8 +86,10 @@ remove :: Int -> [a] -> [a]
 remove pos as = (take pos as) ++ (drop (pos + 1) as)
 
 inject :: Int -> a -> [a] -> [a]
-inject pos a as = let (h, t) = splitAt pos as
-                  in h ++ (a:t)
+inject !pos !a !as = let (h, t) = (take pos as, drop pos as)
+                     in h ++ (a:t)
+-- inject !pos !a !as = let (h, t) = splitAt pos as
+--                      in h ++ (a:t)
 
 repl :: Int -> a -> [a] -> [a]
-repl pos a as = inject pos a (remove pos as)
+repl !pos !a !as = inject pos a (remove pos as)

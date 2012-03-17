@@ -311,9 +311,8 @@ newList :: (Show b) =>
         -> IO (Widget (List a b))
 newList selAttr = do
   list <- newListData selAttr
-  wRef <- newWidget $ \w ->
-      w { state = list
-        , keyEventHandler = listKeyEvent
+  wRef <- newWidget list $ \w ->
+      w { keyEventHandler = listKeyEvent
 
         , growVertical_ = const $ return True
         , growHorizontal_ = const $ return True

@@ -31,12 +31,11 @@ instance Show (Group a) where
 -- |Create a new empty widget group.
 newGroup :: (Show a) => IO (Widget (Group a))
 newGroup = do
-  wRef <- newWidget $ \w ->
-      w { state = Group { entries = []
-                        , currentEntryNum = -1
-                        }
-
-        , getCursorPosition_ =
+  let initSt = Group { entries = []
+                     , currentEntryNum = -1
+                     }
+  wRef <- newWidget initSt $ \w ->
+      w { getCursorPosition_ =
             \this ->
                 getCursorPosition =<< currentEntry this
 

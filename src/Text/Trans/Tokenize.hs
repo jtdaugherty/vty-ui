@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP #-}
+{-# LANGUAGE CPP, BangPatterns #-}
 -- |This module provides functionality for tokenizing text streams to
 -- differentiate between printed characters and structural elements
 -- such as newlines.  Once tokenized, such text streams can be
@@ -37,21 +37,21 @@ import Data.List
 -- type of token should have as its contents a string of characters
 -- all of the same type.  Tokens are generalized over an attribute
 -- type which can be used to annotate each token.
-data Token a = S { tokenStr :: String
+data Token a = S { tokenStr :: !String
                  -- ^The token's string.
-                 , tokenAttr :: a
+                 , tokenAttr :: !a
                  -- ^The token's attribute.
                  }
              -- ^Non-whitespace tokens.
-             | WS { tokenStr :: String
+             | WS { tokenStr :: !String
                   -- ^The token's string.
-                  , tokenAttr :: a
+                  , tokenAttr :: !a
                   -- ^The token's attribute.
                   }
                -- ^Whitespace tokens.
 
 -- |A text stream entity is either a token or a structural element.
-data TextStreamEntity a = T (Token a)
+data TextStreamEntity a = T !(Token a)
                         -- ^Constructor for ordinary tokens.
                         | NL
                           -- ^Newline.
@@ -59,7 +59,7 @@ data TextStreamEntity a = T (Token a)
 -- |A text stream is a list of text stream entities.  A text stream
 -- |combines structural elements of the text (e.g., newlines) with the
 -- |text itself (words, whitespace, etc.).
-data TextStream a = TS [TextStreamEntity a]
+data TextStream a = TS ![TextStreamEntity a]
 
 instance (Show a) => Show (TextStream a) where
     show (TS ts) = "TS " ++ show ts

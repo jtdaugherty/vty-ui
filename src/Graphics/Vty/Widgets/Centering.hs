@@ -24,9 +24,8 @@ instance Show (HCentered a) where
 -- |Wrap another widget to center it horizontally.
 hCentered :: (Show a) => Widget a -> IO (Widget (HCentered a))
 hCentered ch = do
-  wRef <- newWidget $ \w ->
-      w { state = HCentered ch
-        , growHorizontal_ = const $ return True
+  wRef <- newWidget (HCentered ch) $ \w ->
+      w { growHorizontal_ = const $ return True
 
         , growVertical_ = \(HCentered child) -> growVertical child
 
@@ -65,9 +64,8 @@ instance Show (VCentered a) where
 -- |Wrap another widget to center it vertically.
 vCentered :: (Show a) => Widget a -> IO (Widget (VCentered a))
 vCentered ch = do
-  wRef <- newWidget $ \w ->
-      w { state = VCentered ch
-        , growVertical_ = const $ return True
+  wRef <- newWidget (VCentered ch) $ \w ->
+      w { growVertical_ = const $ return True
         , growHorizontal_ = const $ growHorizontal ch
 
         , render_ = \this s ctx -> do

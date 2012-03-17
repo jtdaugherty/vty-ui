@@ -134,27 +134,28 @@ defaultChildSizePolicy = PerChild BoxAuto BoxAuto
 box :: (Show a, Show b) =>
        Orientation -> Int -> Widget a -> Widget b -> IO (Widget (Box a b))
 box o spacing wa wb = do
-  wRef <- newWidget $ \w ->
-      w { state = Box { boxChildSizePolicy = defaultChildSizePolicy
-                      , boxOrientation = o
-                      , boxSpacing = spacing
-                      , boxFirst = wa
-                      , boxSecond = wb
+  let initSt = Box { boxChildSizePolicy = defaultChildSizePolicy
+                   , boxOrientation = o
+                   , boxSpacing = spacing
+                   , boxFirst = wa
+                   , boxSecond = wb
 
-                      , firstGrows =
-                          (if o == Vertical then growVertical else growHorizontal) wa
-                      , secondGrows =
-                          (if o == Vertical then growVertical else growHorizontal) wb
-                      , regDimension =
-                          if o == Vertical then region_height else region_width
-                      , imgDimension =
-                          if o == Vertical then image_height else image_width
-                      , withDimension =
-                          if o == Vertical then withHeight else withWidth
-                      , img_cat =
-                          if o == Vertical then vert_cat else horiz_cat
-                      }
-        , growHorizontal_ = \b -> do
+                   , firstGrows =
+                       (if o == Vertical then growVertical else growHorizontal) wa
+                   , secondGrows =
+                       (if o == Vertical then growVertical else growHorizontal) wb
+                   , regDimension =
+                       if o == Vertical then region_height else region_width
+                   , imgDimension =
+                       if o == Vertical then image_height else image_width
+                   , withDimension =
+                       if o == Vertical then withHeight else withWidth
+                   , img_cat =
+                       if o == Vertical then vert_cat else horiz_cat
+                   }
+
+  wRef <- newWidget initSt $ \w ->
+      w { growHorizontal_ = \b -> do
             case boxOrientation b of
               Vertical -> do
                 h1 <- growHorizontal $ boxFirst b

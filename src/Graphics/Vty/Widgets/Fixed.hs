@@ -31,9 +31,9 @@ instance Show (HFixed a) where
 -- |Impose a fixed horizontal size, in columns, on a 'Widget'.
 hFixed :: (Show a) => Int -> Widget a -> IO (Widget (HFixed a))
 hFixed fixedWidth child = do
-  wRef <- newWidget $ \w ->
-      w { state = HFixed fixedWidth child
-        , render_ = \this s ctx -> do
+  let initSt = HFixed fixedWidth child
+  wRef <- newWidget initSt $ \w ->
+      w { render_ = \this s ctx -> do
                    HFixed width ch <- getState this
                    let region = s `withWidth` fromIntegral (min (toEnum width) (region_width s))
                    img <- render ch region ctx
@@ -62,9 +62,9 @@ instance Show (VFixed a) where
 -- |Impose a fixed vertical size, in columns, on a 'Widget'.
 vFixed :: (Show a) => Int -> Widget a -> IO (Widget (VFixed a))
 vFixed maxHeight child = do
-  wRef <- newWidget $ \w ->
-      w { state = VFixed maxHeight child
-        , growHorizontal_ = const $ growHorizontal child
+  let initSt = VFixed maxHeight child
+  wRef <- newWidget initSt $ \w ->
+      w { growHorizontal_ = const $ growHorizontal child
 
         , render_ = \this s ctx -> do
                    VFixed height ch <- getState this

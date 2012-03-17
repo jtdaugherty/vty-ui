@@ -212,17 +212,17 @@ newTable ::
          -> BorderStyle
          -> IO (Widget Table)
 newTable specs borderSty = do
-  t <- newWidget $ \w ->
-      w { state = Table { rows = []
-                        , columnSpecs = specs
-                        , borderStyle = borderSty
-                        , numColumns = length specs
-                        , borderAttr = def_attr
-                        , defaultCellAlignment = AlignLeft
-                        , defaultCellPadding = padNone
-                        }
+  let initSt = Table { rows = []
+                     , columnSpecs = specs
+                     , borderStyle = borderSty
+                     , numColumns = length specs
+                     , borderAttr = def_attr
+                     , defaultCellAlignment = AlignLeft
+                     , defaultCellPadding = padNone
+                     }
 
-        , growHorizontal_ = \st -> do
+  t <- newWidget initSt $ \w ->
+      w { growHorizontal_ = \st -> do
             return $ any (== ColAuto) (map columnSize $ columnSpecs st)
 
         , render_ =

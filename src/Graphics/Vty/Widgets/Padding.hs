@@ -105,10 +105,9 @@ withPadding = flip padded
 -- |Create a 'Padded' wrapper to add padding.
 padded :: (Show a) => Widget a -> Padding -> IO (Widget Padded)
 padded ch padding = do
-  wRef <- newWidget $ \w ->
-      w { state = Padded ch padding
-
-        , growVertical_ = const $ growVertical ch
+  let initSt = Padded ch padding
+  wRef <- newWidget initSt $ \w ->
+      w { growVertical_ = const $ growVertical ch
         , growHorizontal_ = const $ growHorizontal ch
 
         , render_ =

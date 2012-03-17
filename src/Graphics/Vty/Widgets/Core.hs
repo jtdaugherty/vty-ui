@@ -153,7 +153,7 @@ defaultContext = RenderContext def_attr (white `on` blue) def_attr unicodeSkin
 -- |The type of widget implementations, parameterized on the type of
 -- the widget's state.
 data WidgetImpl a = WidgetImpl {
-      state :: a
+      state :: !a
     -- ^The state of the widget.
     , render_ :: Widget a -> DisplayRegion -> RenderContext -> IO Image
     -- ^The rendering routine of the widget.  Takes the widget itself,
@@ -306,17 +306,19 @@ setCurrentPosition wRef pos = do
   w <- readIORef wRef
   (setCurrentPosition_ w) wRef pos
 
--- |Create a new widget.  Takes a widget implementation function and
--- passes it an implementation with default values.  The caller MUST
--- set the 'state' and 'render_' functions of the implementation!
-newWidget :: (WidgetImpl a -> WidgetImpl a) -> IO (Widget a)
-newWidget f = do
+-- |Create a new widget.  Takes an initial state value and a widget
+-- implementation transformation and passes it an implementation with
+-- default values.
+newWidget :: a
+          -> (WidgetImpl a -> WidgetImpl a)
+          -> IO (Widget a)
+newWidget initState f = do
   gfhs <- newHandlers
   lfhs <- newHandlers
 
   wRef <- newIORef $
-          WidgetImpl { state = undefined
-                     , render_ = undefined
+          WidgetImpl { state = initState
+                     , render_ = \_ _ _ -> return empty_image
                      , growVertical_ = const $ return False
                      , growHorizontal_ = const $ return False
                      , setCurrentPosition_ = \_ _ -> return ()
@@ -460,14 +462,14 @@ data FocusGroup = FocusGroup { entries :: [Widget FocusEntry]
 
 newFocusEntry :: (Show a) => Widget a -> IO (Widget FocusEntry)
 newFocusEntry chRef = do
-  wRef <- newWidget $ \w ->
-      w { state = FocusEntry chRef
 
-        , growHorizontal_ = const $ growHorizontal chRef
+  let st = FocusEntry chRef
+
+  wRef <- newWidget st $ \w ->
+      w { growHorizontal_ = const $ growHorizontal chRef
         , growVertical_ = const $ growVertical chRef
 
-        , render_ =
-            \_ sz ctx -> render chRef sz ctx
+        , render_ = \_ sz ctx -> render chRef sz ctx
 
         , setCurrentPosition_ =
             \this pos -> do
@@ -485,14 +487,15 @@ newFocusEntry chRef = do
 -- before input events are handled by the currently-focused widget.
 newFocusGroup :: IO (Widget FocusGroup)
 newFocusGroup = do
-  wRef <- newWidget $ \w ->
-      w { state = FocusGroup { entries = []
-                             , currentEntryNum = -1
-                             , nextKey = (KASCII '\t', [])
-                             , prevKey = (KASCII '\t', [MShift])
-                             }
 
-        , getCursorPosition_ =
+  let initSt = FocusGroup { entries = []
+                          , currentEntryNum = -1
+                          , nextKey = (KASCII '\t', [])
+                          , prevKey = (KASCII '\t', [MShift])
+                          }
+
+  wRef <- newWidget initSt $ \w ->
+      w { getCursorPosition_ =
             \this -> do
               cur <- currentEntryNum <~~ this
               case cur of
@@ -515,9 +518,6 @@ newFocusGroup = do
                           do
                             let e = entries st !! i
                             handleKeyEvent e key mods
-
-        -- Should never be rendered.
-        , render_ = \_ _ _ -> return empty_image
         }
   return wRef
 

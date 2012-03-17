@@ -155,16 +155,17 @@ newMultiStateCheckbox :: (Eq a) =>
 newMultiStateCheckbox _ [] = throw EmptyCheckboxStates
 newMultiStateCheckbox label states = do
   cchs <- newHandlers
-  wRef <- newWidget $ \w ->
-      w { state = CheckBox { checkboxLabel = label
-                           , checkboxChangeHandlers = cchs
-                           , leftBracketChar = '['
-                           , rightBracketChar = ']'
-                           , checkboxStates = states
-                           , currentState = fst $ states !! 0
-                           , checkboxFrozen = False
-                           }
-        , getCursorPosition_ =
+  let initSt = CheckBox { checkboxLabel = label
+                        , checkboxChangeHandlers = cchs
+                        , leftBracketChar = '['
+                        , rightBracketChar = ']'
+                        , checkboxStates = states
+                        , currentState = fst $ states !! 0
+                        , checkboxFrozen = False
+                        }
+
+  wRef <- newWidget initSt $ \w ->
+      w { getCursorPosition_ =
             \this -> do
               pos <- getCurrentPosition this
               return $ Just (pos `plusWidth` 1)
