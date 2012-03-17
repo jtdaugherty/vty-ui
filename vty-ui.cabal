@@ -101,6 +101,7 @@ Library
   Hs-Source-Dirs:    src
   Exposed-Modules:
           Graphics.Vty.Widgets.All
+          Graphics.Vty.Widgets.Alignment
           Graphics.Vty.Widgets.Text
           Graphics.Vty.Widgets.Core
           Graphics.Vty.Widgets.Box

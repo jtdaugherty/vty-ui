@@ -22,6 +22,7 @@ module Graphics.Vty.Widgets.All
     , module Graphics.Vty.Widgets.ProgressBar
     , module Graphics.Vty.Widgets.DirBrowser
     , module Graphics.Vty.Widgets.Group
+    , module Graphics.Vty.Widgets.Alignment
     )
 where
 
@@ -47,3 +48,4 @@ import Graphics.Vty.Widgets.Button
 import Graphics.Vty.Widgets.ProgressBar
 import Graphics.Vty.Widgets.DirBrowser
 import Graphics.Vty.Widgets.Group
+import Graphics.Vty.Widgets.Alignment

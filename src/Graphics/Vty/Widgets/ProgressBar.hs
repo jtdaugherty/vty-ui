@@ -4,65 +4,111 @@
 module Graphics.Vty.Widgets.ProgressBar
     ( ProgressBar
     , newProgressBar
-    , progressBarWidget
     , setProgress
+    , setProgressTextAlignment
+    , setProgressText
     , addProgress
     , getProgress
     , onProgressChange
     )
 where
 
-import Data.IORef
 import Control.Monad
-import Control.Monad.Trans
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
-import Graphics.Vty.Widgets.Fills
-import Graphics.Vty.Widgets.Box
 import Graphics.Vty.Widgets.Events
-import Graphics.Vty.Widgets.Util
+import Graphics.Vty.Widgets.Text
+import Graphics.Vty.Widgets.Alignment
 
-data ProgressBar = ProgressBar { progressBarWidget :: Widget (Box HFill HFill)
-                               -- ^Get the widget of a progress bar.
-                               , progressBarAmount :: IORef Int
+data ProgressBar = ProgressBar { progressBarAmount :: Int
                                , onChangeHandlers :: Handlers Int
+                               , progressBarText :: String
+                               , progressBarTextAlignment :: Alignment
                                }
+
+instance Show ProgressBar where
+    show p = concat [ "ProgressBar { "
+                    , ", " ++ (show $ progressBarAmount p)
+                    , ", ... }"
+                    ]
 
 -- |Create a new progress bar with the specified completed and
 -- uncompleted colors, respectively.
-newProgressBar :: Color -> Color -> IO ProgressBar
-newProgressBar completeColor incompleteColor = do
-  let completeAttr = completeColor `on` completeColor
-      incompleteAttr = incompleteColor `on` incompleteColor
+newProgressBar :: Attr -> Attr -> IO (Widget ProgressBar)
+newProgressBar completeAttr incompleteAttr = do
+  chs <- newHandlers
+  t <- plainText ""
+  wRef <- newWidget $ \w ->
+          w { state = ProgressBar 0 chs "" AlignCenter
+            , growHorizontal_ = const $ return True
+            , render_ =
+                \this size ctx -> do
+                  -- Divide the available width according to the
+                  -- progress value
+                  prog <- progressBarAmount <~~ this
+                  txt <- progressBarText <~~ this
+                  al <- progressBarTextAlignment <~~ this
 
-  w <- (hFill ' ' 1 >>= withNormalAttribute completeAttr) <++>
-       (hFill ' ' 1 >>= withNormalAttribute incompleteAttr)
-  r <- liftIO $ newIORef 0
-  hs <- newHandlers
-  let p = ProgressBar w r hs
-  setProgress p 0
-  return p
+                  let complete_width = fromEnum $ (toRational prog / toRational (100.0 :: Double)) *
+                                       (toRational $ fromEnum $ region_width size)
+
+                      full_width = fromEnum $ region_width size
+                      full_str = take full_width $ mkStr txt al
+
+                      mkStr s AlignLeft = s ++ replicate (full_width - length txt) ' '
+                      mkStr s AlignRight = replicate (full_width - length txt) ' ' ++ s
+                      mkStr s AlignCenter = concat [ half
+                                                   , s
+                                                   , half
+                                                   , if length half * 2 < (full_width + length txt)
+                                                     then " "
+                                                     else ""
+                                                   ]
+                          where
+                            half = replicate ((full_width - length txt) `div` 2) ' '
+
+                      (complete_str, incomplete_str) = ( take complete_width full_str
+                                                       , drop complete_width full_str
+                                                       )
+
+                  setTextWithAttrs t [ (complete_str, completeAttr)
+                                     , (incomplete_str, incompleteAttr)
+                                     ]
+                  render t size ctx
+            }
+
+  setProgress wRef 0
+  return wRef
 
 -- |Register a handler to be invoked when the progress bar's progress
 -- value changes.  The handler will be passed the new progress value.
-onProgressChange :: ProgressBar -> (Int -> IO ()) -> IO ()
-onProgressChange = addHandler (return . onChangeHandlers)
+onProgressChange :: Widget ProgressBar -> (Int -> IO ()) -> IO ()
+onProgressChange = addHandler (onChangeHandlers <~~)
 
 -- |Set the progress bar's progress value.  Values outside the allowed
 -- range will be ignored.
-setProgress :: ProgressBar -> Int -> IO ()
+setProgress :: Widget ProgressBar -> Int -> IO ()
 setProgress p amt =
     when (amt >= 0 && amt <= 100) $ do
-      liftIO $ writeIORef (progressBarAmount p) amt
-      setBoxChildSizePolicy (progressBarWidget p) $ Percentage amt
-      fireEvent p (return . onChangeHandlers) amt
+      updateWidgetState p $ \st -> st { progressBarAmount = amt }
+      fireEvent p (onChangeHandlers <~~) amt
+
+-- |Set the progress bar's text alignment.
+setProgressTextAlignment :: Widget ProgressBar -> Alignment -> IO ()
+setProgressTextAlignment p al =
+    updateWidgetState p $ \st -> st { progressBarTextAlignment = al }
+
+-- |Set the progress bar's text label.
+setProgressText :: Widget ProgressBar -> String -> IO ()
+setProgressText p s =
+    updateWidgetState p $ \st -> st { progressBarText = s }
 
 -- |Get the progress bar's current progress value.
-getProgress :: ProgressBar -> IO Int
-getProgress = liftIO . readIORef . progressBarAmount
+getProgress :: Widget ProgressBar -> IO Int
+getProgress = (progressBarAmount <~~)
 
 -- |Add a delta value to the progress bar's current value.
-addProgress :: ProgressBar -> Int -> IO ()
+addProgress :: Widget ProgressBar -> Int -> IO ()
 addProgress p amt = do
   cur <- getProgress p
   let newAmt = cur + amt

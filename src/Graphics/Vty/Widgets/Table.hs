@@ -12,8 +12,6 @@ module Graphics.Vty.Widgets.Table
     , RowLike(..)
     , TableError(..)
     , ColumnSpec(..)
-    , Alignment(..)
-    , Alignable(..)
     , (.|.)
     , newTable
     , setDefaultCellAlignment
@@ -44,6 +42,7 @@ import Graphics.Vty.Widgets.Skins
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Fills
 import Graphics.Vty.Widgets.Box
+import Graphics.Vty.Widgets.Alignment
 
 data TableError = ColumnCountMismatch
                 -- ^A row added to the table did not have the same
@@ -57,14 +56,6 @@ data TableError = ColumnCountMismatch
                   deriving (Show, Typeable)
 
 instance Exception TableError
-
--- |Column alignment values.
-data Alignment = AlignCenter | AlignLeft | AlignRight
-                 deriving (Show)
-
--- |The class of types whose values can be aligned.
-class Alignable a where
-    align :: a -> Alignment -> a
 
 -- |The wrapper type for all table cells; stores the widgets
 -- themselves in addition to alignment and padding settings.
