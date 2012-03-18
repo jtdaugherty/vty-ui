@@ -1,0 +1,22 @@
+vty-ui
+------
+
+Project homepage: http://codevine.org/vty-ui/
+
+`vty-ui` is a high-level user interface library for applications
+running in terminal emulators.  It provides similar functionality to
+what you might expect from graphical toolkits like GTK and QT.
+
+The best place to read about how to use `vty-ui` is the user manual,
+found in the `doc` subdirectory.  You can find the manual
+corresponding to the latest release on the project home page.  If you
+need to build it by hand, install LaTeX, Pygments, and pdflatex, and
+run:
+
+    $ cd doc
+    $ make
+
+The library provides comprehensive Haddock documentation in addition
+to a collection of relatively comprehensive demonstration programs;
+see the *-demo programs in `vty-ui.cabal` and their respective sources
+in `src`.
