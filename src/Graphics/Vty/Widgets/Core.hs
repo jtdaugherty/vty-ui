@@ -81,11 +81,12 @@ import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Skins
 import Graphics.Vty.Widgets.Events
 
--- |The class of types with a "normal" attribute.
+-- |The class of types with a ''normal'' attribute.
 class HasNormalAttr w where
     setNormalAttribute :: w -> Attr -> IO ()
 
--- |The class of types with a "focus" attribute.
+-- |The class of types with a ''focus'' attribute, i.e., a way of
+-- visually indicating that the object has input focus.
 class HasFocusAttr w where
     setFocusAttribute :: w -> Attr -> IO ()
 
@@ -389,7 +390,10 @@ onKeyPressed wRef handler = do
 
   updateWidget wRef $ \w -> w { keyEventHandler = combinedHandler }
 
--- |Focus a widget.  Causes its focus gain event handlers to run.
+-- |Focus a widget.  Causes its focus gain event handlers to run.  If
+-- the widget is in a 'FocusGroup' and if that group's
+-- currently-focused widget is some other widget, that widget will
+-- lose the focus and its focus loss event handlers will be called.
 focus :: Widget a -> IO ()
 focus wRef = do
   updateWidget wRef $ \w -> w { focused = True }
