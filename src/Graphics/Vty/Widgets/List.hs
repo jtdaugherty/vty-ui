@@ -300,7 +300,7 @@ onItemRemoved = addHandler (itemRemoveHandlers <~~)
 -- which happens when the user presses Enter on a selected element
 -- while the list has the focus.
 onItemActivated :: Widget (List a b)
-            -> (ActivateItemEvent a b -> IO ()) -> IO ()
+                -> (ActivateItemEvent a b -> IO ()) -> IO ()
 onItemActivated = addHandler (itemActivateHandlers <~~)
 
 -- |Clear the list, removing all elements.  Does not invoke any
