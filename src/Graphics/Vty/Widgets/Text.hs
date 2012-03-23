@@ -24,8 +24,8 @@ module Graphics.Vty.Widgets.Text
     )
 where
 
+import Control.Applicative
 import Data.Monoid
-import Data.Word
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Text.Trans.Tokenize
@@ -167,10 +167,23 @@ renderText t foc (Formatter format) sz ctx = do
                                  ]
 
       lineImgs = map mkLineImg ls
+      lineLength l = length $ tokenStr <$> l
+      maxLineLength = maximum $ lineLength <$> ls
+      emptyLineLength = min (fromEnum $ region_width sz) maxLineLength
+
       ls = map truncLine $ map (map entityToken) $ findLines newText
       truncLine = truncateLine (fromEnum $ region_width sz)
+
+      -- When building images for empty lines, it's critical that we
+      -- *don't* use the empty_image, because that will cause empty
+      -- lines to collapse vertically.  Instead, we create line images
+      -- using spaces.  When doing this it's important to make them as
+      -- wide as the rest of the text because otherwise we could have
+      -- weird-looking results with background attributes not
+      -- affecting the whole empty line.  We compute the length of the
+      -- longest line above and use that to build the 'empty' lines.
       mkLineImg line = if null line
-                       then char_fill attr' ' ' (region_width sz) (1::Word)
+                       then char_fill attr' ' ' emptyLineLength 1
                        else horiz_cat $ map mkTokenImg line
       nullImg = string def_attr ""
 
