@@ -8,58 +8,68 @@ import Graphics.Vty.Widgets.All
 data AppElements =
     AppElements { theList :: Widget (List String FormattedText)
                 , theBody :: Widget FormattedText
-                , theFooter1 :: Widget FormattedText
-                , theFooter2 :: Widget FormattedText
-                , theEdit :: Widget Edit
+                , theFooter :: Widget FormattedText
                 , theListLimit :: Widget (VLimit (List String FormattedText))
                 , uis :: Collection
                 }
 
--- Visual attributes.
 titleAttr = bright_white `on` blue
-editAttr = white `on` black
 focAttr = black `on` green
-boxAttr = bright_yellow `on` black
-bodyAttr = bright_green `on` black
+bodyAttr = white `on` black
 selAttr = black `on` yellow
-hlAttr1 = red `on` black
-hlAttr2 = yellow `on` black
+keyAttr = fgColor magenta
 
-uiCore appst w = do
-  (hBorder >>= withBorderAttribute titleAttr)
-      <--> w
-      <--> (hBorder >>= withBorderAttribute titleAttr)
-      <--> (return $ theEdit appst)
-      <--> ((return $ theFooter1 appst)
-            <++> (return $ theFooter2 appst)
-            <++> (hBorder >>= withBorderAttribute titleAttr))
+message1 :: String
+message1 = "This demonstration shows how list widgets behave. \n\
+           \See the keystrokes below to try the demo."
 
-buildUi1 appst = do
-  uiCore appst (return $ theList appst)
+message2 :: [(String, Attr)]
+message2 = [ ("- Press ", def_attr), ("q", keyAttr), (" to quit\n", def_attr)
+           , ("- Press ", def_attr), ("+", keyAttr)
+           , (" / ", def_attr), ("a", keyAttr)
+           , (" to add a list item\n", def_attr)
+           , ("- Press ", def_attr), ("-", keyAttr)
+           , (" / ", def_attr), ("d", keyAttr)
+           , (" to remove the selected list item\n", def_attr)
+           , ("- Press ", def_attr)
+           , ("up", keyAttr), (" / ", def_attr)
+           , ("down", keyAttr), (" / ", def_attr)
+           , ("page up", keyAttr), (" / ", def_attr)
+           , ("page down", keyAttr)
+           , (" to navigate the list\n", def_attr)
+           ]
 
-buildUi2 appst =
-    uiCore appst ((return $ theListLimit appst)
-                  <--> (hBorder >>= withBorderAttribute titleAttr)
-                  <--> (return $ theBody appst)
-                  <--> (vFill ' '))
+buildUi appst = do
+  msg1 <- plainText message1
+  setTextFormatter msg1 wrap
 
--- Construct the application state using the message map.
+  msg2 <- plainTextWithAttrs message2
+  setTextFormatter msg2 wrap
+
+  mainUi <- (hBorder >>= withBorderAttribute titleAttr)
+         <--> (return $ theList appst)
+         <--> ((return $ theFooter appst)
+               <++> (hBorder >>= withBorderAttribute titleAttr))
+
+  centered =<< hLimit 55 =<<
+             ((return msg1)
+                  <--> ((vLimit 25 mainUi >>= bordered)
+                        <--> return msg2 >>= withBoxSpacing 1)
+                    >>= withBoxSpacing 1)
+
+-- Construct the application statea using the message map.
 mkAppElements :: IO AppElements
 mkAppElements = do
   lw <- newStringList selAttr []
   b <- textWidget wrap ""
-  f1 <- plainText "" >>= withNormalAttribute titleAttr
-  f2 <- plainText "[]" >>= withNormalAttribute titleAttr
-  e <- editWidget
+  ft <- plainText "" >>= withNormalAttribute titleAttr
   ll <- vLimit 5 lw
 
   c <- newCollection
 
   return $ AppElements { theList = lw
                        , theBody = b
-                       , theFooter1 = f1
-                       , theFooter2 = f2
-                       , theEdit = e
+                       , theFooter = ft
                        , theListLimit = ll
                        , uis = c
                        }
@@ -74,86 +84,40 @@ updateFooterNums st w = do
   result <- getSelected w
   sz <- getListSize w
   let msg = case result of
-              Nothing -> "--/--"
-              Just (i, _) ->
-                  "-" ++ (show $ i + 1) ++ "/" ++
-                          (show sz) ++ "-"
-  setText (theFooter1 st) msg
-
-updateFooterText :: AppElements -> Widget Edit -> String -> IO ()
-updateFooterText st _ t = setText (theFooter2 st) ("[" ++ t ++ "]")
+              Nothing -> "0/0"
+              Just (i, _) -> (show $ i + 1) ++ "/" ++ (show sz)
+  setText (theFooter st) msg
 
 main :: IO ()
 main = do
   st <- mkAppElements
 
-  ui1 <- buildUi1 st
-  ui2 <- buildUi2 st
+  ui <- buildUi st
+  fg <- newFocusGroup
 
-  fg1 <- newFocusGroup
-  fg2 <- newFocusGroup
+  _ <- addToCollection (uis st) ui fg
+  _ <- addToFocusGroup fg (theList st)
 
-  showMainUI <- addToCollection (uis st) ui1 fg1
-  showMessageUI <- addToCollection (uis st) ui2 fg2
-
-  listCtx1 <- addToFocusGroup fg1 (theList st)
-  addToFocusGroup fg1 (theEdit st)
-
-  listCtx2 <- addToFocusGroup fg2 (theList st)
-  addToFocusGroup fg2 (theEdit st)
-
-  -- These event handlers will fire regardless of the input event
-  -- context.
-  (theEdit st) `onChange` (updateFooterText st (theEdit st))
-  (theEdit st) `onActivate` \e -> do
-         s <- getEditText e
-         addToList (theList st) s =<< plainText s
-         setEditText e ""
-
-  let doBodyUpdate (SelectionOn i _ _) = updateBody st i
-      doBodyUpdate SelectionOff = return ()
-
-  (theList st) `onSelectionChange` doBodyUpdate
   (theList st) `onSelectionChange` \_ -> updateFooterNums st $ theList st
   (theList st) `onItemAdded` \_ -> updateFooterNums st $ theList st
   (theList st) `onItemRemoved` \_ -> updateFooterNums st $ theList st
 
+  let removeCurrentItem = do
+         result <- getSelected (theList st)
+         case result of
+           Nothing -> return ()
+           Just (i, _) -> removeFromList (theList st) i >> return ()
+      addNewItem = do
+         addToList (theList st) "unused" =<< plainText "a list item"
+
   (theList st) `onKeyPressed` \_ k _ -> do
          case k of
            (KASCII 'q') -> exitSuccess
-           KDel -> do
-                  result <- getSelected (theList st)
-                  case result of
-                    Nothing -> return ()
-                    Just (i, _) -> removeFromList (theList st) i >> return ()
-                  return True
+           (KASCII '-') -> removeCurrentItem >> return True
+           (KASCII 'd') -> removeCurrentItem >> return True
+           (KASCII '+') -> addNewItem >> return True
+           (KASCII 'a') -> addNewItem >> return True
            _ -> return False
-
-  -- These event handlers will only fire when the UI is in the
-  -- appropriate mode, depending on the state of the Widget
-  -- Collection.
-  listCtx1 `onKeyPressed` \_ k _ -> do
-            case k of
-              KEnter -> do
-                     r <- getSelected (theList st)
-                     case r of
-                       Nothing -> return True
-                       Just _ -> showMessageUI >> return True
-              _ -> return False
-
-  listCtx2 `onKeyPressed` \_ k _ -> do
-         case k of
-           KASCII 'c' -> showMainUI >> return True
-           KASCII '+' -> do
-                  addToVLimit (theListLimit st) 1
-                  return True
-           KASCII '-' -> do
-                  addToVLimit (theListLimit st) (-1)
-                  return True
-           _ -> return False
-
-  setEditText (theEdit st) "edit me"
-  focus (theEdit st)
 
   -- We need to call these handlers manually because while they will
   -- be called automatically as items are added to the list in the
