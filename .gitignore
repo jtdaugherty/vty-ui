@@ -1,3 +1,11 @@
 dist/
 cabal-dev/
 *~
+doc/*.aux
+doc/**/*.aux
+doc/*.out
+doc/*.toc
+doc/*.log
+doc/**/*.log
+doc/auto
+doc/**/auto
