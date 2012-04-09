@@ -6,7 +6,7 @@ import Graphics.Vty.Widgets.All
 
 main :: IO ()
 main = do
-  e <- editWidget
+  e <- singleLineEditWidget
   fg <- newFocusGroup
   addToFocusGroup fg e
 

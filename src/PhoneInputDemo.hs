@@ -28,18 +28,14 @@ data PhoneInput =
 newPhoneInput :: IO (PhoneInput, Widget FocusGroup)
 newPhoneInput = do
    ahs <- newHandlers
-   e1 <- editWidget
-   e2 <- editWidget
-   e3 <- editWidget
+   e1 <- singleLineEditWidget
+   e2 <- singleLineEditWidget
+   e3 <- singleLineEditWidget
    ui <- (hFixed 4 e1) <++>
          (plainText "-") <++>
          (hFixed 4 e2) <++>
          (plainText "-") <++>
          (hFixed 5 e3)
-
-   setEditMaxLength e1 3
-   setEditMaxLength e2 3
-   setEditMaxLength e3 4
 
    let w = PhoneInput ui e1 e2 e3 ahs
        doFireEvent = const $ do

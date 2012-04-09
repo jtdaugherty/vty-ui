@@ -54,8 +54,10 @@ main = do
                                          , (Lemon, 'L')
                                          ]
 
-  edit1 <- editWidget >>= withFocusAttribute (white `on` red)
-  edit2 <- editWidget
+  edit1 <- singleLineEditWidget >>= withFocusAttribute (white `on` red)
+  edit2 <- multiLineEditWidget
+  edit2box <- boxFixed 30 3 edit2
+  setEditLineLimit edit2 $ Just 3
 
   edit1Header <- textWidget wrap [] >>= withNormalAttribute headerAttr
   edit2Header <- textWidget wrap [] >>= withNormalAttribute headerAttr
@@ -77,7 +79,7 @@ main = do
   addRow table $ radioHeader .|. rs
   addRow table $ cbHeader .|. r3
   addRow table $ edit1Header .|. edit1
-  addRow table $ edit2Header .|. edit2
+  addRow table $ edit2Header .|. edit2box
   addRow table $ listHeader .|. customCell selector `pad` padNone
   addRow table $ emptyCell .|. timeText
   addRow table $ emptyCell .|. prog
