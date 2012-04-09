@@ -40,8 +40,8 @@ hFixed fixedWidth child = do
                    -- Pad the image if it's smaller than the region.
                    let img' = if image_width img < region_width region
                               then img <|> (char_fill (getNormalAttr ctx) ' '
-                                            (region_width region - image_width img)
-                                            (region_height region))
+                                            (toEnum width - image_width img)
+                                            (image_height img))
                               else img
                    return img'
 
@@ -73,8 +73,8 @@ vFixed maxHeight child = do
                    -- Pad the image if it's smaller than the region.
                    let img' = if image_height img < region_height region
                               then img <-> (char_fill (getNormalAttr ctx) ' '
-                                            (region_width region)
-                                            (region_height region - image_height img))
+                                            (image_width img)
+                                            (toEnum height - image_height img))
                               else img
                    return img'
 
