@@ -28,9 +28,9 @@ data PhoneInput =
 newPhoneInput :: IO (PhoneInput, Widget FocusGroup)
 newPhoneInput = do
    ahs <- newHandlers
-   e1 <- singleLineEditWidget
-   e2 <- singleLineEditWidget
-   e3 <- singleLineEditWidget
+   e1 <- editWidget
+   e2 <- editWidget
+   e3 <- editWidget
    ui <- (hFixed 4 e1) <++>
          (plainText "-") <++>
          (hFixed 4 e2) <++>

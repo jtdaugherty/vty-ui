@@ -3,7 +3,7 @@
 -- operate in single- and multi-line modes.
 module Graphics.Vty.Widgets.Edit
     ( Edit
-    , singleLineEditWidget
+    , editWidget
     , multiLineEditWidget
     , getEditText
     , getEditCurrentLine
@@ -51,9 +51,8 @@ instance Show Edit where
                     , " }"
                     ]
 
--- |Create a new editing widget.
-editWidget :: IO (Widget Edit)
-editWidget = do
+editWidget' :: IO (Widget Edit)
+editWidget' = do
   ahs <- newHandlers
   chs <- newHandlers
   cmhs <- newHandlers
@@ -124,9 +123,9 @@ editWidget = do
 -- |Construct a text widget for editing a single line of text.
 -- Single-line edit widgets will send activation events when the user
 -- presses 'Enter' (see 'onActivate').
-singleLineEditWidget :: IO (Widget Edit)
-singleLineEditWidget = do
-  wRef <- editWidget
+editWidget :: IO (Widget Edit)
+editWidget = do
+  wRef <- editWidget'
   setNormalAttribute wRef $ style underline
   setFocusAttribute wRef $ style underline
   setEditLineLimit wRef $ Just 1
@@ -137,7 +136,7 @@ singleLineEditWidget = do
 -- 'Enter' key inserts a new line at the cursor position.
 multiLineEditWidget :: IO (Widget Edit)
 multiLineEditWidget = do
-  wRef <- editWidget
+  wRef <- editWidget'
   setEditLineLimit wRef Nothing
   return wRef
 

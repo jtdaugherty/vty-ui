@@ -54,7 +54,7 @@ main = do
                                          , (Lemon, 'L')
                                          ]
 
-  edit1 <- singleLineEditWidget >>= withFocusAttribute (white `on` red)
+  edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- multiLineEditWidget
   edit2box <- boxFixed 30 3 edit2
   setEditLineLimit edit2 $ Just 3

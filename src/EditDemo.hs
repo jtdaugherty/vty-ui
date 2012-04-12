@@ -8,7 +8,7 @@ main = do
   e1 <- multiLineEditWidget
   e2 <- multiLineEditWidget
   setEditLineLimit e2 $ Just 3
-  e3 <- singleLineEditWidget
+  e3 <- editWidget
 
   fg <- newFocusGroup
   _ <- addToFocusGroup fg e1

@@ -27,12 +27,11 @@ API changes:
     with an 'undefined' state.
   * Generalized the 'Edit' widget type to support single- and
     multi-line editing modes.  Added functions getEditCurrentLine,
-    getEditLineLimit, setEditLineLimit, singleLineEditWidget, and
-    multiLineEditWidget.  The old 'editWidget' constructor is no
-    longer exported in favor of the more specific versions.  Dropped
-    support for limiting the amount of text in a single-line edit
-    widget, but added the ability to control the number of lines in a
-    multi-line edit widget.
+    getEditLineLimit, setEditLineLimit, and multiLineEditWidget.  The
+    'editWidget' behaves as before and creates a single-line edit
+    widget.  Dropped support for limiting the amount of text in a
+    single-line edit widget, but added the ability to control the
+    number of lines in a multi-line edit widget.
 
 Bug fixes / improvements:
   * Fixed a bug where hFixed and vFixed widgets were adding too much
