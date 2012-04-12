@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
--- |This module provides a one-line editing interface.
+-- |This module provides a text-editing widget.  Edit widgets can
+-- operate in single- and multi-line modes.
 module Graphics.Vty.Widgets.Edit
     ( Edit
     , singleLineEditWidget
@@ -121,6 +122,8 @@ editWidget = do
   return wRef
 
 -- |Construct a text widget for editing a single line of text.
+-- Single-line edit widgets will send activation events when the user
+-- presses 'Enter' (see 'onActivate').
 singleLineEditWidget :: IO (Widget Edit)
 singleLineEditWidget = do
   wRef <- editWidget
@@ -130,6 +133,8 @@ singleLineEditWidget = do
   return wRef
 
 -- |Construct a text widget for editing multi-line documents.
+-- Multi-line edit widgets never send activation events, since the
+-- 'Enter' key inserts a new line at the cursor position.
 multiLineEditWidget :: IO (Widget Edit)
 multiLineEditWidget = do
   wRef <- editWidget
@@ -184,11 +189,13 @@ onChange = addHandler (changeHandlers <~~)
 onCursorMove :: Widget Edit -> ((Int, Int) -> IO ()) -> IO ()
 onCursorMove = addHandler (cursorMoveHandlers <~~)
 
--- |Get the current contents of the edit widget.
+-- |Get the current contents of the edit widget.  This returns all of
+-- the lines of text in the widget, separated by newlines.
 getEditText :: Widget Edit -> IO String
 getEditText = ((unlines . currentText) <~~)
 
--- |Get the contents of the current line of the edit widget.
+-- |Get the contents of the current line of the edit widget (the line
+-- on which the cursor is positioned).
 getEditCurrentLine :: Widget Edit -> IO String
 getEditCurrentLine e = do
   ls <- currentText <~~ e
