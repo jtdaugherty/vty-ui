@@ -43,14 +43,11 @@ eventChan = unsafePerformIO newTChanIO
 runUi :: Collection -> RenderContext -> IO ()
 runUi collection ctx = do
   vty <- mkVty
-  reserve_display $ terminal vty
 
   -- Create VTY event listener thread
   _ <- forkIO $ vtyEventListener vty eventChan
 
-  runUi' vty eventChan collection ctx `finally` do
-                         release_display $ terminal vty
-                         shutdown vty
+  runUi' vty eventChan collection ctx `finally` shutdown vty
 
 vtyEventListener :: Vty -> TChan CombinedEvent -> IO ()
 vtyEventListener vty chan =
