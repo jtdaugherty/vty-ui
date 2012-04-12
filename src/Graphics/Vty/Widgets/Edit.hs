@@ -1,6 +1,24 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 -- |This module provides a text-editing widget.  Edit widgets can
 -- operate in single- and multi-line modes.
+--
+-- Edit widgets support the following special keystrokes:
+--
+-- * Arrow keys to navigate the text
+--
+-- * 'Enter' - Activate single-line edit widgets or insert new lines
+--   into multi-line widgets
+--
+-- * 'Home' / 'Control-a' - Go to beginning of the current line
+--
+-- * 'End' / 'Control-e' - Go to end of the current line
+--
+-- * 'Control-k' - Remove text from the cursor to the end of the line,
+--   or remove the line if it is empty
+--
+-- * 'Del' / 'Control-d' - delete the current character
+--
+-- * 'Backspace' - delete the previous character
 module Graphics.Vty.Widgets.Edit
     ( Edit
     , editWidget
