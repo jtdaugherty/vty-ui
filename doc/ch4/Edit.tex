@@ -34,8 +34,13 @@ To use an \fw{Edit} widget, add it to your interface and
   position.
 \item \fw{Backspace} -- delete the character just before the cursor
   position and move the cursor position back by one character.
-\item \fw{Enter} -- ``activate'' the \fw{Edit} widget.
+\item \fw{Enter} -- ``activate'' the \fw{Edit} widget if it is a
+  single-line widget; if it is multi-line, insert a new line at the
+  cursor position.
 \end{itemize}
+
+Note that \fw{Tab} will not be handled by \fw{Edit} widgets because it
+is used to change focus.
 
 An \fw{Edit} widget can be monitored for three events:
 
