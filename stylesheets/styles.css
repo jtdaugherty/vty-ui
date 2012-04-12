@@ -19,7 +19,7 @@ body {
 }
 
 .wrapper {
-  width: 640px;
+  width: 720px;
   margin: 0 auto;
   background: #DEDEDE;
   -moz-border-radius: 8px;
@@ -41,6 +41,10 @@ header, section, footer {
 a {
   color: #069;
   text-decoration: none;
+}
+
+a code {
+  color: #069;
 }
 
 p {
@@ -360,4 +364,18 @@ footer p + p {
   header p.view a small:before {
     content: 'at http://github.com/';
   }
+}
+
+ul.latest-release {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  margin-bottom: 1em;
+}
+
+ul.latest-release li span {
+  width: 5em;
+  float: left;
+  text-align: right;
+  margin-right: 0.5em;
 }
