@@ -1,4 +1,58 @@
 
+1.4 -> 1.5
+----------
+
+Package changes:
+  * Now builds against GHC 7.4.1 (thanks github.com/elliottt); relaxes
+    dependencies on time (to 1.4), array (to 0.5), and filepath (to
+    1.4)
+  * Now depends on vector >= 0.9.
+  * Added a basic README.
+  * Added demo programs specific to the ProgressBar and Edit widgets
+    to fully showcase their functionality.
+
+API changes:
+  * Moved Alignment-related code from the Table module into its own
+    module, Graphics.Vty.Widgets.Alignment
+  * Progress bars can now have a text label and the label can have an
+    alignment (left, right, or center).  Added functions
+    setProgressText and setProgressTextAlignment.  The progress bar
+    widget type is now 'Widget ProgressBar', instead of 'ProgressBar'
+    with a record field to access its widget.  Lastly, the progress
+    bar constructor takes Attrs, not Colors, to control the display of
+    the two halves of the progress bar (its background and a text
+    label).
+  * The newWidget implementation constructor now takes the initial
+    widget state as a parameter to avoid returning WidgetImpl values
+    with an 'undefined' state.
+  * Generalized the 'Edit' widget type to support single- and
+    multi-line editing modes.  Added functions getEditCurrentLine,
+    getEditLineLimit, setEditLineLimit, singleLineEditWidget, and
+    multiLineEditWidget.  The old 'editWidget' constructor is no
+    longer exported in favor of the more specific versions.  Dropped
+    support for limiting the amount of text in a single-line edit
+    widget, but added the ability to control the number of lines in a
+    multi-line edit widget.
+
+Bug fixes / improvements:
+  * Fixed a bug where hFixed and vFixed widgets were adding too much
+    padding to their child widgets, thus breaking the space guarantees
+    they were intended to make.  As an example, if you wrap a widget
+    in a vFixed wrapper with ten lines of height, the bug caused
+    vFixed to sometimes result in widgets that were more than ten
+    lines in height (and similarly for width/hFixed).
+  * Fixed a bug where sometimes text widgets didn't apply the right
+    amount of trailing padding to short text lines, resulting in weird
+    background attribute rendering issues.
+  * Added some strictness hints to several modules
+  * Improved space performance of the List widget by using Vectors to
+    store the list contents
+  * newWidget now returns a WidgetImpl with a default (trivial)
+    render_ implementation.
+  * Improved the documentation of some functions in Core.
+  * Greatly simplified and improved the ListDemo program so it is more
+    useful for learning how to use the List widget.
+
 1.3.1 -> 1.4
 ------------
 
