@@ -12,7 +12,7 @@ Description:
   having to worry about terminal size.
   .
   Be sure to check out the user manual for the version you're using
-  at: <http://codevine.org/vty-ui/>
+  at: <http://jtdaugherty.github.com/vty-ui/>
   .
   Build with the 'demos' flag to get a set of demonstration programs
   to see some of the things the library can do!
@@ -24,7 +24,7 @@ Build-Type:          Simple
 License:             BSD3
 License-File:        LICENSE
 Cabal-Version:       >= 1.6
-Homepage:            http://codevine.org/vty-ui/
+Homepage:            http://jtdaugherty.github.com/vty-ui/
 
 Data-Files:
     doc/ch1/api_notes.tex
