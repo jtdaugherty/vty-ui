@@ -54,6 +54,9 @@ Bug fixes / improvements:
   * Improved the documentation of some functions in Core.
   * Greatly simplified and improved the ListDemo program so it is more
     useful for learning how to use the List widget.
+  * The main event loop now calls Vty's release_display on shutdown,
+    rather than reserve_display (which was just wrong).  This leads to
+    a cleaner terminal state when a vty-ui application exits.
 
 1.3.1 -> 1.4
 ------------
