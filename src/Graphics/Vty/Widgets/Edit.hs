@@ -6,19 +6,19 @@
 --
 -- * Arrow keys to navigate the text
 --
--- * 'Enter' - Activate single-line edit widgets or insert new lines
+-- * @Enter@ - Activate single-line edit widgets or insert new lines
 --   into multi-line widgets
 --
--- * 'Home' / 'Control-a' - Go to beginning of the current line
+-- * @Home@ / @Control-a@ - Go to beginning of the current line
 --
--- * 'End' / 'Control-e' - Go to end of the current line
+-- * @End@ / @Control-e@ - Go to end of the current line
 --
--- * 'Control-k' - Remove text from the cursor to the end of the line,
+-- * @Control-k@ - Remove text from the cursor to the end of the line,
 --   or remove the line if it is empty
 --
--- * 'Del' / 'Control-d' - delete the current character
+-- * @Del@ / @Control-d@ - delete the current character
 --
--- * 'Backspace' - delete the previous character
+-- * @Backspace@ - delete the previous character
 module Graphics.Vty.Widgets.Edit
     ( Edit
     , editWidget
@@ -140,7 +140,7 @@ editWidget' = do
 
 -- |Construct a text widget for editing a single line of text.
 -- Single-line edit widgets will send activation events when the user
--- presses 'Enter' (see 'onActivate').
+-- presses @Enter@ (see 'onActivate').
 editWidget :: IO (Widget Edit)
 editWidget = do
   wRef <- editWidget'
@@ -151,7 +151,7 @@ editWidget = do
 
 -- |Construct a text widget for editing multi-line documents.
 -- Multi-line edit widgets never send activation events, since the
--- 'Enter' key inserts a new line at the cursor position.
+-- @Enter@ key inserts a new line at the cursor position.
 multiLineEditWidget :: IO (Widget Edit)
 multiLineEditWidget = do
   wRef <- editWidget'
