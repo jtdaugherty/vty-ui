@@ -44,11 +44,9 @@ constructor to construct a \fw{Handlers} list:
  newTempMonitor :: IO (Widget TempMonitor)
  newTempMonitor = do
    handlers <- newHandlers
-   wRef <- newWidget $ \w ->
-     w { state = TempMonitor { tempChangeHandlers = handlers
-                             }
-       }
-
+   let st = TempMonitor { tempChangeHandlers = handlers
+                        }
+   wRef <- newWidget st id
    return wRef
 \end{haskellcode}
 

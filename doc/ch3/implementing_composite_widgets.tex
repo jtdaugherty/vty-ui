@@ -78,10 +78,6 @@ Then, we provide the constructor:
          (plainText "-") <++>
          (hFixed 5 e3)
 
-   setEditMaxLength e1 3
-   setEditMaxLength e2 3
-   setEditMaxLength e3 4
-
    e1 `onChange` \s -> when (length s == 3) $ focus e2
    e2 `onChange` \s -> when (length s == 3) $ focus e3
 

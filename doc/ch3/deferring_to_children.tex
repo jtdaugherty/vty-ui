@@ -24,9 +24,8 @@ Then the implementation of the constructor:\footnote{This widget
 \begin{haskellcode}
  newWrapper :: Widget a -> IO (Widget (Wrapper a))
  newWrapper child = do
-   wRef <- newWidget $ \w ->
-     w { state = Wrapper child
-       , growHorizontal_ = growHorizontal child
+   wRef <- newWidget (Wrapper child) $ \w ->
+     w { growHorizontal_ = growHorizontal child
        , growVertical_ = growVertical child
        , setCurrentPosition_ =
            \_ pos = setCurrentPosition child pos
