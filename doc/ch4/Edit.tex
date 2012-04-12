@@ -2,13 +2,17 @@
 \label{sec:edit}
 
 The \fw{Edit} module provides a line-editing widget, \fw{Widget Edit}.
-This widget makes it possible to edit a single line of text with some
-Emacs-style key bindings.
+This widget makes it possible to edit text with some Emacs-style key
+bindings.
 
-An \fw{Edit} widget is simple to create:
+An \fw{Edit} widget is simple to create.  You can create \fw{Edit}
+widgets in two modes: single- and multi-line:
 
 \begin{haskellcode}
- e <- editWidget
+ -- Single-line text editor:
+ e1 <- editWidget
+ -- Multi-line text editor:
+ e2 <- multiLineEditWidget
 \end{haskellcode}
 
 \fw{Edit} widgets can be laid out in the usual way:
@@ -46,9 +50,9 @@ An \fw{Edit} widget can be monitored for three events:
 
 \begin{itemize}
 \item ``Activation'' events -- triggered when the user presses
-  \fw{Enter} in the \fw{Edit} widget.  Handlers are registered with
-  the \fw{onActivate} function.  Event handlers receive the \fw{Edit}
-  widget as a parameter.
+  \fw{Enter} in a single-line \fw{Edit} widget.  Handlers are
+  registered with the \fw{onActivate} function.  Event handlers
+  receive the \fw{Edit} widget as a parameter.
 \item Text change -- when the contents of the \fw{Edit} widget change.
   Handlers are registered with the \fw{onChange} function.  Event
   handlers receive the new \fw{String} value in the \fw{Edit} widget.
@@ -67,14 +71,17 @@ automatically.
   content of the \fw{Edit} widget.
 \item \fw{getEditCursorPosition}, \fw{setEditCursorPosition} --
   manipulate the cursor position within the \fw{Edit} widget.
-\item \fw{setEditMaxLength} -- set the maximum number of characters in
-  the \fw{Edit} widget.  Once set, the limit cannot be removed but it
-  can be changed to a different value.  If \fw{setEditMaxLength} is
-  called with a limit which is less than the limit already set, the
-  content of the \fw{Edit} widget will be truncated and any change
-  event handlers will be notified.
+\item \fw{getEditLineLimit}, \fw{setEditLineLimit} -- manipulate the
+  limit on the number of lines that the text widget may hold.  Takes
+  \fw{Maybe Int} where \fw{Nothing} indicates no limit.
+  \fw{setEditLineLimit \$ Just 0} is a no-op.
 \end{itemize}
 
 \subsubsection{Growth Policy}
 
-\fw{Edit} widgets grow only horizontally and are always one row high.
+Single-line \fw{Edit} widgets -- those created by \fw{editWidget} --
+grow only horizontally and are always one row high.  Multi-line edit
+widgets -- those created by \fw{multiLineEditWidget} -- always grow in
+both dimensions.  To manage this behavior, you can use one of the
+``fixed'' family of widgets to control their sizes (see Section
+\ref{sec:fixed}).
