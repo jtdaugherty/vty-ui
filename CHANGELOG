@@ -31,7 +31,10 @@ API changes:
     'editWidget' behaves as before and creates a single-line edit
     widget.  Dropped support for limiting the amount of text in a
     single-line edit widget, but added the ability to control the
-    number of lines in a multi-line edit widget.
+    number of lines in a multi-line edit widget.  Since it's possible
+    to get two-dimensional cursor position values for multi-line Edit
+    widgets as a result of these changes, onCursorMove now provides a
+    tuple of (row, column) to its handlers.
 
 Bug fixes / improvements:
   * Fixed a bug where hFixed and vFixed widgets were adding too much
