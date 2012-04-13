@@ -128,12 +128,21 @@ editWidget' = do
                                      , normalAttr ctx
                                      ]
 
+                  totalAllowedLines = fromEnum $ region_height size
+                  numEmptyLines = lim - length truncatedLines
+                      where
+                        lim = case lineLimit st of
+                                Just v -> min v totalAllowedLines
+                                Nothing -> totalAllowedLines
+
+                  emptyLines = replicate numEmptyLines ""
+
               isFocused <- focused <~ this
               let attr = if isFocused then focusAttr ctx else nAttr
                   lineWidget s = string attr s
                                  <|> char_fill attr ' ' (region_width size - (toEnum $ length s)) 1
 
-              return $ vert_cat $ lineWidget <$> truncatedLines
+              return $ vert_cat $ lineWidget <$> (truncatedLines ++ emptyLines)
 
         , keyEventHandler = editKeyEvent
         }

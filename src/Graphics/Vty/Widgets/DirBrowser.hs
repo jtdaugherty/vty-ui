@@ -164,7 +164,7 @@ newDirBrowser bSkin = do
   setVisible footer $ browserShowFooter bSkin
 
   fg <- newFocusGroup
-  _ <- addToFocusGroup fg l
+  _ <- addToFocusGroup fg ui
 
   setDirBrowserPath b path
   return (b, fg)
