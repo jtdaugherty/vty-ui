@@ -79,6 +79,12 @@ data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
                                -- ^Used for device entries.
                                , browserSockAttr :: Attr
                                -- ^Used for socket entries.
+                               , browserShowHeader :: Bool
+                               -- ^Whether the browser header should
+                               -- be shown.
+                               , browserShowFooter :: Bool
+                               -- ^Whether the browser footer should
+                               -- be shown.
                                , browserCustomAnnotations :: [ (FilePath -> FileStatus -> Bool
                                                                , FilePath -> FileStatus -> IO String
                                                                , Attr)
@@ -97,6 +103,8 @@ defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
                                  , browserNamedPipeAttr = fgColor yellow
                                  , browserCharDevAttr = fgColor red
                                  , browserSockAttr = fgColor magenta
+                                 , browserShowHeader = True
+                                 , browserShowFooter = True
                                  , browserCustomAnnotations = []
                                  }
 
@@ -146,6 +154,9 @@ newDirBrowser bSkin = do
   l `onKeyPressed` handleBrowserKey b
   l `onSelectionChange` (\e -> clearError b >> handleSelectionChange b e)
   b `onBrowserPathChange` setText (dirBrowserPathDisplay b)
+
+  setVisible header $ browserShowHeader bSkin
+  setVisible footer $ browserShowFooter bSkin
 
   fg <- newFocusGroup
   _ <- addToFocusGroup fg l
