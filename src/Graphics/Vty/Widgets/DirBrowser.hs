@@ -148,7 +148,7 @@ newDirBrowser bSkin = do
   b `onBrowserPathChange` setText (dirBrowserPathDisplay b)
 
   fg <- newFocusGroup
-  _ <- addToFocusGroup fg l
+  _ <- addToFocusGroup fg ui
 
   setDirBrowserPath b path
   return (b, fg)
