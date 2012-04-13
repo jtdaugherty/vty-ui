@@ -31,6 +31,8 @@ module Graphics.Vty.Widgets.Core
     , growHorizontal
     , getCursorPosition
     , showWidget
+    , getVisible
+    , setVisible
     , (<~)
     , (<~~)
 
@@ -156,6 +158,8 @@ defaultContext = RenderContext def_attr (white `on` blue) def_attr unicodeSkin
 data WidgetImpl a = WidgetImpl {
       state :: !a
     -- ^The state of the widget.
+    , visible :: !Bool
+    -- ^Whether the widget is visible.
     , render_ :: Widget a -> DisplayRegion -> RenderContext -> IO Image
     -- ^The rendering routine of the widget.  Takes the widget itself,
     -- a region indicating how much space the rendering process has to
@@ -221,19 +225,37 @@ instance (Show a) => Show (WidgetImpl a) where
                     , " }"
                     ]
 
+-- |Set the visibility of a widget.  Invisible widgets do not grow in
+-- either direction, always render to an empty image, and never
+-- declare a cursor position.
+setVisible :: Widget a -> Bool -> IO ()
+setVisible wRef v = updateWidget wRef $ \st -> st { visible = v }
+
+-- |Get the visibility of a widget.
+getVisible :: Widget a -> IO Bool
+getVisible = (visible <~)
+
 -- |Does a widget grow horizontally?
 growHorizontal :: Widget a -> IO Bool
 growHorizontal w = do
-  act <- growHorizontal_ <~ w
-  st <- state <~ w
-  act st
+  v <- visible <~ w
+  case v of
+    True -> do
+           act <- growHorizontal_ <~ w
+           st <- state <~ w
+           act st
+    False -> return False
 
 -- |Does a widget grow vertically?
 growVertical :: Widget a -> IO Bool
 growVertical w = do
-  act <- growVertical_ <~ w
-  st <- state <~ w
-  act st
+  v <- visible <~ w
+  case v of
+    True -> do
+           act <- growVertical_ <~ w
+           st <- state <~ w
+           act st
+    False -> return False
 
 -- |Render a widget.  This function should be called by widget
 -- implementations, since it does more than 'render_'; this function
@@ -249,23 +271,27 @@ render :: (Show a) =>
 render wRef sz ctx = do
   impl <- readIORef wRef
 
-  -- Merge the override attributes with the context.  If the overrides
-  -- haven't been set (still def_attr), they will have no effect on
-  -- the context attributes.
-  norm <- normalAttribute <~ wRef
-  foc <- focusAttribute <~ wRef
-  let newCtx = ctx { normalAttr = mergeAttr norm $ normalAttr ctx
-                   , focusAttr = mergeAttr foc $ focusAttr ctx
-                   }
+  v <- visible <~ wRef
+  case v of
+    False -> return empty_image
+    True -> do
+           -- Merge the override attributes with the context.  If the
+           -- overrides haven't been set (still def_attr), they will
+           -- have no effect on the context attributes.
+           norm <- normalAttribute <~ wRef
+           foc <- focusAttribute <~ wRef
+           let newCtx = ctx { normalAttr = mergeAttr norm $ normalAttr ctx
+                            , focusAttr = mergeAttr foc $ focusAttr ctx
+                            }
 
-  img <- render_ impl wRef sz newCtx
-  let imgsz =  DisplayRegion (image_width img) (image_height img)
+           img <- render_ impl wRef sz newCtx
+           let imgsz =  DisplayRegion (image_width img) (image_height img)
 
-  when (image_width img > region_width sz ||
-        image_height img > region_height sz) $ throw $ ImageTooBig (show impl) sz imgsz
+           when (image_width img > region_width sz ||
+                 image_height img > region_height sz) $ throw $ ImageTooBig (show impl) sz imgsz
 
-  setCurrentSize wRef $ DisplayRegion (image_width img) (image_height img)
-  return img
+           setCurrentSize wRef $ DisplayRegion (image_width img) (image_height img)
+           return img
 
 -- |Render a widget and set its position after rendering is complete.
 -- This is exported for internal use; widget implementations should
@@ -326,6 +352,7 @@ newWidget initState f = do
                      , currentSize = DisplayRegion 0 0
                      , currentPosition = DisplayRegion 0 0
                      , focused = False
+                     , visible = True
                      , gainFocusHandlers = gfhs
                      , loseFocusHandlers = lfhs
                      , keyEventHandler = \_ _ _ -> return False
@@ -614,8 +641,12 @@ resetFocusGroup fg = do
 -- |Get the desired cursor position, if any, for a widget.
 getCursorPosition :: Widget a -> IO (Maybe DisplayRegion)
 getCursorPosition wRef = do
-  ci <- getCursorPosition_ <~ wRef
-  ci wRef
+  v <- visible <~ wRef
+  case v of
+    True -> do
+           ci <- getCursorPosition_ <~ wRef
+           ci wRef
+    False -> return Nothing
 
 -- |Return the current focus entry of a focus group.
 currentEntry :: Widget FocusGroup -> IO (Widget FocusEntry)
