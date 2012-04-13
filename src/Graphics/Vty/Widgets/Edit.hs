@@ -38,6 +38,7 @@ where
 
 import Control.Applicative ((<$>))
 import Control.Monad
+import Data.List
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
@@ -209,7 +210,7 @@ onCursorMove = addHandler (cursorMoveHandlers <~~)
 -- |Get the current contents of the edit widget.  This returns all of
 -- the lines of text in the widget, separated by newlines.
 getEditText :: Widget Edit -> IO String
-getEditText = ((unlines . currentText) <~~)
+getEditText = (((intercalate "\n") . currentText) <~~)
 
 -- |Get the contents of the current line of the edit widget (the line
 -- on which the cursor is positioned).
@@ -237,7 +238,7 @@ setEditText wRef str = do
   lim <- lineLimit <~~ wRef
   s <- case lim of
     Nothing -> return str
-    Just l -> return $ unlines $ take l $ lines str
+    Just l -> return $ intercalate "\n" $ take l $ lines str
   updateWidgetState wRef $ \st -> st { currentText = lines s }
   when (oldS /= lines s) $ do
     gotoBeginning wRef

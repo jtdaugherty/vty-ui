@@ -1,4 +1,11 @@
 
+1.5 -> 1.5.1
+------------
+
+Bug fixes:
+ * getEditText widget no longer adds a spurious newline onto the end
+   of the text it returns
+
 1.4 -> 1.5
 ----------
 
