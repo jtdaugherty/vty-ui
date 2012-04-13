@@ -90,6 +90,10 @@ data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
                                                                , Attr)
                                                              ]
                                -- ^File annotations.
+                               , browserIncludeEntry :: FilePath -> FileStatus -> Bool
+                               -- ^The predicate which determines
+                               -- which entries get listed in the
+                               -- browser.
                                }
 
 -- |The default browser skin with (hopefully) sane attribute defaults.
@@ -106,6 +110,7 @@ defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
                                  , browserShowHeader = True
                                  , browserShowFooter = True
                                  , browserCustomAnnotations = []
+                                 , browserIncludeEntry = (const . const) True
                                  }
 
 -- |Apply annotations to a browser skin.
@@ -315,11 +320,13 @@ load b cur entries =
     forM_ entries $ \entry -> do
       let fullPath = cur </> entry
       f <- getSymbolicLinkStatus fullPath
-      (attr, _) <- fileAnnotation (dirBrowserSkin b) f cur entry
-      w <- plainText " " <++> plainText entry
-      addToList (dirBrowserList b) entry w
-      ch <- getSecondChild w
-      setNormalAttribute ch attr
+      when (browserIncludeEntry (dirBrowserSkin b) fullPath f) $
+           do
+             (attr, _) <- fileAnnotation (dirBrowserSkin b) f cur entry
+             w <- plainText " " <++> plainText entry
+             addToList (dirBrowserList b) entry w
+             ch <- getSecondChild w
+             setNormalAttribute ch attr
 
 descend :: DirBrowser -> Bool -> IO ()
 descend b shouldSelect = do
