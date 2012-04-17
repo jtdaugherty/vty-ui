@@ -248,7 +248,12 @@ setEditText wRef str = do
   s <- case lim of
     Nothing -> return str
     Just l -> return $ intercalate "\n" $ take l $ lines str
-  updateWidgetState wRef $ \st -> st { currentText = lines s }
+  updateWidgetState wRef $ \st -> st { currentText = if null s
+                                                     then [""]
+                                                     else lines s
+                                     , cursorColumn = 0
+                                     , cursorRow = 0
+                                     }
   when (oldS /= lines s) $ do
     gotoBeginning wRef
     notifyChangeHandlers wRef
