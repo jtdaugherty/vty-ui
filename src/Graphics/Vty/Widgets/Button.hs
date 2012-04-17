@@ -54,6 +54,8 @@ newButton msg = do
        withNormalAttribute (white `on` black) >>=
        withFocusAttribute (blue `on` white)
 
+  updateWidget w $ \st -> st { getCursorPosition_ = const $ return Nothing }
+
   hs <- newHandlers
 
   let b = Button w t hs
