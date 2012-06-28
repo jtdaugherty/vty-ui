@@ -92,7 +92,7 @@ Library
     directory >= 1.0 && < 1.2,
     filepath >= 1.1 && < 1.4,
     unix >= 2.4 && < 2.6,
-    mtl >= 2.0 && < 2.1,
+    mtl >= 2.0 && < 2.2,
     stm >= 2.1 && < 2.3,
     array >= 0.3.0.0 && < 0.5.0.0,
     vector >= 0.9
@@ -156,7 +156,7 @@ Executable vty-ui-list-demo
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
-    mtl >= 2.0 && < 2.1,
+    mtl >= 2.0 && < 2.2,
     vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
@@ -169,7 +169,7 @@ Executable vty-ui-progressbar-demo
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
-    mtl >= 2.0 && < 2.1,
+    mtl >= 2.0 && < 2.2,
     vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
@@ -182,7 +182,7 @@ Executable vty-ui-complex-demo
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
-    mtl >= 2.0 && < 2.1,
+    mtl >= 2.0 && < 2.2,
     bytestring >= 0.9 && < 1.0,
     time >= 1.1 && < 1.5,
     old-locale >= 1.0 && < 1.1,
@@ -198,7 +198,7 @@ Executable vty-ui-dirbrowser-demo
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
-    mtl >= 2.0 && < 2.1,
+    mtl >= 2.0 && < 2.2,
     vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
@@ -211,7 +211,7 @@ Executable vty-ui-phoneinput-demo
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
-    mtl >= 2.0 && < 2.1,
+    mtl >= 2.0 && < 2.2,
     vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
@@ -224,7 +224,7 @@ Executable vty-ui-dialog-demo
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
-    mtl >= 2.0 && < 2.1,
+    mtl >= 2.0 && < 2.2,
     vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
@@ -237,7 +237,7 @@ Executable vty-ui-edit-demo
     Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
-    mtl >= 2.0 && < 2.1,
+    mtl >= 2.0 && < 2.2,
     vty >= 4.6 && < 4.8
   if !flag(demos)
     Buildable: False
