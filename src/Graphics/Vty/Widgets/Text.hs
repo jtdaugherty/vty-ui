@@ -75,7 +75,7 @@ plainText = textWidget nullFormatter
 -- attributes.
 plainTextWithAttrs :: [(T.Text, Attr)] -> IO (Widget FormattedText)
 plainTextWithAttrs pairs = do
-  w <- textWidget nullFormatter $ T.pack ""
+  w <- textWidget nullFormatter T.empty
   setTextWithAttrs w pairs
   return w
 
