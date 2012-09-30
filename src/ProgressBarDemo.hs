@@ -1,6 +1,7 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind -fno-warn-missing-signatures #-}
 module Main where
 
+import qualified Data.Text as T
 import Control.Concurrent (forkIO, threadDelay)
 import Control.Monad (forever)
 
@@ -20,7 +21,7 @@ setupProgessBar = do
   setProgressTextAlignment pb AlignCenter
 
   pb `onProgressChange` \val ->
-      setProgressText pb $ "Progress (" ++ show val ++ " %)"
+      setProgressText pb $ T.pack $ "Progress (" ++ show val ++ " %)"
 
   return pb
 
@@ -36,7 +37,7 @@ setupProgressBarThread pb = do
 
 setupDialog :: (Show a) => Widget a -> IO (Dialog, Widget FocusGroup)
 setupDialog ui = do
-  (dlg, fg) <- newDialog ui "Progress Bar Demo"
+  (dlg, fg) <- newDialog ui $ T.pack "Progress Bar Demo"
   dlg `onDialogAccept` const exitSuccess
   dlg `onDialogCancel` const exitSuccess
   return (dlg, fg)
