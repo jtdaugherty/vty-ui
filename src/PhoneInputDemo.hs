@@ -3,11 +3,12 @@ module Main where
 -- This demo is discussed in the vty-ui user's manual.
 
 import Control.Monad
+import qualified Data.Text as T
 
 import Graphics.Vty hiding (pad)
 import Graphics.Vty.Widgets.All
 
-data PhoneNumber = PhoneNumber String String String
+data PhoneNumber = PhoneNumber T.Text T.Text T.Text
                    deriving (Show)
 
 -- This type isn't pretty, but we have to specify the type of the
@@ -32,9 +33,9 @@ newPhoneInput = do
    e2 <- editWidget
    e3 <- editWidget
    ui <- (hFixed 4 e1) <++>
-         (plainText "-") <++>
+         (plainText $ T.pack "-") <++>
          (hFixed 4 e2) <++>
-         (plainText "-") <++>
+         (plainText $ T.pack "-") <++>
          (hFixed 5 e3)
 
    let w = PhoneInput ui e1 e2 e3 ahs
@@ -52,8 +53,8 @@ newPhoneInput = do
    e2 `onActivate` doFireEvent
    e3 `onActivate` doFireEvent
 
-   e1 `onChange` \s -> when (length s == 3) $ focus e2
-   e2 `onChange` \s -> when (length s == 3) $ focus e3
+   e1 `onChange` \s -> when (T.length s == 3) $ focus e2
+   e2 `onChange` \s -> when (T.length s == 3) $ focus e3
 
    fg <- newFocusGroup
    mapM_ (addToFocusGroup fg) [e1, e2, e3]
