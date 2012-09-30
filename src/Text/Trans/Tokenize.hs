@@ -28,22 +28,24 @@ module Text.Trans.Tokenize
     )
 where
 
+import Control.Applicative
 import Data.List
     ( inits
     )
+import qualified Data.Text as T
 
 -- |The type of text tokens.  These should consist of printable
 -- characters and NOT presentation characters (e.g., newlines).  Each
 -- type of token should have as its contents a string of characters
 -- all of the same type.  Tokens are generalized over an attribute
 -- type which can be used to annotate each token.
-data Token a = S { tokenStr :: !String
+data Token a = S { tokenStr :: !T.Text
                  -- ^The token's string.
                  , tokenAttr :: !a
                  -- ^The token's attribute.
                  }
              -- ^Non-whitespace tokens.
-             | WS { tokenStr :: !String
+             | WS { tokenStr :: !T.Text
                   -- ^The token's string.
                   , tokenAttr :: !a
                   -- ^The token's attribute.
@@ -90,8 +92,8 @@ streamEntities (TS es) = es
 
 -- |Get the length of a token's string.
 tokenLen :: Token a -> Int
-tokenLen (S s _) = length s
-tokenLen (WS s _) = length s
+tokenLen (S s _) = T.length s
+tokenLen (WS s _) = T.length s
 
 wsChars :: [Char]
 wsChars = [' ', '\t']
@@ -121,28 +123,30 @@ isWsEnt _ = False
 
 -- |Given a text stream, serialize the stream to its original textual
 -- representation.  This discards token attribute metadata.
-serialize :: TextStream a -> String
-serialize (TS es) = concat $ map serializeEntity es
+serialize :: TextStream a -> T.Text
+serialize (TS es) = T.concat $ serializeEntity <$> es
     where
-      serializeEntity NL = "\n"
+      serializeEntity NL = T.pack "\n"
       serializeEntity (T (WS s _)) = s
       serializeEntity (T (S s _)) = s
 
 -- |Tokenize a string and apply a default attribute to every token in
 -- the resulting text stream.
-tokenize :: String -> a -> TextStream a
+tokenize :: T.Text -> a -> TextStream a
 tokenize s def = TS $ findEntities s
     where
-      findEntities [] = []
-      findEntities str@(c:_) = nextEntity : findEntities (drop nextLen str)
+      findEntities str
+          | T.null str = []
+          | otherwise = nextEntity : findEntities (T.drop nextLen str)
           where
+            c = T.head str
             (nextEntity, nextLen) = if isWs c
-                                    then (T (WS nextWs def), length nextWs)
+                                    then (T (WS nextWs def), T.length nextWs)
                                     else if c == '\n'
                                          then (NL, 1)
-                                         else (T (S nextStr def), length nextStr)
-            nextWs = takeWhile isWs str
-            nextStr = takeWhile (\ch -> not $ ch `elem` ('\n':wsChars)) str
+                                         else (T (S nextStr def), T.length nextStr)
+            nextWs = T.takeWhile isWs str
+            nextStr = T.takeWhile (\ch -> not $ ch `elem` ('\n':wsChars)) str
 
 -- |Given a list of tokens, truncate the list so that its underlying
 -- string representation does not exceed the specified column width.
@@ -158,14 +162,14 @@ truncateLine width ts =
     -- If there are no passing cases (i.e., remaining is null), just
     -- return 'width' characters of the first token.
     if null remaining
-    then [first_tok { tokenStr = take width $ tokenStr first_tok }]
+    then [first_tok { tokenStr = T.take width $ tokenStr first_tok }]
     else if length tokens == length ts
          then tokens
-         else if null $ tokenStr lastToken
+         else if T.null $ tokenStr lastToken
               then tokens
               else tokens ++ [lastToken]
     where
-      lengths = map (length . tokenStr) ts
+      lengths = map (T.length . tokenStr) ts
       cases = reverse $ inits lengths
       remaining = dropWhile ((> width) . sum) cases
       tokens = take (length $ head remaining) ts
@@ -173,7 +177,9 @@ truncateLine width ts =
 
       first_tok = ts !! 0
       last_tok = ts !! (length tokens)
-      lastToken = last_tok { tokenStr = take (width - truncLength) $ tokenStr last_tok }
+      lastToken = last_tok { tokenStr = T.take (width - truncLength) $
+                                        tokenStr last_tok
+                           }
 
 -- |Given a text stream and a wrapping width, return a new
 -- 'TextStream' with newlines inserted in appropriate places to wrap
@@ -188,13 +194,13 @@ wrapStream width (TS stream) = TS $ reverse $ dropWhile (== NL) $ reverse $ wrap
       wrapAll' _ [] = []
       wrapAll' _ (NL:rest) = NL : wrapAll' 0 rest
       wrapAll' accum (T t:rest) =
-          if (length $ tokenStr t) + accum > width
+          if (T.length $ tokenStr t) + accum > width
           then if isWhitespace t
                then [NL] ++ wrapAll' 0 (dropWhile isWsEnt rest)
-               else if accum == 0 && ((length $ tokenStr t) >= width)
+               else if accum == 0 && ((T.length $ tokenStr t) >= width)
                     then [T t, NL] ++ wrapAll' 0 (dropWhile isWsEnt rest)
-                    else [NL, T t] ++ wrapAll' (length $ tokenStr t) rest
-          else T t : wrapAll' (accum + (length $ tokenStr t)) rest
+                    else [NL, T t] ++ wrapAll' (T.length $ tokenStr t) rest
+          else T t : wrapAll' (accum + (T.length $ tokenStr t)) rest
 
 partitions :: (a -> Bool) -> [a] -> [[a]]
 partitions _ [] = []
