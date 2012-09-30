@@ -39,7 +39,6 @@ where
 import Control.Applicative ((<$>))
 import Control.Monad
 import qualified Data.Text as T
-import Data.List
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
