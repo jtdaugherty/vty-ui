@@ -192,7 +192,7 @@ wrapStream width (TS stream) = TS $ reverse $ dropWhile (== NL) $ reverse $ wrap
           then if isWhitespace t
                then [NL] ++ wrapAll' 0 (dropWhile isWsEnt rest)
                else if accum == 0 && ((length $ tokenStr t) >= width)
-                    then [T t, NL] ++ wrapAll' 0 (dropWhile isWsEnt rest)
+                    then [T t] ++ wrapAll' (length $ tokenStr t) (dropWhile isWsEnt rest)
                     else [NL, T t] ++ wrapAll' (length $ tokenStr t) rest
           else T t : wrapAll' (accum + (length $ tokenStr t)) rest
 

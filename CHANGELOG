@@ -1,4 +1,9 @@
 
+Bug fixes:
+ * Fixed bug in Text.Trans.Tokenize.wrapStream which prevented
+   over-long words from being wrapped properly, as well as lines where
+   short words followed over-long ones.
+
 
 1.5 -> 1.5.1
 ------------
