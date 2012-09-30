@@ -20,6 +20,8 @@ module Graphics.Vty.Widgets.Borders
     )
 where
 
+import qualified Data.Text as T
+
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Box
@@ -189,10 +191,14 @@ drawBordered this s ctx
   let adjusted = DisplayRegion (image_width childImage + 2)
                  (image_height childImage)
 
-  tlCorner <- plainText [skinCornerTL sk] >>= withNormalAttribute attr'
-  trCorner <- plainText [skinCornerTR sk] >>= withNormalAttribute attr'
-  blCorner <- plainText [skinCornerBL sk] >>= withNormalAttribute attr'
-  brCorner <- plainText [skinCornerBR sk] >>= withNormalAttribute attr'
+  tlCorner <- plainText (T.singleton $ skinCornerTL sk)
+              >>= withNormalAttribute attr'
+  trCorner <- plainText (T.singleton $ skinCornerTR sk)
+              >>= withNormalAttribute attr'
+  blCorner <- plainText (T.singleton $ skinCornerBL sk)
+              >>= withNormalAttribute attr'
+  brCorner <- plainText (T.singleton $ skinCornerBR sk)
+              >>= withNormalAttribute attr'
 
   hb <- hBorder >>= withHBorderLabel label
   setBorderAttribute hb attr'
