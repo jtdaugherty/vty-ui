@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-unused-do-bind #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import System.Exit ( exitSuccess )
@@ -21,27 +22,24 @@ selAttr = black `on` yellow
 keyAttr = fgColor magenta
 
 message1 :: T.Text
-message1 = T.pack $
-           "This demonstration shows how list widgets behave. \n\
+message1 = "This demonstration shows how list widgets behave. \n\
            \See the keystrokes below to try the demo."
 
 message2 :: [(T.Text, Attr)]
-message2 = [(T.pack s, a) | (s, a) <- pairs]
-    where
-      pairs = [ ("- Press ", def_attr), ("q", keyAttr), (" to quit\n", def_attr)
-              , ("- Press ", def_attr), ("+", keyAttr)
-              , (" / ", def_attr), ("a", keyAttr)
-              , (" to add a list item\n", def_attr)
-              , ("- Press ", def_attr), ("-", keyAttr)
-              , (" / ", def_attr), ("d", keyAttr)
-              , (" to remove the selected list item\n", def_attr)
-              , ("- Press ", def_attr)
-              , ("up", keyAttr), (" / ", def_attr)
-              , ("down", keyAttr), (" / ", def_attr)
-              , ("page up", keyAttr), (" / ", def_attr)
-              , ("page down", keyAttr)
-              , (" to navigate the list\n", def_attr)
-              ]
+message2 = [ ("- Press ", def_attr), ("q", keyAttr), (" to quit\n", def_attr)
+           , ("- Press ", def_attr), ("+", keyAttr)
+           , (" / ", def_attr), ("a", keyAttr)
+           , (" to add a list item\n", def_attr)
+           , ("- Press ", def_attr), ("-", keyAttr)
+           , (" / ", def_attr), ("d", keyAttr)
+           , (" to remove the selected list item\n", def_attr)
+           , ("- Press ", def_attr)
+           , ("up", keyAttr), (" / ", def_attr)
+           , ("down", keyAttr), (" / ", def_attr)
+           , ("page up", keyAttr), (" / ", def_attr)
+           , ("page down", keyAttr)
+           , (" to navigate the list\n", def_attr)
+           ]
 
 buildUi appst = do
   msg1 <- plainText message1
@@ -112,8 +110,8 @@ main = do
            Nothing -> return ()
            Just (i, _) -> removeFromList (theList st) i >> return ()
       addNewItem =
-          (plainText $ T.pack "a list item") >>=
-                    addToList (theList st) (T.pack "unused")
+          (plainText "a list item") >>=
+                    addToList (theList st) "unused"
 
   (theList st) `onKeyPressed` \_ k _ -> do
          case k of

@@ -1,10 +1,10 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-unused-do-bind #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import System.Exit ( exitSuccess )
 import System.Locale
 import qualified Data.Text as T
-import Control.Applicative
 import Control.Monad
 import Control.Concurrent
 import Data.Time.Clock
@@ -40,21 +40,21 @@ main = do
            withNormalAttribute (bgColor blue) >>=
            withBorderAttribute (fgColor green)
 
-  tw <- (textWidget wrap $ T.pack msg) >>= withNormalAttribute msgAttr
+  tw <- (textWidget wrap msg) >>= withNormalAttribute msgAttr
   mainBox <- vBox table tw >>= withBoxSpacing 1
 
-  r1 <- newCheckbox $ T.pack "Cake"
-  r2 <- newCheckbox $ T.pack "Death"
+  r1 <- newCheckbox "Cake"
+  r2 <- newCheckbox "Death"
   radioHeader <- plainText T.empty >>= withNormalAttribute headerAttr
 
   rg <- newRadioGroup
   addToRadioGroup rg r1
   addToRadioGroup rg r2
 
-  r3 <- newMultiStateCheckbox (T.pack "Frosting") [ (Chocolate, 'C')
-                                                  , (Vanilla, 'V')
-                                                  , (Lemon, 'L')
-                                                  ]
+  r3 <- newMultiStateCheckbox "Frosting" [ (Chocolate, 'C')
+                                         , (Vanilla, 'V')
+                                         , (Lemon, 'L')
+                                         ]
 
   edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- multiLineEditWidget
@@ -77,7 +77,7 @@ main = do
   prog <- newProgressBar (white `on` red) (red `on` white)
   setProgressTextAlignment prog AlignCenter
 
-  addHeadingRow_ table headerAttr $ T.pack <$> ["Column 1", "Column 2"]
+  addHeadingRow_ table headerAttr ["Column 1", "Column 2"]
   addRow table $ radioHeader .|. rs
   addRow table $ cbHeader .|. r3
   addRow table $ edit1Header .|. edit1
@@ -88,13 +88,16 @@ main = do
 
   rg `onRadioChange` \cb -> do
       s <- getCheckboxLabel cb
-      setText radioHeader $ T.concat [s, T.pack ", please."]
+      setText radioHeader $ T.concat [s, ", please."]
 
   r3 `onCheckboxChange` \v ->
-      setText cbHeader $ T.pack $ "you chose: " ++ show v
+      setText cbHeader $ T.pack $ concat ["you chose: ", show v]
 
   prog `onProgressChange` \val ->
-      setProgressText prog $ T.pack $ "Progress (" ++ show val ++ " %)"
+      setProgressText prog $ T.concat [ "Progress ("
+                                      , T.pack $ show val
+                                      , " %)"
+                                      ]
 
   edit1 `onChange` (setText edit1Header)
   edit2 `onChange` (setText edit2Header)
@@ -107,8 +110,8 @@ main = do
   lst `onItemActivated` \(ActivateItemEvent _ s _) ->
       setText listHeader $ T.pack $ "You activated: " ++ s
 
-  setEditText edit1 $ T.pack "Foo"
-  setEditText edit2 $ T.pack "Bar"
+  setEditText edit1 "Foo"
+  setEditText edit2 "Bar"
   setCheckboxChecked r1
 
   setCheckboxState r3 Chocolate
@@ -116,7 +119,7 @@ main = do
   -- setCheckboxState call above will not notify any state-change
   -- handlers because the state isn't actually changing (from its
   -- original value of Chocolate, the first value in its state list).
-  setText cbHeader $ T.pack $ "you chose: Chocolate"
+  setText cbHeader $ "you chose: Chocolate"
 
   fgr <- newFocusGroup
   fgr `onKeyPressed` \_ k _ -> do

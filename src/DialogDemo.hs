@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import qualified Data.Text as T
@@ -11,11 +12,11 @@ main = do
   fg <- newFocusGroup
   addToFocusGroup fg e
 
-  u <- plainText (T.pack "Enter some text and press enter.") <--> return e
+  u <- plainText "Enter some text and press enter." <--> return e
        >>= withBoxSpacing 1
 
   pe <- padded u (padLeftRight 2)
-  (d, dFg) <- newDialog pe $ T.pack "<enter text>"
+  (d, dFg) <- newDialog pe "<enter text>"
   setNormalAttribute d (white `on` blue)
 
   c <- centered =<< withPadding (padLeftRight 10) (dialogWidget d)

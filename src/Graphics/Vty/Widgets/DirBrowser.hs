@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 -- |This module provides a directory browser interface widget.  For
 -- full details, please see the Vty-ui User's Manual.
 module Graphics.Vty.Widgets.DirBrowser
@@ -127,12 +128,12 @@ newDirBrowser bSkin = do
   path <- getCurrentDirectory
   pathWidget <- plainText T.empty
   errorText <- plainText T.empty >>= withNormalAttribute (browserErrorAttr bSkin)
-  header <- ((plainText $ T.pack " Path: ")
+  header <- ((plainText " Path: ")
              <++> (return pathWidget) <++> (hFill ' ' 1))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
   fileInfo <- plainText T.empty
-  footer <- ((plainText $ T.pack " ")
+  footer <- ((plainText " ")
              <++> (return fileInfo) <++> (hFill ' ' 1) <++> (return errorText))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
@@ -177,7 +178,7 @@ newDirBrowser bSkin = do
 -- selection.
 reportBrowserError :: DirBrowser -> T.Text -> IO ()
 reportBrowserError b msg = setText (dirBrowserErrorWidget b) $
-                           T.concat [ T.pack "Error: "
+                           T.concat [ "Error: "
                                     , msg
                                     ]
 
@@ -210,7 +211,7 @@ chooseCurrentEntry b = do
 handleSelectionChange :: DirBrowser -> SelectionEvent String b -> IO ()
 handleSelectionChange b ev = do
   case ev of
-    SelectionOff -> setText (dirBrowserFileInfo b) $ T.pack "-"
+    SelectionOff -> setText (dirBrowserFileInfo b) "-"
     SelectionOn _ path _ -> setText (dirBrowserFileInfo b) =<<
                             (getFileInfo b path)
 
@@ -240,11 +241,11 @@ builtInAnnotations cur sk =
                         canonicalizePath $ cur </> linkPath
           return $ T.pack $ "symbolic link to " ++ linkDest)
       , browserLinkAttr sk)
-    , (\_ s -> isDirectory s, \_ _ -> return $ T.pack "directory", browserDirAttr sk)
-    , (\_ s -> isBlockDevice s, \_ _ -> return $ T.pack "block device", browserBlockDevAttr sk)
-    , (\_ s -> isNamedPipe s, \_ _ -> return $ T.pack "named pipe", browserNamedPipeAttr sk)
-    , (\_ s -> isCharacterDevice s, \_ _ -> return $ T.pack "character device", browserCharDevAttr sk)
-    , (\_ s -> isSocket s, \_ _ -> return $ T.pack "socket", browserSockAttr sk)
+    , (\_ s -> isDirectory s, \_ _ -> return "directory", browserDirAttr sk)
+    , (\_ s -> isBlockDevice s, \_ _ -> return "block device", browserBlockDevAttr sk)
+    , (\_ s -> isNamedPipe s, \_ _ -> return "named pipe", browserNamedPipeAttr sk)
+    , (\_ s -> isCharacterDevice s, \_ _ -> return "character device", browserCharDevAttr sk)
+    , (\_ s -> isSocket s, \_ _ -> return "socket", browserSockAttr sk)
     ]
 
 fileAnnotation :: BrowserSkin -> FileStatus -> FilePath -> FilePath -> IO (Attr, IO T.Text)
@@ -332,7 +333,7 @@ load b cur entries =
       when (browserIncludeEntry (dirBrowserSkin b) fullPath f) $
            do
              (attr, _) <- fileAnnotation (dirBrowserSkin b) f cur entry
-             w <- plainText (T.pack " ") <++> plainText (T.pack entry)
+             w <- plainText " " <++> plainText (T.pack entry)
              addToList (dirBrowserList b) entry w
              ch <- getSecondChild w
              setNormalAttribute ch attr

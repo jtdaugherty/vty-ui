@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 -- This demo is discussed in the vty-ui user's manual.
@@ -33,9 +34,9 @@ newPhoneInput = do
    e2 <- editWidget
    e3 <- editWidget
    ui <- (hFixed 4 e1) <++>
-         (plainText $ T.pack "-") <++>
+         (plainText "-") <++>
          (hFixed 4 e2) <++>
-         (plainText $ T.pack "-") <++>
+         (plainText "-") <++>
          (hFixed 5 e3)
 
    let w = PhoneInput ui e1 e2 e3 ahs

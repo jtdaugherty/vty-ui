@@ -1,4 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind -fno-warn-missing-signatures #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import qualified Data.Text as T
@@ -37,7 +38,7 @@ setupProgressBarThread pb = do
 
 setupDialog :: (Show a) => Widget a -> IO (Dialog, Widget FocusGroup)
 setupDialog ui = do
-  (dlg, fg) <- newDialog ui $ T.pack "Progress Bar Demo"
+  (dlg, fg) <- newDialog ui "Progress Bar Demo"
   dlg `onDialogAccept` const exitSuccess
   dlg `onDialogCancel` const exitSuccess
   return (dlg, fg)
