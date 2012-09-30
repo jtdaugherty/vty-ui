@@ -374,7 +374,9 @@ killToEOL this = do
   curCol <- cursorColumn <~~ this
   curLine <- getEditCurrentLine this
   case null curLine of
-    False -> setEditCurrentLine this $ take curCol curLine
+    False -> do
+      setEditCurrentLine this $ take curCol curLine
+      notifyChangeHandlers this
     True -> do
       curRow <- cursorRow <~~ this
       numLines <- (length . currentText) <~~ this
