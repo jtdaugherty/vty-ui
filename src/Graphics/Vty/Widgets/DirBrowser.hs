@@ -21,6 +21,7 @@ import Data.IORef
 import qualified Data.Map as Map
 import qualified Control.Exception as E
 import Control.Monad
+import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.List
@@ -86,7 +87,7 @@ data BrowserSkin = BrowserSkin { browserHeaderAttr :: Attr
                                -- ^Whether the browser footer should
                                -- be shown.
                                , browserCustomAnnotations :: [ (FilePath -> FileStatus -> Bool
-                                                               , FilePath -> FileStatus -> IO String
+                                                               , FilePath -> FileStatus -> IO T.Text
                                                                , Attr)
                                                              ]
                                -- ^File annotations.
@@ -115,7 +116,7 @@ defaultBrowserSkin = BrowserSkin { browserHeaderAttr = white `on` blue
 
 -- |Apply annotations to a browser skin.
 withAnnotations :: BrowserSkin
-                -> [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String, Attr)]
+                -> [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO T.Text, Attr)]
                 -> BrowserSkin
 withAnnotations sk as = sk { browserCustomAnnotations = browserCustomAnnotations sk ++ as }
 
@@ -124,13 +125,15 @@ withAnnotations sk as = sk { browserCustomAnnotations = browserCustomAnnotations
 newDirBrowser :: BrowserSkin -> IO (DirBrowser, Widget FocusGroup)
 newDirBrowser bSkin = do
   path <- getCurrentDirectory
-  pathWidget <- plainText ""
-  errorText <- plainText "" >>= withNormalAttribute (browserErrorAttr bSkin)
-  header <- ((plainText " Path: ") <++> (return pathWidget) <++> (hFill ' ' 1))
+  pathWidget <- plainText T.empty
+  errorText <- plainText T.empty >>= withNormalAttribute (browserErrorAttr bSkin)
+  header <- ((plainText $ T.pack " Path: ")
+             <++> (return pathWidget) <++> (hFill ' ' 1))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
-  fileInfo <- plainText ""
-  footer <- ((plainText " ") <++> (return fileInfo) <++> (hFill ' ' 1) <++> (return errorText))
+  fileInfo <- plainText T.empty
+  footer <- ((plainText $ T.pack " ")
+             <++> (return fileInfo) <++> (hFill ' ' 1) <++> (return errorText))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
   l <- newList (browserUnfocusedSelAttr bSkin)
@@ -158,7 +161,7 @@ newDirBrowser bSkin = do
 
   l `onKeyPressed` handleBrowserKey b
   l `onSelectionChange` (\e -> clearError b >> handleSelectionChange b e)
-  b `onBrowserPathChange` setText (dirBrowserPathDisplay b)
+  b `onBrowserPathChange` (setText (dirBrowserPathDisplay b) . T.pack)
 
   setVisible header $ browserShowHeader bSkin
   setVisible footer $ browserShowFooter bSkin
@@ -172,11 +175,14 @@ newDirBrowser bSkin = do
 -- |Report an error in the browser's error-reporting area.  Useful for
 -- reporting application-specific errors with the user's file
 -- selection.
-reportBrowserError :: DirBrowser -> String -> IO ()
-reportBrowserError b msg = setText (dirBrowserErrorWidget b) $ "Error: " ++ msg
+reportBrowserError :: DirBrowser -> T.Text -> IO ()
+reportBrowserError b msg = setText (dirBrowserErrorWidget b) $
+                           T.concat [ T.pack "Error: "
+                                    , msg
+                                    ]
 
 clearError :: DirBrowser -> IO ()
-clearError b = setText (dirBrowserErrorWidget b) ""
+clearError b = setText (dirBrowserErrorWidget b) T.empty
 
 -- |Register handlers to be invoked when the user makes a selection.
 onBrowseAccept :: DirBrowser -> (FilePath -> IO ()) -> IO ()
@@ -204,22 +210,25 @@ chooseCurrentEntry b = do
 handleSelectionChange :: DirBrowser -> SelectionEvent String b -> IO ()
 handleSelectionChange b ev = do
   case ev of
-    SelectionOff -> setText (dirBrowserFileInfo b) "-"
-    SelectionOn _ path _ -> setText (dirBrowserFileInfo b) =<< getFileInfo b path
+    SelectionOff -> setText (dirBrowserFileInfo b) $ T.pack "-"
+    SelectionOn _ path _ -> setText (dirBrowserFileInfo b) =<<
+                            (getFileInfo b path)
 
-getFileInfo :: DirBrowser -> FilePath -> IO String
+getFileInfo :: DirBrowser -> FilePath -> IO T.Text
 getFileInfo b path = do
   cur <- getDirBrowserPath b
   let newPath = cur </> path
   st <- getSymbolicLinkStatus newPath
   (_, mkAnn) <- fileAnnotation (dirBrowserSkin b) st cur path
   ann <- mkAnn
-  return $ path ++ ": " ++ ann
+  return $ T.concat [ T.pack (path ++ ": ")
+                    , ann
+                    ]
 
-builtInAnnotations :: FilePath -> BrowserSkin -> [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO String, Attr)]
+builtInAnnotations :: FilePath -> BrowserSkin -> [(FilePath -> FileStatus -> Bool, FilePath -> FileStatus -> IO T.Text, Attr)]
 builtInAnnotations cur sk =
     [ (\_ s -> isRegularFile s
-      , \_ s -> return $ "regular file, " ++
+      , \_ s -> return $ T.pack $ "regular file, " ++
                 (show $ fileSize s) ++ " bytes"
       , def_attr)
     , (\_ s -> isSymbolicLink s,
@@ -229,23 +238,23 @@ builtInAnnotations cur sk =
                       else do
                         linkPath <- readSymbolicLink p
                         canonicalizePath $ cur </> linkPath
-          return $ "symbolic link to " ++ linkDest)
+          return $ T.pack $ "symbolic link to " ++ linkDest)
       , browserLinkAttr sk)
-    , (\_ s -> isDirectory s, \_ _ -> return "directory", browserDirAttr sk)
-    , (\_ s -> isBlockDevice s, \_ _ -> return "block device", browserBlockDevAttr sk)
-    , (\_ s -> isNamedPipe s, \_ _ -> return "named pipe", browserNamedPipeAttr sk)
-    , (\_ s -> isCharacterDevice s, \_ _ -> return "character device", browserCharDevAttr sk)
-    , (\_ s -> isSocket s, \_ _ -> return "socket", browserSockAttr sk)
+    , (\_ s -> isDirectory s, \_ _ -> return $ T.pack "directory", browserDirAttr sk)
+    , (\_ s -> isBlockDevice s, \_ _ -> return $ T.pack "block device", browserBlockDevAttr sk)
+    , (\_ s -> isNamedPipe s, \_ _ -> return $ T.pack "named pipe", browserNamedPipeAttr sk)
+    , (\_ s -> isCharacterDevice s, \_ _ -> return $ T.pack "character device", browserCharDevAttr sk)
+    , (\_ s -> isSocket s, \_ _ -> return $ T.pack "socket", browserSockAttr sk)
     ]
 
-fileAnnotation :: BrowserSkin -> FileStatus -> FilePath -> FilePath -> IO (Attr, IO String)
+fileAnnotation :: BrowserSkin -> FileStatus -> FilePath -> FilePath -> IO (Attr, IO T.Text)
 fileAnnotation sk st cur shortPath = do
   let fullPath = cur </> shortPath
 
       annotation = getAnnotation' fullPath st $ (browserCustomAnnotations sk) ++
                    (builtInAnnotations cur sk)
 
-      getAnnotation' _ _ [] = (def_attr, return "")
+      getAnnotation' _ _ [] = (def_attr, return T.empty)
       getAnnotation' pth stat ((f,mkAnn,a):rest) =
           if f pth stat
           then (a, mkAnn pth stat)
@@ -278,7 +287,7 @@ setDirBrowserPath b path = do
                       entries <- getDirectoryContents cPath
                       return (True, entries))
                      `E.catch` \e -> do
-                             reportBrowserError b (ioeGetErrorString e)
+                             reportBrowserError b (T.pack $ ioeGetErrorString e)
                              return (False, [])
 
   when res $ do
@@ -323,7 +332,7 @@ load b cur entries =
       when (browserIncludeEntry (dirBrowserSkin b) fullPath f) $
            do
              (attr, _) <- fileAnnotation (dirBrowserSkin b) f cur entry
-             w <- plainText " " <++> plainText entry
+             w <- plainText (T.pack " ") <++> plainText (T.pack entry)
              addToList (dirBrowserList b) entry w
              ch <- getSecondChild w
              setNormalAttribute ch attr
