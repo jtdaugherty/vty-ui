@@ -1,10 +1,4 @@
 
-1.5.1 -> 1.5.2
---------------
-
-Bug fixes:
- * Text edit widgets now properly report text change events when
-   killing to end-of-line (i.e. with C-k)
 
 1.5 -> 1.5.1
 ------------
@@ -12,6 +6,15 @@ Bug fixes:
 Bug fixes:
  * getEditText widget no longer adds a spurious newline onto the end
    of the text it returns
+ * Text edit widgets now properly report text change events when
+   killing to end-of-line (i.e. with C-k)
+ * Edit widgets now correctly set internal state when setting to the
+   empty string, and reset the cursor position to (0, 0)
+ * Edit widgets now pad correctly when the line limit and rendering
+   region size permit it
+ * Directory browser widgets now add their top-level widget (the value
+   of dirBrowserWidget) to the focus group instead of the List widget
+   contained in the browser
 
 1.4 -> 1.5
 ----------
