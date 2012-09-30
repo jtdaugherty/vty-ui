@@ -26,6 +26,7 @@ module Graphics.Vty.Widgets.Table
 where
 
 import Data.Monoid
+import qualified Data.Text as T
 import Data.Typeable
 import Data.Word
 import Data.List
@@ -454,7 +455,7 @@ autoWidth t sz = do
 -- |Add a heading row to a table.  Adds a row using the specified
 -- |labels and attribute.  Returns the widgets it constructed as a
 -- |side-effect in case you want to do something with them.
-addHeadingRow :: Widget Table -> Attr -> [String] -> IO [Widget FormattedText]
+addHeadingRow :: Widget Table -> Attr -> [T.Text] -> IO [Widget FormattedText]
 addHeadingRow tbl attr labels = do
   ws <- mapM (\s -> plainText s >>= withNormalAttribute attr) labels
   addRow tbl ws
@@ -462,7 +463,7 @@ addHeadingRow tbl attr labels = do
 
 -- |Add a heading row to a table.  Adds a row using the specified
 -- |labels and attribute.
-addHeadingRow_ :: Widget Table -> Attr -> [String] -> IO ()
+addHeadingRow_ :: Widget Table -> Attr -> [T.Text] -> IO ()
 addHeadingRow_ tbl attr labels = addHeadingRow tbl attr labels >> return ()
 
 applyCellAlignment :: Alignment -> TableCell -> IO TableCell
@@ -523,7 +524,7 @@ addRow t row = do
 
 renderCell :: DisplayRegion -> TableCell -> RenderContext -> IO Image
 renderCell region EmptyCell ctx = do
-  w <- plainText ""
+  w <- plainText T.empty
   render w region ctx
 renderCell region (TableCell w _ _) ctx =
     render w region ctx
