@@ -43,18 +43,18 @@ main = do
   tw <- (textWidget wrap $ T.pack msg) >>= withNormalAttribute msgAttr
   mainBox <- vBox table tw >>= withBoxSpacing 1
 
-  r1 <- newCheckbox "Cake"
-  r2 <- newCheckbox "Death"
+  r1 <- newCheckbox $ T.pack "Cake"
+  r2 <- newCheckbox $ T.pack "Death"
   radioHeader <- plainText T.empty >>= withNormalAttribute headerAttr
 
   rg <- newRadioGroup
   addToRadioGroup rg r1
   addToRadioGroup rg r2
 
-  r3 <- newMultiStateCheckbox "Frosting" [ (Chocolate, 'C')
-                                         , (Vanilla, 'V')
-                                         , (Lemon, 'L')
-                                         ]
+  r3 <- newMultiStateCheckbox (T.pack "Frosting") [ (Chocolate, 'C')
+                                                  , (Vanilla, 'V')
+                                                  , (Lemon, 'L')
+                                                  ]
 
   edit1 <- editWidget >>= withFocusAttribute (white `on` red)
   edit2 <- multiLineEditWidget
@@ -88,7 +88,7 @@ main = do
 
   rg `onRadioChange` \cb -> do
       s <- getCheckboxLabel cb
-      setText radioHeader $ T.pack $ s ++ ", please."
+      setText radioHeader $ T.concat [s, T.pack ", please."]
 
   r3 `onCheckboxChange` \v ->
       setText cbHeader $ T.pack $ "you chose: " ++ show v

@@ -40,6 +40,7 @@ where
 import Data.IORef
 import Data.List ( findIndex )
 import Data.Maybe
+import qualified Data.Text as T
 import Control.Monad
 import Control.Exception
 import Data.Typeable
@@ -126,7 +127,7 @@ data CheckBox a = CheckBox { leftBracketChar :: Char
                            , rightBracketChar :: Char
                            , checkboxStates :: [(a, Char)]
                            , currentState :: a
-                           , checkboxLabel :: String
+                           , checkboxLabel :: T.Text
                            , checkboxChangeHandlers :: Handlers a
                            , checkboxFrozen :: Bool
                            }
@@ -141,12 +142,12 @@ instance Show a => Show (CheckBox a) where
                      ]
 
 -- |Create a new checkbox with the specified text label.
-newCheckbox :: String -> IO (Widget (CheckBox Bool))
+newCheckbox :: T.Text -> IO (Widget (CheckBox Bool))
 newCheckbox label = newMultiStateCheckbox label [(False, ' '), (True, 'x')]
 
 -- |Create a new multi-state checkbox.
 newMultiStateCheckbox :: (Eq a) =>
-                         String -- ^The checkbox label.
+                         T.Text -- ^The checkbox label.
                       -> [(a, Char)] -- ^The list of valid states that
                                      -- the checkbox can be in, along
                                      -- with the visual representation
@@ -187,10 +188,16 @@ newMultiStateCheckbox label states = do
                   v = currentState st
                   ch = fromJust $ lookup v (checkboxStates st)
 
-                  s = [leftBracketChar st, ch, rightBracketChar st, ' '] ++
-                      (checkboxLabel st)
+                  s = T.concat [ T.pack [ leftBracketChar st
+                                        , ch
+                                        , rightBracketChar st
+                                        , ' '
+                                        ]
+                               , checkboxLabel st
+                               ]
 
-              return $ string fAttr $ take (fromEnum $ region_width sz) s
+              return $ string fAttr $ T.unpack $
+                     T.take (fromEnum $ region_width sz) s
         }
   return wRef
 
@@ -223,7 +230,7 @@ setBracketChars wRef chL chR =
                                      }
 
 -- |Get a checkbox's text label.
-getCheckboxLabel :: Widget (CheckBox a) -> IO String
+getCheckboxLabel :: Widget (CheckBox a) -> IO T.Text
 getCheckboxLabel = (checkboxLabel <~~)
 
 radioKeyEvent :: (Eq a) => Widget (CheckBox a) -> Key -> [Modifier] -> IO Bool
