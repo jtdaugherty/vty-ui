@@ -15,6 +15,7 @@ module Graphics.Vty.Widgets.ProgressBar
 where
 
 import Control.Monad
+import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
@@ -23,7 +24,7 @@ import Graphics.Vty.Widgets.Alignment
 
 data ProgressBar = ProgressBar { progressBarAmount :: Int
                                , onChangeHandlers :: Handlers Int
-                               , progressBarText :: String
+                               , progressBarText :: T.Text
                                , progressBarTextAlignment :: Alignment
                                }
 
@@ -39,8 +40,8 @@ instance Show ProgressBar where
 newProgressBar :: Attr -> Attr -> IO (Widget ProgressBar)
 newProgressBar completeAttr incompleteAttr = do
   chs <- newHandlers
-  t <- plainText ""
-  let initSt = ProgressBar 0 chs "" AlignCenter
+  t <- plainText T.empty
+  let initSt = ProgressBar 0 chs T.empty AlignCenter
   wRef <- newWidget initSt $ \w ->
           w { growHorizontal_ = const $ return True
             , render_ =
@@ -55,22 +56,26 @@ newProgressBar completeAttr incompleteAttr = do
                                        (toRational $ fromEnum $ region_width size)
 
                       full_width = fromEnum $ region_width size
-                      full_str = take full_width $ mkStr txt al
+                      full_str = T.take full_width $ mkStr txt al
 
-                      mkStr s AlignLeft = s ++ replicate (full_width - length txt) ' '
-                      mkStr s AlignRight = replicate (full_width - length txt) ' ' ++ s
-                      mkStr s AlignCenter = concat [ half
-                                                   , s
-                                                   , half
-                                                   , if length half * 2 < (full_width + length txt)
-                                                     then " "
-                                                     else ""
+                      mkStr s AlignLeft = T.concat [ s
+                                                   , T.pack $ replicate (full_width - T.length txt) ' '
                                                    ]
+                      mkStr s AlignRight = T.concat [ T.pack $ replicate (full_width - T.length txt) ' '
+                                                    , s
+                                                    ]
+                      mkStr s AlignCenter = T.concat [ half
+                                                     , s
+                                                     , half
+                                                     , if T.length half * 2 < (full_width + T.length txt)
+                                                       then T.singleton ' '
+                                                       else T.empty
+                                                     ]
                           where
-                            half = replicate ((full_width - length txt) `div` 2) ' '
+                            half = T.pack $ replicate ((full_width - T.length txt) `div` 2) ' '
 
-                      (complete_str, incomplete_str) = ( take complete_width full_str
-                                                       , drop complete_width full_str
+                      (complete_str, incomplete_str) = ( T.take complete_width full_str
+                                                       , T.drop complete_width full_str
                                                        )
 
                   setTextWithAttrs t [ (complete_str, completeAttr)
@@ -101,7 +106,7 @@ setProgressTextAlignment p al =
     updateWidgetState p $ \st -> st { progressBarTextAlignment = al }
 
 -- |Set the progress bar's text label.
-setProgressText :: Widget ProgressBar -> String -> IO ()
+setProgressText :: Widget ProgressBar -> T.Text -> IO ()
 setProgressText p s =
     updateWidgetState p $ \st -> st { progressBarText = s }
 
