@@ -13,6 +13,7 @@ module Graphics.Vty.Widgets.Dialog
     )
 where
 
+import qualified Data.Text as T
 import Graphics.Vty.Widgets.Centering
 import Graphics.Vty.Widgets.Button
 import Graphics.Vty.Widgets.Padding
@@ -22,7 +23,7 @@ import Graphics.Vty.Widgets.Box
 import Graphics.Vty.Widgets.Core
 
 data Dialog = Dialog { dialogWidget :: Widget (Bordered Padded)
-                     , setDialogTitle :: String -> IO ()
+                     , setDialogTitle :: T.Text -> IO ()
                      , dialogAcceptHandlers :: Handlers Dialog
                      , dialogCancelHandlers :: Handlers Dialog
                      }
@@ -33,10 +34,10 @@ instance HasNormalAttr Dialog where
 -- |Create a new dialog with the specified embedded interface and
 -- title.  Returns the dialog itself and the 'FocusGroup' to which its
 -- buttons were added, for use in your application.
-newDialog :: (Show a) => Widget a -> String -> IO (Dialog, Widget FocusGroup)
+newDialog :: (Show a) => Widget a -> T.Text -> IO (Dialog, Widget FocusGroup)
 newDialog body title = do
-  okB <- newButton "OK"
-  cancelB <- newButton "Cancel"
+  okB <- newButton $ T.pack "OK"
+  cancelB <- newButton $ T.pack "Cancel"
 
   buttonBox <- (return $ buttonWidget okB) <++> (return $ buttonWidget cancelB)
   setBoxSpacing buttonBox 4
