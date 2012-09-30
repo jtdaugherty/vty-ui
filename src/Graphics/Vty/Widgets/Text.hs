@@ -1,9 +1,8 @@
 {-# LANGUAGE TypeSynonymInstances, FlexibleInstances, BangPatterns #-}
--- |This module provides functionality for rendering 'String's as
+-- |This module provides functionality for rendering 'Text' as
 -- 'Widget's, including functionality to make structural and/or visual
--- changes at rendering time.  To get started, turn your ordinary
--- 'String' into a 'Widget' with 'plainText'; for more control, use
--- 'textWidget'.
+-- changes at rendering time.  To get started, use 'plainText'; for
+-- more control, use 'textWidget'.
 module Graphics.Vty.Widgets.Text
     ( FormattedText
     -- *Constructing Text Widgets
@@ -26,6 +25,7 @@ where
 
 import Control.Applicative
 import Data.Monoid
+import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Text.Trans.Tokenize
@@ -66,16 +66,16 @@ instance Show FormattedText where
                                         , " }"
                                         ]
 
--- |Construct a Widget directly from a String.  This is recommended if
--- you don't need to use a 'Formatter'.
-plainText :: String -> IO (Widget FormattedText)
+-- |Construct a Widget directly from a Text value.  This is
+-- recommended if you don't need to use a 'Formatter'.
+plainText :: T.Text -> IO (Widget FormattedText)
 plainText = textWidget nullFormatter
 
 -- |Construct a Widget directly from a list of strings and their
 -- attributes.
-plainTextWithAttrs :: [(String, Attr)] -> IO (Widget FormattedText)
+plainTextWithAttrs :: [(T.Text, Attr)] -> IO (Widget FormattedText)
 plainTextWithAttrs pairs = do
-  w <- textWidget nullFormatter ""
+  w <- textWidget nullFormatter $ T.pack ""
   setTextWithAttrs w pairs
   return w
 
@@ -92,7 +92,7 @@ wrap =
 -- |Construct a text widget formatted with the specified formatters
 -- and initial content.  The formatters will be applied in the order
 -- given here (and, depending on the formatter, order might matter).
-textWidget :: Formatter -> String -> IO (Widget FormattedText)
+textWidget :: Formatter -> T.Text -> IO (Widget FormattedText)
 textWidget format s = do
   let initSt = FormattedText { text = TS []
                              , formatter = format
@@ -130,7 +130,7 @@ setTextAppearFocused wRef val = updateWidgetState wRef $ \st ->
 
 -- |Set the text value of a 'FormattedText' widget.  The specified
 -- string will be 'tokenize'd.
-setText :: Widget FormattedText -> String -> IO ()
+setText :: Widget FormattedText -> T.Text -> IO ()
 setText wRef s = setTextWithAttrs wRef [(s, def_attr)]
 
 -- |Set the text value of a 'FormattedText' widget directly, in case
@@ -138,7 +138,7 @@ setText wRef s = setTextWithAttrs wRef [(s, def_attr)]
 -- attributes.  The specified strings will each be 'tokenize'd, and
 -- tokens resulting from each 'tokenize' operation will be given the
 -- specified attribute in the tuple.
-setTextWithAttrs :: Widget FormattedText -> [(String, Attr)] -> IO ()
+setTextWithAttrs :: Widget FormattedText -> [(T.Text, Attr)] -> IO ()
 setTextWithAttrs wRef pairs = do
   let streams = map (\(s, a) -> tokenize s a) pairs
       ts = concat $ map streamEntities streams
@@ -188,7 +188,7 @@ renderText t foc (Formatter format) sz ctx = do
       nullImg = string def_attr ""
 
       mkTokenImg :: Token Attr -> Image
-      mkTokenImg tok = string (finalAttr tok) (tokenStr tok)
+      mkTokenImg tok = string (finalAttr tok) (T.unpack $ tokenStr tok)
 
   return $ if region_height sz == 0
            then nullImg
