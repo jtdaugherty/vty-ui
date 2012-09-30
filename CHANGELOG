@@ -1,4 +1,11 @@
 
+1.5.1 -> 1.5.2
+--------------
+
+Bug fixes:
+ * Text edit widgets now properly report text change events when
+   killing to end-of-line (i.e. with C-k)
+
 1.5 -> 1.5.1
 ------------
 
