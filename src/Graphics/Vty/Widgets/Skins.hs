@@ -12,74 +12,76 @@ module Graphics.Vty.Widgets.Skins
     )
 where
 
+import qualified Data.Text as T
+
 -- Corners start from top left and go clockwise.  Intersections are:
 -- full, left, right, top, bottom.
-data Skin = Skin { skinCornerTL :: Char
-                 , skinCornerTR :: Char
-                 , skinCornerBR :: Char
-                 , skinCornerBL :: Char
-                 , skinIntersectionFull :: Char
-                 , skinIntersectionL :: Char
-                 , skinIntersectionR :: Char
-                 , skinIntersectionT :: Char
-                 , skinIntersectionB :: Char
-                 , skinHorizontal :: Char
-                 , skinVertical :: Char
+data Skin = Skin { skinCornerTL :: T.Text
+                 , skinCornerTR :: T.Text
+                 , skinCornerBR :: T.Text
+                 , skinCornerBL :: T.Text
+                 , skinIntersectionFull :: T.Text
+                 , skinIntersectionL :: T.Text
+                 , skinIntersectionR :: T.Text
+                 , skinIntersectionT :: T.Text
+                 , skinIntersectionB :: T.Text
+                 , skinHorizontal :: T.Text
+                 , skinVertical :: T.Text
                  }
 
 -- |An ASCII skin which will work in any terminal.
 asciiSkin :: Skin
-asciiSkin = Skin { skinCornerTL = '+'
-                 , skinCornerTR = '+'
-                 , skinCornerBR = '+'
-                 , skinCornerBL = '+'
-                 , skinIntersectionFull = '+'
-                 , skinIntersectionL = '+'
-                 , skinIntersectionR = '+'
-                 , skinIntersectionT = '+'
-                 , skinIntersectionB = '+'
-                 , skinHorizontal = '-'
-                 , skinVertical = '|'
+asciiSkin = Skin { skinCornerTL = T.pack "+"
+                 , skinCornerTR = T.pack "+"
+                 , skinCornerBR = T.pack "+"
+                 , skinCornerBL = T.pack "+"
+                 , skinIntersectionFull = T.pack "+"
+                 , skinIntersectionL = T.pack "+"
+                 , skinIntersectionR = T.pack "+"
+                 , skinIntersectionT = T.pack "+"
+                 , skinIntersectionB = T.pack "+"
+                 , skinHorizontal = T.pack "-"
+                 , skinVertical = T.pack "|"
                  }
 
 unicodeSkin :: Skin
-unicodeSkin = Skin { skinCornerTL = '┌'
-                   , skinCornerTR = '┐'
-                   , skinCornerBR = '┘'
-                   , skinCornerBL = '└'
-                   , skinIntersectionFull = '┼'
-                   , skinIntersectionL = '├'
-                   , skinIntersectionR = '┤'
-                   , skinIntersectionT = '┬'
-                   , skinIntersectionB = '┴'
-                   , skinHorizontal = '─'
-                   , skinVertical = '│'
+unicodeSkin = Skin { skinCornerTL = T.pack "┌"
+                   , skinCornerTR = T.pack "┐"
+                   , skinCornerBR = T.pack "┘"
+                   , skinCornerBL = T.pack "└"
+                   , skinIntersectionFull = T.pack "┼"
+                   , skinIntersectionL = T.pack "├"
+                   , skinIntersectionR = T.pack "┤"
+                   , skinIntersectionT = T.pack "┬"
+                   , skinIntersectionB = T.pack "┴"
+                   , skinHorizontal = T.pack "─"
+                   , skinVertical = T.pack "│"
                    }
 
 unicodeBoldSkin :: Skin
-unicodeBoldSkin = Skin { skinCornerTL = '┏'
-                       , skinCornerTR = '┓'
-                       , skinCornerBR = '┛'
-                       , skinCornerBL = '┗'
-                       , skinIntersectionFull = '╋'
-                       , skinIntersectionL = '┣'
-                       , skinIntersectionR = '┫'
-                       , skinIntersectionT = '┳'
-                       , skinIntersectionB = '┻'
-                       , skinHorizontal = '━'
-                       , skinVertical = '┃'
+unicodeBoldSkin = Skin { skinCornerTL = T.pack "┏"
+                       , skinCornerTR = T.pack "┓"
+                       , skinCornerBR = T.pack "┛"
+                       , skinCornerBL = T.pack "┗"
+                       , skinIntersectionFull = T.pack "╋"
+                       , skinIntersectionL = T.pack "┣"
+                       , skinIntersectionR = T.pack "┫"
+                       , skinIntersectionT = T.pack "┳"
+                       , skinIntersectionB = T.pack "┻"
+                       , skinHorizontal = T.pack "━"
+                       , skinVertical = T.pack "┃"
                        }
 
 unicodeRoundedSkin :: Skin
-unicodeRoundedSkin = Skin { skinCornerTL = '╭'
-                          , skinCornerTR = '╮'
-                          , skinCornerBR = '╯'
-                          , skinCornerBL = '╰'
-                          , skinIntersectionFull = '┼'
-                          , skinIntersectionL = '├'
-                          , skinIntersectionR = '┤'
-                          , skinIntersectionT = '┬'
-                          , skinIntersectionB = '┴'
-                          , skinHorizontal = '─'
-                          , skinVertical = '│'
+unicodeRoundedSkin = Skin { skinCornerTL = T.pack "╭"
+                          , skinCornerTR = T.pack "╮"
+                          , skinCornerBR = T.pack "╯"
+                          , skinCornerBL = T.pack "╰"
+                          , skinIntersectionFull = T.pack "┼"
+                          , skinIntersectionL = T.pack "├"
+                          , skinIntersectionR = T.pack "┤"
+                          , skinIntersectionT = T.pack "┬"
+                          , skinIntersectionB = T.pack "┴"
+                          , skinHorizontal = T.pack "─"
+                          , skinVertical = T.pack "│"
                           }
