@@ -38,13 +38,14 @@ where
 
 import Control.Applicative ((<$>))
 import Control.Monad
+import qualified Data.Text as T
 import Data.List
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
-data Edit = Edit { currentText :: [String]
+data Edit = Edit { currentText :: [T.Text]
                  , cursorRow :: Int
                  , cursorColumn :: Int
                  , displayStart :: Int
@@ -52,7 +53,7 @@ data Edit = Edit { currentText :: [String]
                  , topRow :: Int
                  , visibleRows :: Int
                  , activateHandlers :: Handlers (Widget Edit)
-                 , changeHandlers :: Handlers String
+                 , changeHandlers :: Handlers T.Text
                  , cursorMoveHandlers :: Handlers (Int, Int)
                  , lineLimit :: Maybe Int
                  }
@@ -76,7 +77,7 @@ editWidget' = do
   chs <- newHandlers
   cmhs <- newHandlers
 
-  let initSt = Edit { currentText = [""]
+  let initSt = Edit { currentText = [T.empty]
                     , cursorRow = 0
                     , cursorColumn = 0
                     , displayStart = 0
@@ -117,8 +118,8 @@ editWidget' = do
 
               st <- getState this
 
-              let truncated l = take (displayWidth st)
-                                (drop (displayStart st) l)
+              let truncated l = T.take (displayWidth st)
+                                (T.drop (displayStart st) l)
 
                   visibleLines = take (visibleRows st) $
                                  drop (topRow st) (currentText st)
@@ -135,12 +136,12 @@ editWidget' = do
                                 Just v -> min v totalAllowedLines
                                 Nothing -> totalAllowedLines
 
-                  emptyLines = replicate numEmptyLines ""
+                  emptyLines = replicate numEmptyLines T.empty
 
               isFocused <- focused <~ this
               let attr = if isFocused then focusAttr ctx else nAttr
-                  lineWidget s = string attr s
-                                 <|> char_fill attr ' ' (region_width size - (toEnum $ length s)) 1
+                  lineWidget s = string attr (T.unpack s)
+                                 <|> char_fill attr ' ' (region_width size - (toEnum $ T.length s)) 1
 
               return $ vert_cat $ lineWidget <$> (truncatedLines ++ emptyLines)
 
@@ -207,7 +208,7 @@ notifyCursorMoveHandlers wRef = do
 
 -- |Register handlers to be invoked when the edit widget's contents
 -- change.  Handlers will be passed the new contents.
-onChange :: Widget Edit -> (String -> IO ()) -> IO ()
+onChange :: Widget Edit -> (T.Text -> IO ()) -> IO ()
 onChange = addHandler (changeHandlers <~~)
 
 -- |Register handlers to be invoked when the edit widget's cursor
@@ -218,18 +219,18 @@ onCursorMove = addHandler (cursorMoveHandlers <~~)
 
 -- |Get the current contents of the edit widget.  This returns all of
 -- the lines of text in the widget, separated by newlines.
-getEditText :: Widget Edit -> IO String
-getEditText = (((intercalate "\n") . currentText) <~~)
+getEditText :: Widget Edit -> IO T.Text
+getEditText = (((T.intercalate (T.pack "\n")) . currentText) <~~)
 
 -- |Get the contents of the current line of the edit widget (the line
 -- on which the cursor is positioned).
-getEditCurrentLine :: Widget Edit -> IO String
+getEditCurrentLine :: Widget Edit -> IO T.Text
 getEditCurrentLine e = do
   ls <- currentText <~~ e
   curL <- cursorRow <~~ e
   return $ ls !! curL
 
-setEditCurrentLine :: Widget Edit -> String -> IO ()
+setEditCurrentLine :: Widget Edit -> T.Text -> IO ()
 setEditCurrentLine e s = do
   ls <- currentText <~~ e
   curL <- cursorRow <~~ e
@@ -241,20 +242,20 @@ setEditCurrentLine e s = do
 -- |Set the contents of the edit widget.  Newlines will be used to
 -- break up the text in multiline widgets.  If the edit widget has a
 -- line limit, only those lines within the limit will be set.
-setEditText :: Widget Edit -> String -> IO ()
+setEditText :: Widget Edit -> T.Text -> IO ()
 setEditText wRef str = do
   oldS <- currentText <~~ wRef
   lim <- lineLimit <~~ wRef
   s <- case lim of
     Nothing -> return str
-    Just l -> return $ intercalate "\n" $ take l $ lines str
-  updateWidgetState wRef $ \st -> st { currentText = if null s
-                                                     then [""]
-                                                     else lines s
+    Just l -> return $ T.intercalate (T.pack "\n") $ take l $ T.lines str
+  updateWidgetState wRef $ \st -> st { currentText = if T.null s
+                                                     then [T.empty]
+                                                     else T.lines s
                                      , cursorColumn = 0
                                      , cursorRow = 0
                                      }
-  when (oldS /= lines s) $ do
+  when (oldS /= T.lines s) $ do
     gotoBeginning wRef
     notifyChangeHandlers wRef
 
@@ -272,7 +273,7 @@ setEditCursorPosition wRef (newRow, newCol) = do
       -- Then, if the row is valid, is the column valid for that row?
       -- It's legal for the new position to be *after* the last
       -- character (i.e., in the case of go-to-end)
-      case newCol >= 0 && newCol <= (length (ls !! newRow)) of
+      case newCol >= 0 && newCol <= (T.length (ls !! newRow)) of
         False -> return ()
         True -> do
               (oldRow, oldCol) <- getEditCursorPosition wRef
@@ -359,8 +360,8 @@ insertLineAtPoint e = do
          curL <- getEditCurrentLine e
          curCol <- cursorColumn <~~ e
          curRow <- cursorRow <~~ e
-         let r1 = take curCol curL
-             r2 = drop curCol curL
+         let r1 = T.take curCol curL
+             r2 = T.drop curCol curL
          setEditCurrentLine e r1
          updateWidgetState e $ \st ->
              st { currentText = inject (curRow + 1) r2 (currentText st)
@@ -373,8 +374,8 @@ killToEOL this = do
   -- Preserve some state since setEditText changes it.
   curCol <- cursorColumn <~~ this
   curLine <- getEditCurrentLine this
-  case null curLine of
-    False -> setEditCurrentLine this $ take curCol curLine
+  case T.null curLine of
+    False -> setEditCurrentLine this $ T.take curCol curLine
     True -> do
       curRow <- cursorRow <~~ this
       numLines <- (length . currentText) <~~ this
@@ -403,10 +404,10 @@ deletePreviousChar this = do
           ls <- currentText <~~ this
           let prevLine = ls !! (curRow - 1)
           updateWidgetState this $ \st ->
-              st { currentText = repl (curRow - 1) (prevLine ++ curLine)
+              st { currentText = repl (curRow - 1) (T.concat [prevLine, curLine])
                                  $ remove curRow (currentText st)
                  }
-          setEditCursorPosition this (curRow - 1, length prevLine)
+          setEditCursorPosition this (curRow - 1, T.length prevLine)
           notifyChangeHandlers this
 
     False -> do
@@ -424,7 +425,7 @@ gotoEnd :: Widget Edit -> IO ()
 gotoEnd wRef = do
   curLine <- getEditCurrentLine wRef
   curRow <- cursorRow <~~ wRef
-  setEditCursorPosition wRef (curRow, length curLine)
+  setEditCursorPosition wRef (curRow, T.length curLine)
 
 moveCursorUp :: Widget Edit -> IO ()
 moveCursorUp wRef = do
@@ -434,9 +435,9 @@ moveCursorUp wRef = do
                else cursorRow st - 1
 
       prevLine = currentText st !! (cursorRow st - 1)
-      newCol = if cursorRow st == 0 || (cursorColumn st <= length prevLine)
+      newCol = if cursorRow st == 0 || (cursorColumn st <= T.length prevLine)
                then cursorColumn st
-               else length prevLine
+               else T.length prevLine
 
   setEditCursorPosition wRef (newRow, newCol)
 
@@ -450,9 +451,9 @@ moveCursorDown wRef = do
       nextLine = currentText st !! (cursorRow st + 1)
       newCol = if cursorRow st == (length $ currentText st) - 1
                then cursorColumn st
-               else if cursorColumn st <= length nextLine
+               else if cursorColumn st <= T.length nextLine
                     then cursorColumn st
-                    else length nextLine
+                    else T.length nextLine
 
   setEditCursorPosition wRef (newRow, newCol)
 
@@ -468,7 +469,7 @@ moveCursorLeft wRef = do
       newCol = if cursorColumn st == 0
                then if cursorRow st == 0
                     then 0
-                    else length prevLine
+                    else T.length prevLine
                else cursorColumn st - 1
   setEditCursorPosition wRef (newRow, newCol)
 
@@ -478,10 +479,10 @@ moveCursorRight wRef = do
   curL <- getEditCurrentLine wRef
   let newRow = if cursorRow st == (length $ currentText st) - 1
                then cursorRow st
-               else if cursorColumn st == length curL
+               else if cursorColumn st == T.length curL
                     then cursorRow st + 1
                     else cursorRow st
-      newCol = if cursorColumn st == length curL
+      newCol = if cursorColumn st == T.length curL
                then if cursorRow st == (length $ currentText st) - 1
                     then cursorColumn st
                     else 0
@@ -492,7 +493,10 @@ insertChar :: Widget Edit -> Char -> IO ()
 insertChar wRef ch = do
   curLine <- getEditCurrentLine wRef
   updateWidgetState wRef $ \st ->
-      let newLine = inject (cursorColumn st) ch curLine
+      let newLine = T.concat [ T.take (cursorColumn st) curLine
+                             , T.singleton ch
+                             , T.drop (cursorColumn st) curLine
+                             ]
           newViewStart =
               if cursorColumn st == displayStart st + displayWidth st - 1
               then displayStart st + 1
@@ -507,10 +511,12 @@ delCurrentChar :: Widget Edit -> IO ()
 delCurrentChar wRef = do
   st <- getState wRef
   curLine <- getEditCurrentLine wRef
-  case cursorColumn st < (length curLine) of
+  case cursorColumn st < (T.length curLine) of
     True ->
         do
-          let newLine = remove (cursorColumn st) curLine
+          let newLine = T.concat [ T.take (cursorColumn st) curLine
+                                 , T.drop (cursorColumn st + 1) curLine
+                                 ]
           updateWidgetState wRef $ \s -> s { currentText = repl (cursorRow st) newLine (currentText st) }
           notifyChangeHandlers wRef
     False ->
@@ -522,5 +528,5 @@ delCurrentChar wRef = do
           let nextLine = currentText st !! (cursorRow st + 1)
           updateWidgetState wRef $ \s ->
               s { currentText = remove (cursorRow s + 1) $
-                                repl (cursorRow st) (curLine ++ nextLine) (currentText s)
+                                repl (cursorRow st) (T.concat [curLine, nextLine]) (currentText s)
                 }
