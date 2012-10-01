@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, DeriveDataTypeable #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, DeriveDataTypeable,
+  OverloadedStrings #-}
 -- |This module provides ''check box'' widgets and ''radio button''
 -- widgets.  In addition, this module provides a generalized
 -- ''multi-state'' check box type which allows you to set multiple
@@ -46,6 +47,7 @@ import Control.Exception
 import Data.Typeable
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
+import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
@@ -130,6 +132,7 @@ data CheckBox a = CheckBox { leftBracketChar :: Char
                            , checkboxLabel :: T.Text
                            , checkboxChangeHandlers :: Handlers a
                            , checkboxFrozen :: Bool
+                           , innerTextWidget :: Widget FormattedText
                            }
 
 instance Show a => Show (CheckBox a) where
@@ -156,6 +159,7 @@ newMultiStateCheckbox :: (Eq a) =>
 newMultiStateCheckbox _ [] = throw EmptyCheckboxStates
 newMultiStateCheckbox label states = do
   cchs <- newHandlers
+  t <- plainText ""
   let initSt = CheckBox { checkboxLabel = label
                         , checkboxChangeHandlers = cchs
                         , leftBracketChar = '['
@@ -163,6 +167,7 @@ newMultiStateCheckbox label states = do
                         , checkboxStates = states
                         , currentState = fst $ states !! 0
                         , checkboxFrozen = False
+                        , innerTextWidget = t
                         }
 
   wRef <- newWidget initSt $ \w ->
@@ -174,18 +179,10 @@ newMultiStateCheckbox label states = do
         , keyEventHandler = radioKeyEvent
         , render_ =
             \this sz ctx -> do
-              f <- focused <~ this
               st <- getState this
+              tw <- innerTextWidget <~~ this
 
-              let attr = mergeAttrs [ overrideAttr ctx
-                                    , normalAttr ctx
-                                    ]
-
-                  fAttr = if f
-                          then focusAttr ctx
-                          else attr
-
-                  v = currentState st
+              let v = currentState st
                   ch = fromJust $ lookup v (checkboxStates st)
 
                   s = T.concat [ T.pack [ leftBracketChar st
@@ -196,9 +193,13 @@ newMultiStateCheckbox label states = do
                                , checkboxLabel st
                                ]
 
-              return $ string fAttr $ T.unpack $
-                     T.take (fromEnum $ region_width sz) s
+              setText tw s
+              render tw sz ctx
         }
+
+  wRef `relayFocusEvents` t
+  setTextAppearFocused t True
+
   return wRef
 
 modifyElem :: [a] -> Int -> (a -> a) -> [a]
