@@ -87,24 +87,29 @@ renderHBorder this s ctx = do
                          , attr
                          , normalAttr ctx
                          ]
-      noTitle = char_fill attr' (skinHorizontal $ skin ctx) (region_width s) 1
-  case T.null str of
-    True -> return noTitle
-    False -> do
-      let title = T.concat [ T.pack " "
-                           , str
-                           , T.pack " "
-                           ]
-      case (toEnum $ T.length title) > region_width s of
-        True -> return noTitle
-        False -> do
-                  let remaining = region_width s - (toEnum $ T.length title)
-                      side1 = remaining `div` 2
-                      side2 = if remaining `mod` 2 == 0 then side1 else side1 + 1
-                  return $ horiz_cat [ char_fill attr' (skinHorizontal $ skin ctx) side1 1
-                                     , string attr' $ T.unpack title
-                                     , char_fill attr' (skinHorizontal $ skin ctx) side2 1
-                                     ]
+      ch = skinHorizontal $ skin ctx
+      noTitle = T.pack $ replicate (fromEnum $ region_width s) ch
+
+  wStr <- case T.null str of
+            True -> return noTitle
+            False -> do
+              let title = T.concat [ T.pack " "
+                                   , str
+                                   , T.pack " "
+                                   ]
+              case (toEnum $ T.length title) > region_width s of
+                True -> return noTitle
+                False -> do
+                       let remaining = region_width s - (toEnum $ T.length title)
+                           side1 = fromEnum $ remaining `div` 2
+                           side2 = if remaining `mod` 2 == 0 then side1 else side1 + 1
+                       return $ T.concat [ T.pack $ replicate side1 ch
+                                         , title
+                                         , T.pack $ replicate side2 ch
+                                         ]
+
+  w <- plainTextWithAttrs [(wStr, attr')]
+  render w s ctx
 
 data VBorder = VBorder Attr
                deriving (Show)
