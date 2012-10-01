@@ -21,6 +21,8 @@ module Text.Trans.Tokenize
     , truncateLine
     , wrapStream
     , findLines
+    , takeMaxText
+    , takeMaxChars
 #ifdef TESTING
     , isWhitespace
     , partitions
@@ -33,6 +35,10 @@ import Data.List
     ( inits
     )
 import qualified Data.Text as T
+import Graphics.Vty.Image
+    ( safe_wcwidth
+    , safe_wcswidth
+    )
 
 -- |The type of text tokens.  These should consist of printable
 -- characters and NOT presentation characters (e.g., newlines).  Each
@@ -162,14 +168,14 @@ truncateLine width ts =
     -- If there are no passing cases (i.e., remaining is null), just
     -- return 'width' characters of the first token.
     if null remaining
-    then [first_tok { tokenStr = T.take width $ tokenStr first_tok }]
+    then [first_tok { tokenStr = takeMaxText width $ tokenStr first_tok }]
     else if length tokens == length ts
          then tokens
          else if T.null $ tokenStr lastToken
               then tokens
               else tokens ++ [lastToken]
     where
-      lengths = map (T.length . tokenStr) ts
+      lengths = map (fromEnum . safe_wcswidth . T.unpack . tokenStr) ts
       cases = reverse $ inits lengths
       remaining = dropWhile ((> width) . sum) cases
       tokens = take (length $ head remaining) ts
@@ -177,7 +183,7 @@ truncateLine width ts =
 
       first_tok = ts !! 0
       last_tok = ts !! (length tokens)
-      lastToken = last_tok { tokenStr = T.take (width - truncLength) $
+      lastToken = last_tok { tokenStr = takeMaxText (width - truncLength) $
                                         tokenStr last_tok
                            }
 
@@ -214,3 +220,15 @@ partitions f as = p : partitions f (drop (length p + 1) as)
 -- 'entityToken'.)
 findLines :: [TextStreamEntity a] -> [[TextStreamEntity a]]
 findLines = partitions (not . isNL)
+
+takeMaxChars :: Int -> [Char] -> [Char]
+takeMaxChars mx xs = f' 0 xs
+    where
+      f' _ [] = []
+      f' acc (c:cs) = let w = fromEnum $ safe_wcwidth c
+                      in if acc + w <= mx
+                         then c : f' (acc + w) cs
+                         else []
+
+takeMaxText :: Int -> T.Text -> T.Text
+takeMaxText mx xs = T.pack $ takeMaxChars mx $ T.unpack xs
