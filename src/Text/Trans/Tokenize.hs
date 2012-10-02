@@ -21,8 +21,6 @@ module Text.Trans.Tokenize
     , truncateLine
     , wrapStream
     , findLines
-    , takeMaxText
-    , takeMaxChars
 #ifdef TESTING
     , isWhitespace
     , partitions
@@ -35,10 +33,7 @@ import Data.List
     ( inits
     )
 import qualified Data.Text as T
-import Graphics.Vty.Image
-    ( safe_wcwidth
-    , safe_wcswidth
-    )
+import Graphics.Vty.Widgets.Util
 
 -- |The type of text tokens.  These should consist of printable
 -- characters and NOT presentation characters (e.g., newlines).  Each
@@ -156,7 +151,7 @@ tokenize s def = TS $ findEntities s
 
 -- |Given a list of tokens, truncate the list so that its underlying
 -- string representation does not exceed the specified column width.
-truncateLine :: Int -> [Token a] -> [Token a]
+truncateLine :: Phys -> [Token a] -> [Token a]
 truncateLine l _ | l < 0 = error $ "truncateLine cannot truncate at length = " ++ show l
 truncateLine _ [] = []
 truncateLine width ts =
@@ -175,7 +170,7 @@ truncateLine width ts =
               then tokens
               else tokens ++ [lastToken]
     where
-      lengths = map (fromEnum . safe_wcswidth . T.unpack . tokenStr) ts
+      lengths = map (sum . (chWidth <$>) . T.unpack . tokenStr) ts
       cases = reverse $ inits lengths
       remaining = dropWhile ((> width) . sum) cases
       tokens = take (length $ head remaining) ts
@@ -220,15 +215,3 @@ partitions f as = p : partitions f (drop (length p + 1) as)
 -- 'entityToken'.)
 findLines :: [TextStreamEntity a] -> [[TextStreamEntity a]]
 findLines = partitions (not . isNL)
-
-takeMaxChars :: Int -> [Char] -> [Char]
-takeMaxChars mx xs = f' 0 xs
-    where
-      f' _ [] = []
-      f' acc (c:cs) = let w = fromEnum $ safe_wcwidth c
-                      in if acc + w <= mx
-                         then c : f' (acc + w) cs
-                         else []
-
-takeMaxText :: Int -> T.Text -> T.Text
-takeMaxText mx xs = T.pack $ takeMaxChars mx $ T.unpack xs

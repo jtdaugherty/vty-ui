@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, GeneralizedNewtypeDeriving #-}
 module Graphics.Vty.Widgets.Util
     ( on
     , fgColor
@@ -13,11 +13,46 @@ module Graphics.Vty.Widgets.Util
     , remove
     , inject
     , repl
+    , takeMaxText
+    , takeMaxChars
+    , chWidth
+    , textWidth
+    , Phys(..)
     )
 where
 
+import Control.Applicative
 import Data.Word
+import qualified Data.Text as T
 import Graphics.Vty
+import Graphics.Vty.Image
+    ( safe_wcwidth
+    )
+
+-- A newtype to wrap physical screen coordinates, as opposed to
+-- character-logical coordinates.  Used when transforming cursor
+-- coordinates to screen coordinates and when computing the physical
+-- width of characters and strings.
+newtype Phys = Phys Int
+    deriving (Num, Eq, Show, Ord, Integral, Enum, Real)
+
+chWidth :: Char -> Phys
+chWidth = Phys . fromEnum . safe_wcwidth
+
+textWidth :: T.Text -> Phys
+textWidth = sum . (chWidth <$>) . T.unpack
+
+takeMaxChars :: Phys -> [Char] -> [Char]
+takeMaxChars mx xs = f' (Phys 0) xs
+    where
+      f' _ [] = []
+      f' acc (c:cs) = let w = chWidth c
+                      in if acc + w <= mx
+                         then c : f' (acc + w) cs
+                         else []
+
+takeMaxText :: Phys -> T.Text -> T.Text
+takeMaxText mx xs = T.pack $ takeMaxChars mx $ T.unpack xs
 
 -- |Infix attribute constructor.  Use: foregroundColor `on`
 -- backgroundColor.

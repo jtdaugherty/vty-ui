@@ -97,12 +97,12 @@ renderHBorder this s ctx = do
                                    , str
                                    , T.pack " "
                                    ]
-              case (toEnum $ T.length title) > region_width s of
+              case (textWidth title) > (Phys $ fromEnum $ region_width s) of
                 True -> return noTitle
                 False -> do
-                       let remaining = region_width s - (toEnum $ T.length title)
-                           side1 = fromEnum $ remaining `div` 2
-                           side2 = if remaining `mod` 2 == 0 then side1 else side1 + 1
+                       let remaining = (Phys $ fromEnum $ region_width s) - (textWidth title)
+                           Phys side1 = remaining `div` Phys 2
+                           side2 = if remaining `mod` Phys 2 == Phys 0 then side1 else side1 + 1
                        return $ T.concat [ T.pack $ replicate side1 ch
                                          , title
                                          , T.pack $ replicate side2 ch

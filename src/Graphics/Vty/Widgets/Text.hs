@@ -172,7 +172,7 @@ renderText t foc (Formatter format) sz ctx = do
       emptyLineLength = min (fromEnum $ region_width sz) maxLineLength
 
       ls = map truncLine $ map (map entityToken) $ findLines newText
-      truncLine = truncateLine (fromEnum $ region_width sz)
+      truncLine = truncateLine (Phys $ fromEnum $ region_width sz)
 
       -- When building images for empty lines, it's critical that we
       -- *don't* use the empty_image, because that will cause empty
