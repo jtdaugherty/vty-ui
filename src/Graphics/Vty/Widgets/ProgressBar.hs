@@ -98,7 +98,6 @@ renderProgressBar size ctx st = do
                        ]
   render (progTextWidget st) size ctx
 
-
 -- |Register a handler to be invoked when the progress bar's progress
 -- value changes.  The handler will be passed the new progress value.
 onProgressChange :: Widget ProgressBar -> (Int -> IO ()) -> IO ()
