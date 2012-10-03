@@ -11,9 +11,6 @@ import Graphics.Vty.Widgets.Util
 stringGen :: Gen String
 stringGen = listOf1 charGen
 
--- textGen :: Gen T.Text
--- textGen = T.pack <$> stringGen
-
 charGen :: Gen Char
 charGen = oneof [ arbitrary `suchThat` (\c -> isPrint c)
                 , pure '台'
