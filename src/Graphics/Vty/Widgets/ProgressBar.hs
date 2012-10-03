@@ -86,13 +86,17 @@ renderProgressBar size ctx st = do
           T.concat [ half
                    , s
                    , half
-                   , if T.length half * 2 < (fromEnum $ full_width + textWidth txt)
-                     then T.singleton ' '
-                     else T.empty
+                   , trailingSpc
                    ]
           where
             diff = fromEnum $ full_width - textWidth txt
             half = T.pack $ replicate (diff `div` 2) ' '
+            used_width = textWidth half * 2 + textWidth txt
+            trailingSpc =
+                if used_width < full_width
+                then T.singleton ' '
+                else T.empty
+
 
       (leftPart, _, _) = splitLine complete_width $ T.unpack full_str
       charCount = length leftPart
