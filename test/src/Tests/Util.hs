@@ -1,5 +1,6 @@
 module Tests.Util where
 
+import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Test.QuickCheck
@@ -14,8 +15,8 @@ count :: (a -> Bool) -> [a] -> Int
 count _ [] = 0
 count f (a:as) = count f as + if f a then 1 else 0
 
-numNewlines :: String -> Int
-numNewlines = count (== '\n')
+numNewlines :: T.Text -> Int
+numNewlines = count (== '\n') . T.unpack
 
 sizeTest :: (Show a) => IO (Widget a) -> PropertyM IO Bool
 sizeTest mkWidget =

@@ -130,7 +130,8 @@ Library
 
 Executable vty-ui-tests
   Build-Depends:
-    QuickCheck >= 2.4 && < 2.5
+    QuickCheck >= 2.4 && < 2.5,
+    random >= 1.0
 
   CPP-Options: -DTESTING
   GHC-Options: -Wall

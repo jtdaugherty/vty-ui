@@ -86,7 +86,7 @@ plainTextWithAttrs pairs = do
 wrap :: Formatter
 wrap =
     Formatter $ \sz ts -> do
-      let width = fromEnum $ region_width sz
+      let width = Phys $ fromEnum $ region_width sz
       return $ wrapStream width ts
 
 -- |Construct a text widget formatted with the specified formatters

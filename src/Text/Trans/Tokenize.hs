@@ -184,24 +184,26 @@ truncateLine width ts =
 
 -- |Given a text stream and a wrapping width, return a new
 -- 'TextStream' with newlines inserted in appropriate places to wrap
--- the text at the specified column.  This function results in text
--- wrapped without leading or trailing whitespace on wrapped lines,
--- although it preserves leading whitespace in the text which was not
--- the cause of the wrapping transformation.
-wrapStream :: (Eq a) => Int -> TextStream a -> TextStream a
+-- the text at the specified column (not character position).
+--
+-- This function results in text wrapped without leading or trailing
+-- whitespace on wrapped lines, although it preserves leading
+-- whitespace in the text which was not the cause of the wrapping
+-- transformation.
+wrapStream :: (Eq a) => Phys -> TextStream a -> TextStream a
 wrapStream width (TS stream) = TS $ reverse $ dropWhile (== NL) $ reverse $ wrapAll' 0 stream
     where
-      wrapAll' :: Int -> [TextStreamEntity a] -> [TextStreamEntity a]
+      wrapAll' :: Phys -> [TextStreamEntity a] -> [TextStreamEntity a]
       wrapAll' _ [] = []
       wrapAll' _ (NL:rest) = NL : wrapAll' 0 rest
       wrapAll' accum (T t:rest) =
-          if (T.length $ tokenStr t) + accum > width
+          if (textWidth $ tokenStr t) + accum > width
           then if isWhitespace t
                then [NL] ++ wrapAll' 0 (dropWhile isWsEnt rest)
-               else if accum == 0 && ((T.length $ tokenStr t) >= width)
+               else if accum == 0 && ((textWidth $ tokenStr t) >= width)
                     then [T t, NL] ++ wrapAll' 0 (dropWhile isWsEnt rest)
-                    else [NL, T t] ++ wrapAll' (T.length $ tokenStr t) rest
-          else T t : wrapAll' (accum + (T.length $ tokenStr t)) rest
+                    else [NL, T t] ++ wrapAll' (textWidth $ tokenStr t) rest
+          else T t : wrapAll' (accum + (textWidth $ tokenStr t)) rest
 
 partitions :: (a -> Bool) -> [a] -> [[a]]
 partitions _ [] = []

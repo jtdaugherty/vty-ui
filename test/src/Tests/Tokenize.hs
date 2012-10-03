@@ -1,40 +1,65 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Tests.Tokenize where
 
+import System.Random
+import Control.Applicative
 import Data.Char ( isPrint )
 import Test.QuickCheck
 
 import Text.Trans.Tokenize
+import Graphics.Vty.Widgets.Util
+import qualified Data.Text as T
+
+instance Random Phys where
+    random g =
+        let (val, g') = random g
+        in (Phys val, g')
+
+    randomR (Phys a, Phys b) g =
+        let (val, g') = randomR (a, b) g
+        in (Phys val, g')
 
 lineGen :: Gen [Token ()]
 lineGen = listOf1 $ oneof [wsgen, strgen]
     where
       strgen = do
         s <- stringGen
-        return $ S s ()
+        return $ S (T.pack s) ()
 
       wsgen = do
         s <- listOf1 $ elements " \t"
-        return $ WS s ()
+        return $ WS (T.pack s) ()
 
 stringGen :: Gen String
 stringGen = listOf1 charGen
 
+textGen :: Gen T.Text
+textGen = T.pack <$> stringGen
+
 charGen :: Gen Char
-charGen = arbitrary `suchThat` (\c -> isPrint c)
+charGen = oneof [ arbitrary `suchThat` (\c -> isPrint c)
+                , pure '台'
+                ]
+
+lineLength :: [Token a] -> Phys
+lineLength = sum . (textWidth <$>) . (tokenStr <$>)
 
 tests :: [Property]
-tests = [ label "tokenize and serialize work" $ property $ forAll stringGen $
+tests = [ label "tokenize and serialize work" $
+                property $ forAll textGen $
                     \s -> (serialize $ tokenize s ()) == s
 
-        , label "truncateLine leaves short lines unchanged" $ property $ forAll lineGen $
-                    \ts -> ts == truncateLine (length $ serialize (TS (map T ts))) ts
+        , label "truncateLine leaves short lines unchanged" $
+                property $ forAll lineGen $
+                    \ts -> ts == truncateLine (lineLength ts) ts
 
         -- Bound the truncation width at twice the size of the input
         -- since huge cases are silly.
-        , label "truncateLine truncates long lines" $ property $ forAll lineGen $
-                    \ts -> forAll (choose (0, 2 * (length $ serialize (TS (map T ts))))) $
-                           \width -> length (serialize $ (TS (map T $ truncateLine width ts))) <= width
+        , label "truncateLine truncates long lines" $
+                property $ forAll lineGen $
+                    \ts -> forAll (choose (0, 2 * (lineLength ts))) $
+                           \width -> (lineLength $ truncateLine width ts) <= width
 
         , label "wrapStream does the right thing with whitespace" $ property $
                 and [ wrapStream 5 (TS [T (S "foo" ()), T (WS " " ()), T (S "bar" ())]) ==
@@ -90,8 +115,9 @@ tests = [ label "tokenize and serialize work" $ property $ forAll stringGen $
         -- be broken up.
         , label "wrapLine wraps long lines when possible" $
                 property $ forAll lineGen $
-                    \ts -> forAll (choose ((length $ tokenStr $ ts !! 0), (length $ serialize (TS $ map T ts)) - 1)) $
-                           \width -> let ls = findLines new
-                                         TS new = wrapStream width $ TS $ map T ts
-                                     in all (\l -> (length (serialize $ TS l)) <= width || (length l == 1)) ls
+                    \ts -> forAll (choose ((textWidth $ tokenStr $ ts !! 0), (lineLength ts - Phys 1))) $
+                           \width -> let TS new = wrapStream width $ TS $ T <$> ts
+                                         ls = findLines new
+                                         check l = (lineLength $ entityToken <$> l) <= width || (length l == 1)
+                                     in all check ls
         ]
