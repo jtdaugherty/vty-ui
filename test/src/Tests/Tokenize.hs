@@ -32,8 +32,16 @@ charGen = oneof [ arbitrary `suchThat` (\c -> isPrint c)
                 , pure '台'
                 ]
 
+splitLineLength :: Property
+splitLineLength =
+    property $ forAll stringGen $ \s ->
+        forAll (choose (Phys 0, strWidth s + Phys 1)) $ \width ->
+            let (l, _, _) = splitLine width s
+            in strWidth l <= width
+
 tests :: [Property]
-tests = [ label "tokenize and serialize work" $
+tests = [ label "splitLine guarantees the left string length" splitLineLength
+        , label "tokenize and serialize work" $
                 property $ forAll textGen $
                     \s -> (serialize $ tokenize s ()) == s
 

@@ -21,6 +21,8 @@ import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Alignment
+import Graphics.Vty.Widgets.Util
+import Text.Trans.Tokenize
 
 data ProgressBar = ProgressBar { progressBarAmount :: Int
                                , onChangeHandlers :: Handlers Int
@@ -61,30 +63,33 @@ renderProgressBar size ctx st = do
       txt = progressBarText st
       al = progressBarTextAlignment st
 
-      complete_width = fromEnum $ (toRational prog / toRational (100.0 :: Double)) *
+      complete_width = Phys $ fromEnum $ (toRational prog / toRational (100.0 :: Double)) *
                        (toRational $ fromEnum $ region_width size)
 
-      full_width = fromEnum $ region_width size
-      full_str = T.take full_width $ mkStr txt al
+      full_width = Phys $ fromEnum $ region_width size
+      full_str = truncateText full_width $ mkStr txt al
 
       mkStr s AlignLeft = T.concat [ s
-                                   , T.pack $ replicate (full_width - T.length txt) ' '
+                                   , T.pack $ replicate (fromEnum $ full_width - textWidth txt) ' '
                                    ]
-      mkStr s AlignRight = T.concat [ T.pack $ replicate (full_width - T.length txt) ' '
+      mkStr s AlignRight = T.concat [ T.pack $ replicate (fromEnum $ full_width - textWidth txt) ' '
                                     , s
                                     ]
       mkStr s AlignCenter = T.concat [ half
                                      , s
                                      , half
-                                     , if T.length half * 2 < (full_width + T.length txt)
+                                     , if T.length half * 2 < (fromEnum $ full_width + textWidth txt)
                                        then T.singleton ' '
                                        else T.empty
                                      ]
           where
-            half = T.pack $ replicate ((full_width - T.length txt) `div` 2) ' '
+            half = T.pack $ replicate ((fromEnum $ full_width - textWidth txt) `div` 2) ' '
 
-      (complete_str, incomplete_str) = ( T.take complete_width full_str
-                                       , T.drop complete_width full_str
+      (leftPart, _, _) = splitLine complete_width $ T.unpack full_str
+      charCount = length leftPart
+
+      (complete_str, incomplete_str) = ( T.take charCount full_str
+                                       , T.drop charCount full_str
                                        )
 
   setTextWithAttrs (progTextWidget st)

@@ -34,7 +34,6 @@ module Graphics.Vty.Widgets.Edit
     , onChange
     , onCursorMove
 #ifdef TESTING
-    , splitLine
     , cropLine
     , indicatorChar
 #endif
@@ -44,11 +43,11 @@ where
 import Control.Applicative ((<$>))
 import Control.Monad
 import qualified Data.Text as T
-import Data.List (inits)
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
+import Text.Trans.Tokenize (splitLine)
 
 data Edit = Edit { currentText :: [T.Text]
                  , cursorRow :: Int
@@ -164,49 +163,18 @@ toPhysical col line = sum $ chWidth <$> take col line
 indicatorChar :: Char
 indicatorChar = '$'
 
-splitLine :: Phys -> String -> (String, String, Bool)
-splitLine pos line = (l, r, extra)
-    where
-      widths = chWidth <$> line
-      -- ^The list of character widths for the line
-
-      cases = inits widths
-      -- ^Increasingly longer prefix sublists of widths
-
-      valid = takeWhile ((<= pos) . sum) cases
-      -- ^The cases which satisfy the length requirement
-
-      chosen = if length valid > 0
-               then last valid
-               else []
-      -- ^The chosen case: the character width list for the characters
-      -- to the left of the split.
-
-      nextCharLen = if sum chosen < pos && length chosen < length line
-                    then chWidth $ line !! (length chosen)
-                    else Phys 0
-      -- ^If the left half of the split didn't "use" all the available
-      -- space, record the length of the next character...
-
-      extra = sum chosen + nextCharLen > pos
-      -- ^... and if the next character would exceed the split
-      -- position, set a flag to indicate that we want to add
-      -- indicators to both sides of the split.
-
-      (leftEnd, rightStart) = (length chosen, length chosen +
-                               (if extra then 1 else 0))
-
-      leftPart = take leftEnd line
-      rightPart = drop rightStart line
-
-      l = leftPart ++ (if extra then [indicatorChar] else "")
-      r = (if extra then [indicatorChar] else "") ++ rightPart
-
 cropLine :: Phys -> Phys -> [Char] -> ([Char], Bool, Bool)
 cropLine leftMargin lineLength line = (s, leftInd, rightInd)
     where
-      (s, _, rightInd) = splitLine lineLength s'
-      (_, s', leftInd) = splitLine leftMargin line
+      (s, _, rightInd) = sp lineLength s'
+      (_, s', leftInd) = sp leftMargin line
+
+      sp pos str = (l, r, extra)
+          where
+            (l', r', extra) = splitLine pos str
+            l = l' ++ (if extra then [indicatorChar] else "")
+            r = (if extra then [indicatorChar] else "") ++ r'
+
 
 -- |Construct a text widget for editing a single line of text.
 -- Single-line edit widgets will send activation events when the user

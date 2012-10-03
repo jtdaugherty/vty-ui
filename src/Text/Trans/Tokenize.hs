@@ -19,8 +19,10 @@ module Text.Trans.Tokenize
 
     -- * Manipulation
     , truncateLine
+    , truncateText
     , wrapStream
     , findLines
+    , splitLine
 #ifdef TESTING
     , isWhitespace
     , partitions
@@ -149,6 +151,13 @@ tokenize s def = TS $ findEntities s
             nextWs = T.takeWhile isWs str
             nextStr = T.takeWhile (\ch -> not $ ch `elem` ('\n':wsChars)) str
 
+-- |Same as 'truncateLine' but for 'Text' values.
+truncateText :: Phys -> T.Text -> T.Text
+truncateText width t =
+    let TS ts = tokenize t ()
+        tokens = entityToken <$> ts
+    in T.concat $ tokenStr <$> truncateLine width tokens
+
 -- |Given a list of tokens, truncate the list so that its underlying
 -- string representation does not exceed the specified column width.
 truncateLine :: Phys -> [Token a] -> [Token a]
@@ -217,3 +226,43 @@ partitions f as = p : partitions f (drop (length p + 1) as)
 -- 'entityToken'.)
 findLines :: [TextStreamEntity a] -> [[TextStreamEntity a]]
 findLines = partitions (not . isNL)
+
+-- |Split a line at a physical position.  Considers physical character
+-- width.  Returns (left, right, did_slice) where did_slice indicates
+-- whether the line was split in the "middle" of a wide character.  If
+-- it was, then the wide character is absent in both fragments of the
+-- split.
+splitLine :: Phys -> String -> (String, String, Bool)
+splitLine pos line = (l, r, extra)
+    where
+      widths = chWidth <$> line
+      -- ^The list of character widths for the line
+
+      cases = inits widths
+      -- ^Increasingly longer prefix sublists of widths
+
+      valid = takeWhile ((<= pos) . sum) cases
+      -- ^The cases which satisfy the length requirement
+
+      chosen = if length valid > 0
+               then last valid
+               else []
+      -- ^The chosen case: the character width list for the characters
+      -- to the left of the split.
+
+      nextCharLen = if sum chosen < pos && length chosen < length line
+                    then chWidth $ line !! (length chosen)
+                    else Phys 0
+      -- ^If the left half of the split didn't "use" all the available
+      -- space, record the length of the next character...
+
+      extra = sum chosen + nextCharLen > pos
+      -- ^... and if the next character would exceed the split
+      -- position, set a flag to indicate that we want to add
+      -- indicators to both sides of the split.
+
+      (leftEnd, rightStart) = (length chosen, length chosen +
+                               (if extra then 1 else 0))
+
+      l = take leftEnd line
+      r = drop rightStart line
