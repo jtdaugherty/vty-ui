@@ -63,27 +63,36 @@ renderProgressBar size ctx st = do
       txt = progressBarText st
       al = progressBarTextAlignment st
 
-      complete_width = Phys $ fromEnum $ (toRational prog / toRational (100.0 :: Double)) *
-                       (toRational $ fromEnum $ region_width size)
+      complete_width =
+          Phys $ fromEnum $ (toRational prog / toRational (100.0 :: Double)) *
+                   (toRational $ fromEnum $ region_width size)
 
       full_width = Phys $ fromEnum $ region_width size
       full_str = truncateText full_width $ mkStr txt al
 
-      mkStr s AlignLeft = T.concat [ s
-                                   , T.pack $ replicate (fromEnum $ full_width - textWidth txt) ' '
-                                   ]
-      mkStr s AlignRight = T.concat [ T.pack $ replicate (fromEnum $ full_width - textWidth txt) ' '
-                                    , s
-                                    ]
-      mkStr s AlignCenter = T.concat [ half
-                                     , s
-                                     , half
-                                     , if T.length half * 2 < (fromEnum $ full_width + textWidth txt)
-                                       then T.singleton ' '
-                                       else T.empty
-                                     ]
+      mkStr s AlignLeft =
+          let diff = fromEnum $ full_width - textWidth txt
+          in T.concat [ s
+                      , T.pack $ replicate diff ' '
+                      ]
+
+      mkStr s AlignRight =
+          let diff = fromEnum $ full_width - textWidth txt
+          in T.concat [ T.pack $ replicate diff ' '
+                      , s
+                      ]
+
+      mkStr s AlignCenter =
+          T.concat [ half
+                   , s
+                   , half
+                   , if T.length half * 2 < (fromEnum $ full_width + textWidth txt)
+                     then T.singleton ' '
+                     else T.empty
+                   ]
           where
-            half = T.pack $ replicate ((fromEnum $ full_width - textWidth txt) `div` 2) ' '
+            diff = fromEnum $ full_width - textWidth txt
+            half = T.pack $ replicate (diff `div` 2) ' '
 
       (leftPart, _, _) = splitLine complete_width $ T.unpack full_str
       charCount = length leftPart
