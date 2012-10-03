@@ -147,6 +147,7 @@ Executable vty-ui-tests
   Other-Modules:
         Tests.Instances
         Tests.Util
+        Tests.Edit
         Tests.FormattedText
         Tests.Tokenize
 

@@ -2,23 +2,13 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Tests.Tokenize where
 
-import System.Random
 import Control.Applicative
 import Data.Char ( isPrint )
 import Test.QuickCheck
-
+import Tests.Util
 import Text.Trans.Tokenize
 import Graphics.Vty.Widgets.Util
 import qualified Data.Text as T
-
-instance Random Phys where
-    random g =
-        let (val, g') = random g
-        in (Phys val, g')
-
-    randomR (Phys a, Phys b) g =
-        let (val, g') = randomR (a, b) g
-        in (Phys val, g')
 
 lineGen :: Gen [Token ()]
 lineGen = listOf1 $ oneof [wsgen, strgen]
@@ -41,9 +31,6 @@ charGen :: Gen Char
 charGen = oneof [ arbitrary `suchThat` (\c -> isPrint c)
                 , pure '台'
                 ]
-
-lineLength :: [Token a] -> Phys
-lineLength = sum . (textWidth <$>) . (tokenStr <$>)
 
 tests :: [Property]
 tests = [ label "tokenize and serialize work" $

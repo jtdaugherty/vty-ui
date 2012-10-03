@@ -16,6 +16,7 @@ module Graphics.Vty.Widgets.Util
     , takeMaxText
     , takeMaxChars
     , chWidth
+    , strWidth
     , textWidth
     , Phys(..)
     )
@@ -40,7 +41,10 @@ chWidth :: Char -> Phys
 chWidth = Phys . fromEnum . safe_wcwidth
 
 textWidth :: T.Text -> Phys
-textWidth = sum . (chWidth <$>) . T.unpack
+textWidth = strWidth . T.unpack
+
+strWidth :: String -> Phys
+strWidth = sum . (chWidth <$>)
 
 takeMaxChars :: Phys -> [Char] -> [Char]
 takeMaxChars mx xs = f' (Phys 0) xs

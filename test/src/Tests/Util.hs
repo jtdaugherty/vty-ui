@@ -1,8 +1,11 @@
 module Tests.Util where
 
+import Control.Applicative
 import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
+import Graphics.Vty.Widgets.Util
+import Text.Trans.Tokenize
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 import Tests.Instances ()
@@ -27,3 +30,6 @@ sizeTest mkWidget =
           return $ image_height img == 0 && image_width img == 0 else
           return $ image_width img <= region_width sz &&
                  image_height img <= region_height sz
+
+lineLength :: [Token a] -> Phys
+lineLength = sum . (textWidth <$>) . (tokenStr <$>)

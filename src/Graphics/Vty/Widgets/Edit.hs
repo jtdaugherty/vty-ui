@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, CPP #-}
 -- |This module provides a text-editing widget.  Edit widgets can
 -- operate in single- and multi-line modes.
 --
@@ -33,6 +33,11 @@ module Graphics.Vty.Widgets.Edit
     , onActivate
     , onChange
     , onCursorMove
+#ifdef TESTING
+    , splitLine
+    , cropLine
+    , indicatorChar
+#endif
     )
 where
 
@@ -156,8 +161,8 @@ editWidget' = do
 toPhysical :: Int -> [Char] -> Phys
 toPhysical col line = sum $ chWidth <$> take col line
 
-indCh :: Char
-indCh = '$'
+indicatorChar :: Char
+indicatorChar = '$'
 
 splitLine :: Phys -> String -> (String, String, Bool)
 splitLine pos line = (l, r, extra)
@@ -194,8 +199,8 @@ splitLine pos line = (l, r, extra)
       leftPart = take leftEnd line
       rightPart = drop rightStart line
 
-      l = leftPart ++ (if extra then [indCh] else "")
-      r = (if extra then [indCh] else "") ++ rightPart
+      l = leftPart ++ (if extra then [indicatorChar] else "")
+      r = (if extra then [indicatorChar] else "") ++ rightPart
 
 cropLine :: Phys -> Phys -> [Char] -> ([Char], Bool, Bool)
 cropLine leftMargin lineLength line = (s, leftInd, rightInd)
