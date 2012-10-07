@@ -20,6 +20,7 @@ data ClipRect =
              , clipWidth :: Phys
              , clipHeight :: Phys
              }
+    deriving (Eq, Show)
 
 -- First, 1D clipping.  Returns the clipped data, plus bools
 -- indicating whether data elements were sliced on either end.  The
