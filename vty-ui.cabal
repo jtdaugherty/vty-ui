@@ -106,6 +106,7 @@ Library
           Graphics.Vty.Widgets.Alignment
           Graphics.Vty.Widgets.Text
           Graphics.Vty.Widgets.TextClip
+          Graphics.Vty.Widgets.TextZipper
           Graphics.Vty.Widgets.Core
           Graphics.Vty.Widgets.Box
           Graphics.Vty.Widgets.List

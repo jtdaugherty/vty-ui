@@ -26,10 +26,10 @@ module Graphics.Vty.Widgets.Edit
     , getEditText
     , getEditCurrentLine
     , setEditText
-    , setEditCursorPosition
     , getEditCursorPosition
     , setEditLineLimit
     , getEditLineLimit
+    , applyEdit
     , onActivate
     , onChange
     , onCursorMove
@@ -48,10 +48,9 @@ import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.TextClip
+import qualified Graphics.Vty.Widgets.TextZipper as Z
 
-data Edit = Edit { currentText :: [T.Text]
-                 , cursorRow :: Int
-                 , cursorColumn :: Int
+data Edit = Edit { contents :: Z.TextZipper T.Text
                  , clipRect :: ClipRect
                  , activateHandlers :: Handlers (Widget Edit)
                  , changeHandlers :: Handlers T.Text
@@ -61,9 +60,7 @@ data Edit = Edit { currentText :: [T.Text]
 
 instance Show Edit where
     show e = concat [ "Edit { "
-                    , "currentText = ", show $ currentText e
-                    , ", cursorColumn = ", show $ cursorColumn e
-                    , ", cursorRow = ", show $ cursorRow e
+                    , "contents = ", show $ contents e
                     , ", lineLimit = ", show $ lineLimit e
                     , ", clipRect = ", show $ clipRect e
                     , " }"
@@ -75,9 +72,7 @@ editWidget' = do
   chs <- newHandlers
   cmhs <- newHandlers
 
-  let initSt = Edit { currentText = [T.empty]
-                    , cursorRow = 0
-                    , cursorColumn = 0
+  let initSt = Edit { contents = Z.textZipper []
                     , clipRect = ClipRect { clipLeft = 0
                                           , clipWidth = 0
                                           , clipTop = 0
@@ -103,10 +98,11 @@ editWidget' = do
               f <- focused <~ this
               pos <- getCurrentPosition this
 
-              let Phys offset = physCursorCol st - clipLeft (clipRect st)
+              let (cursorRow, _) = Z.cursorPosition (contents st)
+                  Phys offset = physCursorCol st - clipLeft (clipRect st)
                   newPos = pos
                            `withWidth` (toEnum ((fromEnum $ region_width pos) + offset))
-                           `plusHeight` (toEnum ((cursorRow st) - (fromEnum $ clipTop $ clipRect st)))
+                           `plusHeight` (toEnum (cursorRow - (fromEnum $ clipTop $ clipRect st)))
 
               return $ if f then Just newPos else Nothing
 
@@ -120,7 +116,7 @@ editWidget' = do
               let sliced True = [indicatorChar]
                   sliced False = ""
 
-                  truncatedLines1 = clip2d (clipRect st) (currentText st)
+                  truncatedLines1 = clip2d (clipRect st) (Z.getText $ contents st)
                   truncatedLines = [ sliced ls ++ (T.unpack r) ++ sliced rs
                                      | (r, ls, rs) <- truncatedLines1 ]
 
@@ -194,18 +190,20 @@ resize e (newHeight, newWidth) = do
       let newRect = (clipRect st) { clipHeight = newHeight
                                   , clipWidth = newWidth
                                   }
-          adjusted = updateRect (Phys $ cursorRow st, physCursorCol st) newRect
+          (cursorRow, _) = Z.cursorPosition $ contents st
+          adjusted = updateRect (Phys cursorRow, physCursorCol st) newRect
       in st { clipRect = adjusted }
 
   updateWidgetState e $ \s ->
       let r = clipRect s
-          curLine = T.unpack $ (currentText s) !! (cursorRow s)
+          (_, cursorColumn) = Z.cursorPosition $ contents s
+          curLine = T.unpack $ Z.currentLine $ contents s
           (_, _, ri) = clip1d (clipLeft r) (clipWidth r) (T.pack curLine)
-          newCharLen = if cursorColumn s >= 0 && cursorColumn s < length curLine
-                       then chWidth $ curLine !! cursorColumn s
+          newCharLen = if cursorColumn >= 0 && cursorColumn < length curLine
+                       then chWidth $ curLine !! cursorColumn
                        else Phys 1
 
-          newPhysCol = toPhysical (cursorColumn s) curLine
+          newPhysCol = toPhysical cursorColumn curLine
           extra = if ri && newPhysCol >= ((clipLeft r) + (clipWidth r) - Phys 1)
                   then newCharLen - 1
                   else 0
@@ -249,79 +247,29 @@ onCursorMove = addHandler (cursorMoveHandlers <~~)
 -- |Get the current contents of the edit widget.  This returns all of
 -- the lines of text in the widget, separated by newlines.
 getEditText :: Widget Edit -> IO T.Text
-getEditText = (((T.intercalate (T.pack "\n")) . currentText) <~~)
+getEditText = (((T.intercalate (T.pack "\n")) . Z.getText . contents) <~~)
 
 -- |Get the contents of the current line of the edit widget (the line
 -- on which the cursor is positioned).
 getEditCurrentLine :: Widget Edit -> IO T.Text
-getEditCurrentLine e = do
-  ls <- currentText <~~ e
-  curL <- cursorRow <~~ e
-  return $ ls !! curL
-
-setEditCurrentLine :: Widget Edit -> T.Text -> IO ()
-setEditCurrentLine e s = do
-  ls <- currentText <~~ e
-  curL <- cursorRow <~~ e
-
-  updateWidgetState e $ \st ->
-      st { currentText = repl curL s ls
-         }
+getEditCurrentLine = ((Z.currentLine . contents) <~~)
 
 -- |Set the contents of the edit widget.  Newlines will be used to
 -- break up the text in multiline widgets.  If the edit widget has a
 -- line limit, only those lines within the limit will be set.
 setEditText :: Widget Edit -> T.Text -> IO ()
 setEditText wRef str = do
-  oldS <- currentText <~~ wRef
   lim <- lineLimit <~~ wRef
-  s <- case lim of
-    Nothing -> return str
-    Just l -> return $ T.intercalate (T.pack "\n") $ take l $ T.lines str
-  updateWidgetState wRef $ \st -> st { currentText = if T.null s
-                                                     then [T.empty]
-                                                     else T.lines s
-                                     , cursorColumn = 0
-                                     , cursorRow = 0
+  let ls = case lim of
+             Nothing -> T.lines str
+             Just l -> take l $ T.lines str
+  updateWidgetState wRef $ \st -> st { contents = Z.textZipper ls
                                      }
-  when (oldS /= T.lines s) $ do
-    gotoBeginning wRef
-    notifyChangeHandlers wRef
-
--- |Set the current edit widget cursor position.  The tuple is (row,
--- column) with each starting at zero.  Invalid cursor positions will
--- be ignored.
-setEditCursorPosition :: Widget Edit -> (Int, Int) -> IO ()
-setEditCursorPosition wRef (newRow, newCol) = do
-  ls <- currentText <~~ wRef
-
-  -- First, check that the row is valid
-  case newRow >= 0 && newRow < (length ls) of
-    False -> return ()
-    True -> do
-      -- Then, if the row is valid, is the column valid for that row?
-      -- It's legal for the new position to be *after* the last
-      -- character (i.e., in the case of go-to-end)
-      case newCol >= 0 && newCol <= (T.length (ls !! newRow)) of
-        False -> return ()
-        True -> do
-              (oldRow, oldCol) <- getEditCursorPosition wRef
-              when ((newRow, newCol) /= (oldRow, oldCol)) $
-                   do
-                     updateWidgetState wRef $ \s ->
-                         s { cursorRow = newRow
-                           , cursorColumn = newCol
-                           , clipRect = updateRect (Phys $ cursorRow s, physCursorCol s) (clipRect s)
-                           }
-
-                     notifyCursorMoveHandlers wRef
+  notifyChangeHandlers wRef
 
 -- |Get the edit widget's current cursor position (row, column).
 getEditCursorPosition :: Widget Edit -> IO (Int, Int)
-getEditCursorPosition e = do
-  r <- cursorRow <~~ e
-  c <- cursorColumn <~~ e
-  return (r, c)
+getEditCursorPosition = ((Z.cursorPosition . contents) <~~)
 
 -- |Compute the physical cursor position (column) for the cursor in a
 -- given edit widget state.  The physical position is relative to the
@@ -329,211 +277,50 @@ getEditCursorPosition e = do
 -- displayStart and related state).
 physCursorCol :: Edit -> Phys
 physCursorCol s =
-    let curLine = T.unpack $ (currentText s) !! (cursorRow s)
-    in toPhysical (cursorColumn s) curLine
+    let curLine = T.unpack $ Z.currentLine $ contents s
+        (_, cursorColumn) = Z.cursorPosition $ contents s
+    in toPhysical cursorColumn curLine
+
+applyEdit :: Widget Edit
+          -> (Z.TextZipper T.Text -> Z.TextZipper T.Text)
+          -> IO ()
+applyEdit this f = do
+  oldC <- contents <~~ this
+  updateWidgetState this $ \s ->
+      let newSt = s { contents = f (contents s) }
+      in case lineLimit s of
+           Nothing -> newSt
+           Just l -> if length (Z.getText $ contents newSt) > l
+                     then s
+                     else newSt
+
+  newC <- contents <~~ this
+
+  when (Z.getText oldC /= Z.getText newC) $
+       notifyChangeHandlers this
+
+  when (Z.cursorPosition oldC /= Z.cursorPosition newC) $
+       notifyCursorMoveHandlers this
 
 editKeyEvent :: Widget Edit -> Key -> [Modifier] -> IO Bool
 editKeyEvent this k mods = do
   case (k, mods) of
-    (KASCII 'a', [MCtrl]) -> gotoBeginning this >> return True
-    (KASCII 'k', [MCtrl]) -> killToEOL this >> return True
-    (KASCII 'e', [MCtrl]) -> gotoEnd this >> return True
-    (KASCII 'd', [MCtrl]) -> delCurrentChar this >> return True
-    (KLeft, []) -> moveCursorLeft this >> return True
-    (KRight, []) -> moveCursorRight this >> return True
-    (KUp, []) -> moveCursorUp this >> return True
-    (KDown, []) -> moveCursorDown this >> return True
-    (KBS, []) -> deletePreviousChar this >> return True
-    (KDel, []) -> delCurrentChar this >> return True
-    (KASCII ch, []) -> insertChar this ch >> return True
-    (KHome, []) -> gotoBeginning this >> return True
-    (KEnd, []) -> gotoEnd this >> return True
+    (KASCII 'a', [MCtrl]) -> applyEdit this Z.gotoBOL >> return True
+    (KASCII 'k', [MCtrl]) -> applyEdit this Z.killToEOL >> return True
+    (KASCII 'e', [MCtrl]) -> applyEdit this Z.gotoEOL >> return True
+    (KASCII 'd', [MCtrl]) -> applyEdit this Z.deleteChar >> return True
+    (KLeft, []) -> applyEdit this Z.moveLeft >> return True
+    (KRight, []) -> applyEdit this Z.moveRight >> return True
+    (KUp, []) -> applyEdit this Z.moveUp >> return True
+    (KDown, []) -> applyEdit this Z.moveDown >> return True
+    (KBS, []) -> applyEdit this Z.deletePrevChar >> return True
+    (KDel, []) -> applyEdit this Z.deleteChar >> return True
+    (KASCII ch, []) -> applyEdit this (Z.insertChar ch) >> return True
+    (KHome, []) -> applyEdit this Z.gotoBOL >> return True
+    (KEnd, []) -> applyEdit this Z.gotoEOL >> return True
     (KEnter, []) -> do
                    lim <- lineLimit <~~ this
                    case lim of
                      Just 1 -> notifyActivateHandlers this >> return True
-                     _ -> insertLineAtPoint this >> return True
+                     _ -> applyEdit this Z.breakLine >> return True
     _ -> return False
-
-insertLineAtPoint :: Widget Edit -> IO ()
-insertLineAtPoint e = do
-  -- Bail if adding a new line would violate the line limit
-  lim <- lineLimit <~~ e
-  numLines <- (length . currentText) <~~ e
-
-  let continue = case lim of
-                   Just v | numLines + 1 > v -> False
-                   _ -> True
-
-  when continue $
-       do
-         -- Get information about current line so we can break the
-         -- current line
-         curL <- getEditCurrentLine e
-         curCol <- cursorColumn <~~ e
-         curRow <- cursorRow <~~ e
-         let r1 = T.take curCol curL
-             r2 = T.drop curCol curL
-         setEditCurrentLine e r1
-         updateWidgetState e $ \st ->
-             st { currentText = inject (curRow + 1) r2 (currentText st)
-                }
-         notifyChangeHandlers e
-         setEditCursorPosition e (curRow + 1, 0)
-
-killToEOL :: Widget Edit -> IO ()
-killToEOL this = do
-  -- Preserve some state since setEditText changes it.
-  curCol <- cursorColumn <~~ this
-  curLine <- getEditCurrentLine this
-  case T.null curLine of
-    False -> do
-      setEditCurrentLine this $ T.take curCol curLine
-      notifyChangeHandlers this
-    True -> do
-      curRow <- cursorRow <~~ this
-      numLines <- (length . currentText) <~~ this
-      if curRow == 0 && numLines == 1 then
-          return () else
-          do
-            let newRow = if curRow == numLines - 1 && numLines > 1
-                         then curRow - 1
-                         else curRow
-            updateWidgetState this $ \st ->
-                st { currentText = remove curRow (currentText st)
-                   }
-            notifyChangeHandlers this
-            setEditCursorPosition this (newRow, 0)
-
-deletePreviousChar :: Widget Edit -> IO ()
-deletePreviousChar this = do
-  curCol <- cursorColumn <~~ this
-  curRow <- cursorRow <~~ this
-  case curCol == 0 of
-    True ->
-        if curRow == 0
-        then return ()
-        else do
-          curLine <- getEditCurrentLine this
-          ls <- currentText <~~ this
-          let prevLine = ls !! (curRow - 1)
-          updateWidgetState this $ \st ->
-              st { currentText = repl (curRow - 1) (T.concat [prevLine, curLine])
-                                 $ remove curRow (currentText st)
-                 }
-          setEditCursorPosition this (curRow - 1, T.length prevLine)
-          notifyChangeHandlers this
-
-    False -> do
-      moveCursorLeft this
-      delCurrentChar this
-
-gotoBeginning :: Widget Edit -> IO ()
-gotoBeginning wRef = do
-  curL <- cursorRow <~~ wRef
-  setEditCursorPosition wRef (curL, 0)
-
-gotoEnd :: Widget Edit -> IO ()
-gotoEnd wRef = do
-  curLine <- getEditCurrentLine wRef
-  curRow <- cursorRow <~~ wRef
-  setEditCursorPosition wRef (curRow, T.length curLine)
-
-moveCursorUp :: Widget Edit -> IO ()
-moveCursorUp wRef = do
-  st <- getState wRef
-  let newRow = if cursorRow st == 0
-               then 0
-               else cursorRow st - 1
-
-      prevLine = currentText st !! (cursorRow st - 1)
-      newCol = if cursorRow st == 0 || (cursorColumn st <= T.length prevLine)
-               then cursorColumn st
-               else T.length prevLine
-
-  setEditCursorPosition wRef (newRow, newCol)
-
-moveCursorDown :: Widget Edit -> IO ()
-moveCursorDown wRef = do
-  st <- getState wRef
-  let newRow = if cursorRow st == (length $ currentText st) - 1
-               then (length $ currentText st) - 1
-               else cursorRow st + 1
-
-      nextLine = currentText st !! (cursorRow st + 1)
-      newCol = if cursorRow st == (length $ currentText st) - 1
-               then cursorColumn st
-               else if cursorColumn st <= T.length nextLine
-                    then cursorColumn st
-                    else T.length nextLine
-
-  setEditCursorPosition wRef (newRow, newCol)
-
-moveCursorLeft :: Widget Edit -> IO ()
-moveCursorLeft wRef = do
-  st <- getState wRef
-  let newRow = if cursorRow st == 0
-               then 0
-               else if cursorColumn st == 0
-                    then cursorRow st - 1
-                    else cursorRow st
-      prevLine = currentText st !! (cursorRow st - 1)
-      newCol = if cursorColumn st == 0
-               then if cursorRow st == 0
-                    then 0
-                    else T.length prevLine
-               else cursorColumn st - 1
-  setEditCursorPosition wRef (newRow, newCol)
-
-moveCursorRight :: Widget Edit -> IO ()
-moveCursorRight wRef = do
-  st <- getState wRef
-  curL <- getEditCurrentLine wRef
-  let newRow = if cursorRow st == (length $ currentText st) - 1
-               then cursorRow st
-               else if cursorColumn st == T.length curL
-                    then cursorRow st + 1
-                    else cursorRow st
-      newCol = if cursorColumn st == T.length curL
-               then if cursorRow st == (length $ currentText st) - 1
-                    then cursorColumn st
-                    else 0
-               else cursorColumn st + 1
-  setEditCursorPosition wRef (newRow, newCol)
-
-insertChar :: Widget Edit -> Char -> IO ()
-insertChar wRef ch = do
-  curLine <- getEditCurrentLine wRef
-  updateWidgetState wRef $ \st ->
-      let newLine = T.concat [ T.take (cursorColumn st) curLine
-                             , T.singleton ch
-                             , T.drop (cursorColumn st) curLine
-                             ]
-      in st { currentText = repl (cursorRow st) newLine (currentText st)
-            }
-  moveCursorRight wRef
-  notifyChangeHandlers wRef
-
-delCurrentChar :: Widget Edit -> IO ()
-delCurrentChar wRef = do
-  st <- getState wRef
-  curLine <- getEditCurrentLine wRef
-  case cursorColumn st < (T.length curLine) of
-    True ->
-        do
-          let newLine = T.concat [ T.take (cursorColumn st) curLine
-                                 , T.drop (cursorColumn st + 1) curLine
-                                 ]
-          updateWidgetState wRef $ \s -> s { currentText = repl (cursorRow st) newLine (currentText st) }
-          notifyChangeHandlers wRef
-    False ->
-        -- If we are on the last line, do nothing, but if we aren't,
-        -- combine the next line with the current one
-        if cursorRow st == (length $ currentText st) - 1
-        then return ()
-        else do
-          let nextLine = currentText st !! (cursorRow st + 1)
-          updateWidgetState wRef $ \s ->
-              s { currentText = remove (cursorRow s + 1) $
-                                repl (cursorRow st) (T.concat [curLine, nextLine]) (currentText s)
-                }
