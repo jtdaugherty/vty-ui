@@ -147,8 +147,6 @@ Executable vty-ui-tests
   end
   Hs-Source-Dirs:  src,test,test/src
   Main-is:         TestDriver.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
 
   Other-Modules:
         Tests.Instances
@@ -162,8 +160,6 @@ Executable vty-ui-list-demo
   Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         ListDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
@@ -177,8 +173,6 @@ Executable vty-ui-progressbar-demo
   Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         ProgressBarDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
@@ -192,8 +186,6 @@ Executable vty-ui-complex-demo
   Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         ComplexDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
@@ -210,8 +202,6 @@ Executable vty-ui-dirbrowser-demo
   Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         DirBrowserDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
@@ -224,8 +214,6 @@ Executable vty-ui-phoneinput-demo
   Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         PhoneInputDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
@@ -239,8 +227,6 @@ Executable vty-ui-dialog-demo
   Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         DialogDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
@@ -254,8 +240,6 @@ Executable vty-ui-edit-demo
   Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         EditDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
