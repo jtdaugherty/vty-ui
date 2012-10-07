@@ -37,8 +37,11 @@ clip1d start len t = (T.pack result2, lSlice, rSlice)
       exploded = concat $ mkExp <$> pairs
       mkExp (a, i) = Just a : replicate (fromEnum i - 1) Nothing
 
+      -- First clip up to the starting position.
       clip1 = drop (fromEnum start) exploded
+      -- Then clip according to the width.
       clip2 = take (fromEnum len) clip1
+      -- Rest is whatever was left after clipping to the width.
       rest = drop (fromEnum len) clip1
 
       rSlice = length rest > 0 && head rest == Nothing
