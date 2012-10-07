@@ -34,7 +34,7 @@ module Graphics.Vty.Widgets.Edit
     , onChange
     , onCursorMove
 #ifdef TESTING
-    , cropLine
+    , doClipping
     , indicatorChar
 #endif
     )
@@ -113,19 +113,14 @@ editWidget' = do
 
               st <- getState this
 
-              let sliced True = [indicatorChar]
-                  sliced False = ""
-
-                  truncatedLines1 = clip2d (clipRect st) (Z.getText $ contents st)
-                  truncatedLines = [ sliced ls ++ (T.unpack r) ++ sliced rs
-                                     | (r, ls, rs) <- truncatedLines1 ]
-
               let nAttr = mergeAttrs [ overrideAttr ctx
                                      , normalAttr ctx
                                      ]
 
+                  clipped = doClipping (Z.getText $ contents st) (clipRect st)
+
                   totalAllowedLines = fromEnum $ region_height size
-                  numEmptyLines = lim - length truncatedLines
+                  numEmptyLines = lim - length clipped
                       where
                         lim = case lineLimit st of
                                 Just v -> min v totalAllowedLines
@@ -139,11 +134,20 @@ editWidget' = do
                                  in string attr s <|>
                                     char_fill attr ' ' (region_width size - toEnum physLineLength) 1
 
-              return $ vert_cat $ lineWidget <$> (truncatedLines ++ emptyLines)
+              return $ vert_cat $ lineWidget <$> (clipped ++ emptyLines)
 
         , keyEventHandler = editKeyEvent
         }
   return wRef
+
+doClipping :: [T.Text] -> ClipRect -> [String]
+doClipping ls rect =
+    let sliced True = [indicatorChar]
+        sliced False = ""
+        truncatedLines = clip2d rect ls
+
+    in [ sliced lslice ++ (T.unpack r) ++ sliced rslice
+         | (r, lslice, rslice) <- truncatedLines ]
 
 -- |Convert a logical column number (corresponding to a character) to
 -- a physical column number (corresponding to a terminal cell).
