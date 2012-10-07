@@ -8,6 +8,7 @@ module Graphics.Vty.Widgets.TextZipper
     , cursorPosition
 
     -- *Navigation functions
+    , moveCursor
     , insertChar
     , breakLine
     , killToEOL
@@ -84,6 +85,20 @@ getText tz = concat [ above tz
 -- |Returns (row, col)
 cursorPosition :: TextZipper a -> (Int, Int)
 cursorPosition tz = (length $ above tz, length_ tz $ toLeft tz)
+
+moveCursor :: (Monoid a) => (Int, Int) -> TextZipper a -> TextZipper a
+moveCursor (row, col) tz =
+    let t = getText tz
+    in if row < 0
+           || row > length t
+           || col < 0
+           || col > length_ tz (t !! row)
+       then tz
+       else tz { above = take row t
+               , below = drop (row + 1) t
+               , toLeft = take_ tz col (t !! row)
+               , toRight = drop_ tz col (t !! row)
+               }
 
 lastLine :: TextZipper a -> Bool
 lastLine = (== 0) . length . below

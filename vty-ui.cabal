@@ -155,6 +155,7 @@ Executable vty-ui-tests
         Tests.FormattedText
         Tests.Tokenize
         Tests.TextClip
+        Tests.TextZipper
 
 Executable vty-ui-list-demo
   Hs-Source-Dirs:  demos
