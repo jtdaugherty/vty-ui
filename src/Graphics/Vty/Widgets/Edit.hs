@@ -53,10 +53,7 @@ import Text.Trans.Tokenize (splitLine)
 data Edit = Edit { currentText :: [T.Text]
                  , cursorRow :: Int
                  , cursorColumn :: Int
-                 , displayStart :: Phys
-                 , displayWidth :: Phys
-                 , topRow :: Int
-                 , visibleRows :: Int
+                 , clipRect :: ClipRect
                  , activateHandlers :: Handlers (Widget Edit)
                  , changeHandlers :: Handlers T.Text
                  , cursorMoveHandlers :: Handlers (Int, Int)
@@ -68,11 +65,8 @@ instance Show Edit where
                     , "currentText = ", show $ currentText e
                     , ", cursorColumn = ", show $ cursorColumn e
                     , ", cursorRow = ", show $ cursorRow e
-                    , ", topRow = ", show $ topRow e
                     , ", lineLimit = ", show $ lineLimit e
-                    , ", visibleRows = ", show $ visibleRows e
-                    , ", displayStart = ", show $ displayStart e
-                    , ", displayWidth = ", show $ displayWidth e
+                    , ", clipRect = ", show $ clipRect e
                     , " }"
                     ]
 
@@ -85,10 +79,11 @@ editWidget' = do
   let initSt = Edit { currentText = [T.empty]
                     , cursorRow = 0
                     , cursorColumn = 0
-                    , displayStart = 0
-                    , displayWidth = 0
-                    , topRow = 0
-                    , visibleRows = 1
+                    , clipRect = ClipRect { clipLeft = 0
+                                          , clipWidth = 0
+                                          , clipTop = 0
+                                          , clipHeight = 1
+                                          }
                     , activateHandlers = ahs
                     , changeHandlers = chs
                     , cursorMoveHandlers = cmhs
@@ -109,29 +104,24 @@ editWidget' = do
               f <- focused <~ this
               pos <- getCurrentPosition this
 
-              let Phys offset = physCursorCol st - displayStart st
+              let Phys offset = physCursorCol st - clipLeft (clipRect st)
                   newPos = pos
                            `withWidth` (toEnum ((fromEnum $ region_width pos) + offset))
-                           `plusHeight` (toEnum ((cursorRow st) - (topRow st)))
+                           `plusHeight` (toEnum ((cursorRow st) - (fromEnum $ clipTop $ clipRect st)))
 
               return $ if f then Just newPos else Nothing
 
         , render_ =
             \this size ctx -> do
-              resize this ( fromEnum $ region_height size
-                          , fromEnum $ region_width size )
+              resize this ( Phys $ fromEnum $ region_height size
+                          , Phys $ fromEnum $ region_width size )
 
               st <- getState this
 
               let sliced True = [indicatorChar]
                   sliced False = ""
 
-                  rect = ClipRect { clipLeft = displayStart st
-                                  , clipTop = Phys $ topRow st
-                                  , clipWidth = displayWidth st
-                                  , clipHeight = Phys $ visibleRows st
-                                  }
-                  truncatedLines1 = clip2d rect (currentText st)
+                  truncatedLines1 = clip2d (clipRect st) (currentText st)
                   truncatedLines = [ sliced ls ++ (T.unpack r) ++ sliced rs
                                      | (r, ls, rs) <- truncatedLines1 ]
 
@@ -212,10 +202,31 @@ setEditLineLimit w v = updateWidgetState w $ \st -> st { lineLimit = v }
 getEditLineLimit :: Widget Edit -> IO (Maybe Int)
 getEditLineLimit = (lineLimit <~~)
 
-resize :: Widget Edit -> (Int, Int) -> IO ()
+resize :: Widget Edit -> (Phys, Phys) -> IO ()
 resize e (newHeight, newWidth) = do
-  updateWidgetState e $ \st -> st { visibleRows = newHeight }
-  setDisplayWidth e newWidth
+  updateWidgetState e $ \st ->
+      let newRect = (clipRect st) { clipHeight = newHeight
+                                  , clipWidth = newWidth
+                                  }
+          adjusted = updateRect (Phys $ cursorRow st, physCursorCol st) newRect
+      in st { clipRect = adjusted }
+
+  updateWidgetState e $ \s ->
+      let r = clipRect s
+          curLine = T.unpack $ (currentText s) !! (cursorRow s)
+          (_, _, ri) = clip1d (clipLeft r) (clipWidth r) (T.pack curLine)
+          newCharLen = if cursorColumn s >= 0 && cursorColumn s < length curLine
+                       then chWidth $ curLine !! cursorColumn s
+                       else Phys 1
+
+          newPhysCol = toPhysical (cursorColumn s) curLine
+          extra = if ri && newPhysCol >= ((clipLeft r) + (clipWidth r) - Phys 1)
+                  then newCharLen - 1
+                  else 0
+          newLeft = clipLeft (clipRect s) + extra
+      in s { clipRect = (clipRect s) { clipLeft = newLeft
+                                     }
+           }
 
 -- |Register handlers to be invoked when the edit widget has been
 -- ''activated'' (when the user presses Enter while the widget is
@@ -311,46 +322,12 @@ setEditCursorPosition wRef (newRow, newCol) = do
               (oldRow, oldCol) <- getEditCursorPosition wRef
               when ((newRow, newCol) /= (oldRow, oldCol)) $
                    do
-                     st <- getState wRef
-
-                     -- When changing the display start, we need to
-                     -- look at the physical behavior of the cursor
-                     -- position change, rather than the logical
-                     -- behavior, since we're changing which character
-                     -- constitutes the physical start of the viewing
-                     -- area (on the left margin), and that will be
-                     -- impacted by the width of the characters on the
-                     -- line.
-
-                     let curLine = T.unpack $ ls !! newRow
-                         newPhysCol = toPhysical newCol curLine
-                         newCharLen = if newCol >= 0 && newCol < length curLine
-                                      then chWidth $ curLine !! newCol
-                                      else Phys 1
-                         (_, _, ri) = cropLine (displayStart st) (displayWidth st) curLine
-
-                         newDisplayStart = if newPhysCol >= (displayStart st + displayWidth st)
-                                           then newPhysCol - displayWidth st + newCharLen
-                                           else if newPhysCol < displayStart st
-                                                then newPhysCol
-                                                else if ri && newPhysCol == (displayStart st + displayWidth st - Phys 1)
-                                                     then displayStart st + newCharLen
-                                                     else displayStart st
-                         newTopRow = if newRow < topRow st
-                                     then newRow
-                                     else if newRow >= (topRow st + visibleRows st)
-                                          then newRow - visibleRows st + 1
-                                          else topRow st
-
-                     updateWidgetState wRef $ \s ->
-                         s { displayStart = newDisplayStart
-                           , topRow = newTopRow
-                           }
-
                      updateWidgetState wRef $ \s ->
                          s { cursorRow = newRow
                            , cursorColumn = newCol
+                           , clipRect = updateRect (Phys $ cursorRow s, physCursorCol s) (clipRect s)
                            }
+
                      notifyCursorMoveHandlers wRef
 
 -- |Get the edit widget's current cursor position (row, column).
@@ -368,19 +345,6 @@ physCursorCol :: Edit -> Phys
 physCursorCol s =
     let curLine = T.unpack $ (currentText s) !! (cursorRow s)
     in toPhysical (cursorColumn s) curLine
-
-setDisplayWidth :: Widget Edit -> Int -> IO ()
-setDisplayWidth this width = do
-  s <- getState this
-
-  let newDispStart = if physCursorCol s - displayStart s >= (Phys width)
-                     then physCursorCol s - (Phys $ width + 1)
-                     else displayStart s
-
-  updateWidgetState this $ \s' ->
-      s' { displayWidth = Phys width
-         , displayStart = newDispStart
-         }
 
 editKeyEvent :: Widget Edit -> Key -> [Modifier] -> IO Bool
 editKeyEvent this k mods = do
@@ -480,8 +444,6 @@ deletePreviousChar this = do
 
 gotoBeginning :: Widget Edit -> IO ()
 gotoBeginning wRef = do
-  updateWidgetState wRef $ \s -> s { displayStart = 0
-                                   }
   curL <- cursorRow <~~ wRef
   setEditCursorPosition wRef (curL, 0)
 
@@ -561,12 +523,7 @@ insertChar wRef ch = do
                              , T.singleton ch
                              , T.drop (cursorColumn st) curLine
                              ]
-          newViewStart =
-              if physCursorCol st == displayStart st + displayWidth st - (Phys 1)
-              then displayStart st + chWidth ch
-              else displayStart st
-      in st { displayStart = newViewStart
-            , currentText = repl (cursorRow st) newLine (currentText st)
+      in st { currentText = repl (cursorRow st) newLine (currentText st)
             }
   moveCursorRight wRef
   notifyChangeHandlers wRef
