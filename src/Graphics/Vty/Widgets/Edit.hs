@@ -48,7 +48,6 @@ import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.TextClip
-import Text.Trans.Tokenize (splitLine)
 
 data Edit = Edit { currentText :: [T.Text]
                  , cursorRow :: Int
@@ -157,19 +156,6 @@ toPhysical col line = sum $ chWidth <$> take col line
 
 indicatorChar :: Char
 indicatorChar = '$'
-
-cropLine :: Phys -> Phys -> [Char] -> ([Char], Bool, Bool)
-cropLine leftMargin lineLength line = (s, leftInd, rightInd)
-    where
-      (s, _, rightInd) = sp lineLength s'
-      (_, s', leftInd) = sp leftMargin line
-
-      sp pos str = (l, r, extra)
-          where
-            (l', r', extra) = splitLine pos str
-            l = l' ++ (if extra then [indicatorChar] else "")
-            r = (if extra then [indicatorChar] else "") ++ r'
-
 
 -- |Construct a text widget for editing a single line of text.
 -- Single-line edit widgets will send activation events when the user

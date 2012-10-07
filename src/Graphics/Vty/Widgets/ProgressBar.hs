@@ -22,6 +22,7 @@ import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Alignment
 import Graphics.Vty.Widgets.Util
+import Graphics.Vty.Widgets.TextClip
 import Text.Trans.Tokenize
 
 data ProgressBar = ProgressBar { progressBarAmount :: Int
@@ -98,8 +99,8 @@ renderProgressBar size ctx st = do
                 else T.empty
 
 
-      (leftPart, _, _) = splitLine complete_width $ T.unpack full_str
-      charCount = length leftPart
+      (leftPart, _, _) = clip1d 0 complete_width full_str
+      charCount = T.length leftPart
 
       (complete_str, incomplete_str) = ( T.take charCount full_str
                                        , T.drop charCount full_str
