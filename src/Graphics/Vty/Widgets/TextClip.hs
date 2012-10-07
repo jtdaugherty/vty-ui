@@ -2,6 +2,7 @@ module Graphics.Vty.Widgets.TextClip
     ( ClipRect(..)
     , clip1d
     , clip2d
+    , updateRect
     )
 where
 
@@ -54,3 +55,25 @@ clip2d rect ls = clip1d left len <$> visibleLines
           top = clipTop rect
           len = clipWidth rect
           height = clipHeight rect
+
+-- |Given a physical point and a clipping rectangle, adjust the
+-- clipping rectangle so that the point falls just inside the
+-- rectangle.  If the point is already within the rectangle, return
+-- the rectangle unmodified.  NB: this assumes that the physical
+-- position given has passed whatever validation checks are relevant
+-- for the user of the ClipRect.  This function just performs a
+-- rectangle transformation.
+updateRect :: (Phys, Phys) -> ClipRect -> ClipRect
+updateRect (row, col) oldRect = adjustLeft $ adjustTop oldRect
+    where
+      adjustLeft old
+          | col < clipLeft oldRect = old { clipLeft = col }
+          | col >= clipLeft oldRect + clipWidth oldRect =
+              old { clipLeft = col - clipWidth old + 1 }
+          | otherwise = old
+
+      adjustTop old
+          | row < clipTop oldRect = old { clipTop = row }
+          | row >= clipTop oldRect + clipHeight oldRect =
+              old { clipTop = row - clipHeight old + 1 }
+          | otherwise = old
