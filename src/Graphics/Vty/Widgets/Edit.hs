@@ -47,6 +47,7 @@ import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
+import Graphics.Vty.Widgets.TextClip
 import Text.Trans.Tokenize (splitLine)
 
 data Edit = Edit { currentText :: [T.Text]
@@ -122,13 +123,17 @@ editWidget' = do
 
               st <- getState this
 
-              let truncated s = T.pack cropped
-                      where
-                        (cropped, _, _) = cropLine (displayStart st) (displayWidth st) $ T.unpack s
+              let sliced True = [indicatorChar]
+                  sliced False = ""
 
-                  visibleLines = take (visibleRows st) $
-                                 drop (topRow st) (currentText st)
-                  truncatedLines = truncated <$> visibleLines
+                  rect = ClipRect { clipLeft = displayStart st
+                                  , clipTop = Phys $ topRow st
+                                  , clipWidth = displayWidth st
+                                  , clipHeight = Phys $ visibleRows st
+                                  }
+                  truncatedLines1 = clip2d rect (currentText st)
+                  truncatedLines = [ sliced ls ++ (T.unpack r) ++ sliced rs
+                                     | (r, ls, rs) <- truncatedLines1 ]
 
               let nAttr = mergeAttrs [ overrideAttr ctx
                                      , normalAttr ctx
@@ -141,12 +146,12 @@ editWidget' = do
                                 Just v -> min v totalAllowedLines
                                 Nothing -> totalAllowedLines
 
-                  emptyLines = replicate numEmptyLines T.empty
+                  emptyLines = replicate numEmptyLines ""
 
               isFocused <- focused <~ this
               let attr = if isFocused then focusAttr ctx else nAttr
-                  lineWidget s = let Phys physLineLength = sum $ chWidth <$> T.unpack s
-                                 in string attr (T.unpack s) <|>
+                  lineWidget s = let Phys physLineLength = sum $ chWidth <$> s
+                                 in string attr s <|>
                                     char_fill attr ' ' (region_width size - toEnum physLineLength) 1
 
               return $ vert_cat $ lineWidget <$> (truncatedLines ++ emptyLines)
