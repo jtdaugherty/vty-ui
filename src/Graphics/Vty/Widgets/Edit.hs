@@ -27,6 +27,7 @@ module Graphics.Vty.Widgets.Edit
     , getEditCurrentLine
     , setEditText
     , getEditCursorPosition
+    , setEditCursorPosition
     , setEditLineLimit
     , getEditLineLimit
     , applyEdit
@@ -274,6 +275,11 @@ setEditText wRef str = do
 -- |Get the edit widget's current cursor position (row, column).
 getEditCursorPosition :: Widget Edit -> IO (Int, Int)
 getEditCursorPosition = ((Z.cursorPosition . contents) <~~)
+
+-- |Set the cursor position to the specified row and column.  Invalid
+-- cursor positions will be ignored.
+setEditCursorPosition :: (Int, Int) -> Widget Edit -> IO ()
+setEditCursorPosition pos w = applyEdit w (Z.moveCursor pos)
 
 -- |Compute the physical cursor position (column) for the cursor in a
 -- given edit widget state.  The physical position is relative to the
