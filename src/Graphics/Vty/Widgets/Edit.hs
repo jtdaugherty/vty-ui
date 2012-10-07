@@ -93,53 +93,54 @@ editWidget' = do
                 Just v | v == 1 -> return False
                 _ -> return True
 
-        , getCursorPosition_ =
-            \this -> do
-              st <- getState this
-              f <- focused <~ this
-              pos <- getCurrentPosition this
-
-              let (cursorRow, _) = Z.cursorPosition (contents st)
-                  Phys offset = physCursorCol st - clipLeft (clipRect st)
-                  newPos = pos
-                           `withWidth` (toEnum ((fromEnum $ region_width pos) + offset))
-                           `plusHeight` (toEnum (cursorRow - (fromEnum $ clipTop $ clipRect st)))
-
-              return $ if f then Just newPos else Nothing
-
-        , render_ =
-            \this size ctx -> do
-              resize this ( Phys $ fromEnum $ region_height size
-                          , Phys $ fromEnum $ region_width size )
-
-              st <- getState this
-
-              let nAttr = mergeAttrs [ overrideAttr ctx
-                                     , normalAttr ctx
-                                     ]
-
-                  clipped = doClipping (Z.getText $ contents st) (clipRect st)
-
-                  totalAllowedLines = fromEnum $ region_height size
-                  numEmptyLines = lim - length clipped
-                      where
-                        lim = case lineLimit st of
-                                Just v -> min v totalAllowedLines
-                                Nothing -> totalAllowedLines
-
-                  emptyLines = replicate numEmptyLines ""
-
-              isFocused <- focused <~ this
-              let attr = if isFocused then focusAttr ctx else nAttr
-                  lineWidget s = let Phys physLineLength = sum $ chWidth <$> s
-                                 in string attr s <|>
-                                    char_fill attr ' ' (region_width size - toEnum physLineLength) 1
-
-              return $ vert_cat $ lineWidget <$> (clipped ++ emptyLines)
-
+        , getCursorPosition_ = internalGetCursorPosition
+        , render_ = renderEditWidget
         , keyEventHandler = editKeyEvent
         }
   return wRef
+
+internalGetCursorPosition :: Widget Edit -> IO (Maybe DisplayRegion)
+internalGetCursorPosition this = do
+  st <- getState this
+  f <- focused <~ this
+  pos <- getCurrentPosition this
+
+  let (cursorRow, _) = Z.cursorPosition (contents st)
+      Phys offset = physCursorCol st - clipLeft (clipRect st)
+      newPos = pos
+               `withWidth` (toEnum ((fromEnum $ region_width pos) + offset))
+               `plusHeight` (toEnum (cursorRow - (fromEnum $ clipTop $ clipRect st)))
+
+  return $ if f then Just newPos else Nothing
+
+renderEditWidget :: Widget Edit -> DisplayRegion -> RenderContext -> IO Image
+renderEditWidget this size ctx = do
+  resize this ( Phys $ fromEnum $ region_height size
+              , Phys $ fromEnum $ region_width size )
+
+  st <- getState this
+  isFocused <- focused <~ this
+
+  let nAttr = mergeAttrs [ overrideAttr ctx
+                         , normalAttr ctx
+                         ]
+      attr = if isFocused then focusAttr ctx else nAttr
+
+      clipped = doClipping (Z.getText $ contents st) (clipRect st)
+
+      totalAllowedLines = fromEnum $ region_height size
+      numEmptyLines = lim - length clipped
+          where
+            lim = case lineLimit st of
+                    Just v -> min v totalAllowedLines
+                    Nothing -> totalAllowedLines
+
+      emptyLines = replicate numEmptyLines ""
+      lineWidget s = let Phys physLineLength = sum $ chWidth <$> s
+                     in string attr s <|>
+                        char_fill attr ' ' (region_width size - toEnum physLineLength) 1
+
+  return $ vert_cat $ lineWidget <$> (clipped ++ emptyLines)
 
 doClipping :: [T.Text] -> ClipRect -> [String]
 doClipping ls rect =
