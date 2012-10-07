@@ -279,7 +279,7 @@ getEditCursorPosition = ((Z.cursorPosition . contents) <~~)
 -- |Set the cursor position to the specified row and column.  Invalid
 -- cursor positions will be ignored.
 setEditCursorPosition :: (Int, Int) -> Widget Edit -> IO ()
-setEditCursorPosition pos w = applyEdit w (Z.moveCursor pos)
+setEditCursorPosition pos = applyEdit (Z.moveCursor pos)
 
 -- |Compute the physical cursor position (column) for the cursor in a
 -- given edit widget state.  The physical position is relative to the
@@ -291,10 +291,10 @@ physCursorCol s =
         (_, cursorColumn) = Z.cursorPosition $ contents s
     in toPhysical cursorColumn curLine
 
-applyEdit :: Widget Edit
-          -> (Z.TextZipper T.Text -> Z.TextZipper T.Text)
+applyEdit :: (Z.TextZipper T.Text -> Z.TextZipper T.Text)
+          -> Widget Edit
           -> IO ()
-applyEdit this f = do
+applyEdit f this = do
   oldC <- contents <~~ this
   updateWidgetState this $ \s ->
       let newSt = s { contents = f (contents s) }
@@ -314,23 +314,24 @@ applyEdit this f = do
 
 editKeyEvent :: Widget Edit -> Key -> [Modifier] -> IO Bool
 editKeyEvent this k mods = do
+  let run f = applyEdit f this >> return True
   case (k, mods) of
-    (KASCII 'a', [MCtrl]) -> applyEdit this Z.gotoBOL >> return True
-    (KASCII 'k', [MCtrl]) -> applyEdit this Z.killToEOL >> return True
-    (KASCII 'e', [MCtrl]) -> applyEdit this Z.gotoEOL >> return True
-    (KASCII 'd', [MCtrl]) -> applyEdit this Z.deleteChar >> return True
-    (KLeft, []) -> applyEdit this Z.moveLeft >> return True
-    (KRight, []) -> applyEdit this Z.moveRight >> return True
-    (KUp, []) -> applyEdit this Z.moveUp >> return True
-    (KDown, []) -> applyEdit this Z.moveDown >> return True
-    (KBS, []) -> applyEdit this Z.deletePrevChar >> return True
-    (KDel, []) -> applyEdit this Z.deleteChar >> return True
-    (KASCII ch, []) -> applyEdit this (Z.insertChar ch) >> return True
-    (KHome, []) -> applyEdit this Z.gotoBOL >> return True
-    (KEnd, []) -> applyEdit this Z.gotoEOL >> return True
+    (KASCII 'a', [MCtrl]) -> run Z.gotoBOL
+    (KASCII 'k', [MCtrl]) -> run Z.killToEOL
+    (KASCII 'e', [MCtrl]) -> run Z.gotoEOL
+    (KASCII 'd', [MCtrl]) -> run Z.deleteChar
+    (KLeft, []) -> run Z.moveLeft
+    (KRight, []) -> run Z.moveRight
+    (KUp, []) -> run Z.moveUp
+    (KDown, []) -> run Z.moveDown
+    (KBS, []) -> run Z.deletePrevChar
+    (KDel, []) -> run Z.deleteChar
+    (KASCII ch, []) -> run (Z.insertChar ch)
+    (KHome, []) -> run Z.gotoBOL
+    (KEnd, []) -> run Z.gotoEOL
     (KEnter, []) -> do
                    lim <- lineLimit <~~ this
                    case lim of
                      Just 1 -> notifyActivateHandlers this >> return True
-                     _ -> applyEdit this Z.breakLine >> return True
+                     _ -> run Z.breakLine
     _ -> return False
