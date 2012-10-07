@@ -35,3 +35,6 @@ instance Random Phys where
     randomR (Phys a, Phys b) g =
         let (val, g') = randomR (a, b) g
         in (Phys val, g')
+
+instance Arbitrary Phys where
+    arbitrary = Phys <$> arbitrary

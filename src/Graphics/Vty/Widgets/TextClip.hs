@@ -28,6 +28,7 @@ data ClipRect =
 -- inside the clipping region; if one or both of the slice indicators
 -- is true, the resulting list will smaller than the clipping region.
 clip1d :: Phys -> Phys -> T.Text -> (T.Text, Bool, Bool)
+clip1d _ 0 _ = (T.empty, False, False)
 clip1d start len t = (T.pack result2, lSlice, rSlice)
 
     where

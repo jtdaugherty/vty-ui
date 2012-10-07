@@ -8,11 +8,13 @@ import Test.QuickCheck.Test
 import qualified Tests.FormattedText as FormattedText
 import qualified Tests.Tokenize as Tokenize
 import qualified Tests.Edit as Edit
+import qualified Tests.TextClip as TextClip
 
 tests :: [Property]
 tests = concat [ FormattedText.tests
                , Tokenize.tests
                , Edit.tests
+               , TextClip.tests
                ]
 
 main :: IO ()
