@@ -1,7 +1,21 @@
+-- |This module provides a two-dimensional text zipper data structure.
+-- This structure represents a body of text and an editing cursor
+-- which can be moved throughout the text, along with a set of editing
+-- transformations.
+--
+-- Text zippers are generalized over the set of data types that might
+-- be used to store lists of characters (e.g., 'String', 'T.Text',
+-- etc.).  As a result, the most general way to create a text zipper
+-- is to use 'mkZipper' and provide all of the functions required to
+-- manipulate the underlying text data.
+--
+-- A default implementation using 'T.Text' is provided and is used
+-- elsewhere in this library.
 module Graphics.Vty.Widgets.TextZipper
     ( TextZipper
 
     -- *Construction and extraction
+    , mkZipper
     , textZipper
     , getText
     , currentLine
@@ -60,17 +74,28 @@ instance (Show a) => Show (TextZipper a) where
                      , " }"
                      ]
 
+-- |Create a zipper using a custom text storage type.  Takes the
+-- initial text as well as all of the functions necessary to
+-- manipulate the underlying text values.
 mkZipper :: (Monoid a) =>
-            [a]
-         -> (Char -> a)
+            (Char -> a)
+         -- ^A singleton constructor.
          -> (Int -> a -> a)
+         -- ^'drop'.
          -> (Int -> a -> a)
+         -- ^'take'.
          -> (a -> Int)
+         -- ^'length'.
          -> (a -> Char)
+         -- ^'last'.
          -> (a -> a)
+         -- ^'init'.
          -> (a -> Bool)
+         -- ^'null'.
+         -> [a]
+         -- ^The initial lines of text.
          -> TextZipper a
-mkZipper ls fromCh drp tk lngth lst int nl =
+mkZipper fromCh drp tk lngth lst int nl ls =
     let (first, rest) = if null ls
                         then (mempty, mempty)
                         else (head ls, tail ls)
@@ -233,5 +258,5 @@ moveDown tz
     | otherwise = gotoEOL tz
 
 textZipper :: [T.Text] -> TextZipper T.Text
-textZipper ls =
-    mkZipper ls T.singleton T.drop T.take T.length T.last T.init T.null
+textZipper =
+    mkZipper T.singleton T.drop T.take T.length T.last T.init T.null
