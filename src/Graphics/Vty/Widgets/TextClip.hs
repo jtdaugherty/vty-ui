@@ -1,3 +1,17 @@
+-- |This module provides \"text clipping\" routines.  These routines
+-- are responsible for ensuring that logical characters are clipped
+-- properly when being laid out in a given physical region.  This is a
+-- bit tricky because some Unicode characters use two terminal columns
+-- and others (most) use one.  We have to take this into account when
+-- truncating text to fit into rendering regions, so we concentrate
+-- that logic here under the name of a \"clipping rectangle\" and
+-- functions to apply it.
+--
+-- Clipping functionality is provided in two forms: one- and
+-- two-dimensional clipping.  The former is useful for clipping a
+-- single line of text at a given offset and up to a given width.  The
+-- latter is useful for clipping a list of lines with respect to a 2-D
+-- clipping rectangle.
 module Graphics.Vty.Widgets.TextClip
     ( ClipRect(..)
     , clip1d
@@ -14,19 +28,29 @@ import Graphics.Vty.Widgets.Util
     , chWidth
     )
 
+-- |The type of clipping rectangles for 2-D clipping operations.  All
+-- values are 'Phys' values to indicate that we are dealing explicitly
+-- with physical column measurements rather than logical character
+-- positions.
 data ClipRect =
     ClipRect { clipLeft :: Phys
+             -- ^The left margin of the clipping rectangle.
              , clipTop :: Phys
+             -- ^The top row of the clipping rectangle.
              , clipWidth :: Phys
+             -- ^The width, in columns, of the clipping rectangle.
              , clipHeight :: Phys
+             -- ^The height, in rows, of the clipping rectangle.
              }
     deriving (Eq, Show)
 
--- First, 1D clipping.  Returns the clipped data, plus bools
--- indicating whether data elements were sliced on either end.  The
--- data element list will be the list of complete elements that fit
--- inside the clipping region; if one or both of the slice indicators
--- is true, the resulting list will smaller than the clipping region.
+-- |One-dimensional text clipping.  Returns the clipped text plus
+-- 'Bool's indicating whether wide characters were \"sliced\" on
+-- either side (left and right, respectively) of the clipping region.
+-- This function guarantees that the text returned will always fit
+-- within the specified clipping region.  Since wide characters may be
+-- sliced during clipping, this may return a text string smaller than
+-- the clipping region.
 clip1d :: Phys -> Phys -> T.Text -> (T.Text, Bool, Bool)
 clip1d _ 0 _ = (T.empty, False, False)
 clip1d start len t = (T.pack result2, lSlice, rSlice)
@@ -52,6 +76,10 @@ clip1d start len t = (T.pack result2, lSlice, rSlice)
                 then init result1
                 else result1
 
+-- |Two-dimensional text clipping.  Returns clipping data for each
+-- line as returned by 'clip1d', with the added behavior that it
+-- returns at most 'clipHeight' lines of text and uses 'clipTop' as
+-- the offset when clipping rows.
 clip2d :: ClipRect -> [T.Text] -> [(T.Text, Bool, Bool)]
 clip2d rect ls = clip1d left len <$> visibleLines
         where
@@ -66,7 +94,7 @@ clip2d rect ls = clip1d left len <$> visibleLines
 -- rectangle.  If the point is already within the rectangle, return
 -- the rectangle unmodified.  NB: this assumes that the physical
 -- position given has passed whatever validation checks are relevant
--- for the user of the ClipRect.  This function just performs a
+-- for the user of the 'ClipRect'.  This function just performs a
 -- rectangle transformation.
 updateRect :: (Phys, Phys) -> ClipRect -> ClipRect
 updateRect (row, col) oldRect = adjustLeft $ adjustTop oldRect
