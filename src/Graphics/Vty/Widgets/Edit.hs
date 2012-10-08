@@ -19,6 +19,21 @@
 -- * @Del@ / @Control-d@ - delete the current character
 --
 -- * @Backspace@ - delete the previous character
+--
+-- Edit widgets may be configured with a line limit which limits the
+-- number of lines of text the widget will store.  It does not provide
+-- any limit control on the length of its lines, though.
+--
+-- Edit widgets support multi-column characters.  (For some
+-- information, see <http://www.unicode.org/reports/tr11/>.)  When the
+-- edit widget scrolling reaches a point where a wide character cannot
+-- be drawn because it is bisected by the editing window's boundary,
+-- it will be replaced with an indicator (\"$\") until the scrolling
+-- window is moved enough to reveal the character.  This is done to
+-- preserve the relative alignment of all of the rows in the widget in
+-- the presence of characters of different widths.  Note that this is
+-- a visual aid only and does not affect the underlying text content
+-- of the widget.
 module Graphics.Vty.Widgets.Edit
     ( Edit
     , editWidget
@@ -292,6 +307,10 @@ physCursorCol s =
         (_, cursorColumn) = Z.cursorPosition $ contents s
     in toPhysical cursorColumn curLine
 
+-- |Apply an editing transformation to the edit widget's text.  If the
+-- transformation modifies the text or the cursor, the appropriate
+-- event handlers will be notified.  If a line limit is in effect and
+-- the transformation violates it, the transformation will be ignored.
 applyEdit :: (Z.TextZipper T.Text -> Z.TextZipper T.Text)
           -> Widget Edit
           -> IO ()
