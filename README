@@ -1,7 +1,7 @@
 vty-ui
 ------
 
-Project homepage: http://codevine.org/vty-ui/
+Project homepage: http://jtdaugherty.github.com/vty-ui/
 
 `vty-ui` is a high-level user interface library for applications
 running in terminal emulators.  It provides similar functionality to
@@ -18,5 +18,5 @@ run:
 
 The library provides comprehensive Haddock documentation in addition
 to a collection of relatively comprehensive demonstration programs;
-see the *-demo programs in `vty-ui.cabal` and their respective sources
-in `src`.
+install with the "demos" flag to build them, and see their sources in
+`demos/`.
