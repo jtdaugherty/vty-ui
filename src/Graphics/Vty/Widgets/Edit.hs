@@ -261,7 +261,7 @@ onChange = addHandler (changeHandlers <~~)
 
 -- |Register handlers to be invoked when the edit widget's cursor
 -- position changes.  Handlers will be passed the new cursor position,
--- relative to the beginning of the string (position 0).
+-- relative to the beginning of the text (position (0, 0)).
 onCursorMove :: Widget Edit -> ((Int, Int) -> IO ()) -> IO ()
 onCursorMove = addHandler (cursorMoveHandlers <~~)
 
