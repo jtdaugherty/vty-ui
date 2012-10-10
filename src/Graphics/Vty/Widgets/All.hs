@@ -6,6 +6,8 @@ module Graphics.Vty.Widgets.All
     , module Graphics.Vty.Widgets.List
     , module Graphics.Vty.Widgets.Borders
     , module Graphics.Vty.Widgets.Text
+    , module Graphics.Vty.Widgets.TextClip
+    , module Graphics.Vty.Widgets.TextZipper
     , module Graphics.Vty.Widgets.Edit
     , module Graphics.Vty.Widgets.Util
     , module Graphics.Vty.Widgets.Table
@@ -32,6 +34,8 @@ import Graphics.Vty.Widgets.Box
 import Graphics.Vty.Widgets.List
 import Graphics.Vty.Widgets.Borders
 import Graphics.Vty.Widgets.Text
+import Graphics.Vty.Widgets.TextClip
+import Graphics.Vty.Widgets.TextZipper
 import Graphics.Vty.Widgets.Edit
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Table
