@@ -8,8 +8,8 @@ module:
  import Graphics.Vty.Widgets.All
 \end{haskellcode}
 
-The \fw{All} module exports everything exported by the library; if you
-prefer, you may import specific modules depending on your needs.
+The \fw{All} module exports almost everything exported by the library.
+If you prefer, you can always import specific modules.
 
 As a demonstration, we'll create a program which presents an editing
 widget in the middle of the screen.  You'll be able to provide some
@@ -17,6 +17,8 @@ text input and press Enter, at which point the program will exit and
 will print what you entered.  The code for this program is as follows:
 
 \begin{haskellcode}
+ import qualified Data.Text as T
+
  main :: IO ()
  main = do
    e <- editWidget
@@ -29,7 +31,7 @@ will print what you entered.  The code for this program is as follows:
    addToCollection c ui fg
 
    e `onActivate` \this ->
-     getEditText this >>= (error . ("You entered: " ++))
+     getEditText this >>= (error . ("You entered: " ++) . T.unpack)
 
    runUi c defaultContext
 \end{haskellcode}
@@ -106,7 +108,7 @@ presented will be \fw{ui}.
 
 \begin{haskellcode}
  e `onActivate` \this -> getEditText this >>=
-   (error . ("You entered: " ++))
+   (error . ("You entered: " ++) . T.unpack)
 \end{haskellcode}
 
 This binds an event handler to the ``activation'' of the \fw{Edit}

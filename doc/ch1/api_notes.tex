@@ -1,5 +1,7 @@
 \section{Conventions and API Notes}
 
+\subsection{Widget Types}
+
 When you create a widget in \vtyui, the result with almost always have
 a type like \fw{Widget a}.  The type variable \fw{a} represents the
 specific type of state the widget can carry, and therefore which
@@ -15,12 +17,19 @@ widget implementation type, \fw{WidgetImpl a}.  So it's best to use
 \fw{Widget a} whenever you need to refer to a widget; this makes it
 possible to mutate widget state when events occur in your application.
 
+\subsection{Return Values}
+
 Regarding return values, even if a function is of type \fw{...\ -> IO
   a}, we say it is ``in the \fw{IO} monad'' and \textit{returns}
 \fw{a}.  We won't bother saying that a function \textit{returns \fw{IO
     a}}.
 
+\subsection{Library Modules}
+
 Lastly, we will refer to the many \vtyui\ library modules throughout
 this document.  We will almost always omit the
 \fw{Graphics.Vty.Widgets} module namespace prefix and will instead
-refer to the modules by their short names.
+refer to the modules by their short names.  In addition, many modules
+in this library use \fw{Data.Text} values to represent text strings.
+We assume that \fw{Data.Text} is imported under the qualified name
+\fw{T}.

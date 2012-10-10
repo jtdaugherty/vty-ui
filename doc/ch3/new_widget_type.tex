@@ -8,20 +8,20 @@ the widget can have and it determines what the widget's API will be.
 As an example, consider a widget that displays a numeric counter.  The
 widget state will be the value of the counter.  We'll start with the
 following state type:\footnote{You might wonder why we don't just use
-  \fw{Int}; the reason is because that's too general.  Other widgets
-  might represent the temperature with an \fw{Int}, and then your
-  counter API functions -- taking a widget of type \fw{Widget Int} --
-  would work on their widgets, which is probably not what you want!}
+  \fw{Int}, i.e., \fw{Widget Int}; the reason is because that's too
+  general.  Other widgets might represent the temperature with an
+  \fw{Int}, and then your counter API functions -- taking a widget of
+  type \fw{Widget Int} -- would work on other types of widgets, which
+  is probably not what you want!}
 
 \begin{haskellcode}
  data Counter = Counter Int
 \end{haskellcode}
 
 The next step is to write a widget constructor function.  This
-function will return a value of type \fw{Widget Counter}, which
-indicates that it is a \fw{Widget} with state type \fw{Counter}.
-We'll allow the constructor to take the counter's initial value.
-Here's what the function will look like in full:
+function will return a value of type \fw{Widget Counter}.  The
+constructor will take the counter's initial value.  Here's the
+function in full:
 
 \begin{haskellcode}
  newCounter :: Int -> IO (Widget Counter)
@@ -48,15 +48,15 @@ The \fw{Core} module's \fw{newWidget} function creates a new
 where all of the widget logic is actually implemented.  You implement
 this logic by overriding the fields of the \fw{WidgetImpl} type, such
 as \fw{render\_}.  We call \fw{newWidget}'s result \fw{wRef} because
-it is a reference to a widget object, and this helps distinguish it
-from the actual widget data in the next step.
+it is a reference to a widget, and this helps distinguish it from the
+actual widget data in the next step.
 
 The \fw{newWidget} function takes an initial state of the widget (of
 type \fw{a}) and a transformation function \fw{WidgetImpl a ->
   WidgetImpl a}, creates a new \fw{WidgetImpl}, sets its \fw{state} to
 the initial state provided, and transforms it with the transformation
 function.  We do this to specify the behavior of the widget beyond the
-defaults, which are specified in the \fw{newWidget} function.
+defaults provided by the \fw{newWidget} function.
 
 Here is the \fw{render\_} function which will actually construct a Vty
 \fw{Image} to be displayed in the terminal:
@@ -65,14 +65,15 @@ Here is the \fw{render\_} function which will actually construct a Vty
  render_ =
    \this size ctx -> do
      (Counter v) <- getState this
-     let s = show v
-         width = fromEnum $ region_width size - length s
-         truncated = take width s
-     return $ string (getNormalAttr ctx) truncated
+     let s = T.pack $ show v
+         width = (fromEnum $ region_width size) -
+                 (fromEnum $ textWidth s)
+         (truncated, _, _) = clip1d (Phys 0) (Phys width) s
+     return $ string (getNormalAttr ctx) $ T.unpack truncated
 \end{haskellcode}
 
 The type of \fw{render\_} is \fw{Widget a -> DisplayRegion ->
-  RenderContext -> IO Image}.  The types are as follows:
+  RenderContext -> IO Image}.  The arguments are as follows:
 
 \begin{itemize}
 \item \fw{Widget a} - the widget being rendered, i.e., the \fw{Widget
@@ -88,8 +89,8 @@ The type of \fw{render\_} is \fw{Widget a -> DisplayRegion ->
   widget sizes are used to compute widget positions, so sizes must be
   accurate.
 
-  A widget may render to an \fw{Image} \textit{smaller} than the
-  specified size; many do.
+  A widget must render to an \fw{Image} \textit{no larger} than the
+  specified size.
 \item \fw{RenderContext} - the rendering context passed to \fw{runUi}
   as explained in Section \ref{sec:event_loop}.  In the \fw{render\_}
   function, we use this to determine which screen attributes to use.
@@ -114,19 +115,37 @@ It's important to use \fw{getState} instead of just referring to
 the latest state value at the time \fw{render\_} is called.
 
 \begin{haskellcode}
- let s = show v
-     width = fromEnum $ region_width size - length s
-     truncated = take width s
+ let s = T.pack $ show v
+     width = (fromEnum $ region_width size) -
+             (fromEnum $ textWidth s)
+     (truncated, _, _) = clip1d (Phys 0) (Phys width) s
 \end{haskellcode}
 
 To ensure that the \fw{Image} we generate does not exceed \fw{size} as
 described above, we use the width of the region to limit how many
-characters we take from the string representation of the counter.
+characters we take from the string representation of the counter.  We
+also introduce a function to calculate the width of our counter
+string, \fw{textWidth}, and a function to clip the string to the
+desired width, \fw{clip1d}.  These functions exist because, in
+general, some characters may take up more than one column in the
+terminal and we need a general way to account for that.  The
+\fw{textWidth} function returns a \fw{Phys} value which indicates the
+\textit{physical width} of its input, in columns, which may be more
+than its \textit{logical character width} in characters.  The
+\fw{clip1d} function returns a text string truncated so that its
+characters fit into the specified physical space.  It also returns
+\fw{Bool} indicators so you can tell whether clipping occurred in the
+``middle'' of wide characters.
+
+In this simple example widget, we could technically ignore text
+clipping details since we know that we'll always be returning numerals
+which occupy one column each; however, we should get in the habit of
+always using \fw{textWidth} and \fw{clip1d} in case we need to start
+showing multi-column characters.
 
 \begin{haskellcode}
- return $ string (getNormalAttr ctx) truncated
+ return $ string (getNormalAttr ctx) $ T.unpack truncated
 \end{haskellcode}
-
 The \fw{string} function is a Vty library function which takes an
 attribute (\fw{Attr}) and a \fw{String} and returns an \fw{Image}.
 The \fw{getNormalAttr} function returns the normal attribute from the
