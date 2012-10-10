@@ -208,8 +208,7 @@ column sz = ColumnSpec sz Nothing Nothing
 
 -- |Create a table widget using a list of column specifications and a
 -- border style.
-newTable :: 
-            [ColumnSpec]
+newTable :: [ColumnSpec]
          -> BorderStyle
          -> IO (Widget Table)
 newTable specs borderSty = do
