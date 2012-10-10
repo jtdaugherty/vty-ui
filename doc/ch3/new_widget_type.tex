@@ -126,22 +126,8 @@ described above, we use the width of the region to limit how many
 characters we take from the string representation of the counter.  We
 also introduce a function to calculate the width of our counter
 string, \fw{textWidth}, and a function to clip the string to the
-desired width, \fw{clip1d}.  These functions exist because, in
-general, some characters may take up more than one column in the
-terminal and we need a general way to account for that.  The
-\fw{textWidth} function returns a \fw{Phys} value which indicates the
-\textit{physical width} of its input, in columns, which may be more
-than its \textit{logical character width} in characters.  The
-\fw{clip1d} function returns a text string truncated so that its
-characters fit into the specified physical space.  It also returns
-\fw{Bool} indicators so you can tell whether clipping occurred in the
-``middle'' of wide characters.
-
-In this simple example widget, we could technically ignore text
-clipping details since we know that we'll always be returning numerals
-which occupy one column each; however, we should get in the habit of
-always using \fw{textWidth} and \fw{clip1d} in case we need to start
-showing multi-column characters.
+desired width, \fw{clip1d}.  For more information on text clipping,
+see Section \ref{sec:textclip}.
 
 \begin{haskellcode}
  return $ string (getNormalAttr ctx) $ T.unpack truncated

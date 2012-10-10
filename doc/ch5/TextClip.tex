@@ -1,0 +1,47 @@
+\section{Text Clipping}
+\label{sec:textclip}
+
+Most widgets in \vtyui\ render some form of text.  When we render
+text, we have to reason about the amount of space -- columns -- that
+the text will consume in the terminal so that we can render coherent
+interfaces.  However, this is tricky because some characters use one
+column of space and others use
+two.\footnote{\url{http://www.unicode.org/reports/tr11/}} To account
+for this possibility, any code which deals with computing the space
+required for text must consider the width of \textit{each character}.
+
+In cases where we have to consider character width, the most common
+operation we're trying to perform is to \textit{clip} a text string to
+ensure that it fits within a given region.  The \fw{TextClip} module
+provides types and functions to do this in one and two dimensions:
+
+\begin{itemize}
+\item \fw{ClipRect} - the type of two-dimensional clipping regions.
+  Allows you to specify a top-left corner, a clipping width, and a
+  clipping height.
+\item \fw{clip1d} - performs one-dimensional clipping on a single line
+  of text.
+\item \fw{clip2d} - performs two-dimensional clipping on a list of
+  lines of text using a \fw{ClipRect}.
+\end{itemize}
+
+The functions in the \fw{TextClip} module deal in physical values
+expressed using the \fw{Phys} type.  This type designates a
+\textit{physical width} as opposed to a logical one.  We use this
+distinction to gain compile-time clarity about which integer values
+refer to logical characters and which ones refer to terminal column
+counts.
+
+Both the \fw{clip1d} and \fw{clip2d} functions return text strings
+truncated so that their characters fit into the specified physical
+space.  They also return \fw{Bool} indicators which can be used to
+determine whether clipping occurred in the ``middle'' of wide
+characters.  The \fw{Edit} widget uses this feature to annotate
+truncated strings to indicate that a wide character can be found on
+either end of a truncated line of text.
+
+In simple widgets, we could technically ignore text clipping details
+if we know that we'll always be rendering strings which use
+single-column characters.  However, we should get in the habit of
+always using clipping functions in case we need to start showing
+multi-column characters.
