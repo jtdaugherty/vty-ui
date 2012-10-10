@@ -7,6 +7,7 @@ have already seen some of its fields in previous sections.
 \begin{haskellcode}
  data WidgetImpl a = WidgetImpl {
        state :: a
+     , visibie :: Bool
      , render_ :: Widget a -> DisplayRegion -> RenderContext
                -> IO Image
      , growHorizontal_ :: a -> IO Bool
@@ -39,6 +40,10 @@ completeness:
 \item \fw{focused} -- \fw{True} if this widget is focused.  As
   explained in Section \ref{sec:focus}, although one widget has the
   user's focus, internally many widgets may share it in a hierarchy.
+\item \fw{visible} -- \fw{True} if this widget is visible.  Visible
+  widgets will be rendered as usual, but invisible widgets
+  automatically render to empty images and do not grow horizontally or
+  vertically.
 \item \fw{currentSize} -- the ``current'' size of the widget, i.e.,
   the size of the \fw{Image} \textit{after} the last time the widget
   was rendered.
