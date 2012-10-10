@@ -174,7 +174,8 @@ newMultiStateCheckbox label states = do
       w { getCursorPosition_ =
             \this -> do
               pos <- getCurrentPosition this
-              return $ Just (pos `plusWidth` 1)
+              ch <- leftBracketChar <~~ this
+              return $ Just (pos `plusWidth` chWidth ch)
 
         , keyEventHandler = radioKeyEvent
         , render_ =
