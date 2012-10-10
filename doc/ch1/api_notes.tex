@@ -32,4 +32,5 @@ this document.  We will almost always omit the
 refer to the modules by their short names.  In addition, many modules
 in this library use \fw{Data.Text} values to represent text strings.
 We assume that \fw{Data.Text} is imported under the qualified name
-\fw{T}.
+\fw{T}.  We also assume the use of the \fw{OverloadedStrings} compiler
+language extension to avoid the repeated use of \fw{T.pack}.
