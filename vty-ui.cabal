@@ -23,7 +23,7 @@ Maintainer:          Jonathan Daugherty <jtd@galois.com>
 Build-Type:          Simple
 License:             BSD3
 License-File:        LICENSE
-Cabal-Version:       >= 1.6
+Cabal-Version:       >= 1.8
 Homepage:            http://jtdaugherty.github.com/vty-ui/
 
 Data-Files:
@@ -75,8 +75,8 @@ Source-Repository head
   type:     git
   location: git://github.com/jtdaugherty/vty-ui.git
 
-Flag testing
-    Description:     Build for testing
+Flag no-tests
+    Description:     Skip build of testing executable
     Default:         False
 
 Flag demos
@@ -95,6 +95,7 @@ Library
     mtl >= 2.0 && < 2.2,
     stm >= 2.1 && < 2.3,
     array >= 0.3.0.0 && < 0.5.0.0,
+    text >= 0.11,
     vector >= 0.9
 
   GHC-Options:       -Wall
@@ -104,6 +105,8 @@ Library
           Graphics.Vty.Widgets.All
           Graphics.Vty.Widgets.Alignment
           Graphics.Vty.Widgets.Text
+          Graphics.Vty.Widgets.TextClip
+          Graphics.Vty.Widgets.TextZipper
           Graphics.Vty.Widgets.Core
           Graphics.Vty.Widgets.Box
           Graphics.Vty.Widgets.List
@@ -129,115 +132,119 @@ Library
 
 Executable vty-ui-tests
   Build-Depends:
-    QuickCheck >= 2.4 && < 2.5
+    base >= 4 && < 5,
+    QuickCheck >= 2.4 && < 2.5,
+    random >= 1.0,
+    text,
+    vty,
+    vty-ui
 
   CPP-Options: -DTESTING
   GHC-Options: -Wall
 
-  if !flag(testing)
+  if flag(no-tests)
     Buildable:     False
   end
   Hs-Source-Dirs:  src,test,test/src
   Main-is:         TestDriver.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
 
   Other-Modules:
         Tests.Instances
         Tests.Util
+        Tests.Edit
         Tests.FormattedText
         Tests.Tokenize
+        Tests.TextClip
+        Tests.TextZipper
 
 Executable vty-ui-list-demo
-  Hs-Source-Dirs:  src
+  Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         ListDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
-    vty >= 4.6 && < 4.8
+    vty >= 4.6 && < 4.8,
+    text,
+    vty-ui
   if !flag(demos)
     Buildable: False
 
 Executable vty-ui-progressbar-demo
-  Hs-Source-Dirs:  src
+  Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         ProgressBarDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
-    vty >= 4.6 && < 4.8
+    vty >= 4.6 && < 4.8,
+    text,
+    vty-ui
   if !flag(demos)
     Buildable: False
 
 Executable vty-ui-complex-demo
-  Hs-Source-Dirs:  src
+  Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         ComplexDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
     bytestring >= 0.9 && < 1.0,
     time >= 1.1 && < 1.5,
     old-locale >= 1.0 && < 1.1,
-    vty >= 4.6 && < 4.8
+    vty >= 4.6 && < 4.8,
+    text,
+    vty-ui == 1.5.1
   if !flag(demos)
     Buildable: False
 
 Executable vty-ui-dirbrowser-demo
-  Hs-Source-Dirs:  src
+  Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         DirBrowserDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
-    vty >= 4.6 && < 4.8
+    vty >= 4.6 && < 4.8,
+    vty-ui
   if !flag(demos)
     Buildable: False
 
 Executable vty-ui-phoneinput-demo
-  Hs-Source-Dirs:  src
+  Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         PhoneInputDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
-    vty >= 4.6 && < 4.8
+    vty >= 4.6 && < 4.8,
+    text,
+    vty-ui
   if !flag(demos)
     Buildable: False
 
 Executable vty-ui-dialog-demo
-  Hs-Source-Dirs:  src
+  Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         DialogDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
-    vty >= 4.6 && < 4.8
+    vty >= 4.6 && < 4.8,
+    text,
+    vty-ui
   if !flag(demos)
     Buildable: False
 
 Executable vty-ui-edit-demo
-  Hs-Source-Dirs:  src
+  Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
   Main-is:         EditDemo.hs
-  if os(darwin)
-    Extra-Lib-Dirs:  /usr/lib
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.2,
-    vty >= 4.6 && < 4.8
+    vty >= 4.6 && < 4.8,
+    vty-ui
   if !flag(demos)
     Buildable: False

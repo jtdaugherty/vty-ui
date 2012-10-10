@@ -1,9 +1,53 @@
+1.5.1 -> 1.6
+------------
+
+Package changes:
+ * Added library dependency on "text" package.
+ * Added tests dependency on "random" package.
+ * Now the vty-ui-tests binary builds by default and can be turned off
+   with the 'no-tests' flag.
+ * Increased the declared cabal version to 1.8.
+ * Moved the demo sources into demos/ and added vty-ui as dependency
+   for each.  This helps to avoid redundant library compilation for
+   each demo program.
+ * Removed some dubious Darwin-specific cabal directives.
+
+API changes:
+ * Modified all widget constructors and functions to use Text values
+   where previously they used Strings.
+ * Renamed List.newStringList to newTextList.
+ * Added TextClip, a module which implements one- and two-dimensional
+   text clipping.  The implementation respects Unicode character
+   width.
+ * Added TextZipper, a module which implements a two-dimensional text
+   editor in zipper fash ion.
+ * Added a "Phys" newtype to express physical column values (as
+   opposed to character indices).  This is used in logical-to-physical
+   conversions and computations which have to take account of
+   character width.
+ * Exported Edit.applyEdit for applying generic text zipper
+   transformations to Edit widgets.
+
+Misc changes:
+ * Modified FormattedText widgets to take account of Unicode character
+   widths so that wide characters are rendered properly.  Also
+   modified some widgets to use FormattedText instead of direct Vty
+   rendering to take advantage of this feature.
+ * Refactored the Edit widget to use TextZipper and TextClip modules
+   to properly account for character width.  Edit widgets now support
+   multi-column characters and show beginning-of-line and end-of-line
+   indicators ("$") in cases where wide characters cannot be shown due
+   to display clipping.
+ * Added some QuickCheck properties for TextClip and TextZipper.
+
+Other notes:
+ * Deprecation notice: Text.Trans.Tokenize will either be removed
+   entirely or severely refactored in a future release.
 
 Bug fixes:
  * Fixed bug in Text.Trans.Tokenize.wrapStream which prevented
    over-long words from being wrapped properly, as well as lines where
    short words followed over-long ones.
-
 
 1.5 -> 1.5.1
 ------------

@@ -1,8 +1,10 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-unused-do-bind #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import System.Exit ( exitSuccess )
 import System.Locale
+import qualified Data.Text as T
 import Control.Monad
 import Control.Concurrent
 import Data.Time.Clock
@@ -43,7 +45,7 @@ main = do
 
   r1 <- newCheckbox "Cake"
   r2 <- newCheckbox "Death"
-  radioHeader <- plainText "" >>= withNormalAttribute headerAttr
+  radioHeader <- plainText T.empty >>= withNormalAttribute headerAttr
 
   rg <- newRadioGroup
   addToRadioGroup rg r1
@@ -59,18 +61,18 @@ main = do
   edit2box <- boxFixed 30 3 edit2
   setEditLineLimit edit2 $ Just 3
 
-  edit1Header <- textWidget wrap [] >>= withNormalAttribute headerAttr
-  edit2Header <- textWidget wrap [] >>= withNormalAttribute headerAttr
+  edit1Header <- textWidget wrap T.empty >>= withNormalAttribute headerAttr
+  edit2Header <- textWidget wrap T.empty >>= withNormalAttribute headerAttr
 
   lst <- newList (fgColor bright_green)
 
   selector <- vLimit 3 lst
-  listHeader <- plainText ""
+  listHeader <- plainText T.empty
 
   rs <- vBox r1 r2
 
-  cbHeader <- plainText ""
-  timeText <- plainText ""
+  cbHeader <- plainText T.empty
+  timeText <- plainText T.empty
 
   prog <- newProgressBar (white `on` red) (red `on` white)
   setProgressTextAlignment prog AlignCenter
@@ -86,24 +88,27 @@ main = do
 
   rg `onRadioChange` \cb -> do
       s <- getCheckboxLabel cb
-      setText radioHeader $ s ++ ", please."
+      setText radioHeader $ T.concat [s, ", please."]
 
   r3 `onCheckboxChange` \v ->
-      setText cbHeader $ "you chose: " ++ show v
+      setText cbHeader $ T.pack $ concat ["you chose: ", show v]
 
   prog `onProgressChange` \val ->
-      setProgressText prog $ "Progress (" ++ show val ++ " %)"
+      setProgressText prog $ T.concat [ "Progress ("
+                                      , T.pack $ show val
+                                      , " %)"
+                                      ]
 
   edit1 `onChange` (setText edit1Header)
   edit2 `onChange` (setText edit2Header)
 
   lst `onSelectionChange` \ev ->
       case ev of
-        SelectionOn _ k _ -> setText listHeader $ "You selected: " ++ k
+        SelectionOn _ k _ -> setText listHeader $ T.pack $ "You selected: " ++ k
         SelectionOff -> return ()
 
   lst `onItemActivated` \(ActivateItemEvent _ s _) ->
-      setText listHeader $ "You activated: " ++ s
+      setText listHeader $ T.pack $ "You activated: " ++ s
 
   setEditText edit1 "Foo"
   setEditText edit2 "Bar"
@@ -131,7 +136,7 @@ main = do
              ]
 
   forM_ strs $ \s ->
-      (addToList lst s =<< plainText s)
+      (addToList lst s =<< (plainText $ T.pack s))
 
   addToFocusGroup fgr r1
   addToFocusGroup fgr r2
@@ -145,7 +150,8 @@ main = do
   forkIO $ forever $ do
          schedule $ do
            t <- getCurrentTime
-           setText timeText $ formatTime defaultTimeLocale rfc822DateFormat t
+           setText timeText $ T.pack $
+                   formatTime defaultTimeLocale rfc822DateFormat t
          threadDelay $ 1 * 1000 * 1000
 
   forkIO $ forever $ do

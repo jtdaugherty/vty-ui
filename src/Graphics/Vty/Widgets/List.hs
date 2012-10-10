@@ -14,7 +14,7 @@ module Graphics.Vty.Widgets.List
     , SelectionEvent(..)
     , ActivateItemEvent(..)
     -- ** List creation
-    , newStringList
+    , newTextList
     , newList
     , addToList
     , insertIntoList
@@ -42,6 +42,7 @@ where
 import Data.Typeable
 import Control.Exception hiding (Handler)
 import Control.Monad
+import qualified Data.Text as T
 import qualified Data.Vector as V
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
@@ -419,13 +420,13 @@ renderListWidget foc list s ctx = do
 
   return $ vert_cat (visible_imgs ++ [filler])
 
--- |A convenience function to create a new list using 'String's as the
--- internal values and 'FormattedText' widgets to represent those
+-- |A convenience function to create a new list using 'Text' values as
+-- the internal values and 'FormattedText' widgets to represent those
 -- strings.
-newStringList :: Attr -- ^The attribute of the selected item
-              -> [String] -- ^The list items
-              -> IO (Widget (List String FormattedText))
-newStringList selAttr labels = do
+newTextList :: Attr -- ^The attribute of the selected item
+            -> [T.Text] -- ^The list items
+            -> IO (Widget (List T.Text FormattedText))
+newTextList selAttr labels = do
   list <- newList selAttr
   forM_ labels $ \l ->
       (addToList list l =<< plainText l)

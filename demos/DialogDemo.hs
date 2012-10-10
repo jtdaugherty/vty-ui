@@ -1,6 +1,8 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
+import qualified Data.Text as T
 import Graphics.Vty hiding (Button)
 import Graphics.Vty.Widgets.All
 
@@ -35,4 +37,4 @@ main = do
 
   runUi coll $ defaultContext { focusAttr = black `on` yellow }
 
-  (putStrLn . ("You entered: " ++)) =<< getEditText e
+  (putStrLn . ("You entered: " ++) . T.unpack) =<< getEditText e

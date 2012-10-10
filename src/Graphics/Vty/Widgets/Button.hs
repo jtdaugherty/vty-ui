@@ -11,6 +11,7 @@ module Graphics.Vty.Widgets.Button
     )
 where
 
+import qualified Data.Text as T
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Padding
@@ -34,7 +35,7 @@ pressButton :: Button -> IO ()
 pressButton b = fireEvent b (return . buttonPressedHandlers) b
 
 -- |Set the text label on a button.
-setButtonText :: Button -> String -> IO ()
+setButtonText :: Button -> T.Text -> IO ()
 setButtonText b s = setText (buttonText b) s
 
 instance HasNormalAttr Button where
@@ -44,7 +45,7 @@ instance HasFocusAttr Button where
     setFocusAttribute b a = setFocusAttribute (buttonWidget b) a
 
 -- |Create a button.  Get its underlying widget with 'buttonWidget'.
-newButton :: String -> IO Button
+newButton :: T.Text -> IO Button
 newButton msg = do
   t <- plainText msg
   setTextAppearFocused t True

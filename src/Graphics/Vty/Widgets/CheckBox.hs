@@ -1,4 +1,5 @@
-{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, DeriveDataTypeable #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances, DeriveDataTypeable,
+  OverloadedStrings #-}
 -- |This module provides ''check box'' widgets and ''radio button''
 -- widgets.  In addition, this module provides a generalized
 -- ''multi-state'' check box type which allows you to set multiple
@@ -40,11 +41,13 @@ where
 import Data.IORef
 import Data.List ( findIndex )
 import Data.Maybe
+import qualified Data.Text as T
 import Control.Monad
 import Control.Exception
 import Data.Typeable
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
+import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
@@ -126,9 +129,10 @@ data CheckBox a = CheckBox { leftBracketChar :: Char
                            , rightBracketChar :: Char
                            , checkboxStates :: [(a, Char)]
                            , currentState :: a
-                           , checkboxLabel :: String
+                           , checkboxLabel :: T.Text
                            , checkboxChangeHandlers :: Handlers a
                            , checkboxFrozen :: Bool
+                           , innerTextWidget :: Widget FormattedText
                            }
 
 instance Show a => Show (CheckBox a) where
@@ -141,12 +145,12 @@ instance Show a => Show (CheckBox a) where
                      ]
 
 -- |Create a new checkbox with the specified text label.
-newCheckbox :: String -> IO (Widget (CheckBox Bool))
+newCheckbox :: T.Text -> IO (Widget (CheckBox Bool))
 newCheckbox label = newMultiStateCheckbox label [(False, ' '), (True, 'x')]
 
 -- |Create a new multi-state checkbox.
 newMultiStateCheckbox :: (Eq a) =>
-                         String -- ^The checkbox label.
+                         T.Text -- ^The checkbox label.
                       -> [(a, Char)] -- ^The list of valid states that
                                      -- the checkbox can be in, along
                                      -- with the visual representation
@@ -155,6 +159,7 @@ newMultiStateCheckbox :: (Eq a) =>
 newMultiStateCheckbox _ [] = throw EmptyCheckboxStates
 newMultiStateCheckbox label states = do
   cchs <- newHandlers
+  t <- plainText ""
   let initSt = CheckBox { checkboxLabel = label
                         , checkboxChangeHandlers = cchs
                         , leftBracketChar = '['
@@ -162,36 +167,40 @@ newMultiStateCheckbox label states = do
                         , checkboxStates = states
                         , currentState = fst $ states !! 0
                         , checkboxFrozen = False
+                        , innerTextWidget = t
                         }
 
   wRef <- newWidget initSt $ \w ->
       w { getCursorPosition_ =
             \this -> do
               pos <- getCurrentPosition this
-              return $ Just (pos `plusWidth` 1)
+              ch <- leftBracketChar <~~ this
+              return $ Just (pos `plusWidth` chWidth ch)
 
         , keyEventHandler = radioKeyEvent
         , render_ =
             \this sz ctx -> do
-              f <- focused <~ this
               st <- getState this
+              tw <- innerTextWidget <~~ this
 
-              let attr = mergeAttrs [ overrideAttr ctx
-                                    , normalAttr ctx
-                                    ]
-
-                  fAttr = if f
-                          then focusAttr ctx
-                          else attr
-
-                  v = currentState st
+              let v = currentState st
                   ch = fromJust $ lookup v (checkboxStates st)
 
-                  s = [leftBracketChar st, ch, rightBracketChar st, ' '] ++
-                      (checkboxLabel st)
+                  s = T.concat [ T.pack [ leftBracketChar st
+                                        , ch
+                                        , rightBracketChar st
+                                        , ' '
+                                        ]
+                               , checkboxLabel st
+                               ]
 
-              return $ string fAttr $ take (fromEnum $ region_width sz) s
+              setText tw s
+              render tw sz ctx
         }
+
+  wRef `relayFocusEvents` t
+  setTextAppearFocused t True
+
   return wRef
 
 modifyElem :: [a] -> Int -> (a -> a) -> [a]
@@ -223,7 +232,7 @@ setBracketChars wRef chL chR =
                                      }
 
 -- |Get a checkbox's text label.
-getCheckboxLabel :: Widget (CheckBox a) -> IO String
+getCheckboxLabel :: Widget (CheckBox a) -> IO T.Text
 getCheckboxLabel = (checkboxLabel <~~)
 
 radioKeyEvent :: (Eq a) => Widget (CheckBox a) -> Key -> [Modifier] -> IO Bool

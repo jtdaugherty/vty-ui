@@ -4,6 +4,7 @@ import Test.QuickCheck
 import Test.QuickCheck.Monadic
 
 import Control.Applicative
+import qualified Data.Text as T
 
 import Graphics.Vty
 import Graphics.Vty.Widgets.Text
@@ -42,11 +43,12 @@ textSetText =
         img3 <- run $ render w2 sz defaultContext
         return $ img1 == img3 && img1 /= img2
 
-textString :: Gen String
-textString = listOf $ oneof [ pure 'a'
-                            , pure '\n'
-                            , pure ' '
-                            ]
+textString :: Gen T.Text
+textString = T.pack <$> (listOf $ oneof [ pure 'a'
+                                        , pure '\n'
+                                        , pure ' '
+                                        , pure '台'
+                                        ])
 
 tests :: [Property]
 tests = [ label "text: newlines rendered correctly" textHeight

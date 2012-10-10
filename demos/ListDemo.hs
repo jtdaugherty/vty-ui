@@ -1,15 +1,17 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-unused-do-bind #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
 import System.Exit ( exitSuccess )
+import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Widgets.All
 
 data AppElements =
-    AppElements { theList :: Widget (List String FormattedText)
+    AppElements { theList :: Widget (List T.Text FormattedText)
                 , theBody :: Widget FormattedText
                 , theFooter :: Widget FormattedText
-                , theListLimit :: Widget (VLimit (List String FormattedText))
+                , theListLimit :: Widget (VLimit (List T.Text FormattedText))
                 , uis :: Collection
                 }
 
@@ -19,11 +21,11 @@ bodyAttr = white `on` black
 selAttr = black `on` yellow
 keyAttr = fgColor magenta
 
-message1 :: String
+message1 :: T.Text
 message1 = "This demonstration shows how list widgets behave. \n\
            \See the keystrokes below to try the demo."
 
-message2 :: [(String, Attr)]
+message2 :: [(T.Text, Attr)]
 message2 = [ ("- Press ", def_attr), ("q", keyAttr), (" to quit\n", def_attr)
            , ("- Press ", def_attr), ("+", keyAttr)
            , (" / ", def_attr), ("a", keyAttr)
@@ -60,9 +62,9 @@ buildUi appst = do
 -- Construct the application statea using the message map.
 mkAppElements :: IO AppElements
 mkAppElements = do
-  lw <- newStringList selAttr []
-  b <- textWidget wrap ""
-  ft <- plainText "" >>= withNormalAttribute titleAttr
+  lw <- newTextList selAttr []
+  b <- textWidget wrap T.empty
+  ft <- plainText T.empty >>= withNormalAttribute titleAttr
   ll <- vLimit 5 lw
 
   c <- newCollection
@@ -77,7 +79,7 @@ mkAppElements = do
 updateBody :: AppElements -> Int -> IO ()
 updateBody st i = do
   let msg = "This is the text for list entry " ++ (show $ i + 1)
-  setText (theBody st) msg
+  setText (theBody st) $ T.pack msg
 
 updateFooterNums :: AppElements -> Widget (List a b) -> IO ()
 updateFooterNums st w = do
@@ -86,7 +88,7 @@ updateFooterNums st w = do
   let msg = case result of
               Nothing -> "0/0"
               Just (i, _) -> (show $ i + 1) ++ "/" ++ (show sz)
-  setText (theFooter st) msg
+  setText (theFooter st) $ T.pack msg
 
 main :: IO ()
 main = do
@@ -107,8 +109,9 @@ main = do
          case result of
            Nothing -> return ()
            Just (i, _) -> removeFromList (theList st) i >> return ()
-      addNewItem = do
-         addToList (theList st) "unused" =<< plainText "a list item"
+      addNewItem =
+          (plainText "a list item") >>=
+                    addToList (theList st) "unused"
 
   (theList st) `onKeyPressed` \_ k _ -> do
          case k of

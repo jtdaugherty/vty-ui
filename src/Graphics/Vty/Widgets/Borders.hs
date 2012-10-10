@@ -20,6 +20,8 @@ module Graphics.Vty.Widgets.Borders
     )
 where
 
+import qualified Data.Text as T
+
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Box
@@ -32,7 +34,7 @@ import Graphics.Vty.Widgets.Skins
 class HasBorderAttr a where
     setBorderAttribute :: a -> Attr -> IO ()
 
-data HBorder = HBorder Attr String
+data HBorder = HBorder Attr T.Text
                deriving (Show)
 
 instance HasBorderAttr (Widget HBorder) where
@@ -45,23 +47,23 @@ withBorderAttribute att w = setBorderAttribute w att >> return w
 
 -- | Adds a label to a horizontal border.  The label will be
 -- horizontally centered.
-withHBorderLabel :: String -> Widget HBorder -> IO (Widget HBorder)
+withHBorderLabel :: T.Text -> Widget HBorder -> IO (Widget HBorder)
 withHBorderLabel label w = setHBorderLabel w label >> return w
 
 -- | Adds a label to a horizontal border.  The label will be
 -- horizontally centered.
-setHBorderLabel :: Widget HBorder -> String -> IO ()
+setHBorderLabel :: Widget HBorder -> T.Text -> IO ()
 setHBorderLabel w label =
     updateWidgetState w $ \(HBorder a _) -> HBorder a label
 
 -- | Adds a label to the top border of a bordered widget.  The label
 -- will be horizontally centered.
-withBorderedLabel :: String -> Widget (Bordered a) -> IO (Widget (Bordered a))
+withBorderedLabel :: T.Text -> Widget (Bordered a) -> IO (Widget (Bordered a))
 withBorderedLabel label w = setBorderedLabel w label >> return w
 
 -- | Adds a label to the top border of a bordered widget.  The label
 -- will be horizontally centered.
-setBorderedLabel :: Widget (Bordered a) -> String -> IO ()
+setBorderedLabel :: Widget (Bordered a) -> T.Text -> IO ()
 setBorderedLabel w label =
     updateWidgetState w $ \(Bordered a ch _) -> Bordered a ch label
 
@@ -69,7 +71,7 @@ setBorderedLabel w label =
 -- attribute and character.
 hBorder :: IO (Widget HBorder)
 hBorder = do
-  let initSt = HBorder def_attr ""
+  let initSt = HBorder def_attr T.empty
   wRef <- newWidget initSt $ \w ->
       w { growHorizontal_ = const $ return True
         , render_ = renderHBorder
@@ -85,21 +87,29 @@ renderHBorder this s ctx = do
                          , attr
                          , normalAttr ctx
                          ]
-      noTitle = char_fill attr' (skinHorizontal $ skin ctx) (region_width s) 1
-  case null str of
-    True -> return noTitle
-    False -> do
-      let title = " " ++ str ++ " "
-      case (toEnum $ length title) > region_width s of
-        True -> return noTitle
-        False -> do
-                  let remaining = region_width s - (toEnum $ length title)
-                      side1 = remaining `div` 2
-                      side2 = if remaining `mod` 2 == 0 then side1 else side1 + 1
-                  return $ horiz_cat [ char_fill attr' (skinHorizontal $ skin ctx) side1 1
-                                     , string attr' title
-                                     , char_fill attr' (skinHorizontal $ skin ctx) side2 1
-                                     ]
+      ch = skinHorizontal $ skin ctx
+      noTitle = T.pack $ replicate (fromEnum $ region_width s) ch
+
+  wStr <- case T.null str of
+            True -> return noTitle
+            False -> do
+              let title = T.concat [ T.pack " "
+                                   , str
+                                   , T.pack " "
+                                   ]
+              case (textWidth title) > (Phys $ fromEnum $ region_width s) of
+                True -> return noTitle
+                False -> do
+                       let remaining = (Phys $ fromEnum $ region_width s) - (textWidth title)
+                           Phys side1 = remaining `div` Phys 2
+                           side2 = if remaining `mod` Phys 2 == Phys 0 then side1 else side1 + 1
+                       return $ T.concat [ T.pack $ replicate side1 ch
+                                         , title
+                                         , T.pack $ replicate side2 ch
+                                         ]
+
+  w <- plainTextWithAttrs [(wStr, attr')]
+  render w s ctx
 
 data VBorder = VBorder Attr
                deriving (Show)
@@ -125,7 +135,7 @@ vBorder = do
         }
   return wRef
 
-data Bordered a = (Show a) => Bordered Attr (Widget a) String
+data Bordered a = (Show a) => Bordered Attr (Widget a) T.Text
 
 instance Show (Bordered a) where
     show (Bordered attr _ l) = concat [ "Bordered { attr = "
@@ -142,7 +152,7 @@ instance HasBorderAttr (Widget (Bordered a)) where
 -- |Wrap a widget in a bordering box.
 bordered :: (Show a) => Widget a -> IO (Widget (Bordered a))
 bordered child = do
-  let initSt = Bordered def_attr child ""
+  let initSt = Bordered def_attr child T.empty
   wRef <- newWidget initSt $ \w ->
       w { growVertical_ = const $ growVertical child
         , growHorizontal_ = const $ growHorizontal child
@@ -189,10 +199,14 @@ drawBordered this s ctx
   let adjusted = DisplayRegion (image_width childImage + 2)
                  (image_height childImage)
 
-  tlCorner <- plainText [skinCornerTL sk] >>= withNormalAttribute attr'
-  trCorner <- plainText [skinCornerTR sk] >>= withNormalAttribute attr'
-  blCorner <- plainText [skinCornerBL sk] >>= withNormalAttribute attr'
-  brCorner <- plainText [skinCornerBR sk] >>= withNormalAttribute attr'
+  tlCorner <- plainText (T.singleton $ skinCornerTL sk)
+              >>= withNormalAttribute attr'
+  trCorner <- plainText (T.singleton $ skinCornerTR sk)
+              >>= withNormalAttribute attr'
+  blCorner <- plainText (T.singleton $ skinCornerBL sk)
+              >>= withNormalAttribute attr'
+  brCorner <- plainText (T.singleton $ skinCornerBR sk)
+              >>= withNormalAttribute attr'
 
   hb <- hBorder >>= withHBorderLabel label
   setBorderAttribute hb attr'

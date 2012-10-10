@@ -15,16 +15,23 @@ module Graphics.Vty.Widgets.ProgressBar
 where
 
 import Control.Monad
+import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Alignment
+import Graphics.Vty.Widgets.Util
+import Graphics.Vty.Widgets.TextClip
+import Text.Trans.Tokenize
 
 data ProgressBar = ProgressBar { progressBarAmount :: Int
                                , onChangeHandlers :: Handlers Int
-                               , progressBarText :: String
+                               , progressBarText :: T.Text
                                , progressBarTextAlignment :: Alignment
+                               , progCompleteAttr :: Attr
+                               , progIncompleteAttr :: Attr
+                               , progTextWidget :: Widget FormattedText
                                }
 
 instance Show ProgressBar where
@@ -39,48 +46,71 @@ instance Show ProgressBar where
 newProgressBar :: Attr -> Attr -> IO (Widget ProgressBar)
 newProgressBar completeAttr incompleteAttr = do
   chs <- newHandlers
-  t <- plainText ""
-  let initSt = ProgressBar 0 chs "" AlignCenter
+  t <- plainText T.empty
+  let initSt = ProgressBar 0 chs T.empty AlignCenter completeAttr incompleteAttr t
   wRef <- newWidget initSt $ \w ->
           w { growHorizontal_ = const $ return True
             , render_ =
-                \this size ctx -> do
-                  -- Divide the available width according to the
-                  -- progress value
-                  prog <- progressBarAmount <~~ this
-                  txt <- progressBarText <~~ this
-                  al <- progressBarTextAlignment <~~ this
-
-                  let complete_width = fromEnum $ (toRational prog / toRational (100.0 :: Double)) *
-                                       (toRational $ fromEnum $ region_width size)
-
-                      full_width = fromEnum $ region_width size
-                      full_str = take full_width $ mkStr txt al
-
-                      mkStr s AlignLeft = s ++ replicate (full_width - length txt) ' '
-                      mkStr s AlignRight = replicate (full_width - length txt) ' ' ++ s
-                      mkStr s AlignCenter = concat [ half
-                                                   , s
-                                                   , half
-                                                   , if length half * 2 < (full_width + length txt)
-                                                     then " "
-                                                     else ""
-                                                   ]
-                          where
-                            half = replicate ((full_width - length txt) `div` 2) ' '
-
-                      (complete_str, incomplete_str) = ( take complete_width full_str
-                                                       , drop complete_width full_str
-                                                       )
-
-                  setTextWithAttrs t [ (complete_str, completeAttr)
-                                     , (incomplete_str, incompleteAttr)
-                                     ]
-                  render t size ctx
+                \this size ctx -> renderProgressBar size ctx =<< getState this
             }
 
   setProgress wRef 0
   return wRef
+
+renderProgressBar :: DisplayRegion -> RenderContext -> ProgressBar -> IO Image
+renderProgressBar size ctx st = do
+  -- Divide the available width according to the progress value
+  let prog = progressBarAmount st
+      txt = progressBarText st
+      al = progressBarTextAlignment st
+
+      complete_width =
+          Phys $ fromEnum $ (toRational prog / toRational (100.0 :: Double)) *
+                   (toRational $ fromEnum $ region_width size)
+
+      full_width = Phys $ fromEnum $ region_width size
+      full_str = truncateText full_width $ mkStr txt al
+
+      mkStr s AlignLeft =
+          let diff = fromEnum $ full_width - textWidth txt
+          in T.concat [ s
+                      , T.pack $ replicate diff ' '
+                      ]
+
+      mkStr s AlignRight =
+          let diff = fromEnum $ full_width - textWidth txt
+          in T.concat [ T.pack $ replicate diff ' '
+                      , s
+                      ]
+
+      mkStr s AlignCenter =
+          T.concat [ half
+                   , s
+                   , half
+                   , trailingSpc
+                   ]
+          where
+            diff = fromEnum $ full_width - textWidth txt
+            half = T.pack $ replicate (diff `div` 2) ' '
+            used_width = textWidth half * 2 + textWidth txt
+            trailingSpc =
+                if used_width < full_width
+                then T.singleton ' '
+                else T.empty
+
+
+      (leftPart, _, _) = clip1d 0 complete_width full_str
+      charCount = T.length leftPart
+
+      (complete_str, incomplete_str) = ( T.take charCount full_str
+                                       , T.drop charCount full_str
+                                       )
+
+  setTextWithAttrs (progTextWidget st)
+                       [ (complete_str, progCompleteAttr st)
+                       , (incomplete_str, progIncompleteAttr st)
+                       ]
+  render (progTextWidget st) size ctx
 
 -- |Register a handler to be invoked when the progress bar's progress
 -- value changes.  The handler will be passed the new progress value.
@@ -101,7 +131,7 @@ setProgressTextAlignment p al =
     updateWidgetState p $ \st -> st { progressBarTextAlignment = al }
 
 -- |Set the progress bar's text label.
-setProgressText :: Widget ProgressBar -> String -> IO ()
+setProgressText :: Widget ProgressBar -> T.Text -> IO ()
 setProgressText p s =
     updateWidgetState p $ \st -> st { progressBarText = s }
 
