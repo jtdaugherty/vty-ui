@@ -44,13 +44,17 @@ data ClipRect =
              }
     deriving (Eq, Show)
 
--- |One-dimensional text clipping.  Returns the clipped text plus
--- 'Bool's indicating whether wide characters were \"sliced\" on
--- either side (left and right, respectively) of the clipping region.
--- This function guarantees that the text returned will always fit
--- within the specified clipping region.  Since wide characters may be
--- sliced during clipping, this may return a text string smaller than
--- the clipping region.
+-- |One-dimensional text clipping.  Takes the left clipping margin, a
+-- clipping width, and a text string.  For example, @clip1d n w s@
+-- clips the string @s@ so that the result includes characters in @s@
+-- starting at position @n@ and including characters using no more
+-- than @w@ columns in width.  Returns the clipped text plus 'Bool's
+-- indicating whether wide characters were \"sliced\" on either side
+-- (left and right, respectively) of the clipping region.  This
+-- function guarantees that the text returned will always fit within
+-- the specified clipping region.  Since wide characters may be sliced
+-- during clipping, this may return a text string smaller than the
+-- clipping region.
 clip1d :: Phys -> Phys -> T.Text -> (T.Text, Bool, Bool)
 clip1d _ 0 _ = (T.empty, False, False)
 clip1d start len t = (T.pack result2, lSlice, rSlice)
