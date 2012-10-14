@@ -1,1 +1,67 @@
 \section{The Text Zipper}
+
+The \fw{TextZipper} module provides a
+\textit{zipper}\footnote{\url{http://www.haskell.org/haskellwiki/Zipper}}
+data structure to manage the text editing process of multi-line text
+buffers.  A \fw{TextZipper} stores text and a \textit{cursor position}
+at which editing operations are applied.  The zipper implementation
+works for any string representation type that provides implementations
+of \fw{drop}, \fw{take}, \fw{length}, \fw{last}, \fw{init}, and
+\fw{null}.  The module provides a default implementation (used by the
+\fw{Edit} widget) based on the \fw{Data.Text.Text} type.  Its
+constructor, \fw{textZipper}, takes a list of \fw{Text} values and
+creates a zipper.
+
+\begin{haskellcode}
+ let z = textZipper []
+\end{haskellcode}
+
+To extract the text content of the zipper, use \fw{getText}:
+
+\begin{haskellcode}
+ let theLines = getText z
+\end{haskellcode}
+
+The module provides the following \textit{editing transformations}:
+
+\begin{itemize}
+\item \fw{moveCursor (row, col)} - Move the cursor to the specified
+  cursor position.  Invalid positions will be ignored.
+\item \fw{insertChar c} - Insert \fw{c} at the cursor position.
+\item \fw{breakLine} - Insert a line break at the cursor position.
+\item \fw{killToEOL} - Kill (delete) all text after the cursor
+  position up to the end of the current line.
+\item \fw{gotoEOL} - Move the cursor past the end of the current line.
+\item \fw{gotoBOL} - Move the cursor to just before the beginning of
+  the current line.
+\item \fw{deletePrevChar} - Delete the character preceding the cursor
+  position.  If the cursor is at the beginning of a line, the current
+  line will be appended onto the previous line.
+\item \fw{deleteChar} - Delete the character at the cursor position.
+  If the cursor is at the end of a line, the following line will be
+  appended onto the current line.
+\item \fw{moveRight} - Move the cursor one position to the right,
+  wrapping to the following line if necessary.
+\item \fw{moveLeft} - Move the cursor one position to the left,
+  wrapping to the preceding line if necessary.
+\item \fw{moveUp} - Move the cursor up by one row.
+\item \fw{moveDown} - Move the cursor down by one row.
+\end{itemize}
+
+These transformations can be composed in natural ways to create a
+sequence of editing transformations.  For example:
+
+\begin{haskellcode}
+ import Control.Arrow
+
+ doEdits :: TextZipper a -> TextZipper a
+ doEdits = foldl (>>>) id [ moveRight
+                          , insertChar 'x'
+                          , insertChar 'z'
+                          , moveLeft
+                          , insertChar 'y'
+                          , deletePrevChar
+                          ]
+ -- Later:
+ let edited = doEdits $ textZipper theLines
+\end{haskellcode}
