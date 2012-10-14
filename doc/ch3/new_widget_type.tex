@@ -132,6 +132,7 @@ see Section \ref{sec:textclip}.
 \begin{haskellcode}
  return $ string (getNormalAttr ctx) $ T.unpack truncated
 \end{haskellcode}
+
 The \fw{string} function is a Vty library function which takes an
 attribute (\fw{Attr}) and a \fw{String} and returns an \fw{Image}.
 The \fw{getNormalAttr} function returns the normal attribute from the

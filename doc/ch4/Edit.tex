@@ -77,6 +77,18 @@ automatically.
   \fw{setEditLineLimit \$ Just 0} is a no-op.
 \end{itemize}
 
+\subsubsection{Wide Character Support}
+
+Some characters, such as those from some Asian character sets, require
+two columns instead of one when displayed in a terminal.  The
+\fw{Edit} widget supports such characters with one caveat: when a wide
+character straddles the left or right viewing boundary of an \fw{Edit}
+widget, an indicator (\fw{\$}) will be displayed in its place to
+indicate that a wide character lies on the boundary and can be
+revealed by scrolling further in the appropriate direction.  Such
+indicators are only visual and do not affect the underlying text, so
+e.g. calls to \fw{getEditText} will return the text as expected.
+
 \subsubsection{Growth Policy}
 
 Single-line \fw{Edit} widgets -- those created by \fw{editWidget} --

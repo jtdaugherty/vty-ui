@@ -116,7 +116,10 @@ widget.  Activation occurs when the user focuses the \fw{Edit} widget
 and presses \fw{Enter}.  The handler for this event is an \fw{IO}
 action which takes the \fw{Edit} widget itself as its only parameter.
 The \fw{getEditText} function gets the current text of the \fw{Edit}
-widget, and we use \fw{error} to abort the program and print the text.
+widget, and we use \fw{error} to abort the program and print the
+text.\footnote{In general I wouldn't recommend the use of \fw{error}
+  to do this, but the \vtyui\ event loop will still cleanly shut down
+  and clean up Vty in the event of any exception.}
 
 \begin{haskellcode}
  runUi c defaultContext

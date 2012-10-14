@@ -20,8 +20,8 @@ A \fw{FormattedText} widget can be created from a \fw{String} with the
 The contents of a text widget can be set in one of three ways:
 \begin{itemize}
 \item Initially, as a parameter to \fw{plainText} and \fw{textWidget}
-\item As a \fw{String} parameter to \fw{setText}
-\item As a list parameter of \fw{(String, Attr)} with
+\item As a \fw{Text} parameter to \fw{setText}
+\item As a list parameter of \fw{(Text, Attr)} with
   \fw{setTextWithAttrs}
 \end{itemize}
 
@@ -32,8 +32,8 @@ Each token is assigned a default attribute of \fw{def\_attr}, which
 defaults to the ``normal'' attribute of the widget (see Section
 \ref{sec:attributes} for more information on attributes).
 
-The \fw{setText} function merely takes a \fw{String}, tokenizes it,
-and assigns the default attribute to all tokens.
+The \fw{setText} function merely takes a \fw{Text} value, tokenizes
+it, and assigns the default attribute to all tokens.
 
 The \fw{setTextWithAttrs} function provides finer control over the
 initial attribute assignment to the text because it lets you specify

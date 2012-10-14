@@ -146,7 +146,9 @@ error message in the browser's error message area.
 
 \begin{haskellcode}
  browser `onBrowseAccept` \path ->
-   reportBrowserError browser $ "not a valid document: " ++ path
+   reportBrowserError browser $ T.concat [ "not a valid document: "
+                                         , T.pack path
+                                         ]
 \end{haskellcode}
 
 \subsubsection{Growth Policy}
