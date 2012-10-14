@@ -65,6 +65,9 @@ Data-Files:
     doc/ch4/Padded.tex
     doc/ch4/ProgressBar.tex
     doc/ch4/Table.tex
+    doc/ch5/main.tex
+    doc/ch5/TextClip.tex
+    doc/ch5/TextZipper.tex
     doc/macros.tex
     doc/Makefile
     doc/vty-ui-users-manual.tex
