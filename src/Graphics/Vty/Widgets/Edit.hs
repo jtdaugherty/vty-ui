@@ -194,9 +194,9 @@ multiLineEditWidget = do
   setEditLineLimit wRef Nothing
   return wRef
 
--- |Set the limit on the number of lines for the edit widget.  Nothing
--- indicates no limit, while Just indicates a limit of the specified
--- number of lines.
+-- |Set the limit on the number of lines for the edit widget.
+-- 'Nothing' indicates no limit, while 'Just' indicates a limit of the
+-- specified number of lines.
 setEditLineLimit :: Widget Edit -> Maybe Int -> IO ()
 setEditLineLimit _ (Just v) | v <= 0 = return ()
 setEditLineLimit w v = updateWidgetState w $ \st -> st { lineLimit = v }
