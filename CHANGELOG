@@ -1,3 +1,16 @@
+1.6 -> 1.6.1
+------------
+
+Bug fixes:
+ * The List widget now has an initial scroll window size at a value
+   sufficiently large value (i.e., larger than anyone's terminal would
+   reasonably be) to ensure that list changes *prior* to the first
+   rendering will properly affect the other aspects of the list.  We
+   do this because otherwise, if we set the initial window to zero,
+   some operations bail since that condition also suggests there's
+   nothing to be rendered.  Setting this to a high value is safe
+   because it will be resized just prior to rendering anyway.
+
 1.5.1 -> 1.6
 ------------
 

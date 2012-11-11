@@ -128,7 +128,17 @@ newListData selAttr = do
   return $ List { selectedUnfocusedAttr = selAttr
                 , selectedIndex = -1
                 , scrollTopIndex = 0
-                , scrollWindowSize = 0
+                -- Set the scroll window size to a value sufficiently
+                -- large (i.e., larger than anyone's terminal would
+                -- reasonably be) to ensure that list changes *prior*
+                -- to the first rendering will properly affect the
+                -- other aspects of the list.  We do this because
+                -- otherwise, if we set the initial window to zero,
+                -- some operations bail since that condition also
+                -- suggests there's nothing to be rendered.  Setting
+                -- this to a high value is safe because it will be
+                -- resized just prior to rendering anyway.
+                , scrollWindowSize = 100000
                 , listItems = V.empty
                 , selectionChangeHandlers = schs
                 , itemAddHandlers = iahs
