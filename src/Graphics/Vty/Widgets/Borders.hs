@@ -75,6 +75,7 @@ hBorder = do
   wRef <- newWidget initSt $ \w ->
       w { growHorizontal_ = const $ return True
         , render_ = renderHBorder
+        , getCursorPosition_ = const $ return Nothing
         }
   return wRef
 
@@ -125,6 +126,7 @@ vBorder = do
   let initSt = VBorder def_attr
   wRef <- newWidget initSt $ \w ->
       w { growVertical_ = const $ return True
+        , getCursorPosition_ = const $ return Nothing
         , render_ = \this s ctx -> do
                    VBorder attr <- getState this
                    let attr' = mergeAttrs [ overrideAttr ctx

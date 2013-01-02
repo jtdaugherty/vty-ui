@@ -49,6 +49,10 @@ hFixed fixedWidth child = do
             \this pos -> do
               HFixed _ ch <- getState this
               setCurrentPosition ch pos
+
+        , getCursorPosition_ = \this -> do
+              HFixed _ ch <- getState this
+              getCursorPosition ch
         }
   wRef `relayKeyEvents` child
   wRef `relayFocusEvents` child
@@ -82,6 +86,10 @@ vFixed maxHeight child = do
             \this pos -> do
               VFixed _ ch <- getState this
               setCurrentPosition ch pos
+
+        , getCursorPosition_ = \this -> do
+              VFixed _ ch <- getState this
+              getCursorPosition ch
         }
   wRef `relayKeyEvents` child
   wRef `relayFocusEvents` child

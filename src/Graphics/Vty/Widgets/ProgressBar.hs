@@ -52,6 +52,7 @@ newProgressBar completeAttr incompleteAttr = do
           w { growHorizontal_ = const $ return True
             , render_ =
                 \this size ctx -> renderProgressBar size ctx =<< getState this
+            , getCursorPosition_ = const $ return Nothing
             }
 
   setProgress wRef 0

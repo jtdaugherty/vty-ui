@@ -46,6 +46,10 @@ hLimit maxWidth child = do
             \this pos -> do
               HLimit _ ch <- getState this
               setCurrentPosition ch pos
+
+        , getCursorPosition_ = \this -> do
+              HLimit _ ch <- getState this
+              getCursorPosition ch
         }
   wRef `relayKeyEvents` child
   wRef `relayFocusEvents` child
@@ -73,6 +77,10 @@ vLimit maxHeight child = do
             \this pos -> do
               VLimit _ ch <- getState this
               setCurrentPosition ch pos
+
+        , getCursorPosition_ = \this -> do
+              VLimit _ ch <- getState this
+              getCursorPosition ch
         }
   wRef `relayKeyEvents` child
   wRef `relayFocusEvents` child

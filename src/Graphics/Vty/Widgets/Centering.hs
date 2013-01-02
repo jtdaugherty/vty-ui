@@ -51,6 +51,10 @@ hCentered ch = do
               let (half, _) = centered_halves region_width s (region_width chSz)
                   chPos = pos `plusWidth` half
               setCurrentPosition child chPos
+
+        , getCursorPosition_ = \this -> do
+              HCentered child <- getState this
+              getCursorPosition child
         }
   wRef `relayKeyEvents` ch
   wRef `relayFocusEvents` ch
@@ -90,6 +94,10 @@ vCentered ch = do
               let (half, _) = centered_halves region_height s (region_height chSz)
                   chPos = pos `plusHeight` half
               setCurrentPosition child chPos
+
+        , getCursorPosition_ = \this -> do
+              VCentered child <- getState this
+              getCursorPosition child
         }
   wRef `relayKeyEvents` ch
   wRef `relayFocusEvents` ch
