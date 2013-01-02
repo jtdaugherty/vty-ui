@@ -153,6 +153,9 @@ padded ch padding = do
 
               setCurrentPosition child newPos
 
+        , getCursorPosition_ = \this -> do
+              Padded child _ <- getState this
+              getCursorPosition child
         }
 
   wRef `relayKeyEvents` ch

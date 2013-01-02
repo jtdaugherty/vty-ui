@@ -29,6 +29,8 @@ vFill c = do
                                           , normalAttr ctx
                                           ]
                    return $ char_fill attr' ch (region_width s) (region_height s)
+
+        , getCursorPosition_ = const $ return Nothing
         }
   return wRef
 
@@ -48,5 +50,7 @@ hFill c h = do
                                           , normalAttr ctx
                                           ]
                    return $ char_fill attr' ch (region_width s) (toEnum height)
+
+        , getCursorPosition_ = const $ return Nothing
         }
   return wRef
