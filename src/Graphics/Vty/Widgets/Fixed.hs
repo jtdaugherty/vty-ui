@@ -56,6 +56,8 @@ hFixed fixedWidth child = do
         }
   wRef `relayKeyEvents` child
   wRef `relayFocusEvents` child
+  wRef `relayHideEvents` child
+  wRef `relayShowEvents` child
   return wRef
 
 data VFixed a = (Show a) => VFixed Int (Widget a)
@@ -93,6 +95,8 @@ vFixed maxHeight child = do
         }
   wRef `relayKeyEvents` child
   wRef `relayFocusEvents` child
+  wRef `relayHideEvents` child
+  wRef `relayShowEvents` child
   return wRef
 
 -- |Set the vertical fixed size of a child widget.

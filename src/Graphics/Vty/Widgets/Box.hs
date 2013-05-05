@@ -216,6 +216,10 @@ box o spacing wa wb = do
 
   wRef `relayFocusEvents` wa
   wRef `relayFocusEvents` wb
+  wRef `relayHideEvents` wa
+  wRef `relayHideEvents` wb
+  wRef `relayShowEvents` wa
+  wRef `relayShowEvents` wb
 
   return wRef
 

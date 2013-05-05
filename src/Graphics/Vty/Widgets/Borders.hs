@@ -177,6 +177,8 @@ bordered child = do
         }
   wRef `relayFocusEvents` child
   wRef `relayKeyEvents` child
+  wRef `relayHideEvents` child
+  wRef `relayShowEvents` child
   return wRef
 
 drawBordered :: (Show a) =>

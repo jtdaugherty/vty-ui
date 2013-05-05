@@ -121,6 +121,9 @@ entryRenderAndPosition (Entry w _) = renderAndPosition w
 entryFocusGroup :: Entry -> Widget FocusGroup
 entryFocusGroup (Entry _ fg) = fg
 
+entrySetVisible :: Entry -> Bool -> IO ()
+entrySetVisible (Entry w _) v = setVisible w v
+
 -- |Create a new collection.
 newCollection :: IO Collection
 newCollection =
@@ -156,9 +159,14 @@ addToCollection cRef wRef fg = do
 setCurrentEntry :: Collection -> Int -> IO ()
 setCurrentEntry cRef i = do
   st <- readIORef cRef
+  let eOld = (entries st) !! (currentEntryNum st)
   if i < length (entries st) && i >= 0 then
       (modifyIORef cRef $ \s -> s { currentEntryNum = i }) else
       throw $ BadCollectionIndex i
 
-  e <- getCurrentEntry cRef
-  resetFocusGroup $ entryFocusGroup e
+  eNew <- getCurrentEntry cRef
+
+  entrySetVisible eOld False
+  entrySetVisible eNew True
+
+  resetFocusGroup $ entryFocusGroup eNew

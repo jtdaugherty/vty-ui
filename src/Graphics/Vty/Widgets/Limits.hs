@@ -53,6 +53,8 @@ hLimit maxWidth child = do
         }
   wRef `relayKeyEvents` child
   wRef `relayFocusEvents` child
+  wRef `relayHideEvents` child
+  wRef `relayShowEvents` child
   return wRef
 
 data VLimit a = (Show a) => VLimit Int (Widget a)
@@ -84,6 +86,8 @@ vLimit maxHeight child = do
         }
   wRef `relayKeyEvents` child
   wRef `relayFocusEvents` child
+  wRef `relayHideEvents` child
+  wRef `relayShowEvents` child
   return wRef
 
 -- |Set the vertical limit of a child widget's size.

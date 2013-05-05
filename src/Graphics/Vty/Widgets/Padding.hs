@@ -160,4 +160,6 @@ padded ch padding = do
 
   wRef `relayKeyEvents` ch
   wRef `relayFocusEvents` ch
+  wRef `relayHideEvents` ch
+  wRef `relayShowEvents` ch
   return wRef

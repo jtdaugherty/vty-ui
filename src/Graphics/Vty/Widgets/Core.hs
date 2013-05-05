@@ -53,8 +53,12 @@ module Graphics.Vty.Widgets.Core
     , onKeyPressed
     , onGainFocus
     , onLoseFocus
+    , onShow
+    , onHide
     , relayKeyEvents
     , relayFocusEvents
+    , relayShowEvents
+    , relayHideEvents
 
     -- ** Focus management
     , FocusGroup
@@ -196,6 +200,10 @@ data WidgetImpl a = WidgetImpl {
     -- ^List of handlers to be invoked when the widget gains focus.
     , loseFocusHandlers :: Handlers (Widget a)
     -- ^List of handlers to be invoked when the widget loses focus.
+    , showHandlers :: Handlers (Widget a)
+    -- ^List of handlers to be invoked when the widget becomes visible.
+    , hideHandlers :: Handlers (Widget a)
+    -- ^List of handlers to be invoked when the widget becomes invisible.
     , focused :: Bool
     -- ^Whether the widget is focused.
     , getCursorPosition_ :: Widget a -> IO (Maybe DisplayRegion)
@@ -229,7 +237,11 @@ instance (Show a) => Show (WidgetImpl a) where
 -- either direction, always render to an empty image, and never
 -- declare a cursor position.
 setVisible :: Widget a -> Bool -> IO ()
-setVisible wRef v = updateWidget wRef $ \st -> st { visible = v }
+setVisible wRef v = do
+  updateWidget wRef $ \st -> st { visible = v }
+  if v then
+      fireEvent wRef (showHandlers <~) wRef else
+      fireEvent wRef (hideHandlers <~) wRef
 
 -- |Get the visibility of a widget.
 getVisible :: Widget a -> IO Bool
@@ -342,6 +354,8 @@ newWidget :: a
 newWidget initState f = do
   gfhs <- newHandlers
   lfhs <- newHandlers
+  shs <- newHandlers
+  hhs <- newHandlers
 
   wRef <- newIORef $
           WidgetImpl { state = initState
@@ -355,6 +369,8 @@ newWidget initState f = do
                      , visible = True
                      , gainFocusHandlers = gfhs
                      , loseFocusHandlers = lfhs
+                     , showHandlers = shs
+                     , hideHandlers = hhs
                      , keyEventHandler = \_ _ _ -> return False
                      , getCursorPosition_ = defaultCursorInfo
                      , normalAttribute = def_attr
@@ -391,6 +407,12 @@ handleKeyEvent wRef keyEvent mods = do
 -- wrapped widget.
 relayKeyEvents :: Widget a -> Widget b -> IO ()
 relayKeyEvents a b = a `onKeyPressed` \_ k mods -> handleKeyEvent b k mods
+
+relayShowEvents :: Widget a -> Widget b -> IO ()
+relayShowEvents a b = a `onShow` \_ -> setVisible b True
+
+relayHideEvents :: Widget a -> Widget b -> IO ()
+relayHideEvents a b = a `onHide` \_ -> setVisible b False
 
 -- |Given widgets A and B, cause all focus gain and loss events on A
 -- to cause focus gain and loss for B.
@@ -443,6 +465,12 @@ onGainFocus = addHandler (gainFocusHandlers <~)
 -- focus.
 onLoseFocus :: Widget a -> (Widget a -> IO ()) -> IO ()
 onLoseFocus = addHandler (loseFocusHandlers <~)
+
+onHide :: Widget a -> (Widget a -> IO ()) -> IO ()
+onHide = addHandler (hideHandlers <~)
+
+onShow :: Widget a -> (Widget a -> IO ()) -> IO ()
+onShow = addHandler (showHandlers <~)
 
 -- |Convenience projection on the contents of an 'IORef'.
 (<~) :: (a -> b) -> IORef a -> IO b
@@ -510,6 +538,8 @@ newFocusEntry chRef = do
 
   wRef `relayFocusEvents` chRef
   wRef `relayKeyEvents` chRef
+  wRef `relayShowEvents` chRef
+  wRef `relayHideEvents` chRef
 
   return wRef
 

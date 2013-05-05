@@ -199,6 +199,8 @@ newMultiStateCheckbox label states = do
         }
 
   wRef `relayFocusEvents` t
+  wRef `relayHideEvents` t
+  wRef `relayShowEvents` t
   setTextAppearFocused t True
 
   return wRef

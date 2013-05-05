@@ -58,6 +58,8 @@ hCentered ch = do
         }
   wRef `relayKeyEvents` ch
   wRef `relayFocusEvents` ch
+  wRef `relayHideEvents` ch
+  wRef `relayShowEvents` ch
   return wRef
 
 data VCentered a = (Show a) => VCentered (Widget a)
@@ -101,6 +103,8 @@ vCentered ch = do
         }
   wRef `relayKeyEvents` ch
   wRef `relayFocusEvents` ch
+  wRef `relayHideEvents` ch
+  wRef `relayShowEvents` ch
   return wRef
 
 -- |Wrap another widget to center it both vertically and horizontally.
