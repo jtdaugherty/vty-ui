@@ -23,7 +23,6 @@ module Graphics.Vty.Widgets.Util
 where
 
 import Control.Applicative
-import Data.Word
 import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Image
@@ -100,24 +99,24 @@ mergeAttrs :: [Attr] -> Attr
 mergeAttrs attrs = foldr mergeAttr def_attr attrs
 
 -- |Modify the width component of a 'DisplayRegion'.
-withWidth :: DisplayRegion -> Word -> DisplayRegion
+withWidth :: DisplayRegion -> Int -> DisplayRegion
 withWidth (DisplayRegion _ h) w = DisplayRegion w h
 
 -- |Modify the height component of a 'DisplayRegion'.
-withHeight :: DisplayRegion -> Word -> DisplayRegion
+withHeight :: DisplayRegion -> Int -> DisplayRegion
 withHeight (DisplayRegion w _) h = DisplayRegion w h
 
 -- |Modify the width component of a 'DisplayRegion'.
-plusWidth :: DisplayRegion -> Word -> DisplayRegion
+plusWidth :: DisplayRegion -> Int -> DisplayRegion
 plusWidth (DisplayRegion w' h) w =
-    if (fromEnum w' + fromEnum w < 0)
+    if (w' + w < 0)
     then error $ "plusWidth: would overflow on " ++ (show w') ++ " + " ++ (show w)
     else DisplayRegion (w + w') h
 
 -- |Modify the height component of a 'DisplayRegion'.
-plusHeight :: DisplayRegion -> Word -> DisplayRegion
+plusHeight :: DisplayRegion -> Int -> DisplayRegion
 plusHeight (DisplayRegion w h') h =
-    if (fromEnum h' + fromEnum h < 0)
+    if (h' + h < 0)
     then error $ "plusHeight: would overflow on " ++ (show h') ++ " + " ++ (show h)
     else DisplayRegion w (h + h')
 

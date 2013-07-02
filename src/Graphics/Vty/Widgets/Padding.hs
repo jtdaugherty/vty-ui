@@ -19,7 +19,6 @@ module Graphics.Vty.Widgets.Padding
     )
 where
 
-import Data.Word
 import Data.Monoid
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
@@ -53,16 +52,16 @@ class Paddable a where
 instance Paddable Padding where
     pad p1 p2 = p1 +++ p2
 
-leftPadding :: Padding -> Word
+leftPadding :: Padding -> Int
 leftPadding (Padding _ _ _ l) = toEnum l
 
-rightPadding :: Padding -> Word
+rightPadding :: Padding -> Int
 rightPadding (Padding _ r _ _) = toEnum r
 
-bottomPadding :: Padding -> Word
+bottomPadding :: Padding -> Int
 bottomPadding (Padding _ _ b _) = toEnum b
 
-topPadding :: Padding -> Word
+topPadding :: Padding -> Int
 topPadding (Padding t _ _ _) = toEnum t
 
 -- |Padding constructor with no padding.

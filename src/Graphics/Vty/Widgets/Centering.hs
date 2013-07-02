@@ -11,7 +11,6 @@ module Graphics.Vty.Widgets.Centering
     )
 where
 
-import GHC.Word ( Word )
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty
 import Graphics.Vty.Widgets.Util
@@ -107,7 +106,7 @@ vCentered ch = do
 centered :: (Show a) => Widget a -> IO (Widget (VCentered (HCentered a)))
 centered wRef = vCentered =<< hCentered wRef
 
-centered_halves :: (DisplayRegion -> Word) -> DisplayRegion -> Word -> (Word, Word)
+centered_halves :: (DisplayRegion -> Int) -> DisplayRegion -> Int -> (Int, Int)
 centered_halves region_size s obj_sz =
     let remaining = region_size s - obj_sz
         half = remaining `div` 2

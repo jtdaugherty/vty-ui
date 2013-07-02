@@ -28,7 +28,6 @@ module Graphics.Vty.Widgets.Box
     )
 where
 
-import GHC.Word ( Word )
 import Data.Typeable
 import Control.Exception
 import Control.Monad
@@ -81,11 +80,11 @@ data Box a b = Box { boxChildSizePolicy :: ChildSizePolicy
                    -- growth comparison function
                    , secondGrows :: IO Bool
                    -- region dimension fetch function
-                   , regDimension :: DisplayRegion -> Word
+                   , regDimension :: DisplayRegion -> Int
                    -- image dimension fetch function
-                   , imgDimension :: Image -> Word
+                   , imgDimension :: Image -> Int
                    -- dimension modification function
-                   , withDimension :: DisplayRegion -> Word -> DisplayRegion
+                   , withDimension :: DisplayRegion -> Int -> DisplayRegion
                    -- Oriented image concatenation
                    , img_cat :: [Image] -> Image
                    }

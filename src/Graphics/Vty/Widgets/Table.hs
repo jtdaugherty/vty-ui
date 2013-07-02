@@ -28,7 +28,6 @@ where
 import Data.Monoid
 import qualified Data.Text as T
 import Data.Typeable
-import Data.Word
 import Data.List
 import Control.Applicative hiding ((<|>))
 import Control.Exception
@@ -434,7 +433,7 @@ positionRow t bs pos cells = do
 
   doPositioning 0 $ zip szs cells
 
-autoWidth :: Widget Table -> DisplayRegion -> IO Word
+autoWidth :: Widget Table -> DisplayRegion -> IO Int
 autoWidth t sz = do
   specs <- columnSpecs <~~ t
   bs <- borderStyle <~~ t
@@ -543,7 +542,7 @@ rowBorders (BorderPartial fs) = Rows `elem` fs
 rowBorders BorderFull = True
 rowBorders _ = False
 
-rowHeight :: [Image] -> Word
+rowHeight :: [Image] -> Int
 rowHeight = maximum . map image_height
 
 renderRow :: Widget Table -> DisplayRegion -> [TableCell] -> RenderContext -> IO Image
