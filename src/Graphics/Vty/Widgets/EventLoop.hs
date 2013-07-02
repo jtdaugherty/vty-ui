@@ -83,13 +83,29 @@ runUi' vty chan collection ctx = do
                         set_cursor_pos (terminal vty) w h
     Nothing -> hide_cursor $ terminal vty
 
-  evt <- atomically $ readTChan chan
+  -- Get the next event(s) in the queue.  Returns all available events;
+  -- blocks until at least one event is available.
+  let getNextEvents = do
+      evt <- readTChan chan
+      em <- isEmptyTChan chan
+      case em of
+          True -> return [evt]
+          False -> do
+              rest <- getNextEvents
+              return $ evt : rest
 
-  cont <- case evt of
-            VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return True
-            VTYEvent _ -> return True
-            UserEvent (ScheduledAction act) -> act >> return True
-            ShutdownUi -> return False
+  evts <- atomically getNextEvents
+
+  let processEvent lastCont evt = do
+          if not lastCont then
+              return False else
+              case evt of
+                  VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return True
+                  VTYEvent _ -> return True
+                  UserEvent (ScheduledAction act) -> act >> return True
+                  ShutdownUi -> return False
+
+  cont <- foldM processEvent True evts
 
   when cont $ runUi' vty chan collection ctx
 
