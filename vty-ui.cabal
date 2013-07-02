@@ -18,8 +18,8 @@ Description:
   to see some of the things the library can do!
 
 Category:            User Interfaces
-Author:              Jonathan Daugherty <jtd@galois.com>
-Maintainer:          Jonathan Daugherty <jtd@galois.com>
+Author:              Jonathan Daugherty <cygnus@foobox.com>
+Maintainer:          Jonathan Daugherty <cygnus@foobox.com>
 Build-Type:          Simple
 License:             BSD3
 License-File:        LICENSE
