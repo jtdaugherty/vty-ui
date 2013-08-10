@@ -269,7 +269,7 @@ insertIntoList list key w pos = do
                                    , scrollTopIndex = newScrollTop
                                    }
 
-  notifyItemAddHandler list (numItems + 1) key w
+  notifyItemAddHandler list (min numItems pos) key w
 
   when (numItems == 0) $
        do
