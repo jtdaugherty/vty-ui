@@ -39,6 +39,11 @@ newGroup = do
             \this ->
                 getCursorPosition =<< currentEntry this
 
+        , setCurrentPosition_ =
+            \this pos -> do
+                e <- currentEntry this
+                setCurrentPosition e pos
+
         , growHorizontal_ =
             \this ->
                 growHorizontal $ currentEntry' this
