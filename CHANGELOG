@@ -1,3 +1,24 @@
+1.6 -> 1.6.1
+------------
+
+Bug fixes:
+ * Group: forward position to current child widget (fixes #24) (thanks
+   github.com/zydeon)
+ * List: report correct item position in NewItemEvents
+   Adding an item to a list previously emitted a NewItemEvent with the new
+   size of the list as first parameter even though the documentation says
+   otherwise, so we now report the position of the new item instead of the
+   list size (thanks, Hans-Peter Deifel <hpdeifel@gmx.de>)
+ * Performance: event loop now reads and processes all available events
+   between UI updates
+ * Only show cursor in widgets that need it: hides the cursor in static
+   widgets like borders or texts. Also, container widgets like padding or
+   centering now show the cursor only if their clients would (thanks,
+   Hans-Peter Deifel <hpdeifel@gmx.de>)
+
+Package changes:
+ * Allow building against QuickCheck 2.7 (fixes #21)
+
 1.5.1 -> 1.6
 ------------
 
