@@ -37,8 +37,9 @@ vFill c = do
 data HFill = HFill Char Int
              deriving (Show)
 
--- |A horizontal fill widget.  Fills the available horizontal space,
--- one row high, using the specified character and attribute.
+-- |A horizontal fill widget.  Fills the available horizontal space using the
+-- specified character. The integer parameter specifies the height, in rows, of
+-- the fill.
 hFill :: Char -> Int -> IO (Widget HFill)
 hFill c h = do
   wRef <- newWidget (HFill c h) $ \w ->
