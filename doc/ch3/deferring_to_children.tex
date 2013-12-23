@@ -28,17 +28,17 @@ Then the implementation of the constructor:\footnote{This widget
      w { growHorizontal_ = growHorizontal child
        , growVertical_ = growVertical child
        , setCurrentPosition_ =
-           \_ pos = setCurrentPosition child pos
+           \_ pos -> setCurrentPosition child pos
        , getCursorPosition_ =
            const $ getCursorPosition child
        , render_ =
-           \_ sz ctx = do
-             render child sz ctx
+         \_ sz ctx -> render child sz ctx
        }
 
    wRef `relayFocusEvents` child
    wRef `relayKeyEvents` child
    return wRef
+
 \end{haskellcode}
 
 This demonstration highlights some important features of container

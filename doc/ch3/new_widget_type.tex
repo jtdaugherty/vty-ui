@@ -16,6 +16,7 @@ following state type:\footnote{You might wonder why we don't just use
 
 \begin{haskellcode}
  data Counter = Counter Int
+                deriving (Show)
 \end{haskellcode}
 
 The next step is to write a widget constructor function.  This
@@ -27,7 +28,7 @@ function in full:
  newCounter :: Int -> IO (Widget Counter)
  newCounter initialValue = do
    let st = Counter initialValue
-   wRef <- newWidget st $ \w ->
+   newWidget st $ \w ->
      w { render_ =
          \this size ctx -> do
            (Counter v) <- getState this
