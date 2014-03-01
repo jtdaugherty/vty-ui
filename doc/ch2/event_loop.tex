@@ -182,3 +182,36 @@ action to run.
 Some built-in widgets will almost always be used in this way; for an
 example, take a look at the \fw{ProgressBar} widget in the
 \fw{ProgressBar} module (see Section \ref{sec:progress_bars}).
+
+\subsection{Handling Resize Events}
+
+When \vtyui\ renders a widget, you can be notified if its size changes.  This
+might be useful if, for example, you want to change the visual style or state
+of a widget when its size crosses a threshold.  To do this, register a resize
+event handler on the widget with \fw{onResize} as follows:
+
+\begin{haskellcode}
+ w <- someWidget
+ w `onResize` \(oldSize, newSize) -> do
+   ...
+\end{haskellcode}
+
+The resize handler will be given the old size before the change and the new
+size after the change.  Initially every widget has size \fw{(0, 0)} so your
+handler will always run at least once with an "old" size of \fw{(0, 0)} and a
+"new" size of the widget's initial size.
+
+The \fw{onResize} mechanism has a serious caveat.  Consider a resize handler
+which results in another size change, such as a call to \fw{setText} which
+makes a text widget larger.  Such a change would spur another size change and
+would result in a non-terminating sequence of calls which would probably crash
+your program or, if not, just use all of your CPU.  To avoid this, ensure that
+any resize handlers don't result in size changes; you can change the visual
+style, attributes, etc., of your widget, but if you change contents enough, a
+resize handler loop will result.
+
+Finally, since resize handlers run during the rendering process, any changes to
+widgets which require a redraw to be visible on the screen will need to use the
+\fw{schedule} function (see Section \ref{sec:concurrency}).  This will ensure
+that visual changes to a widget made during rendering will force another
+rendering.
