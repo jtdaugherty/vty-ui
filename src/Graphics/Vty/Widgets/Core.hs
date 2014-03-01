@@ -53,6 +53,7 @@ module Graphics.Vty.Widgets.Core
     , onKeyPressed
     , onGainFocus
     , onLoseFocus
+    , onResize
     , relayKeyEvents
     , relayFocusEvents
 
