@@ -11,7 +11,11 @@ module Graphics.Vty.Widgets.Text
     , textWidget
     -- *Setting Widget Contents
     , setText
+    , appendText
+    , prependText
     , setTextWithAttrs
+    , appendTextWithAttrs
+    , prependTextWithAttrs
     , setTextFormatter
     , setTextAppearFocused
     -- *Formatting
@@ -133,18 +137,56 @@ setTextAppearFocused wRef val = updateWidgetState wRef $ \st ->
 setText :: Widget FormattedText -> T.Text -> IO ()
 setText wRef s = setTextWithAttrs wRef [(s, def_attr)]
 
+-- |Append the text value to the text contained in a 'FormattedText' widget.
+-- The specified string will be 'tokenize'd.
+appendText :: Widget FormattedText -> T.Text -> IO ()
+appendText wRef s = appendTextWithAttrs wRef [(s, def_attr)]
+
+-- |Prepend the text value to the text contained in a 'FormattedText' widget.
+-- The specified string will be 'tokenize'd.
+prependText :: Widget FormattedText -> T.Text -> IO ()
+prependText wRef s = prependTextWithAttrs wRef [(s, def_attr)]
+
+-- |Prepend text to the text value of a 'FormattedText' widget directly, in
+-- case you have done formatting elsewhere and already have text with
+-- attributes.  The specified strings will each be 'tokenize'd, and tokens
+-- resulting from each 'tokenize' operation will be given the specified
+-- attribute in the tuple.
+prependTextWithAttrs :: Widget FormattedText -> [(T.Text, Attr)] -> IO ()
+prependTextWithAttrs wRef pairs = _setTextWithAttrs wRef pairs f
+    where
+      f st new = let TS old = text st
+                 in new ++ old
+
+-- |Append text to the text value of a 'FormattedText' widget directly, in case
+-- you have done formatting elsewhere and already have text with attributes.
+-- The specified strings will each be 'tokenize'd, and tokens resulting from
+-- each 'tokenize' operation will be given the specified attribute in the
+-- tuple.
+appendTextWithAttrs :: Widget FormattedText -> [(T.Text, Attr)] -> IO ()
+appendTextWithAttrs wRef pairs = _setTextWithAttrs wRef pairs f
+    where
+      f st new = let TS old = text st
+                 in old ++ new
+
 -- |Set the text value of a 'FormattedText' widget directly, in case
 -- you have done formatting elsewhere and already have text with
 -- attributes.  The specified strings will each be 'tokenize'd, and
 -- tokens resulting from each 'tokenize' operation will be given the
 -- specified attribute in the tuple.
 setTextWithAttrs :: Widget FormattedText -> [(T.Text, Attr)] -> IO ()
-setTextWithAttrs wRef pairs = do
+setTextWithAttrs wRef pairs = _setTextWithAttrs wRef pairs (\_ new -> new)
+
+_setTextWithAttrs :: Widget FormattedText
+                  -> [(T.Text, Attr)]
+                  -> (FormattedText -> [TextStreamEntity Attr] -> [TextStreamEntity Attr])
+                  -> IO ()
+_setTextWithAttrs wRef pairs f = do
   let streams = map (\(s, a) -> tokenize s a) pairs
       ts = concat $ map streamEntities streams
 
   updateWidgetState wRef $ \st ->
-      st { text = TS ts }
+      st { text = TS $ f st ts }
 
 -- |Low-level text-rendering routine.
 renderText :: TextStream Attr
