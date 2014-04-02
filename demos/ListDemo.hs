@@ -62,7 +62,7 @@ buildUi appst = do
 -- Construct the application statea using the message map.
 mkAppElements :: IO AppElements
 mkAppElements = do
-  lw <- newTextList selAttr []
+  lw <- newTextList selAttr [] 1
   b <- textWidget wrap T.empty
   ft <- plainText T.empty >>= withNormalAttribute titleAttr
   ll <- vLimit 5 lw

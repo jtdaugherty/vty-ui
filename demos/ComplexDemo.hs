@@ -64,7 +64,7 @@ main = do
   edit1Header <- textWidget wrap T.empty >>= withNormalAttribute headerAttr
   edit2Header <- textWidget wrap T.empty >>= withNormalAttribute headerAttr
 
-  lst <- newList (fgColor bright_green)
+  lst <- newList (fgColor bright_green) 1
 
   selector <- vLimit 3 lst
   listHeader <- plainText T.empty
