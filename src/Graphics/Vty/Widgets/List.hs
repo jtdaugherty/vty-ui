@@ -47,6 +47,7 @@ import qualified Data.Vector as V
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
+import Graphics.Vty.Widgets.Limits
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
@@ -54,9 +55,6 @@ data ListError = BadItemIndex Int
                -- ^The specified position could not be used to remove
                -- an item from the list.
                | ResizeError
-               | BadListWidgetSizePolicy
-               -- ^The type of widgets added to the list grow
-               -- vertically, which is not permitted.
                  deriving (Show, Typeable)
 
 instance Exception ListError
@@ -118,8 +116,9 @@ instance Show (List a b) where
                       ]
 
 newListData :: Attr -- ^The attribute of the selected item
+            -> Int -- ^Item widget height in rows
             -> IO (List a b)
-newListData selAttr = do
+newListData selAttr h = do
   schs <- newHandlers
   iahs <- newHandlers
   irhs <- newHandlers
@@ -134,7 +133,7 @@ newListData selAttr = do
                 , itemAddHandlers = iahs
                 , itemRemoveHandlers = irhs
                 , itemActivateHandlers = iacths
-                , itemHeight = 0
+                , itemHeight = h
                 }
 
 -- |Get the length of the list in elements.
@@ -223,22 +222,6 @@ insertIntoList :: (Show b) => Widget (List a b) -> a -> Widget b -> Int -> IO ()
 insertIntoList list key w pos = do
   numItems <- (V.length . listItems) <~~ list
 
-  v <- growVertical w
-  when (v) $ throw BadListWidgetSizePolicy
-
-  h <- case numItems of
-         0 -> do
-           -- We're adding the first element to the list, so we need
-           -- to compute the item height based on this widget.  We
-           -- just render it in an unreasonably large space (since,
-           -- really, list items should never be THAT big) and measure
-           -- the result, assuming that all list widgets will have the
-           -- same size.  If you violate this, you'll have interesting
-           -- results!
-           img <- render w (DisplayRegion 100 100) defaultContext
-           return $ max 1 $ fromEnum $ image_height img
-         _ -> itemHeight <~~ list
-
   -- Calculate the new selected index.
   oldSel <- selectedIndex <~~ list
   oldScr <- scrollTopIndex <~~ list
@@ -263,8 +246,7 @@ insertIntoList list key w pos = do
                    then V.snoc (listItems s) (key, w)
                    else vInject pos (key, w) (listItems s)
 
-  updateWidgetState list $ \s -> s { itemHeight = h
-                                   , listItems = V.force $ newItems s
+  updateWidgetState list $ \s -> s { listItems = V.force $ newItems s
                                    , selectedIndex = newSelIndex
                                    , scrollTopIndex = newScrollTop
                                    }
@@ -318,9 +300,10 @@ clearList w = do
 -- currently-selected element when the list does NOT have focus.
 newList :: (Show b) =>
            Attr -- ^The attribute of the selected item
+        -> Int -- ^Height of list item widgets in rows
         -> IO (Widget (List a b))
-newList selAttr = do
-  list <- newListData selAttr
+newList selAttr ht = do
+  list <- newListData selAttr ht
   wRef <- newWidget list $ \w ->
       w { keyEventHandler = listKeyEvent
 
@@ -402,7 +385,10 @@ renderListWidget foc list s ctx = do
                                        , defaultAttr
                                        ]
                   else defaultAttr
-        img <- render w s $ ctx { overrideAttr = att }
+        -- Height-limit the widget by wrapping it with a VLimit
+        limited <- vLimit (itemHeight list) w
+
+        img <- render limited s $ ctx { overrideAttr = att }
 
         let actualHeight = min (region_height s) (toEnum $ itemHeight list)
             img' = img <|> char_fill att ' '
@@ -425,9 +411,10 @@ renderListWidget foc list s ctx = do
 -- strings.
 newTextList :: Attr -- ^The attribute of the selected item
             -> [T.Text] -- ^The list items
+            -> Int -- ^Maximum number of rows of text to show per list item
             -> IO (Widget (List T.Text FormattedText))
-newTextList selAttr labels = do
-  list <- newList selAttr
+newTextList selAttr labels h = do
+  list <- newList selAttr h
   forM_ labels $ \l ->
       (addToList list l =<< plainText l)
   return list

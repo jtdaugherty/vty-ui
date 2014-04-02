@@ -137,7 +137,7 @@ newDirBrowser bSkin = do
              <++> (return fileInfo) <++> (hFill ' ' 1) <++> (return errorText))
             >>= withNormalAttribute (browserHeaderAttr bSkin)
 
-  l <- newList (browserUnfocusedSelAttr bSkin)
+  l <- newList (browserUnfocusedSelAttr bSkin) 1
   ui <- vBox header =<< vBox l footer
 
   r <- newIORef ""
