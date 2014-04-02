@@ -380,13 +380,16 @@ renderListWidget foc list s ctx = do
 
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
+        na <- normalAttribute <~ w
         let att = if sel
                   then if foc
                        then focusAttr ctx
                        else mergeAttrs [ selectedUnfocusedAttr list
                                        , defaultAttr
                                        ]
-                  else defaultAttr
+                  else mergeAttrs [ na
+                                  , defaultAttr
+                                  ]
         -- Height-limit the widget by wrapping it with a VLimit
         limited <- vLimit (itemHeight list) w
 
