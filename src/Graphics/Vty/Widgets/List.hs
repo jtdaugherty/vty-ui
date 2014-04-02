@@ -23,6 +23,8 @@ module Graphics.Vty.Widgets.List
     , scrollBy
     , scrollUp
     , scrollDown
+    , scrollToEnd
+    , scrollToBeginning
     , pageUp
     , pageDown
     , onSelectionChange
@@ -554,6 +556,23 @@ notifyItemRemoveHandler wRef pos k w =
 notifyItemAddHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
 notifyItemAddHandler wRef pos k w =
     fireEvent wRef (itemAddHandlers <~~) $ NewItemEvent pos k w
+
+-- |Scroll to the last list position.
+scrollToEnd :: Widget (List a b) -> IO ()
+scrollToEnd wRef = do
+    cur <- getSelected wRef
+    sz <- getListSize wRef
+    case cur of
+        Nothing -> return ()
+        Just (pos, _) -> scrollBy wRef (sz - pos)
+
+-- |Scroll to the first list position.
+scrollToBeginning :: Widget (List a b) -> IO ()
+scrollToBeginning wRef = do
+    cur <- getSelected wRef
+    case cur of
+        Nothing -> return ()
+        Just (pos, _) -> scrollBy wRef (-1 * pos)
 
 -- |Scroll a list down by one position.
 scrollDown :: Widget (List a b) -> IO ()
