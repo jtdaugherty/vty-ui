@@ -515,19 +515,21 @@ scrollBy wRef amount = do
   notifySelectionHandler wRef
 
 scrollBy' :: Int -> List a b -> List a b
-scrollBy' amount list =
-  let sel = selectedIndex list
-      lastPos = (V.length $ listItems list) - 1
-      validPositions = [0..lastPos]
-      newPosition = sel + amount
+scrollBy' amt list =
+    case selectedIndex list of
+        (-1) -> list
+        i -> let dest = i + amt
+                 sz = V.length $ listItems list
+                 newDest = if dest < 0
+                           then 0
+                           else if dest >= sz
+                                then sz - 1
+                                else dest
+             in scrollTo newDest list
 
-      newSelected = if newPosition `elem` validPositions
-                    then newPosition
-                    else if newPosition > lastPos
-                         then lastPos
-                         else 0
-
-      bottomPosition = min (scrollTopIndex list + scrollWindowSize list - 1)
+scrollTo :: Int -> List a b -> List a b
+scrollTo newSelected list =
+  let bottomPosition = min (scrollTopIndex list + scrollWindowSize list - 1)
                        ((V.length $ listItems list) - 1)
       topPosition = scrollTopIndex list
       windowPositions = [topPosition..bottomPosition]
@@ -541,7 +543,8 @@ scrollBy' amount list =
   in if scrollWindowSize list == 0
      then list
      else list { scrollTopIndex = adjustedTop
-               , selectedIndex = newSelected }
+               , selectedIndex = newSelected
+               }
 
 notifySelectionHandler :: Widget (List a b) -> IO ()
 notifySelectionHandler wRef = do
