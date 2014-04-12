@@ -546,7 +546,7 @@ newFocusGroup = do
   let initSt = FocusGroup { entries = []
                           , currentEntryNum = -1
                           , nextKey = (KASCII '\t', [])
-                          , prevKey = (KASCII '\t', [MShift])
+                          , prevKey = (KBackTab, [])
                           }
 
   wRef <- newWidget initSt $ \w ->
