@@ -58,22 +58,14 @@ main = do
   (ui3, fg3) <- mkThirdUI
   switchToThird <- addToCollection coll ui3 fg3
 
-  fg1 `onKeyPressed` \_ k mods ->
-      case (k, mods) of
-          (KASCII 'n', [MCtrl]) -> switchToSecond >> return True
-          (KEsc, []) -> exitSuccess
-          _ -> return False
+  let keyHandler nextUI = \_ k mods ->
+        case (k, mods) of
+            (KASCII 'n', [MCtrl]) -> nextUI >> return True
+            (KEsc, []) -> exitSuccess
+            _ -> return False
 
-  fg2 `onKeyPressed` \_ k mods ->
-      case (k, mods) of
-          (KASCII 'n', [MCtrl]) -> switchToThird >> return True
-          (KEsc, []) -> exitSuccess
-          _ -> return False
-
-  fg3 `onKeyPressed` \_ k mods ->
-      case (k, mods) of
-          (KASCII 'n', [MCtrl]) -> switchToFirst >> return True
-          (KEsc, []) -> exitSuccess
-          _ -> return False
+  fg1 `onKeyPressed` (keyHandler switchToSecond)
+  fg2 `onKeyPressed` (keyHandler switchToThird)
+  fg3 `onKeyPressed` (keyHandler switchToFirst)
 
   runUi coll $ defaultContext { focusAttr = black `on` yellow }
