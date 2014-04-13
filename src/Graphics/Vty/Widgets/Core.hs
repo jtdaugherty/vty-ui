@@ -589,9 +589,9 @@ setFocusGroupPrevKey fg k mods =
     updateWidgetState fg $ \s -> s { prevKey = (k, mods) }
 
 -- |Merge two focus groups.  Given two focus groups A and B, this
--- returns a new focus group with all of the entries from A and B
--- added to it, in that order.  Both A and B must be non-empty or
--- 'FocusGroupEmpty' will be thrown.
+-- returns a new focus group with all of the entries from A and B added to it,
+-- in that order.  At least one A and B must be non-empty or 'FocusGroupEmpty'
+-- will be thrown.
 mergeFocusGroups :: Widget FocusGroup -> Widget FocusGroup -> IO (Widget FocusGroup)
 mergeFocusGroups a b = do
   c <- newFocusGroup
@@ -599,7 +599,7 @@ mergeFocusGroups a b = do
   aEntries <- entries <~~ a
   bEntries <- entries <~~ b
 
-  when (null aEntries || null bEntries) $
+  when (null aEntries && null bEntries) $
        throw FocusGroupEmpty
 
   updateWidgetState c $ \s -> s { entries = aEntries ++ bEntries
