@@ -20,6 +20,7 @@ module Graphics.Vty.Widgets.TextZipper
     , getText
     , currentLine
     , cursorPosition
+    , lineLengths
 
     -- *Navigation functions
     , moveCursor
@@ -37,6 +38,7 @@ module Graphics.Vty.Widgets.TextZipper
     )
 where
 
+import Control.Applicative ((<$>))
 import Data.Monoid
 import qualified Data.Text as T
 
@@ -107,6 +109,13 @@ getText tz = concat [ above tz
                     , [currentLine tz]
                     , below tz
                     ]
+
+-- |Return the lengths of the lines in the zipper.
+lineLengths :: (Monoid a) => TextZipper a -> [Int]
+lineLengths tz = (length_ tz) <$> concat [ above tz
+                                         , [currentLine tz]
+                                         , below tz
+                                         ]
 
 -- |Get the cursor position of the zipper; returns @(row, col)@.
 -- @row@ ranges from @[0..num_rows-1]@ inclusive; @col@ ranges from

@@ -45,6 +45,8 @@ module Graphics.Vty.Widgets.Edit
     , setEditCursorPosition
     , setEditLineLimit
     , getEditLineLimit
+    , setEditMaxLength
+    , getEditMaxLength
     , applyEdit
     , onActivate
     , onChange
@@ -58,6 +60,7 @@ where
 
 import Control.Applicative ((<$>))
 import Control.Monad
+import Data.Maybe (isJust)
 import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
@@ -72,6 +75,7 @@ data Edit = Edit { contents :: Z.TextZipper T.Text
                  , changeHandlers :: Handlers T.Text
                  , cursorMoveHandlers :: Handlers (Int, Int)
                  , lineLimit :: Maybe Int
+                 , maxLength :: Maybe Int
                  }
 
 instance Show Edit where
@@ -98,6 +102,7 @@ editWidget' = do
                     , changeHandlers = chs
                     , cursorMoveHandlers = cmhs
                     , lineLimit = Nothing
+                    , maxLength = Nothing
                     }
 
   wRef <- newWidget initSt $ \w ->
@@ -205,6 +210,17 @@ setEditLineLimit w v = updateWidgetState w $ \st -> st { lineLimit = v }
 getEditLineLimit :: Widget Edit -> IO (Maybe Int)
 getEditLineLimit = (lineLimit <~~)
 
+-- |Set the maximum length of the contents of an edit widget.  Applies to every
+-- line of text in the editor.  'Nothing' indicates no limit, while 'Just'
+-- indicates a limit of the specified number of characters.
+setEditMaxLength :: Widget Edit -> Maybe Int -> IO ()
+setEditMaxLength _ (Just v) | v <= 0 = return ()
+setEditMaxLength w v = updateWidgetState w $ \st -> st { maxLength = v }
+
+-- |Get the current maximum length, if any, for the edit widget.
+getEditMaxLength :: Widget Edit -> IO (Maybe Int)
+getEditMaxLength = (maxLength <~~)
+
 resize :: Widget Edit -> (Phys, Phys) -> IO ()
 resize e (newHeight, newWidth) = do
   updateWidgetState e $ \st ->
@@ -277,14 +293,19 @@ getEditCurrentLine = ((Z.currentLine . contents) <~~)
 
 -- |Set the contents of the edit widget.  Newlines will be used to
 -- break up the text in multiline widgets.  If the edit widget has a
--- line limit, only those lines within the limit will be set.
+-- line limit, only those lines within the limit will be set.  If the edit
+-- widget has a line length limit, lines will be truncated.
 setEditText :: Widget Edit -> T.Text -> IO ()
 setEditText wRef str = do
   lim <- lineLimit <~~ wRef
-  let ls = case lim of
+  maxL <- maxLength <~~ wRef
+  let ls1 = case lim of
              Nothing -> T.lines str
              Just l -> take l $ T.lines str
-  updateWidgetState wRef $ \st -> st { contents = Z.textZipper ls
+      ls2 = case maxL of
+             Nothing -> ls1
+             Just l -> ((T.take l) <$>) $ T.lines str
+  updateWidgetState wRef $ \st -> st { contents = Z.textZipper ls2
                                      }
   notifyChangeHandlers wRef
 
@@ -315,22 +336,31 @@ applyEdit :: (Z.TextZipper T.Text -> Z.TextZipper T.Text)
           -> Widget Edit
           -> IO ()
 applyEdit f this = do
-  oldC <- contents <~~ this
-  updateWidgetState this $ \s ->
-      let newSt = s { contents = f (contents s) }
-      in case lineLimit s of
-           Nothing -> newSt
-           Just l -> if length (Z.getText $ contents newSt) > l
-                     then s
-                     else newSt
+  old <- contents <~~ this
+  llim <- lineLimit <~~ this
+  maxL <- maxLength <~~ this
 
-  newC <- contents <~~ this
+  let checkLines tz = case llim of
+                        Nothing -> Just tz
+                        Just l -> if length (Z.getText tz) > l
+                                  then Nothing
+                                  else Just tz
+      checkLength tz = case maxL of
+                         Nothing -> Just tz
+                         Just l -> if or ((> l) <$> (Z.lineLengths tz))
+                                   then Nothing
+                                   else Just tz
+      newContents = checkLength =<< checkLines (f old)
 
-  when (Z.getText oldC /= Z.getText newC) $
-       notifyChangeHandlers this
+  when (isJust newContents) $ do
+    let Just new = newContents
+    updateWidgetState this $ \s -> s { contents = new }
 
-  when (Z.cursorPosition oldC /= Z.cursorPosition newC) $
-       notifyCursorMoveHandlers this
+    when (Z.getText old /= Z.getText new) $
+         notifyChangeHandlers this
+
+    when (Z.cursorPosition old /= Z.cursorPosition new) $
+         notifyCursorMoveHandlers this
 
 editKeyEvent :: Widget Edit -> Key -> [Modifier] -> IO Bool
 editKeyEvent this k mods = do
