@@ -160,6 +160,19 @@ Executable vty-ui-tests
         Tests.TextClip
         Tests.TextZipper
 
+Executable vty-ui-collection-demo
+  Hs-Source-Dirs:  demos
+  GHC-Options:     -Wall
+  Main-is:         CollectionDemo.hs
+  Build-Depends:
+    base >= 4 && < 5,
+    mtl >= 2.0 && < 2.2,
+    vty >= 4.7.0.18,
+    text,
+    vty-ui
+  if !flag(demos)
+    Buildable: False
+
 Executable vty-ui-list-demo
   Hs-Source-Dirs:  demos
   GHC-Options:     -Wall
