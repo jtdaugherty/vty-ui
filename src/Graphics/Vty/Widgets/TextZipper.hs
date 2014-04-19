@@ -132,9 +132,9 @@ moveCursor :: (Monoid a) => (Int, Int) -> TextZipper a -> TextZipper a
 moveCursor (row, col) tz =
     let t = getText tz
     in if row < 0
-           || row > length t
+           || row >= length t
            || col < 0
-           || col > length_ tz (t !! row)
+           || col >= length_ tz (t !! row)
        then tz
        else tz { above = take row t
                , below = drop (row + 1) t
