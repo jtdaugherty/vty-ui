@@ -131,10 +131,10 @@ getHFixedSize wRef = do
   (HFixed lim _) <- state <~ wRef
   return lim
 
--- |Impose a maximum horizontal and vertical size on a widget.
+-- |Impose a fixed horizontal and vertical size on a widget.
 boxFixed :: (Show a) =>
-            Int -- ^Maximum width in columns
-         -> Int -- ^Maximum height in rows
+            Int -- ^Width in columns
+         -> Int -- ^Height in rows
          -> Widget a
          -> IO (Widget (VFixed (HFixed a)))
 boxFixed maxWidth maxHeight w = do
