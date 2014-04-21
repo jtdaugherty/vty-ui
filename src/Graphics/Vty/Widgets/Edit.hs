@@ -374,7 +374,20 @@ editKeyEvent this k mods = do
     (KRight, []) -> run Z.moveRight
     (KUp, []) -> run Z.moveUp
     (KDown, []) -> run Z.moveDown
-    (KBS, []) -> run Z.deletePrevChar
+    (KBS, []) -> do
+        v <- run Z.deletePrevChar
+        when (v) $ do
+            -- We want deletions to cause content earlier on the line(s) to
+            -- slide in from the left rather than letting the cursor reach the
+            -- beginning of the edit widget, preventing the user from seeing
+            -- characters being deleted.  To do this, after deletion (if we
+            -- can) we slide the clipping window one column to the left.
+            updateWidgetState this $ \st ->
+                let r = clipRect st
+                if clipLeft r > 0
+                then st { clipRect = r { clipLeft = clipLeft r - Phys 1 } }
+                else st
+        return v
     (KDel, []) -> run Z.deleteChar
     (KASCII ch, []) -> run (Z.insertChar ch)
     (KHome, []) -> run Z.gotoBOL
