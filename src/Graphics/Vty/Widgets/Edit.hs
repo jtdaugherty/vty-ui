@@ -384,9 +384,9 @@ editKeyEvent this k mods = do
             -- can) we slide the clipping window one column to the left.
             updateWidgetState this $ \st ->
                 let r = clipRect st
-                if clipLeft r > 0
-                then st { clipRect = r { clipLeft = clipLeft r - Phys 1 } }
-                else st
+                in if clipLeft r > 0
+                   then st { clipRect = r { clipLeft = clipLeft r - Phys 1 } }
+                   else st
         return v
     (KDel, []) -> run Z.deleteChar
     (KASCII ch, []) -> run (Z.insertChar ch)
