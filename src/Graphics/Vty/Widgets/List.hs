@@ -35,6 +35,7 @@ module Graphics.Vty.Widgets.List
     , clearList
     , setSelected
     -- ** List inspection
+    , indexOf
     , getListSize
     , getSelected
     , getListItem
@@ -459,6 +460,14 @@ setSelected wRef newPos = do
   case selectedIndex list of
     (-1) -> return ()
     curPos -> scrollBy wRef (newPos - curPos)
+
+-- |Get the index of the internal item @a@ in the list
+indexOf :: (Eq a) => Widget (List a b) -> a -> IO (Maybe Int)
+indexOf wRef item = do
+  list <- state <~ wRef
+  return $ V.findIndex matcher (listItems list)
+  where
+    matcher = \(match, _) -> item == match
 
 resize :: Widget (List a b) -> Int -> IO ()
 resize wRef newSize = do
