@@ -549,11 +549,11 @@ scrollTo newSelected list =
                          then newSelected - scrollWindowSize list + 1
                          else newSelected
 
-  in if scrollWindowSize list == 0
-     then list
-     else list { scrollTopIndex = adjustedTop
-               , selectedIndex = newSelected
-               }
+  in list { scrollTopIndex = adjustedTop
+          , selectedIndex = newSelected
+          }
+
+
 
 notifySelectionHandler :: Widget (List a b) -> IO ()
 notifySelectionHandler wRef = do
