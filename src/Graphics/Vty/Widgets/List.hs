@@ -36,6 +36,7 @@ module Graphics.Vty.Widgets.List
     , setSelected
     -- ** List inspection
     , indexOf
+    , indicesOf
     , getListSize
     , getSelected
     , getListItem
@@ -466,6 +467,14 @@ indexOf :: (Eq a) => Widget (List a b) -> a -> IO (Maybe Int)
 indexOf wRef item = do
   list <- state <~ wRef
   return $ V.findIndex matcher (listItems list)
+  where
+    matcher = \(match, _) -> item == match
+
+-- |Get all indices where the internal item @a@ is in the list
+indicesOf :: (Eq a) => Widget (List a b) -> a -> IO [Int]
+indicesOf wRef item = do
+  list <- state <~ wRef
+  return $ V.toList $ V.findIndices matcher (listItems list)
   where
     matcher = \(match, _) -> item == match
 
