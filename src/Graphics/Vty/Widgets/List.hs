@@ -35,8 +35,8 @@ module Graphics.Vty.Widgets.List
     , clearList
     , setSelected
     -- ** List inspection
-    , indexOf
-    , indicesOf
+    , getFirstListIndexOf
+    , getListIndicesOf
     , getListSize
     , getSelected
     , getListItem
@@ -462,17 +462,17 @@ setSelected wRef newPos = do
     (-1) -> return ()
     curPos -> scrollBy wRef (newPos - curPos)
 
--- |Get the index of the internal item @a@ in the list
-indexOf :: (Eq a) => Widget (List a b) -> a -> IO (Maybe Int)
-indexOf wRef item = do
+-- |Get the first index of the internal item @a@ in the list
+getFirstListIndexOf :: (Eq a) => Widget (List a b) -> a -> IO (Maybe Int)
+getFirstListIndexOf wRef item = do
   list <- state <~ wRef
   return $ V.findIndex matcher (listItems list)
   where
     matcher = \(match, _) -> item == match
 
 -- |Get all indices where the internal item @a@ is in the list
-indicesOf :: (Eq a) => Widget (List a b) -> a -> IO [Int]
-indicesOf wRef item = do
+getListIndicesOf :: (Eq a) => Widget (List a b) -> a -> IO [Int]
+getListIndicesOf wRef item = do
   list <- state <~ wRef
   return $ V.toList $ V.findIndices matcher (listItems list)
   where
