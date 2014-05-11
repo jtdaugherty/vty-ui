@@ -35,6 +35,8 @@ module Graphics.Vty.Widgets.List
     , clearList
     , setSelected
     -- ** List inspection
+    , getFirstListIndexOf
+    , getListIndicesOf
     , getListSize
     , getSelected
     , getListItem
@@ -460,6 +462,22 @@ setSelected wRef newPos = do
     (-1) -> return ()
     curPos -> scrollBy wRef (newPos - curPos)
 
+-- |Get the first index of the internal item @a@ in the list
+getFirstListIndexOf :: (Eq a) => Widget (List a b) -> a -> IO (Maybe Int)
+getFirstListIndexOf wRef item = do
+  list <- state <~ wRef
+  return $ V.findIndex matcher (listItems list)
+  where
+    matcher = \(match, _) -> item == match
+
+-- |Get all indices where the internal item @a@ is in the list
+getListIndicesOf :: (Eq a) => Widget (List a b) -> a -> IO [Int]
+getListIndicesOf wRef item = do
+  list <- state <~ wRef
+  return $ V.toList $ V.findIndices matcher (listItems list)
+  where
+    matcher = \(match, _) -> item == match
+
 resize :: Widget (List a b) -> Int -> IO ()
 resize wRef newSize = do
   when (newSize == 0) $ throw ResizeError
@@ -540,11 +558,11 @@ scrollTo newSelected list =
                          then newSelected - scrollWindowSize list + 1
                          else newSelected
 
-  in if scrollWindowSize list == 0
-     then list
-     else list { scrollTopIndex = adjustedTop
-               , selectedIndex = newSelected
-               }
+  in list { scrollTopIndex = adjustedTop
+          , selectedIndex = newSelected
+          }
+
+
 
 notifySelectionHandler :: Widget (List a b) -> IO ()
 notifySelectionHandler wRef = do
