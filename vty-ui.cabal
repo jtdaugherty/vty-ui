@@ -6,7 +6,7 @@ Synopsis:
 Description:
   An extensible library of user interface widgets for composing and
   laying out Vty user interfaces.  This library provides a collection
-  of widgets for building and composing interactive interactive,
+  of widgets for building and composing interactive,
   event-driven terminal interfaces.  This library is intended to make
   non-trivial user interfaces easy to express and modify without
   having to worry about terminal size.
