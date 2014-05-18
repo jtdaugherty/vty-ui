@@ -134,7 +134,7 @@ moveCursor (row, col) tz =
     in if row < 0
            || row >= length t
            || col < 0
-           || col >= length_ tz (t !! row)
+           || col > length_ tz (t !! row)
        then tz
        else tz { above = take row t
                , below = drop (row + 1) t
