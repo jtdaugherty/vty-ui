@@ -1,3 +1,50 @@
+1.6.1 -> 1.7
+------------
+
+Package changes:
+ * Relaxed version bounds for 'array' and 'unix' packages to permit GHC 7.8
+   builds
+
+API changes:
+ * List: list creation now requires specification of item widget height
+ * List: removed BadListWidgetSizePolicy exception
+ * List: added scrollToBeginning, scrollToEnd functions
+ * Added Graphics.Vty.Widgets.Text
+      .appendText
+      .prependText
+      .appendTextWithAttrs
+      .prependTextWithAttrs
+ * Added Graphics.Vty.Widgets.Core.onResize to register event handlers for when
+   a widget's size changes at render time
+ * Added List functions listFindFirst and listFindAll (thanks Moritz Angermann
+   <moritz.angermann@stoeger-it.de>)
+
+Bug fixes:
+ * Fixed documentation bugs in Chapter 3 (thanks Alexander Berntsen
+   <alexander@plaimi.net>)
+ * Fixed bugs in example code (thanks Adam Wheeler <adamwhlr@gmail.com>)
+ * List: scrolling a list with no elements no longer crashes with V.! error
+ * Core: Use correct constructor to set Shift-Tab as the previous focus
+   keybinding (fixes #31)
+ * Edit: now supports limiting line length via set/getEditMaxLength (fixes #33)
+ * TextZipper: ignore more invalid cursor positions (fixes #29)
+ * h/vFixed: add sufficient padding to prevent empty images from disrupting
+   fixed dimensions (fixes #34)
+ * Corrected documentation for boxFixed
+ * TextZipper: permit setting cursor position to column after end of line
+   (fixes #41)
+
+Other changes:
+ * List widgets now permit selecting elements before the first time the list
+   has been rendered (thanks Moritz Angermann <moritz.angermann@stoeger-it.de>)
+ * Edit widgets now bring in old content on the left on backspace rather than
+   hiding what is being deleted (fixes #35
+ * List: the list item widget's default attribute apply to any padding added to
+   it
+ * mergeFocusGroups now just requires at least one non-empty group
+ * Fixed the documentation for hFill
+ * Added a collection programming demo
+
 1.6 -> 1.6.1
 ------------
 
