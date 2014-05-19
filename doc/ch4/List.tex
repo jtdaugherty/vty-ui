@@ -36,16 +36,15 @@ parameters are as follows:
 Lists are created with the \fw{newList} function:
 
 \begin{haskellcode}
- lst <- newList attr
+ lst <- newList attr 1
 \end{haskellcode}
 
-\fw{newList} takes one parameter: the attribute of the
-currently-selected item to be used when the list is \textit{not}
-focused.  The \fw{List} uses its own focus attribute (Section
-\ref{sec:attributes}) as the attribute of the currently-selected item
-when it has the focus.  The widget type of the list (\fw{b} above)
-won't be chosen by the type system until you actually add something to
-the list.
+\fw{newList} takes two parameters: the attribute of the currently-selected item
+to be used when the list is \textit{not} focused, and the height, in rows, of
+each widget in the list.  The \fw{List} uses its own focus attribute (Section
+\ref{sec:attributes}) as the attribute of the currently-selected item when it
+has the focus.  The widget type of the list (\fw{b} above) won't be chosen by
+the type system until you actually add something to the list.
 
 Items may be added to a \fw{List} with the \fw{addToList} function,
 which takes an internal value (e.g., \fw{String}) and a widget of the
@@ -72,8 +71,8 @@ There are two restrictions on the widget type that can be used with
   height}.  This is because the list uses the item height to calculate
   how many items can be displayed, given the space available to the
   rendered \fw{List}.  If you specify a widget whose rendered size
-  doesn't match that of the rest of the wigets of the list, layout
-  problems are likely to ensue.
+  doesn't match that of the rest of the wigets of the list, the widget will be
+  clipped to fit in the configured number of rows passed to \fw{newList}.
 \end{itemize}
 
 Items may be removed from \fw{List}s with the \fw{removeFromList}
