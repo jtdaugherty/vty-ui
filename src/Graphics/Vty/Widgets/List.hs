@@ -51,6 +51,7 @@ import qualified Data.Vector as V
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
+import Graphics.Vty.Widgets.Fixed
 import Graphics.Vty.Widgets.Limits
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
@@ -392,8 +393,8 @@ renderListWidget foc list s ctx = do
                   else mergeAttrs [ na
                                   , defaultAttr
                                   ]
-        -- Height-limit the widget by wrapping it with a VLimit
-        limited <- vLimit (itemHeight list) w
+        -- Height-limit the widget by wrapping it with a VFixed/VLimit
+        limited <- vLimit (itemHeight list) =<< vFixed (itemHeight list) w
 
         img <- render limited s $ ctx { overrideAttr = att }
 
