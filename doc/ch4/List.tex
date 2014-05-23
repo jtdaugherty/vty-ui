@@ -58,21 +58,19 @@ appropriate type:
 In addition, items may be inserted into a \fw{List} at any position with
 the \fw{insertIntoList} function.
 
-There are two restrictions on the widget type that can be used with
-\fw{List}s:
+When it comes to how \fw{List}s render item widgets, there are two behaviors to
+know about:
 
 \begin{itemize}
-\item The \fw{Widget b} type \textit{must not grow vertically}.  This
-  is because all \fw{List} item widgets must take up a fixed amount of
-  vertical space so the \fw{List} can manage scrolling.  If the widget
-  grows vertically, \fw{addToList} will throw a \fw{ListError}
-  exception.
-\item All widgets added to the \fw{List} \textit{must have the same
-  height}.  This is because the list uses the item height to calculate
-  how many items can be displayed, given the space available to the
-  rendered \fw{List}.  If you specify a widget whose rendered size
-  doesn't match that of the rest of the wigets of the list, the widget will be
-  clipped to fit in the configured number of rows passed to \fw{newList}.
+\item \textit{All widgets rendered by the list must have the same height}.
+  This is because the list uses the item height to calculate how many
+  items can be displayed, given the space available to the rendered \fw{List}.
+  This is why the height of list items must be passed to \fw{newList}.
+\item \textit{The item widgets will be height-restricted}.  This is because all
+  \fw{List} item widgets must take up a fixed amount of vertical space so the
+  \fw{List} can manage scrolling state.  Internally the \fw{List} widget uses a
+  \fw{vLimit} wrapper to render each item widget to guarantee that all items
+  have the same height.
 \end{itemize}
 
 Items may be removed from \fw{List}s with the \fw{removeFromList}
