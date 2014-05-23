@@ -68,9 +68,9 @@ know about:
   This is why the height of list items must be passed to \fw{newList}.
 \item \textit{The item widgets will be height-restricted}.  This is because all
   \fw{List} item widgets must take up a fixed amount of vertical space so the
-  \fw{List} can manage scrolling state.  Internally the \fw{List} widget uses a
-  \fw{vLimit} wrapper to render each item widget to guarantee that all items
-  have the same height.
+  \fw{List} can manage scrolling state.  Internally the \fw{List} widget uses
+  \fw{vLimit} and \fw{vFixed} wrappers to render each item widget to guarantee
+  that all items have the same height.
 \end{itemize}
 
 Items may be removed from \fw{List}s with the \fw{removeFromList}
