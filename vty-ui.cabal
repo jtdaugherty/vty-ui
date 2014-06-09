@@ -89,7 +89,7 @@ Flag demos
 Library
   Build-Depends:
     base >= 4 && < 5,
-    vty >= 4.7.0.18,
+    vty >= 4.7.0.18 && < 5,
     containers >= 0.2 && < 0.6,
     regex-base >= 0.93 && < 0.94,
     directory >= 1.0 && < 1.3,
