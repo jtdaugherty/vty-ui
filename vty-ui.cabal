@@ -1,5 +1,5 @@
 Name:                vty-ui
-Version:             1.7
+Version:             1.7.1
 Synopsis:
   An interactive terminal user interface library for Vty
 
@@ -139,7 +139,7 @@ Executable vty-ui-tests
     QuickCheck >= 2.4 && < 2.8,
     random >= 1.0,
     text,
-    vty,
+    vty < 5,
     vty-ui
 
   CPP-Options: -DTESTING
@@ -167,7 +167,7 @@ Executable vty-ui-collection-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.3,
-    vty >= 4.7.0.18,
+    vty >= 4.7.0.18 && < 5,
     text,
     vty-ui
   if !flag(demos)
@@ -180,7 +180,7 @@ Executable vty-ui-list-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.3,
-    vty >= 4.7.0.18,
+    vty >= 4.7.0.18 && < 5,
     text,
     vty-ui
   if !flag(demos)
@@ -193,7 +193,7 @@ Executable vty-ui-progressbar-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.3,
-    vty >= 4.7.0.18,
+    vty >= 4.7.0.18 && < 5,
     text,
     vty-ui
   if !flag(demos)
@@ -209,7 +209,7 @@ Executable vty-ui-complex-demo
     bytestring >= 0.9 && < 1.0,
     time >= 1.1 && < 1.5,
     old-locale >= 1.0 && < 1.1,
-    vty >= 4.7.0.18,
+    vty >= 4.7.0.18 && < 5,
     text,
     vty-ui
   if !flag(demos)
@@ -222,7 +222,7 @@ Executable vty-ui-dirbrowser-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.3,
-    vty >= 4.7.0.18,
+    vty >= 4.7.0.18 && < 5,
     vty-ui
   if !flag(demos)
     Buildable: False
@@ -234,7 +234,7 @@ Executable vty-ui-phoneinput-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.3,
-    vty >= 4.7.0.18,
+    vty >= 4.7.0.18 && < 5,
     text,
     vty-ui
   if !flag(demos)
@@ -247,7 +247,7 @@ Executable vty-ui-dialog-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.3,
-    vty >= 4.7.0.18,
+    vty >= 4.7.0.18 && < 5,
     text,
     vty-ui
   if !flag(demos)
@@ -260,7 +260,7 @@ Executable vty-ui-edit-demo
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.3,
-    vty >= 4.7.0.18,
+    vty >= 4.7.0.18 && < 5,
     vty-ui
   if !flag(demos)
     Buildable: False
