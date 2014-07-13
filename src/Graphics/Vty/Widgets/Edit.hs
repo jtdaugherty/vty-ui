@@ -41,6 +41,7 @@ module Graphics.Vty.Widgets.Edit
     , getEditText
     , getEditCurrentLine
     , setEditText
+    , setEditRewriter
     , getEditCursorPosition
     , setEditCursorPosition
     , setEditLineLimit
@@ -76,6 +77,7 @@ data Edit = Edit { contents :: Z.TextZipper T.Text
                  , cursorMoveHandlers :: Handlers (Int, Int)
                  , lineLimit :: Maybe Int
                  , maxLength :: Maybe Int
+                 , rewriter :: Char -> Char
                  }
 
 instance Show Edit where
@@ -103,6 +105,7 @@ editWidget' = do
                     , cursorMoveHandlers = cmhs
                     , lineLimit = Nothing
                     , maxLength = Nothing
+                    , rewriter = id
                     }
 
   wRef <- newWidget initSt $ \w ->
@@ -133,6 +136,12 @@ internalGetCursorPosition this = do
 
   return $ if f then Just newPos else Nothing
 
+-- |Set the function which rewrites all characters at rendering time.  Defaults
+-- to 'id'.  Does not affect text stored in the editor.
+setEditRewriter :: Widget Edit -> (Char -> Char) -> IO ()
+setEditRewriter w f =
+    updateWidgetState w $ \st -> st { rewriter = f }
+
 renderEditWidget :: Widget Edit -> DisplayRegion -> RenderContext -> IO Image
 renderEditWidget this size ctx = do
   resize this ( Phys $ fromEnum $ region_height size
@@ -147,9 +156,10 @@ renderEditWidget this size ctx = do
       attr = if isFocused then focusAttr ctx else nAttr
 
       clipped = doClipping (Z.getText $ contents st) (clipRect st)
+      rewritten = ((rewriter st) <$>) <$> clipped
 
       totalAllowedLines = fromEnum $ region_height size
-      numEmptyLines = lim - length clipped
+      numEmptyLines = lim - length rewritten
           where
             lim = case lineLimit st of
                     Just v -> min v totalAllowedLines
@@ -160,7 +170,7 @@ renderEditWidget this size ctx = do
                      in string attr s <|>
                         char_fill attr ' ' (region_width size - toEnum physLineLength) 1
 
-  return $ vert_cat $ lineWidget <$> (clipped ++ emptyLines)
+  return $ vert_cat $ lineWidget <$> (rewritten ++ emptyLines)
 
 doClipping :: [T.Text] -> ClipRect -> [String]
 doClipping ls rect =
