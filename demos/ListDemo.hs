@@ -11,7 +11,6 @@ data AppElements =
     AppElements { theList :: Widget (List T.Text FormattedText)
                 , theBody :: Widget FormattedText
                 , theFooter :: Widget FormattedText
-                , theListLimit :: Widget (VLimit (List T.Text FormattedText))
                 , uis :: Collection
                 }
 
@@ -72,7 +71,6 @@ mkAppElements = do
   return $ AppElements { theList = lw
                        , theBody = b
                        , theFooter = ft
-                       , theListLimit = ll
                        , uis = c
                        }
 
