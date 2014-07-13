@@ -111,11 +111,13 @@ padded ch padding = do
         , growHorizontal_ = const $ growHorizontal ch
 
         , render_ =
-            \this sz ctx ->
-                if (region_width sz < 2) || (region_height sz < 2)
-                then return empty_image
-                else do
-                  Padded child p <- getState this
+            \this sz ctx -> do
+                Padded child p <- getState this
+
+                if (region_width sz < leftPadding p + rightPadding p) ||
+                   (region_height sz < bottomPadding p + topPadding p) then
+                  return empty_image else
+                 do
                   f <- focused <~ this
 
                   -- Compute constrained space based on padding
