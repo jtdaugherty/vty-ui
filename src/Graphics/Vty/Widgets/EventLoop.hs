@@ -119,7 +119,12 @@ instance Exception CollectionError
 type EntryShow = IO ()
 type EntryHide = IO ()
 
-data Entry = forall a. (Show a) => Entry (Widget a) (Widget FocusGroup) EntryShow EntryHide
+data Entry = forall a. (Show a) => Entry
+    { entryWidget :: Widget a
+    , entryFocusGroup :: Widget FocusGroup
+    , entryShowCallback :: EntryShow
+    , entryHideCallback :: EntryHide
+    }
 
 data CollectionData =
     CollectionData { entries :: [Entry]
@@ -137,16 +142,7 @@ instance Show CollectionData where
                                           ]
 
 entryRenderAndPosition :: Entry -> DisplayRegion -> DisplayRegion -> RenderContext -> IO Image
-entryRenderAndPosition (Entry w _ _ _) = renderAndPosition w
-
-entryFocusGroup :: Entry -> Widget FocusGroup
-entryFocusGroup (Entry _ fg _ _) = fg
-
-entryShowCallback :: Entry -> IO ()
-entryShowCallback (Entry _ _ cb _) = cb
-
-entryHideCallback :: Entry -> IO ()
-entryHideCallback (Entry _ _ _ cb) = cb
+entryRenderAndPosition (Entry { entryWidget = w }) = renderAndPosition w
 
 -- |Create a new collection.
 newCollection :: IO Collection
