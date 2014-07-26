@@ -42,6 +42,7 @@ module Graphics.Vty.Widgets.Edit
     , getEditCurrentLine
     , setEditText
     , setEditRewriter
+    , setCharFilter
     , getEditCursorPosition
     , setEditCursorPosition
     , setEditLineLimit
@@ -78,6 +79,7 @@ data Edit = Edit { contents :: Z.TextZipper T.Text
                  , lineLimit :: Maybe Int
                  , maxLength :: Maybe Int
                  , rewriter :: Char -> Char
+                 , charFilter :: Char -> Bool
                  }
 
 instance Show Edit where
@@ -106,6 +108,7 @@ editWidget' = do
                     , lineLimit = Nothing
                     , maxLength = Nothing
                     , rewriter = id
+                    , charFilter = const True
                     }
 
   wRef <- newWidget initSt $ \w ->
@@ -141,6 +144,10 @@ internalGetCursorPosition this = do
 setEditRewriter :: Widget Edit -> (Char -> Char) -> IO ()
 setEditRewriter w f =
     updateWidgetState w $ \st -> st { rewriter = f }
+
+setCharFilter :: Widget Edit -> (Char -> Bool) -> IO ()
+setCharFilter w f =
+    updateWidgetState w $ \st -> st { charFilter = f }
 
 renderEditWidget :: Widget Edit -> DisplayRegion -> RenderContext -> IO Image
 renderEditWidget this size ctx = do
@@ -399,7 +406,11 @@ editKeyEvent this k mods = do
                    else st
         return v
     (KDel, []) -> run Z.deleteChar
-    (KASCII ch, []) -> run (Z.insertChar ch)
+    (KASCII ch, []) -> do
+        st <- getState this
+        if charFilter st ch
+            then run (Z.insertChar ch)
+            else return True -- True even if the filter rejected the character.
     (KHome, []) -> run Z.gotoBOL
     (KEnd, []) -> run Z.gotoEOL
     (KEnter, []) -> do
