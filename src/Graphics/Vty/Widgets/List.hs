@@ -384,9 +384,12 @@ renderListWidget foc list s ctx = do
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
         na <- normalAttribute <~ w
+        wFoc <- focusAttribute <~ w
         let att = if sel
                   then if foc
-                       then focusAttr ctx
+                       then mergeAttrs [ wFoc
+                                       , focusAttr ctx
+                                       ]
                        else mergeAttrs [ selectedUnfocusedAttr list
                                        , defaultAttr
                                        ]
