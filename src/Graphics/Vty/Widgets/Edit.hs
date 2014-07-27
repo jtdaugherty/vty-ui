@@ -146,9 +146,8 @@ setEditRewriter w f =
     updateWidgetState w $ \st -> st { rewriter = f }
 
 -- |Set the function which allows typed characters in the edit widget.
--- Defaults to 'const True' allowing all characters.
--- For example, setting the filter to (`elem` "0123456789") will only allow
--- numbers in the edit widget.
+-- Defaults to 'const True', allowing all characters.  For example, setting the
+-- filter to (`elem` "0123456789") will only allow numbers in the edit widget.
 setCharFilter :: Widget Edit -> (Char -> Bool) -> IO ()
 setCharFilter w f =
     updateWidgetState w $ \st -> st { charFilter = f }
