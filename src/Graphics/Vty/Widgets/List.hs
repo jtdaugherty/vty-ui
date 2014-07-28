@@ -402,9 +402,9 @@ renderListWidget this s ctx = do
       renderVisible ((w, sel):ws) = do
         let att = if sel
                   then if foc
-                       then mergeAttrs [ overrideAttr ctx, childSelFocAttr ]
-                       else mergeAttrs [ overrideAttr ctx, childSelUnfocAttr ]
-                  else overrideAttr ctx
+                       then mergeAttrs [ childSelFocAttr, defaultAttr ]
+                       else mergeAttrs [ childSelUnfocAttr, defaultAttr ]
+                  else defaultAttr
 
         -- Height-limit the widget by wrapping it with a VFixed/VLimit
         limited <- vLimit (itemHeight list) =<< vFixed (itemHeight list) w
