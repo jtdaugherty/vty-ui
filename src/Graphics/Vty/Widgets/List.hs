@@ -19,6 +19,8 @@ module Graphics.Vty.Widgets.List
     , addToList
     , insertIntoList
     , removeFromList
+    , setSelectedFocusedAttr
+    , setSelectedUnfocusedAttr
     -- ** List manipulation
     , scrollBy
     , scrollUp
@@ -92,7 +94,8 @@ data ActivateItemEvent a b = ActivateItemEvent Int a (Widget b)
 -- /value type/ @a@, the type of internal values used to refer to the
 -- visible representations of the list contents, and the /widget type/
 -- @b@, the type of widgets used to represent the list visually.
-data List a b = List { selectedUnfocusedAttr :: !Attr
+data List a b = List { selectedUnfocusedAttr :: Maybe Attr
+                     , selectedFocusedAttr :: Maybe Attr
                      , selectedIndex :: !Int
                      -- ^The currently selected list index.
                      , scrollTopIndex :: !Int
@@ -112,6 +115,7 @@ data List a b = List { selectedUnfocusedAttr :: !Attr
 instance Show (List a b) where
     show lst = concat [ "List { "
                       , "selectedUnfocusedAttr = ", show $ selectedUnfocusedAttr lst
+                      , ", selectedFocusedAttr = ", show $ selectedFocusedAttr lst
                       , ", selectedIndex = ", show $ selectedIndex lst
                       , ", scrollTopIndex = ", show $ scrollTopIndex lst
                       , ", scrollWindowSize = ", show $ scrollWindowSize lst
@@ -120,16 +124,16 @@ instance Show (List a b) where
                       , " }"
                       ]
 
-newListData :: Attr -- ^The attribute of the selected item
-            -> Int -- ^Item widget height in rows
+newListData :: Int -- ^Item widget height in rows
             -> IO (List a b)
-newListData selAttr h = do
+newListData h = do
   schs <- newHandlers
   iahs <- newHandlers
   irhs <- newHandlers
   iacths <- newHandlers
 
-  return $ List { selectedUnfocusedAttr = selAttr
+  return $ List { selectedUnfocusedAttr = Nothing
+                , selectedFocusedAttr = Nothing
                 , selectedIndex = -1
                 , scrollTopIndex = 0
                 , scrollWindowSize = 0
@@ -212,6 +216,18 @@ removeFromList list pos = do
 
   -- Return the removed item.
   return (label, w)
+
+-- |Sets the attributes to be merged on the selected list item when the list
+-- widget has the focus.
+setSelectedFocusedAttr :: Widget (List a b) -> Maybe Attr -> IO ()
+setSelectedFocusedAttr w attr = do
+  updateWidgetState w $ \l -> l { selectedFocusedAttr = attr }
+
+-- |Sets the attributes to be merged on the selected list item when the list
+-- widget does not have the focus.
+setSelectedUnfocusedAttr :: Widget (List a b) -> Maybe Attr -> IO ()
+setSelectedUnfocusedAttr w attr = do
+  updateWidgetState w $ \l -> l { selectedUnfocusedAttr = attr }
 
 -- |Add an item to the list.  Its widget will be constructed from the
 -- specified internal value using the widget constructor passed to
@@ -304,11 +320,10 @@ clearList w = do
 -- |Create a new list using the specified attribute for the
 -- currently-selected element when the list does NOT have focus.
 newList :: (Show b) =>
-           Attr -- ^The attribute of the selected item
-        -> Int -- ^Height of list item widgets in rows
+           Int -- ^Height of list item widgets in rows
         -> IO (Widget (List a b))
-newList selAttr ht = do
-  list <- newListData selAttr ht
+newList ht = do
+  list <- newListData ht
   wRef <- newWidget list $ \w ->
       w { keyEventHandler = listKeyEvent
 
@@ -333,10 +348,7 @@ newList selAttr ht = do
               when (h > 0) $
                    resize this (max 1 ((fromEnum $ region_height sz) `div` h))
 
-              listData <- getState this
-              foc <- focused <~ this
-
-              renderListWidget foc listData sz ctx
+              renderListWidget this sz ctx
 
         , setCurrentPosition_ =
             \this pos -> do
@@ -374,28 +386,26 @@ listKeyEvent w k mods = do
     Nothing -> return False
     Just (_, (_, e)) -> handleKeyEvent e k mods
 
-renderListWidget :: (Show b) => Bool -> List a b -> DisplayRegion -> RenderContext -> IO Image
-renderListWidget foc list s ctx = do
+renderListWidget :: (Show b) => Widget (List a b) -> DisplayRegion -> RenderContext -> IO Image
+renderListWidget this s ctx = do
+  list <- getState this
+  foc <- focused <~ this
+
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
+      childSelFocAttr   = (maybe (focusAttr ctx) id) $ selectedFocusedAttr list
+      childSelUnfocAttr = (maybe (focusAttr ctx) id) $ selectedUnfocusedAttr list
       defaultAttr = mergeAttrs [ overrideAttr ctx
                                , normalAttr ctx
                                ]
 
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
-        na <- normalAttribute <~ w
-        wFoc <- focusAttribute <~ w
         let att = if sel
                   then if foc
-                       then mergeAttrs [ wFoc
-                                       , focusAttr ctx
-                                       ]
-                       else mergeAttrs [ selectedUnfocusedAttr list
-                                       , defaultAttr
-                                       ]
-                  else mergeAttrs [ na
-                                  , defaultAttr
-                                  ]
+                       then mergeAttrs [ childSelFocAttr, defaultAttr ]
+                       else mergeAttrs [ childSelUnfocAttr, defaultAttr ]
+                  else defaultAttr
+
         -- Height-limit the widget by wrapping it with a VFixed/VLimit
         limited <- vLimit (itemHeight list) =<< vFixed (itemHeight list) w
 
@@ -420,12 +430,11 @@ renderListWidget foc list s ctx = do
 -- |A convenience function to create a new list using 'Text' values as
 -- the internal values and 'FormattedText' widgets to represent those
 -- strings.
-newTextList :: Attr -- ^The attribute of the selected item
-            -> [T.Text] -- ^The list items
+newTextList :: [T.Text] -- ^The list items
             -> Int -- ^Maximum number of rows of text to show per list item
             -> IO (Widget (List T.Text FormattedText))
-newTextList selAttr labels h = do
-  list <- newList selAttr h
+newTextList labels h = do
+  list <- newList h
   forM_ labels $ \l ->
       (addToList list l =<< plainText l)
   return list

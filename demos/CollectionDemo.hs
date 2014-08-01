@@ -25,7 +25,8 @@ mkFirstUI = do
 
 mkSecondUI = do
   fg <- newFocusGroup
-  lst <- newTextList (green `on` blue) items 1
+  lst <- newTextList items 1
+  setSelectedUnfocusedAttr lst $ Just (green `on` blue)
   addToFocusGroup fg lst
   c <- centered =<< vLimit 10 =<< hLimit 50 =<< bordered lst
   return (c, fg)
