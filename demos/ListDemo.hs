@@ -65,7 +65,6 @@ mkAppElements = do
   setSelectedUnfocusedAttr lw $ Just selAttr
   b <- textWidget wrap T.empty
   ft <- plainText T.empty >>= withNormalAttribute titleAttr
-  ll <- vLimit 5 lw
 
   c <- newCollection
 
