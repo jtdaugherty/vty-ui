@@ -21,7 +21,6 @@ module Graphics.Vty.Widgets.Limits
 where
 
 import Control.Monad
-import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Util
 
