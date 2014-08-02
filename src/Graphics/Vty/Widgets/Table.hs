@@ -215,7 +215,7 @@ newTable specs borderSty = do
                      , columnSpecs = specs
                      , borderStyle = borderSty
                      , numColumns = length specs
-                     , borderAttr = def_attr
+                     , borderAttr = defAttr
                      , defaultCellAlignment = AlignLeft
                      , defaultCellPadding = padNone
                      }
@@ -237,21 +237,21 @@ newTable specs borderSty = do
               sideBorderL <- mkSideBorder this ctx True
               sideBorderR <- mkSideBorder this ctx False
 
-              let body = vert_cat $ intersperse rowBorder rowImgs
-                  withTBBorders = vert_cat [topBorder, body, bottomBorder]
-                  withSideBorders = horiz_cat [sideBorderL, withTBBorders, sideBorderR]
+              let body = vertCat $ intersperse rowBorder rowImgs
+                  withTBBorders = vertCat [topBorder, body, bottomBorder]
+                  withSideBorders = horizCat [sideBorderL, withTBBorders, sideBorderR]
 
               -- Ideally, we would only display rows that we have room
               -- to render, but this is a much easier cop-out. :)
-              if ((region_width sz < image_width withSideBorders) ||
-                  (region_height sz < image_height withSideBorders)) then
-                  return empty_image else
+              if ((regionWidth sz < imageWidth withSideBorders) ||
+                  (regionHeight sz < imageHeight withSideBorders)) then
+                  return emptyImage else
                   return withSideBorders
 
         , setCurrentPosition_ =
             \this pos -> do
               sz <- getCurrentSize this
-              if region_width sz == 0 || region_height sz == 0 then
+              if regionWidth sz == 0 || regionHeight sz == 0 then
                   return () else
                   do
                     bs <- borderStyle <~~ this
@@ -271,7 +271,7 @@ newTable specs borderSty = do
                             cellPhysSizes <- forM row $ \cell ->
                                              case cell of
                                                TableCell cw _ _ -> getCurrentSize cw
-                                               EmptyCell -> return $ DisplayRegion 0 1
+                                               EmptyCell -> return (0, 1)
 
                             -- Include 1 as a possible height to
                             -- prevent zero-height images from
@@ -279,7 +279,7 @@ newTable specs borderSty = do
                             -- won't hurt in the case where other
                             -- cells are bigger, since their heights
                             -- will be chosen instead.
-                            let maxSize = maximum $ 1 : map region_height cellPhysSizes
+                            let maxSize = maximum $ 1 : map regionHeight cellPhysSizes
                                 borderOffset = if rowBorders bs
                                                then 1 else 0
 
@@ -288,7 +288,7 @@ newTable specs borderSty = do
                             positionRow this bs rowPos row
                             positionRows (height + maxSize + borderOffset) rest
 
-                    positionRows (region_height pos + edgeOffset) rs
+                    positionRows (regionHeight pos + edgeOffset) rs
         }
   return t
 
@@ -321,7 +321,7 @@ mkRowBorder t sz ctx intChar = do
   bs <- borderStyle <~~ t
 
   if not $ rowBorders bs then
-      return empty_image else
+      return emptyImage else
       mkRowBorder_ t sz ctx intChar
 
 -- Make a row border that matches the width of each row but does not
@@ -342,13 +342,13 @@ mkRowBorder_ t sz ctx intChar = do
       intersection = string bAttr' [intChar]
       imgs = (flip map) szs $ \s ->
              case s of
-               ColFixed n -> char_fill bAttr' (skinHorizontal sk) n 1
-               ColAuto -> char_fill bAttr' (skinHorizontal sk) aw 1
+               ColFixed n -> charFill bAttr' (skinHorizontal sk) n 1
+               ColAuto -> charFill bAttr' (skinHorizontal sk) aw 1
       imgs' = if colBorders bs
               then intersperse intersection imgs
               else imgs
 
-  return $ horiz_cat imgs'
+  return $ horizCat imgs'
 
 mkTopBottomBorder :: Widget Table -> DisplayRegion -> RenderContext -> Char -> IO Image
 mkTopBottomBorder t sz ctx intChar = do
@@ -356,7 +356,7 @@ mkTopBottomBorder t sz ctx intChar = do
 
   if edgeBorders bs then
       mkRowBorder_ t sz ctx intChar else
-      return empty_image
+      return emptyImage
 
 -- Make vertical side borders for the table, including row border
 -- intersections if necessary.
@@ -366,7 +366,7 @@ mkSideBorder t ctx isLeft = do
 
   if edgeBorders bs then
       mkSideBorder_ t ctx isLeft else
-      return empty_image
+      return emptyImage
 
 mkSideBorder_ :: Widget Table -> RenderContext -> Bool -> IO Image
 mkSideBorder_ t ctx isLeft = do
@@ -395,16 +395,16 @@ mkSideBorder_ t ctx isLeft = do
   rowHeights <- forM rs $ \(TableRow row) -> do
                     hs <- forM row $ \cell ->
                           case cell of
-                            TableCell cw _ _ -> region_height <$> getCurrentSize cw
+                            TableCell cw _ _ -> regionHeight <$> getCurrentSize cw
                             EmptyCell -> return 1
                     return $ maximum hs
 
-  let borderImgs = (flip map) rowHeights $ \h -> char_fill bAttr' (skinVertical sk) 1 h
+  let borderImgs = (flip map) rowHeights $ \h -> charFill bAttr' (skinVertical sk) 1 h
       withIntersections = if rowBorders bs
                           then intersperse intersection borderImgs
                           else borderImgs
 
-  return $ vert_cat $ topCorner : withIntersections ++ [bottomCorner]
+  return $ vertCat $ topCorner : withIntersections ++ [bottomCorner]
 
 positionRow :: Widget Table -> BorderStyle -> DisplayRegion -> [TableCell] -> IO ()
 positionRow t bs pos cells = do
@@ -447,7 +447,7 @@ autoWidth t sz = do
       edgeWidth = if edgeBorders bs then 2 else 0
       colWidth = if colBorders bs then (toEnum $ length sizes - 1) else 0
 
-  return $ toEnum ((max 0 ((fromEnum $ region_width sz) - totalFixed - edgeWidth - colWidth))
+  return $ toEnum ((max 0 ((fromEnum $ regionWidth sz) - totalFixed - edgeWidth - colWidth))
                    `div` numAuto)
 
 -- |Add a heading row to a table.  Adds a row using the specified
@@ -543,7 +543,7 @@ rowBorders BorderFull = True
 rowBorders _ = False
 
 rowHeight :: [Image] -> Int
-rowHeight = maximum . map image_height
+rowHeight = maximum . map imageHeight
 
 renderRow :: Widget Table -> DisplayRegion -> [TableCell] -> RenderContext -> IO Image
 renderRow tbl sz cells ctx = do
@@ -562,7 +562,7 @@ renderRow tbl sz cells ctx = do
   cellImgs <-
       forM (zip cells sizes) $ \(cellW, sizeSpec) ->
           do
-            let cellSz = DisplayRegion cellWidth (region_height sz)
+            let cellSz = (cellWidth, regionHeight sz)
                 cellWidth = case sizeSpec of
                               ColFixed n -> toEnum n
                               ColAuto -> aw
@@ -570,16 +570,16 @@ renderRow tbl sz cells ctx = do
             img <- renderCell cellSz cellW $ ctx { normalAttr = newDefault }
             -- Right-pad the image if it isn't big enough to fill the
             -- cell.
-            case compare (image_width img) (region_width cellSz) of
+            case compare (imageWidth img) (regionWidth cellSz) of
               EQ -> return img
-              LT -> return $ img <|> char_fill att ' '
-                       (max 0 (region_width cellSz - image_width img))
-                       (max (image_height img) 1)
+              LT -> return $ img <|> charFill att ' '
+                       (max 0 (regionWidth cellSz - imageWidth img))
+                       (max (imageHeight img) 1)
               GT -> throw CellImageTooBig
 
   let maxHeight = rowHeight cellImgs
       cellImgsBottomPadded = (flip map) cellImgs $ \img ->
-                             img <-> char_fill att ' ' (image_width img) (maxHeight - image_height img)
+                             img <-> charFill att ' ' (imageWidth img) (maxHeight - imageHeight img)
 
   -- If we need to draw borders in between columns, do that.
   let bAttr' = mergeAttrs [ overrideAttr ctx
@@ -588,6 +588,6 @@ renderRow tbl sz cells ctx = do
                           ]
       withBorders = case colBorders borderSty of
                       False -> cellImgsBottomPadded
-                      True -> intersperse (char_fill bAttr' (skinVertical sk) 1 maxHeight) cellImgsBottomPadded
+                      True -> intersperse (charFill bAttr' (skinVertical sk) 1 maxHeight) cellImgsBottomPadded
 
-  return $ horiz_cat withBorders
+  return $ horizCat withBorders
