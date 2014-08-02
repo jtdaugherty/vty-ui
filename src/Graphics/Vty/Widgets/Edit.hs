@@ -134,7 +134,7 @@ internalGetCursorPosition this = do
   let (cursorRow, _) = Z.cursorPosition (contents st)
       Phys offset = physCursorCol st - clipLeft (clipRect st)
       newPos = pos
-               `withWidth` (toEnum ((fromEnum $ region_width pos) + offset))
+               `withWidth` (toEnum ((fromEnum $ regionWidth pos) + offset))
                `plusHeight` (toEnum (cursorRow - (fromEnum $ clipTop $ clipRect st)))
 
   return $ if f then Just newPos else Nothing
@@ -154,8 +154,8 @@ setCharFilter w f =
 
 renderEditWidget :: Widget Edit -> DisplayRegion -> RenderContext -> IO Image
 renderEditWidget this size ctx = do
-  resize this ( Phys $ fromEnum $ region_height size
-              , Phys $ fromEnum $ region_width size )
+  resizeEdit this ( Phys $ fromEnum $ regionHeight size
+                  , Phys $ fromEnum $ regionWidth size )
 
   st <- getState this
   isFocused <- focused <~ this
@@ -168,7 +168,7 @@ renderEditWidget this size ctx = do
       clipped = doClipping (Z.getText $ contents st) (clipRect st)
       rewritten = ((rewriter st) <$>) <$> clipped
 
-      totalAllowedLines = fromEnum $ region_height size
+      totalAllowedLines = fromEnum $ regionHeight size
       numEmptyLines = lim - length rewritten
           where
             lim = case lineLimit st of
@@ -178,9 +178,9 @@ renderEditWidget this size ctx = do
       emptyLines = replicate numEmptyLines ""
       lineWidget s = let Phys physLineLength = sum $ chWidth <$> s
                      in string attr s <|>
-                        char_fill attr ' ' (region_width size - toEnum physLineLength) 1
+                        charFill attr ' ' (regionWidth size - toEnum physLineLength) 1
 
-  return $ vert_cat $ lineWidget <$> (rewritten ++ emptyLines)
+  return $ vertCat $ lineWidget <$> (rewritten ++ emptyLines)
 
 doClipping :: [T.Text] -> ClipRect -> [String]
 doClipping ls rect =
@@ -241,8 +241,8 @@ setEditMaxLength w v = updateWidgetState w $ \st -> st { maxLength = v }
 getEditMaxLength :: Widget Edit -> IO (Maybe Int)
 getEditMaxLength = (maxLength <~~)
 
-resize :: Widget Edit -> (Phys, Phys) -> IO ()
-resize e (newHeight, newWidth) = do
+resizeEdit :: Widget Edit -> (Phys, Phys) -> IO ()
+resizeEdit e (newHeight, newWidth) = do
   updateWidgetState e $ \st ->
       let newRect = (clipRect st) { clipHeight = newHeight
                                   , clipWidth = newWidth
@@ -386,10 +386,10 @@ editKeyEvent :: Widget Edit -> Key -> [Modifier] -> IO Bool
 editKeyEvent this k mods = do
   let run f = applyEdit f this >> return True
   case (k, mods) of
-    (KASCII 'a', [MCtrl]) -> run Z.gotoBOL
-    (KASCII 'k', [MCtrl]) -> run Z.killToEOL
-    (KASCII 'e', [MCtrl]) -> run Z.gotoEOL
-    (KASCII 'd', [MCtrl]) -> run Z.deleteChar
+    (KChar 'a', [MCtrl]) -> run Z.gotoBOL
+    (KChar 'k', [MCtrl]) -> run Z.killToEOL
+    (KChar 'e', [MCtrl]) -> run Z.gotoEOL
+    (KChar 'd', [MCtrl]) -> run Z.deleteChar
     (KLeft, []) -> run Z.moveLeft
     (KRight, []) -> run Z.moveRight
     (KUp, []) -> run Z.moveUp
@@ -409,7 +409,7 @@ editKeyEvent this k mods = do
                    else st
         return v
     (KDel, []) -> run Z.deleteChar
-    (KASCII ch, []) -> do
+    (KChar ch, []) -> do
         st <- getState this
         if charFilter st ch
             then run (Z.insertChar ch)
