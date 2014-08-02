@@ -137,7 +137,7 @@ data RenderContext =
                   , overrideAttr :: Attr
                   -- ^An override attribute to be used to override
                   -- both the normal and focus attributes in effect
-                  -- during rendering.  Usually def_attr, this
+                  -- during rendering.  Usually defAttr, this
                   -- attribute is used when child widgets need to have
                   -- their attributes overridden by a parent widget.
                   , skin :: Skin
@@ -152,7 +152,7 @@ getNormalAttr ctx = mergeAttrs [ overrideAttr ctx, normalAttr ctx ]
 
 -- |Default context settings.
 defaultContext :: RenderContext
-defaultContext = RenderContext def_attr (white `on` blue) def_attr unicodeSkin
+defaultContext = RenderContext defAttr (white `on` blue) defAttr unicodeSkin
 
 -- |The type of widget implementations, parameterized on the type of
 -- the widget's state.
@@ -276,10 +276,10 @@ render wRef sz ctx = do
 
   v <- visible <~ wRef
   case v of
-    False -> return empty_image
+    False -> return emptyImage
     True -> do
            -- Merge the override attributes with the context.  If the
-           -- overrides haven't been set (still def_attr), they will
+           -- overrides haven't been set (still defAttr), they will
            -- have no effect on the context attributes.
            norm <- normalAttribute <~ wRef
            foc <- focusAttribute <~ wRef
@@ -288,12 +288,12 @@ render wRef sz ctx = do
                             }
 
            img <- render_ impl wRef sz newCtx
-           let imgsz =  DisplayRegion (image_width img) (image_height img)
+           let imgsz = (imageWidth img, imageHeight img)
 
-           when (image_width img > region_width sz ||
-                 image_height img > region_height sz) $ throw $ ImageTooBig (show impl) sz imgsz
+           when (imageWidth img > fst sz ||
+                 imageHeight img > snd sz) $ throw $ ImageTooBig (show impl) sz imgsz
 
-           setCurrentSize wRef $ DisplayRegion (image_width img) (image_height img)
+           setCurrentSize wRef (imageWidth img, imageHeight img)
            return img
 
 -- |Render a widget and set its position after rendering is complete.
@@ -352,12 +352,12 @@ newWidget initState f = do
 
   wRef <- newIORef $
           WidgetImpl { state = initState
-                     , render_ = \_ _ _ -> return empty_image
+                     , render_ = \_ _ _ -> return emptyImage
                      , growVertical_ = const $ return False
                      , growHorizontal_ = const $ return False
                      , setCurrentPosition_ = \_ _ -> return ()
-                     , currentSize = DisplayRegion 0 0
-                     , currentPosition = DisplayRegion 0 0
+                     , currentSize = (0, 0)
+                     , currentPosition = (0, 0)
                      , focused = False
                      , visible = True
                      , gainFocusHandlers = gfhs
@@ -365,8 +365,8 @@ newWidget initState f = do
                      , loseFocusHandlers = lfhs
                      , keyEventHandler = \_ _ _ -> return False
                      , getCursorPosition_ = defaultCursorInfo
-                     , normalAttribute = def_attr
-                     , focusAttribute = def_attr
+                     , normalAttribute = defAttr
+                     , focusAttribute = defAttr
                      }
 
   updateWidget wRef f
@@ -375,10 +375,10 @@ newWidget initState f = do
 -- |Default cursor positioning implementation used by 'newWidget'.
 defaultCursorInfo :: Widget a -> IO (Maybe DisplayRegion)
 defaultCursorInfo w = do
-  sz <- getCurrentSize w
+  (rW, _) <- getCurrentSize w
   pos <- getCurrentPosition w
-  if region_width sz > 0 then
-      return $ Just $ pos `plusWidth` (region_width sz - 1) else
+  if rW > 0 then
+      return $ Just $ pos `plusWidth` (rW - 1) else
       return Nothing
 
 -- |Given a widget and key event information, invoke the widget's key
@@ -545,7 +545,7 @@ newFocusGroup = do
 
   let initSt = FocusGroup { entries = []
                           , currentEntryNum = -1
-                          , nextKey = (KASCII '\t', [])
+                          , nextKey = (KChar '\t', [])
                           , prevKey = (KBackTab, [])
                           }
 
