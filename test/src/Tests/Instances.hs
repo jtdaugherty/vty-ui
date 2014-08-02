@@ -22,11 +22,6 @@ instance Arbitrary Color where
 instance Arbitrary Attr where
     arbitrary = Attr <$> arbitrary <*> arbitrary <*> arbitrary
 
-instance Arbitrary DisplayRegion where
-    arbitrary = DisplayRegion <$> coord <*> coord
-        where
-          coord = sized $ \n -> fromIntegral <$> choose (0, n)
-
 instance Random Phys where
     random g =
         let (val, g') = random g

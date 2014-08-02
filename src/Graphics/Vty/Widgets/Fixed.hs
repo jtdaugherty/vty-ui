@@ -35,12 +35,12 @@ hFixed fixedWidth child = do
   wRef <- newWidget initSt $ \w ->
       w { render_ = \this s ctx -> do
                    HFixed width ch <- getState this
-                   let region = s `withWidth` fromIntegral (min (toEnum width) (region_width s))
+                   let region = s `withWidth` fromIntegral (min (toEnum width) (regionWidth s))
                    img <- render ch region ctx
                    -- Pad the image if it's smaller than the region.
-                   let img' = if image_width img < region_width region
-                              then img <|> (char_fill (getNormalAttr ctx) ' '
-                                            (toEnum width - image_width img)
+                   let img' = if imageWidth img < regionWidth region
+                              then img <|> (charFill (getNormalAttr ctx) ' '
+                                            (toEnum width - imageWidth img)
                                             1)
                               else img
                    return img'
@@ -72,13 +72,13 @@ vFixed maxHeight child = do
 
         , render_ = \this s ctx -> do
                    VFixed height ch <- getState this
-                   let region = s `withHeight` fromIntegral (min (toEnum height) (region_height s))
+                   let region = s `withHeight` fromIntegral (min (toEnum height) (regionHeight s))
                    img <- render ch region ctx
                    -- Pad the image if it's smaller than the region.
-                   let img' = if image_height img < region_height region
-                              then img <-> (char_fill (getNormalAttr ctx) ' '
+                   let img' = if imageHeight img < regionHeight region
+                              then img <-> (charFill (getNormalAttr ctx) ' '
                                             1
-                                            (toEnum height - image_height img))
+                                            (toEnum height - imageHeight img))
                               else img
                    return img'
 

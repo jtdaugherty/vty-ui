@@ -57,7 +57,7 @@ nullFormatter = Formatter (\_ t -> return t)
 -- |The type of formatted text widget state.  Stores the text itself
 -- and the formatter used to apply attributes to the text.
 data FormattedText =
-    FormattedText { text :: TextStream Attr
+    FormattedText { textContent :: TextStream Attr
                   , formatter :: !Formatter
                   , useFocusAttribute :: !Bool
                   }
@@ -90,7 +90,7 @@ plainTextWithAttrs pairs = do
 wrap :: Formatter
 wrap =
     Formatter $ \sz ts -> do
-      let width = Phys $ fromEnum $ region_width sz
+      let width = Phys $ fromEnum $ fst sz
       return $ wrapStream width ts
 
 -- |Construct a text widget formatted with the specified formatters
@@ -98,7 +98,7 @@ wrap =
 -- given here (and, depending on the formatter, order might matter).
 textWidget :: Formatter -> T.Text -> IO (Widget FormattedText)
 textWidget format s = do
-  let initSt = FormattedText { text = TS []
+  let initSt = FormattedText { textContent = TS []
                              , formatter = format
                              , useFocusAttribute = False
                              }
@@ -110,7 +110,7 @@ textWidget format s = do
               ft <- getState this
               f <- focused <~ this
               appearFocused <- useFocusAttribute <~~ this
-              renderText (text ft) (f && appearFocused) (formatter ft) size ctx
+              renderText (textContent ft) (f && appearFocused) (formatter ft) size ctx
         }
   setText wRef s
   return wRef
@@ -135,17 +135,17 @@ setTextAppearFocused wRef val = updateWidgetState wRef $ \st ->
 -- |Set the text value of a 'FormattedText' widget.  The specified
 -- string will be 'tokenize'd.
 setText :: Widget FormattedText -> T.Text -> IO ()
-setText wRef s = setTextWithAttrs wRef [(s, def_attr)]
+setText wRef s = setTextWithAttrs wRef [(s, defAttr)]
 
 -- |Append the text value to the text contained in a 'FormattedText' widget.
 -- The specified string will be 'tokenize'd.
 appendText :: Widget FormattedText -> T.Text -> IO ()
-appendText wRef s = appendTextWithAttrs wRef [(s, def_attr)]
+appendText wRef s = appendTextWithAttrs wRef [(s, defAttr)]
 
 -- |Prepend the text value to the text contained in a 'FormattedText' widget.
 -- The specified string will be 'tokenize'd.
 prependText :: Widget FormattedText -> T.Text -> IO ()
-prependText wRef s = prependTextWithAttrs wRef [(s, def_attr)]
+prependText wRef s = prependTextWithAttrs wRef [(s, defAttr)]
 
 -- |Prepend text to the text value of a 'FormattedText' widget directly, in
 -- case you have done formatting elsewhere and already have text with
@@ -155,7 +155,7 @@ prependText wRef s = prependTextWithAttrs wRef [(s, def_attr)]
 prependTextWithAttrs :: Widget FormattedText -> [(T.Text, Attr)] -> IO ()
 prependTextWithAttrs wRef pairs = _setTextWithAttrs wRef pairs f
     where
-      f st new = let TS old = text st
+      f st new = let TS old = textContent st
                  in new ++ old
 
 -- |Append text to the text value of a 'FormattedText' widget directly, in case
@@ -166,7 +166,7 @@ prependTextWithAttrs wRef pairs = _setTextWithAttrs wRef pairs f
 appendTextWithAttrs :: Widget FormattedText -> [(T.Text, Attr)] -> IO ()
 appendTextWithAttrs wRef pairs = _setTextWithAttrs wRef pairs f
     where
-      f st new = let TS old = text st
+      f st new = let TS old = textContent st
                  in old ++ new
 
 -- |Set the text value of a 'FormattedText' widget directly, in case
@@ -186,7 +186,7 @@ _setTextWithAttrs wRef pairs f = do
       ts = concat $ map streamEntities streams
 
   updateWidgetState wRef $ \st ->
-      st { text = TS $ f st ts }
+      st { textContent = TS $ f st ts }
 
 -- |Low-level text-rendering routine.
 renderText :: TextStream Attr
@@ -211,13 +211,13 @@ renderText t foc (Formatter format) sz ctx = do
       lineImgs = map mkLineImg ls
       lineLength l = length $ tokenStr <$> l
       maxLineLength = maximum $ lineLength <$> ls
-      emptyLineLength = min (fromEnum $ region_width sz) maxLineLength
+      emptyLineLength = min (fromEnum $ fst sz) maxLineLength
 
       ls = map truncLine $ map (map entityToken) $ findLines newText
-      truncLine = truncateLine (Phys $ fromEnum $ region_width sz)
+      truncLine = truncateLine (Phys $ fromEnum $ fst sz)
 
       -- When building images for empty lines, it's critical that we
-      -- *don't* use the empty_image, because that will cause empty
+      -- *don't* use the emptyImage, because that will cause empty
       -- lines to collapse vertically.  Instead, we create line images
       -- using spaces.  When doing this it's important to make them as
       -- wide as the rest of the text because otherwise we could have
@@ -225,15 +225,15 @@ renderText t foc (Formatter format) sz ctx = do
       -- affecting the whole empty line.  We compute the length of the
       -- longest line above and use that to build the 'empty' lines.
       mkLineImg line = if null line
-                       then char_fill attr' ' ' emptyLineLength 1
-                       else horiz_cat $ map mkTokenImg line
-      nullImg = string def_attr ""
+                       then charFill attr' ' ' emptyLineLength 1
+                       else horizCat $ map mkTokenImg line
+      nullImg = string defAttr ""
 
       mkTokenImg :: Token Attr -> Image
       mkTokenImg tok = string (finalAttr tok) (T.unpack $ tokenStr tok)
 
-  return $ if region_height sz == 0
+  return $ if snd sz == 0
            then nullImg
            else if null ls || all null ls
                 then nullImg
-                else vert_cat $ take (fromEnum $ region_height sz) lineImgs
+                else vertCat $ take (fromEnum $ snd sz) lineImgs

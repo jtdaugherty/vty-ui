@@ -39,7 +39,7 @@ hLimit maxWidth child = do
         , growVertical_ = const $ growVertical child
         , render_ = \this s ctx -> do
                    HLimit width ch <- getState this
-                   let region = s `withWidth` fromIntegral (min (toEnum width) (region_width s))
+                   let region = s `withWidth` fromIntegral (min (toEnum width) (regionWidth s))
                    render ch region ctx
 
         , setCurrentPosition_ =
@@ -70,7 +70,7 @@ vLimit maxHeight child = do
 
         , render_ = \this s ctx -> do
                    VLimit height ch <- getState this
-                   let region = s `withHeight` fromIntegral (min (toEnum height) (region_height s))
+                   let region = s `withHeight` fromIntegral (min (toEnum height) (regionHeight s))
                    render ch region ctx
 
         , setCurrentPosition_ =

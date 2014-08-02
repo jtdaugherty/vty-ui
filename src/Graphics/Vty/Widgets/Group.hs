@@ -13,7 +13,7 @@ module Graphics.Vty.Widgets.Group
 where
 
 import Control.Monad ( when )
-import Graphics.Vty ( empty_image )
+import Graphics.Vty ( emptyImage )
 import Graphics.Vty.Widgets.Core
 
 -- |A group of widgets of a specified type.
@@ -65,7 +65,7 @@ newGroup = do
         , render_ = \this sz ctx -> do
                       cur <- currentEntryNum <~~ this
                       case cur of
-                        (-1) -> return empty_image
+                        (-1) -> return emptyImage
                         _ -> do
                           e <- currentEntry this
                           render e sz ctx

@@ -12,7 +12,7 @@ import Tests.Instances ()
 
 imageSize :: Image -> DisplayRegion -> Bool
 imageSize img sz =
-    image_width img <= region_width sz && image_height img <= region_height sz
+    imageWidth img <= regionWidth sz && imageHeight img <= regionHeight sz
 
 count :: (a -> Bool) -> [a] -> Int
 count _ [] = 0
@@ -26,10 +26,10 @@ sizeTest mkWidget =
     forAllM arbitrary $ \sz -> do
       w <- run mkWidget
       img <- run $ render w sz defaultContext
-      if region_height sz == 0 || region_width sz == 0 then
-          return $ image_height img == 0 && image_width img == 0 else
-          return $ image_width img <= region_width sz &&
-                 image_height img <= region_height sz
+      if regionHeight sz == 0 || regionWidth sz == 0 then
+          return $ imageHeight img == 0 && imageWidth img == 0 else
+          return $ imageWidth img <= regionWidth sz &&
+                 imageHeight img <= regionHeight sz
 
 lineLength :: [Token a] -> Phys
 lineLength = sum . (textWidth <$>) . (tokenStr <$>)

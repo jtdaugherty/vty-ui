@@ -67,9 +67,9 @@ renderProgressBar size ctx st = do
 
       complete_width =
           Phys $ fromEnum $ (toRational prog / toRational (100.0 :: Double)) *
-                   (toRational $ fromEnum $ region_width size)
+                   (toRational $ fromEnum $ regionWidth size)
 
-      full_width = Phys $ fromEnum $ region_width size
+      full_width = Phys $ fromEnum $ regionWidth size
       full_str = truncateText full_width $ mkStr txt al
 
       mkStr s AlignLeft =

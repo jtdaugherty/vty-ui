@@ -33,12 +33,12 @@ hCentered ch = do
                    img <- render child s ctx
 
                    let attr' = getNormalAttr ctx
-                       (half, half') = centered_halves region_width s (image_width img)
+                       (half, half') = centered_halves regionWidth s (imageWidth img)
 
                    return $ if half > 0
-                            then horiz_cat [ char_fill attr' ' ' half (image_height img)
+                            then horizCat [ charFill attr' ' ' half (imageHeight img)
                                            , img
-                                           , char_fill attr' ' ' half' (image_height img)
+                                           , charFill attr' ' ' half' (imageHeight img)
                                            ]
                             else img
 
@@ -47,7 +47,7 @@ hCentered ch = do
               HCentered child <- getState this
               s <- getCurrentSize this
               chSz <- getCurrentSize child
-              let (half, _) = centered_halves region_width s (region_width chSz)
+              let (half, _) = centered_halves regionWidth s (regionWidth chSz)
                   chPos = pos `plusWidth` half
               setCurrentPosition child chPos
 
@@ -76,12 +76,12 @@ vCentered ch = do
                    img <- render child s ctx
 
                    let attr' = getNormalAttr ctx
-                       (half, half') = centered_halves region_height s (image_height img)
+                       (half, half') = centered_halves regionHeight s (imageHeight img)
 
                    return $ if half > 0
-                            then vert_cat [ char_fill attr' ' ' (image_width img) half
+                            then vertCat [ charFill attr' ' ' (imageWidth img) half
                                           , img
-                                          , char_fill attr' ' ' (image_width img) half'
+                                          , charFill attr' ' ' (imageWidth img) half'
                                           ]
                             else img
 
@@ -90,7 +90,7 @@ vCentered ch = do
               VCentered child <- getState this
               s <- getCurrentSize this
               chSz <- getCurrentSize child
-              let (half, _) = centered_halves region_height s (region_height chSz)
+              let (half, _) = centered_halves regionHeight s (regionHeight chSz)
                   chPos = pos `plusHeight` half
               setCurrentPosition child chPos
 

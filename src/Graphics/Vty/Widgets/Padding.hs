@@ -113,9 +113,9 @@ padded ch padding = do
             \this sz ctx -> do
                 Padded child p <- getState this
 
-                if (region_width sz < leftPadding p + rightPadding p) ||
-                   (region_height sz < bottomPadding p + topPadding p) then
-                  return empty_image else
+                if (regionWidth sz < leftPadding p + rightPadding p) ||
+                   (regionHeight sz < bottomPadding p + topPadding p) then
+                  return emptyImage else
                  do
                   f <- focused <~ this
 
@@ -123,8 +123,8 @@ padded ch padding = do
                   -- settings.
                   let constrained = sz `withWidth` (toEnum $ max 0 newWidth)
                                     `withHeight` (toEnum $ max 0 newHeight)
-                      newWidth = (fromEnum $ region_width sz) - fromEnum (leftPadding p + rightPadding p)
-                      newHeight = (fromEnum $ region_height sz) - fromEnum (topPadding p + bottomPadding p)
+                      newWidth = (fromEnum $ regionWidth sz) - fromEnum (leftPadding p + rightPadding p)
+                      newHeight = (fromEnum $ regionHeight sz) - fromEnum (topPadding p + bottomPadding p)
                       attr = mergeAttrs [ if f then focusAttr ctx else overrideAttr ctx
                                         , normalAttr ctx
                                         ]
@@ -133,11 +133,11 @@ padded ch padding = do
                   img <- render child constrained ctx
 
                   -- Create padding images.
-                  let leftImg = char_fill attr ' ' (leftPadding p) (image_height img)
-                      rightImg = char_fill attr ' ' (rightPadding p) (image_height img)
-                      topImg = char_fill attr ' ' (image_width img + leftPadding p + rightPadding p)
+                  let leftImg = charFill attr ' ' (leftPadding p) (imageHeight img)
+                      rightImg = charFill attr ' ' (rightPadding p) (imageHeight img)
+                      topImg = charFill attr ' ' (imageWidth img + leftPadding p + rightPadding p)
                                (topPadding p)
-                      bottomImg = char_fill attr ' ' (image_width img + leftPadding p + rightPadding p)
+                      bottomImg = charFill attr ' ' (imageWidth img + leftPadding p + rightPadding p)
                                   (bottomPadding p)
 
                   return $ topImg <-> (leftImg <|> img <|> rightImg) <-> bottomImg

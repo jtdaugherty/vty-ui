@@ -346,7 +346,7 @@ newList ht = do
               -- Resize the list based on the available space and the
               -- height of each item.
               when (h > 0) $
-                   resize this (max 1 ((fromEnum $ region_height sz) `div` h))
+                   resizeList this (max 1 ((fromEnum $ regionHeight sz) `div` h))
 
               renderListWidget this sz ctx
 
@@ -411,21 +411,21 @@ renderListWidget this s ctx = do
 
         img <- render limited s $ ctx { overrideAttr = att }
 
-        let actualHeight = min (region_height s) (toEnum $ itemHeight list)
-            img' = img <|> char_fill att ' '
-                   (region_width s - image_width img)
+        let actualHeight = min (regionHeight s) (toEnum $ itemHeight list)
+            img' = img <|> charFill att ' '
+                   (regionWidth s - imageWidth img)
                    actualHeight
         imgs <- renderVisible ws
         return (img':imgs)
 
-  let filler = char_fill defaultAttr ' ' (region_width s) fill_height
+  let filler = charFill defaultAttr ' ' (regionWidth s) fill_height
       fill_height = if scrollWindowSize list == 0
-                    then region_height s
+                    then regionHeight s
                     else toEnum $ ((scrollWindowSize list - length items) * itemHeight list)
 
   visible_imgs <- renderVisible items
 
-  return $ vert_cat (visible_imgs ++ [filler])
+  return $ vertCat (visible_imgs ++ [filler])
 
 -- |A convenience function to create a new list using 'Text' values as
 -- the internal values and 'FormattedText' widgets to represent those
@@ -492,8 +492,8 @@ listFindAll wRef item = do
   where
     matcher = \(match, _) -> item == match
 
-resize :: Widget (List a b) -> Int -> IO ()
-resize wRef newSize = do
+resizeList :: Widget (List a b) -> Int -> IO ()
+resizeList wRef newSize = do
   when (newSize == 0) $ throw ResizeError
 
   size <- (scrollWindowSize . state) <~ wRef

@@ -9,22 +9,23 @@ import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Core
+import Graphics.Vty.Widgets.Util
 
 import Tests.Util
 
 import Tests.Instances ()
 
 sz :: DisplayRegion
-sz = DisplayRegion 100 100
+sz = (100, 100)
 
 textHeight :: Property
 textHeight =
     monadicIO $ forAllM textString $ \str -> do
       w <- run $ plainText str
       img <- run $ render w sz defaultContext
-      if region_height sz == 0 then
-          return $ image_height img == 0 else
-          return $ image_height img == (toEnum $ numNewlines str + 1)
+      if regionHeight sz == 0 then
+          return $ imageHeight img == 0 else
+          return $ imageHeight img == (toEnum $ numNewlines str + 1)
 
 textImageSize :: Property
 textImageSize =

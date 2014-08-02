@@ -28,7 +28,7 @@ vFill c = do
                    let attr' = mergeAttrs [ if foc then focusAttr ctx else overrideAttr ctx
                                           , normalAttr ctx
                                           ]
-                   return $ char_fill attr' ch (region_width s) (region_height s)
+                   return $ charFill attr' ch (regionWidth s) (regionHeight s)
 
         , getCursorPosition_ = const $ return Nothing
         }
@@ -50,7 +50,7 @@ hFill c h = do
                    let attr' = mergeAttrs [ if foc then focusAttr ctx else overrideAttr ctx
                                           , normalAttr ctx
                                           ]
-                   return $ char_fill attr' ch (region_width s) (toEnum height)
+                   return $ charFill attr' ch (regionWidth s) (toEnum height)
 
         , getCursorPosition_ = const $ return Nothing
         }
