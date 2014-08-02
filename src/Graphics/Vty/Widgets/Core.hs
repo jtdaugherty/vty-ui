@@ -290,8 +290,9 @@ render wRef sz ctx = do
            img <- render_ impl wRef sz newCtx
            let imgsz = (imageWidth img, imageHeight img)
 
-           when (imageWidth img > regionWidth sz ||
-                 imageHeight img > regionHeight sz) $ throw $ ImageTooBig (show impl) sz imgsz
+           when ((imageWidth img > 0 && imageHeight img > 0) &&
+                 (imageWidth img > regionWidth sz || imageHeight img > regionHeight sz)) $
+                 throw $ ImageTooBig (show impl) sz imgsz
 
            setCurrentSize wRef (imageWidth img, imageHeight img)
            return img
