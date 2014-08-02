@@ -18,6 +18,8 @@ module Graphics.Vty.Widgets.Util
     , chWidth
     , strWidth
     , textWidth
+    , regionWidth
+    , regionHeight
     , Phys(..)
     )
 where
@@ -126,3 +128,9 @@ inject !pos !a !as = let (h, t) = (take pos as, drop pos as)
 
 repl :: Int -> a -> [a] -> [a]
 repl !pos !a !as = inject pos a (remove pos as)
+
+regionWidth :: DisplayRegion -> Int
+regionWidth = fst
+
+regionHeight :: DisplayRegion -> Int
+regionHeight = snd
