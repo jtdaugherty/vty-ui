@@ -17,6 +17,7 @@ where
 
 import Data.IORef
 import Data.Typeable
+import Data.Default (def)
 import Control.Concurrent ( forkIO )
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TChan
@@ -43,7 +44,7 @@ eventChan = unsafePerformIO newTChanIO
 -- 'Collection' is empty.
 runUi :: Collection -> RenderContext -> IO ()
 runUi collection ctx = do
-  vty <- mkVty
+  vty <- mkVty def
 
   -- Create VTY event listener thread
   _ <- forkIO $ vtyEventListener vty eventChan
@@ -54,7 +55,7 @@ runUi collection ctx = do
 vtyEventListener :: Vty -> TChan CombinedEvent -> IO ()
 vtyEventListener vty chan =
     forever $ do
-      e <- next_event vty
+      e <- nextEvent vty
       atomically $ writeTChan chan $ VTYEvent e
 
 -- |Schedule a widget-mutating 'IO' action to be run by the main event
@@ -70,20 +71,20 @@ shutdownUi = atomically $ unGetTChan eventChan ShutdownUi
 
 runUi' :: Vty -> TChan CombinedEvent -> Collection -> RenderContext -> IO ()
 runUi' vty chan collection ctx = do
-  sz <- display_bounds $ terminal vty
+  sz <- displayBounds $ outputIface vty
 
   e <- getCurrentEntry collection
   let fg = entryFocusGroup e
 
-  img <- entryRenderAndPosition e (DisplayRegion 0 0) sz ctx
-  update vty $ pic_for_image img
+  img <- entryRenderAndPosition e (0, 0) sz ctx
+  update vty $ picForLayers [img]
 
   mPos <- getCursorPosition fg
   case mPos of
-    Just (DisplayRegion w h) -> do
-                        show_cursor $ terminal vty
-                        set_cursor_pos (terminal vty) w h
-    Nothing -> hide_cursor $ terminal vty
+    Just (w, h) -> do
+                        showCursor $ outputIface vty
+                        setCursorPos (outputIface vty) w h
+    Nothing -> hideCursor $ outputIface vty
 
   -- Get the next event(s) in the queue.  Returns all available events;
   -- blocks until at least one event is available.
