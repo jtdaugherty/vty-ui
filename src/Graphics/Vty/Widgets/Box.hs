@@ -144,13 +144,13 @@ box o spacing wa wb = do
                    , secondGrows =
                        (if o == Vertical then growVertical else growHorizontal) wb
                    , regDimension =
-                       if o == Vertical then region_height else region_width
+                       if o == Vertical then snd else fst
                    , imgDimension =
-                       if o == Vertical then image_height else image_width
+                       if o == Vertical then imageHeight else imageWidth
                    , withDimension =
                        if o == Vertical then withHeight else withWidth
                    , img_cat =
-                       if o == Vertical then vert_cat else horiz_cat
+                       if o == Vertical then vertCat else horizCat
                    }
 
   wRef <- newWidget initSt $ \w ->
@@ -208,9 +208,9 @@ box o spacing wa wb = do
               setCurrentPosition (boxFirst b) pos
               case boxOrientation b of
                 Horizontal -> setCurrentPosition (boxSecond b) $
-                              pos `plusWidth` ((region_width ch1_size) + (toEnum $ boxSpacing b))
+                              pos `plusWidth` ((fst ch1_size) + (toEnum $ boxSpacing b))
                 Vertical -> setCurrentPosition (boxSecond b) $
-                            pos `plusHeight` ((region_height ch1_size) + (toEnum $ boxSpacing b))
+                            pos `plusHeight` ((snd ch1_size) + (toEnum $ boxSpacing b))
         }
 
   wRef `relayFocusEvents` wa
@@ -289,34 +289,34 @@ renderBox s ctx this = do
   let spAttr = getNormalAttr ctx
       spacing = boxSpacing this
       spacer = case spacing of
-                 0 -> empty_image
+                 0 -> emptyImage
                  _ -> case boxOrientation this of
-                         Horizontal -> let h = max (image_height img1) (image_height img2)
-                                       in char_fill spAttr ' ' (toEnum spacing) h
-                         Vertical -> let w = max (image_width img1) (image_width img2)
-                                     in char_fill spAttr ' ' w (toEnum spacing)
+                         Horizontal -> let h = max (imageHeight img1) (imageHeight img2)
+                                       in charFill spAttr ' ' (toEnum spacing) h
+                         Vertical -> let w = max (imageWidth img1) (imageWidth img2)
+                                     in charFill spAttr ' ' w (toEnum spacing)
 
       -- Use the larger of the two images to determine padding in the
       -- opposite dimension.  E.g. if this is a vertical box, we want
       -- to pad the images such that they have the same width.
       common_opposite_dim = case boxOrientation this of
-                              Horizontal -> max (image_height img1) (image_height img2)
-                              Vertical -> max (image_width img1) (image_width img2)
+                              Horizontal -> max (imageHeight img1) (imageHeight img2)
+                              Vertical -> max (imageWidth img1) (imageWidth img2)
 
       padded_img1 = case boxOrientation this of
                       Horizontal -> img1 <->
-                                    (char_fill spAttr ' ' (image_width img1)
-                                     (common_opposite_dim - image_height img1))
+                                    (charFill spAttr ' ' (imageWidth img1)
+                                     (common_opposite_dim - imageHeight img1))
                       Vertical -> img1 <|>
-                                  (char_fill spAttr ' ' (common_opposite_dim - image_width img1)
-                                   (image_height img1))
+                                  (charFill spAttr ' ' (common_opposite_dim - imageWidth img1)
+                                   (imageHeight img1))
       padded_img2 = case boxOrientation this of
                       Horizontal -> img2 <->
-                                    (char_fill spAttr ' ' (image_width img2)
-                                     (common_opposite_dim - image_height img2))
+                                    (charFill spAttr ' ' (imageWidth img2)
+                                     (common_opposite_dim - imageHeight img2))
                       Vertical -> img2 <|>
-                                  (char_fill spAttr ' ' (common_opposite_dim - image_width img2)
-                                   (image_height img2))
+                                  (charFill spAttr ' ' (common_opposite_dim - imageWidth img2)
+                                   (imageHeight img2))
 
 
   return $ (img_cat this) [padded_img1, spacer, padded_img2]
@@ -332,7 +332,7 @@ renderBoxFixed s ctx this firstDim secondDim
     -- If the box is too large to fit in the available space (since it
     -- has fixed dimensions and can't be scaled), return the empty
     -- image.
-    | toEnum firstDim + toEnum secondDim > regDimension this s = return (empty_image, empty_image)
+    | toEnum firstDim + toEnum secondDim > regDimension this s = return (emptyImage, emptyImage)
     | otherwise = do
   let withDim = withDimension this
   img1 <- render (boxFirst this) (s `withDim` (toEnum firstDim)) ctx
@@ -340,8 +340,8 @@ renderBoxFixed s ctx this firstDim secondDim
 
   -- pad the images so they fill the space appropriately.
   let fill img amt = case boxOrientation this of
-                   Vertical -> char_fill (getNormalAttr ctx) ' ' (image_width img) amt
-                   Horizontal -> char_fill (getNormalAttr ctx) ' ' amt (image_height img)
+                   Vertical -> charFill (getNormalAttr ctx) ' ' (imageWidth img) amt
+                   Horizontal -> charFill (getNormalAttr ctx) ' ' amt (imageHeight img)
       firstDimW = toEnum firstDim
       secondDimW = toEnum secondDim
       img1_size = (imgDimension this) img1
@@ -379,7 +379,7 @@ renderBoxAuto s ctx this = do
         b_img <- render b s' ctx
 
         return $ if renderDimension a_img >= regDim actualSpace
-                 then [a_img, empty_image]
+                 then [a_img, emptyImage]
                  else [a_img, b_img]
 
       renderHalves = do
