@@ -25,9 +25,6 @@ where
 import Control.Applicative
 import qualified Data.Text as T
 import Graphics.Vty
-import Graphics.Vty.Image
-    ( safe_wcwidth
-    )
 
 -- A newtype to wrap physical screen coordinates, as opposed to
 -- character-logical coordinates.  Used when transforming cursor
@@ -37,7 +34,7 @@ newtype Phys = Phys Int
     deriving (Num, Eq, Show, Ord, Integral, Enum, Real)
 
 chWidth :: Char -> Phys
-chWidth = Phys . fromEnum . safe_wcwidth
+chWidth = Phys . fromEnum . safeWcwidth
 
 textWidth :: T.Text -> Phys
 textWidth = strWidth . T.unpack
@@ -60,21 +57,21 @@ takeMaxText mx xs = T.pack $ takeMaxChars mx $ T.unpack xs
 -- |Infix attribute constructor.  Use: foregroundColor `on`
 -- backgroundColor.
 on :: Color -> Color -> Attr
-on a b = def_attr `with_back_color` b `with_fore_color` a
+on a b = defAttr `withBackColor` b `withForeColor` a
 
 -- |Foreground-only attribute constructor.  Background color and style
 -- are defaulted.
 fgColor :: Color -> Attr
-fgColor = (def_attr `with_fore_color`)
+fgColor = (defAttr `withForeColor`)
 
 -- |Background-only attribute constructor.  Foreground color and style
 -- are defaulted.
 bgColor :: Color -> Attr
-bgColor = (def_attr `with_back_color`)
+bgColor = (defAttr `withBackColor`)
 
 -- |Style-only attribute constructor.  Colors are defaulted.
 style :: Style -> Attr
-style = (def_attr `with_style`)
+style = (defAttr `withStyle`)
 
 -- Left-most attribute's fields take precedence.
 -- |Merge two attributes.  Leftmost attribute takes precedence where
@@ -83,42 +80,42 @@ style = (def_attr `with_style`)
 -- style mask will take precedence if any are set.
 mergeAttr :: Attr -> Attr -> Attr
 mergeAttr a b =
-    let b1 = case attr_style a of
-               SetTo v -> b { attr_style = SetTo v }
+    let b1 = case attrStyle a of
+               SetTo v -> b { attrStyle = SetTo v }
                _ -> b
-        b2 = case attr_fore_color a of
-               SetTo v -> b1 `with_fore_color` v
+        b2 = case attrForeColor a of
+               SetTo v -> b1 `withForeColor` v
                _ -> b1
-        b3 = case attr_back_color a of
-               SetTo v -> b2 `with_back_color` v
+        b3 = case attrBackColor a of
+               SetTo v -> b2 `withBackColor` v
                _ -> b2
     in b3
 
 -- |List fold version of 'mergeAttr'.
 mergeAttrs :: [Attr] -> Attr
-mergeAttrs attrs = foldr mergeAttr def_attr attrs
+mergeAttrs attrs = foldr mergeAttr defAttr attrs
 
 -- |Modify the width component of a 'DisplayRegion'.
 withWidth :: DisplayRegion -> Int -> DisplayRegion
-withWidth (DisplayRegion _ h) w = DisplayRegion w h
+withWidth (_, h) w = (w, h)
 
 -- |Modify the height component of a 'DisplayRegion'.
 withHeight :: DisplayRegion -> Int -> DisplayRegion
-withHeight (DisplayRegion w _) h = DisplayRegion w h
+withHeight (w, _) h = (w, h)
 
 -- |Modify the width component of a 'DisplayRegion'.
 plusWidth :: DisplayRegion -> Int -> DisplayRegion
-plusWidth (DisplayRegion w' h) w =
+plusWidth (w', h) w =
     if (w' + w < 0)
     then error $ "plusWidth: would overflow on " ++ (show w') ++ " + " ++ (show w)
-    else DisplayRegion (w + w') h
+    else ((w + w'), h)
 
 -- |Modify the height component of a 'DisplayRegion'.
 plusHeight :: DisplayRegion -> Int -> DisplayRegion
-plusHeight (DisplayRegion w h') h =
+plusHeight (w, h') h =
     if (h' + h < 0)
     then error $ "plusHeight: would overflow on " ++ (show h') ++ " + " ++ (show h)
-    else DisplayRegion w (h + h')
+    else (w, (h + h'))
 
 remove :: Int -> [a] -> [a]
 remove pos as = (take pos as) ++ (drop (pos + 1) as)
