@@ -71,7 +71,7 @@ setBorderedLabel w label =
 -- attribute and character.
 hBorder :: IO (Widget HBorder)
 hBorder = do
-  let initSt = HBorder def_attr T.empty
+  let initSt = HBorder defAttr T.empty
   wRef <- newWidget initSt $ \w ->
       w { growHorizontal_ = const $ return True
         , render_ = renderHBorder
@@ -80,8 +80,8 @@ hBorder = do
   return wRef
 
 renderHBorder :: Widget HBorder -> DisplayRegion -> RenderContext -> IO Image
-renderHBorder _ (DisplayRegion 0 _) _ = return empty_image
-renderHBorder _ (DisplayRegion _ 0) _ = return empty_image
+renderHBorder _ (0, _) _ = return emptyImage
+renderHBorder _ (_, 0) _ = return emptyImage
 renderHBorder this s ctx = do
   HBorder attr str <- getState this
   let attr' = mergeAttrs [ overrideAttr ctx
@@ -89,7 +89,7 @@ renderHBorder this s ctx = do
                          , normalAttr ctx
                          ]
       ch = skinHorizontal $ skin ctx
-      noTitle = T.pack $ replicate (fromEnum $ region_width s) ch
+      noTitle = T.pack $ replicate (fromEnum $ regionWidth s) ch
 
   wStr <- case T.null str of
             True -> return noTitle
@@ -98,10 +98,10 @@ renderHBorder this s ctx = do
                                    , str
                                    , T.pack " "
                                    ]
-              case (textWidth title) > (Phys $ fromEnum $ region_width s) of
+              case (textWidth title) > (Phys $ fromEnum $ regionWidth s) of
                 True -> return noTitle
                 False -> do
-                       let remaining = (Phys $ fromEnum $ region_width s) - (textWidth title)
+                       let remaining = (Phys $ fromEnum $ regionWidth s) - (textWidth title)
                            Phys side1 = remaining `div` Phys 2
                            side2 = if remaining `mod` Phys 2 == Phys 0 then side1 else side1 + 1
                        return $ T.concat [ T.pack $ replicate side1 ch
@@ -123,7 +123,7 @@ instance HasBorderAttr (Widget VBorder) where
 -- attribute and character.
 vBorder :: IO (Widget VBorder)
 vBorder = do
-  let initSt = VBorder def_attr
+  let initSt = VBorder defAttr
   wRef <- newWidget initSt $ \w ->
       w { growVertical_ = const $ return True
         , getCursorPosition_ = const $ return Nothing
@@ -133,7 +133,7 @@ vBorder = do
                                           , attr
                                           , normalAttr ctx
                                           ]
-                   return $ char_fill attr' (skinVertical $ skin ctx) 1 (region_height s)
+                   return $ charFill attr' (skinVertical $ skin ctx) 1 (regionHeight s)
         }
   return wRef
 
@@ -154,7 +154,7 @@ instance HasBorderAttr (Widget (Bordered a)) where
 -- |Wrap a widget in a bordering box.
 bordered :: (Show a) => Widget a -> IO (Widget (Bordered a))
 bordered child = do
-  let initSt = Bordered def_attr child T.empty
+  let initSt = Bordered defAttr child T.empty
   wRef <- newWidget initSt $ \w ->
       w { growVertical_ = const $ growVertical child
         , growHorizontal_ = const $ growHorizontal child
@@ -182,7 +182,7 @@ bordered child = do
 drawBordered :: (Show a) =>
                 Bordered a -> DisplayRegion -> RenderContext -> IO Image
 drawBordered this s ctx
-    | region_width s < 2 || region_height s < 2 = return empty_image
+    | regionWidth s < 2 || regionHeight s < 2 = return emptyImage
     | otherwise = do
   let Bordered attr child label = this
       attr' = mergeAttrs [ overrideAttr ctx
@@ -194,12 +194,13 @@ drawBordered this s ctx
   -- Render the contained widget with enough room to draw borders.
   -- Then, use the size of the rendered widget to constrain the space
   -- used by the (expanding) borders.
-  let constrained = DisplayRegion (region_width s - 2) (region_height s - 2)
+  let constrained = (regionWidth s - 2, regionHeight s - 2)
 
   childImage <- render child constrained ctx
 
-  let adjusted = DisplayRegion (image_width childImage + 2)
-                 (image_height childImage)
+  let adjusted = ( imageWidth childImage + 2
+                 , imageHeight childImage
+                 )
 
   tlCorner <- plainText (T.singleton $ skinCornerTL sk)
               >>= withNormalAttribute attr'
@@ -225,6 +226,6 @@ drawBordered this s ctx
 
   leftRight <- render vb adjusted ctx
 
-  let middle = horiz_cat [leftRight, childImage, leftRight]
+  let middle = horizCat [leftRight, childImage, leftRight]
 
-  return $ vert_cat [top, middle, bottom]
+  return $ vertCat [top, middle, bottom]
