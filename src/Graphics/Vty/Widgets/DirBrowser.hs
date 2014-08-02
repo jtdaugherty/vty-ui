@@ -233,7 +233,7 @@ builtInAnnotations cur sk =
     [ (\_ s -> isRegularFile s
       , \_ s -> return $ T.pack $ "regular file, " ++
                 (show $ fileSize s) ++ " bytes"
-      , def_attr)
+      , defAttr)
     , (\_ s -> isSymbolicLink s,
        (\p stat -> do
           linkDest <- if not $ isSymbolicLink stat
@@ -257,7 +257,7 @@ fileAnnotation sk st cur shortPath = do
       annotation = getAnnotation' fullPath st $ (browserCustomAnnotations sk) ++
                    (builtInAnnotations cur sk)
 
-      getAnnotation' _ _ [] = (def_attr, return T.empty)
+      getAnnotation' _ _ [] = (defAttr, return T.empty)
       getAnnotation' pth stat ((f,mkAnn,a):rest) =
           if f pth stat
           then (a, mkAnn pth stat)
@@ -270,8 +270,8 @@ handleBrowserKey b _ KEnter [] = descend b True >> return True
 handleBrowserKey b _ KRight [] = descend b False >> return True
 handleBrowserKey b _ KLeft [] = ascend b >> return True
 handleBrowserKey b _ KEsc [] = cancelBrowse b >> return True
-handleBrowserKey b _ (KASCII 'q') [] = cancelBrowse b >> return True
-handleBrowserKey b _ (KASCII 'r') [] = refreshBrowser b >> return True
+handleBrowserKey b _ (KChar 'q') [] = cancelBrowse b >> return True
+handleBrowserKey b _ (KChar 'r') [] = refreshBrowser b >> return True
 handleBrowserKey _ _ _ _ = return False
 
 -- |Refresh the browser by reloading and displaying the contents of
