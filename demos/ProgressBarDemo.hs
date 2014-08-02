@@ -12,7 +12,7 @@ import Graphics.Vty.Widgets.All
 
 -- Visual attributes.
 focAttr = black `on` green
-bodyAttr = bright_green `on` black
+bodyAttr = brightGreen `on` black
 completeAttr = white `on` red
 incompleteAttr = red `on` white
 

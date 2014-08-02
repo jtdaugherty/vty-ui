@@ -61,7 +61,7 @@ main = do
 
   let keyHandler nextUI = \_ k mods ->
         case (k, mods) of
-            (KASCII 'n', [MCtrl]) -> nextUI >> return True
+            (KChar 'n', [MCtrl]) -> nextUI >> return True
             (KEsc, []) -> exitSuccess
             _ -> return False
 

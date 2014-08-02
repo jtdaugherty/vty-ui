@@ -16,7 +16,7 @@ import Graphics.Vty.Widgets.All
 fg = white
 bg = black
 focAttr = black `on` yellow
-headerAttr = fgColor bright_green
+headerAttr = fgColor brightGreen
 msgAttr = fgColor blue
 
 -- Multi-state checkbox value type
@@ -65,7 +65,7 @@ main = do
   edit2Header <- textWidget wrap T.empty >>= withNormalAttribute headerAttr
 
   lst <- newList 1
-  setSelectedUnfocusedAttr lst $ Just (fgColor bright_green)
+  setSelectedUnfocusedAttr lst $ Just (fgColor brightGreen)
 
   selector <- vLimit 3 lst
   listHeader <- plainText T.empty

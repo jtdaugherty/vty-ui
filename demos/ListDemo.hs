@@ -14,7 +14,7 @@ data AppElements =
                 , uis :: Collection
                 }
 
-titleAttr = bright_white `on` blue
+titleAttr = brightWhite `on` blue
 focAttr = black `on` green
 bodyAttr = white `on` black
 selAttr = black `on` yellow
@@ -25,19 +25,19 @@ message1 = "This demonstration shows how list widgets behave. \n\
            \See the keystrokes below to try the demo."
 
 message2 :: [(T.Text, Attr)]
-message2 = [ ("- Press ", def_attr), ("q", keyAttr), (" to quit\n", def_attr)
-           , ("- Press ", def_attr), ("+", keyAttr)
-           , (" / ", def_attr), ("a", keyAttr)
-           , (" to add a list item\n", def_attr)
-           , ("- Press ", def_attr), ("-", keyAttr)
-           , (" / ", def_attr), ("d", keyAttr)
-           , (" to remove the selected list item\n", def_attr)
-           , ("- Press ", def_attr)
-           , ("up", keyAttr), (" / ", def_attr)
-           , ("down", keyAttr), (" / ", def_attr)
-           , ("page up", keyAttr), (" / ", def_attr)
+message2 = [ ("- Press ", defAttr), ("q", keyAttr), (" to quit\n", defAttr)
+           , ("- Press ", defAttr), ("+", keyAttr)
+           , (" / ", defAttr), ("a", keyAttr)
+           , (" to add a list item\n", defAttr)
+           , ("- Press ", defAttr), ("-", keyAttr)
+           , (" / ", defAttr), ("d", keyAttr)
+           , (" to remove the selected list item\n", defAttr)
+           , ("- Press ", defAttr)
+           , ("up", keyAttr), (" / ", defAttr)
+           , ("down", keyAttr), (" / ", defAttr)
+           , ("page up", keyAttr), (" / ", defAttr)
            , ("page down", keyAttr)
-           , (" to navigate the list\n", def_attr)
+           , (" to navigate the list\n", defAttr)
            ]
 
 buildUi appst = do
@@ -114,11 +114,11 @@ main = do
 
   (theList st) `onKeyPressed` \_ k _ -> do
          case k of
-           (KASCII 'q') -> exitSuccess
-           (KASCII '-') -> removeCurrentItem >> return True
-           (KASCII 'd') -> removeCurrentItem >> return True
-           (KASCII '+') -> addNewItem >> return True
-           (KASCII 'a') -> addNewItem >> return True
+           (KChar 'q') -> exitSuccess
+           (KChar '-') -> removeCurrentItem >> return True
+           (KChar 'd') -> removeCurrentItem >> return True
+           (KChar '+') -> addNewItem >> return True
+           (KChar 'a') -> addNewItem >> return True
            _ -> return False
 
   -- We need to call these handlers manually because while they will
