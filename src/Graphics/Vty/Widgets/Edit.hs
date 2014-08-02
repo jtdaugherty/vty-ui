@@ -41,10 +41,14 @@ module Graphics.Vty.Widgets.Edit
     , getEditText
     , getEditCurrentLine
     , setEditText
+    , setEditRewriter
+    , setCharFilter
     , getEditCursorPosition
     , setEditCursorPosition
     , setEditLineLimit
     , getEditLineLimit
+    , setEditMaxLength
+    , getEditMaxLength
     , applyEdit
     , onActivate
     , onChange
@@ -58,6 +62,7 @@ where
 
 import Control.Applicative ((<$>))
 import Control.Monad
+import Data.Maybe (isJust)
 import qualified Data.Text as T
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
@@ -72,6 +77,9 @@ data Edit = Edit { contents :: Z.TextZipper T.Text
                  , changeHandlers :: Handlers T.Text
                  , cursorMoveHandlers :: Handlers (Int, Int)
                  , lineLimit :: Maybe Int
+                 , maxLength :: Maybe Int
+                 , rewriter :: Char -> Char
+                 , charFilter :: Char -> Bool
                  }
 
 instance Show Edit where
@@ -98,6 +106,9 @@ editWidget' = do
                     , changeHandlers = chs
                     , cursorMoveHandlers = cmhs
                     , lineLimit = Nothing
+                    , maxLength = Nothing
+                    , rewriter = id
+                    , charFilter = const True
                     }
 
   wRef <- newWidget initSt $ \w ->
@@ -128,6 +139,19 @@ internalGetCursorPosition this = do
 
   return $ if f then Just newPos else Nothing
 
+-- |Set the function which rewrites all characters at rendering time.  Defaults
+-- to 'id'.  Does not affect text stored in the editor.
+setEditRewriter :: Widget Edit -> (Char -> Char) -> IO ()
+setEditRewriter w f =
+    updateWidgetState w $ \st -> st { rewriter = f }
+
+-- |Set the function which allows typed characters in the edit widget.
+-- Defaults to 'const' 'True', allowing all characters.  For example, setting the
+-- filter to ('elem' \"0123456789\") will only allow numbers in the edit widget.
+setCharFilter :: Widget Edit -> (Char -> Bool) -> IO ()
+setCharFilter w f =
+    updateWidgetState w $ \st -> st { charFilter = f }
+
 renderEditWidget :: Widget Edit -> DisplayRegion -> RenderContext -> IO Image
 renderEditWidget this size ctx = do
   resize this ( Phys $ fromEnum $ region_height size
@@ -142,9 +166,10 @@ renderEditWidget this size ctx = do
       attr = if isFocused then focusAttr ctx else nAttr
 
       clipped = doClipping (Z.getText $ contents st) (clipRect st)
+      rewritten = ((rewriter st) <$>) <$> clipped
 
       totalAllowedLines = fromEnum $ region_height size
-      numEmptyLines = lim - length clipped
+      numEmptyLines = lim - length rewritten
           where
             lim = case lineLimit st of
                     Just v -> min v totalAllowedLines
@@ -155,7 +180,7 @@ renderEditWidget this size ctx = do
                      in string attr s <|>
                         char_fill attr ' ' (region_width size - toEnum physLineLength) 1
 
-  return $ vert_cat $ lineWidget <$> (clipped ++ emptyLines)
+  return $ vert_cat $ lineWidget <$> (rewritten ++ emptyLines)
 
 doClipping :: [T.Text] -> ClipRect -> [String]
 doClipping ls rect =
@@ -204,6 +229,17 @@ setEditLineLimit w v = updateWidgetState w $ \st -> st { lineLimit = v }
 -- |Get the current line limit, if any, for the edit widget.
 getEditLineLimit :: Widget Edit -> IO (Maybe Int)
 getEditLineLimit = (lineLimit <~~)
+
+-- |Set the maximum length of the contents of an edit widget.  Applies to every
+-- line of text in the editor.  'Nothing' indicates no limit, while 'Just'
+-- indicates a limit of the specified number of characters.
+setEditMaxLength :: Widget Edit -> Maybe Int -> IO ()
+setEditMaxLength _ (Just v) | v <= 0 = return ()
+setEditMaxLength w v = updateWidgetState w $ \st -> st { maxLength = v }
+
+-- |Get the current maximum length, if any, for the edit widget.
+getEditMaxLength :: Widget Edit -> IO (Maybe Int)
+getEditMaxLength = (maxLength <~~)
 
 resize :: Widget Edit -> (Phys, Phys) -> IO ()
 resize e (newHeight, newWidth) = do
@@ -277,14 +313,19 @@ getEditCurrentLine = ((Z.currentLine . contents) <~~)
 
 -- |Set the contents of the edit widget.  Newlines will be used to
 -- break up the text in multiline widgets.  If the edit widget has a
--- line limit, only those lines within the limit will be set.
+-- line limit, only those lines within the limit will be set.  If the edit
+-- widget has a line length limit, lines will be truncated.
 setEditText :: Widget Edit -> T.Text -> IO ()
 setEditText wRef str = do
   lim <- lineLimit <~~ wRef
-  let ls = case lim of
+  maxL <- maxLength <~~ wRef
+  let ls1 = case lim of
              Nothing -> T.lines str
              Just l -> take l $ T.lines str
-  updateWidgetState wRef $ \st -> st { contents = Z.textZipper ls
+      ls2 = case maxL of
+             Nothing -> ls1
+             Just l -> ((T.take l) <$>) $ T.lines str
+  updateWidgetState wRef $ \st -> st { contents = Z.textZipper ls2
                                      }
   notifyChangeHandlers wRef
 
@@ -315,22 +356,31 @@ applyEdit :: (Z.TextZipper T.Text -> Z.TextZipper T.Text)
           -> Widget Edit
           -> IO ()
 applyEdit f this = do
-  oldC <- contents <~~ this
-  updateWidgetState this $ \s ->
-      let newSt = s { contents = f (contents s) }
-      in case lineLimit s of
-           Nothing -> newSt
-           Just l -> if length (Z.getText $ contents newSt) > l
-                     then s
-                     else newSt
+  old <- contents <~~ this
+  llim <- lineLimit <~~ this
+  maxL <- maxLength <~~ this
 
-  newC <- contents <~~ this
+  let checkLines tz = case llim of
+                        Nothing -> Just tz
+                        Just l -> if length (Z.getText tz) > l
+                                  then Nothing
+                                  else Just tz
+      checkLength tz = case maxL of
+                         Nothing -> Just tz
+                         Just l -> if or ((> l) <$> (Z.lineLengths tz))
+                                   then Nothing
+                                   else Just tz
+      newContents = checkLength =<< checkLines (f old)
 
-  when (Z.getText oldC /= Z.getText newC) $
-       notifyChangeHandlers this
+  when (isJust newContents) $ do
+    let Just new = newContents
+    updateWidgetState this $ \s -> s { contents = new }
 
-  when (Z.cursorPosition oldC /= Z.cursorPosition newC) $
-       notifyCursorMoveHandlers this
+    when (Z.getText old /= Z.getText new) $
+         notifyChangeHandlers this
+
+    when (Z.cursorPosition old /= Z.cursorPosition new) $
+         notifyCursorMoveHandlers this
 
 editKeyEvent :: Widget Edit -> Key -> [Modifier] -> IO Bool
 editKeyEvent this k mods = do
@@ -344,9 +394,26 @@ editKeyEvent this k mods = do
     (KRight, []) -> run Z.moveRight
     (KUp, []) -> run Z.moveUp
     (KDown, []) -> run Z.moveDown
-    (KBS, []) -> run Z.deletePrevChar
+    (KBS, []) -> do
+        v <- run Z.deletePrevChar
+        when (v) $ do
+            -- We want deletions to cause content earlier on the line(s) to
+            -- slide in from the left rather than letting the cursor reach the
+            -- beginning of the edit widget, preventing the user from seeing
+            -- characters being deleted.  To do this, after deletion (if we
+            -- can) we slide the clipping window one column to the left.
+            updateWidgetState this $ \st ->
+                let r = clipRect st
+                in if clipLeft r > 0
+                   then st { clipRect = r { clipLeft = clipLeft r - Phys 1 } }
+                   else st
+        return v
     (KDel, []) -> run Z.deleteChar
-    (KASCII ch, []) -> run (Z.insertChar ch)
+    (KASCII ch, []) -> do
+        st <- getState this
+        if charFilter st ch
+            then run (Z.insertChar ch)
+            else return True -- True even if the filter rejected the character.
     (KHome, []) -> run Z.gotoBOL
     (KEnd, []) -> run Z.gotoEOL
     (KEnter, []) -> do

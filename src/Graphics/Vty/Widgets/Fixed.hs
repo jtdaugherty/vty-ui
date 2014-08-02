@@ -41,7 +41,7 @@ hFixed fixedWidth child = do
                    let img' = if image_width img < region_width region
                               then img <|> (char_fill (getNormalAttr ctx) ' '
                                             (toEnum width - image_width img)
-                                            (image_height img))
+                                            1)
                               else img
                    return img'
 
@@ -77,7 +77,7 @@ vFixed maxHeight child = do
                    -- Pad the image if it's smaller than the region.
                    let img' = if image_height img < region_height region
                               then img <-> (char_fill (getNormalAttr ctx) ' '
-                                            (image_width img)
+                                            1
                                             (toEnum height - image_height img))
                               else img
                    return img'
@@ -131,10 +131,10 @@ getHFixedSize wRef = do
   (HFixed lim _) <- state <~ wRef
   return lim
 
--- |Impose a maximum horizontal and vertical size on a widget.
+-- |Impose a fixed horizontal and vertical size on a widget.
 boxFixed :: (Show a) =>
-            Int -- ^Maximum width in columns
-         -> Int -- ^Maximum height in rows
+            Int -- ^Width in columns
+         -> Int -- ^Height in rows
          -> Widget a
          -> IO (Widget (VFixed (HFixed a)))
 boxFixed maxWidth maxHeight w = do

@@ -10,8 +10,8 @@ what you might expect from graphical toolkits like GTK and QT.
 The best place to read about how to use `vty-ui` is the user manual,
 found in the `doc` subdirectory.  You can find the manual
 corresponding to the latest release on the project home page.  If you
-need to build it by hand, install LaTeX, Pygments, and pdflatex, and
-run:
+need to build it by hand, install LaTeX, the enumitem.sty TeX style,
+Pygments, and pdflatex, and run:
 
     $ cd doc
     $ make

@@ -107,9 +107,9 @@ such as \fw{Centered}, you'll need to add that widget -- not its child
 You might wonder why this is useful.  Consider a situation in which
 you want to add some padding to an input widget, such as an \fw{Edit}
 widget, but when the \fw{Edit} widget is focused you want to highlight
-the padding, too, to make them appear as a single widget.  Since
+the padding too, to make them appear as a single widget.  Since
 padding widgets (see Section \ref{sec:padding}) relay events to their
-children, you could focus the padding widget and the edit widget would
+children, you could focus the padding widget, and the edit widget would
 automatically receive the focus as well as user input events.  This
 kind of focus and event ``inheritance'' makes it possible to create
 new, composite widgets in a flexible way, while getting the desired

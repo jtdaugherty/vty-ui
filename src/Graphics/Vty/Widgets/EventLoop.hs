@@ -10,6 +10,7 @@ module Graphics.Vty.Widgets.EventLoop
     , shutdownUi
     , newCollection
     , addToCollection
+    , addToCollectionWithCallbacks
     , setCurrentEntry
     )
 where
@@ -47,6 +48,7 @@ runUi collection ctx = do
   -- Create VTY event listener thread
   _ <- forkIO $ vtyEventListener vty eventChan
 
+  setCurrentEntry collection 0
   runUi' vty eventChan collection ctx `finally` shutdown vty
 
 vtyEventListener :: Vty -> TChan CombinedEvent -> IO ()
@@ -83,13 +85,29 @@ runUi' vty chan collection ctx = do
                         set_cursor_pos (terminal vty) w h
     Nothing -> hide_cursor $ terminal vty
 
-  evt <- atomically $ readTChan chan
+  -- Get the next event(s) in the queue.  Returns all available events;
+  -- blocks until at least one event is available.
+  let getNextEvents = do
+      evt <- readTChan chan
+      em <- isEmptyTChan chan
+      case em of
+          True -> return [evt]
+          False -> do
+              rest <- getNextEvents
+              return $ evt : rest
 
-  cont <- case evt of
-            VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return True
-            VTYEvent _ -> return True
-            UserEvent (ScheduledAction act) -> act >> return True
-            ShutdownUi -> return False
+  evts <- atomically getNextEvents
+
+  let processEvent lastCont evt = do
+          if not lastCont then
+              return False else
+              case evt of
+                  VTYEvent (EvKey k mods) -> handleKeyEvent fg k mods >> return True
+                  VTYEvent _ -> return True
+                  UserEvent (ScheduledAction act) -> act >> return True
+                  ShutdownUi -> return False
+
+  cont <- foldM processEvent True evts
 
   when cont $ runUi' vty chan collection ctx
 
@@ -98,7 +116,15 @@ data CollectionError = BadCollectionIndex Int
 
 instance Exception CollectionError
 
-data Entry = forall a. (Show a) => Entry (Widget a) (Widget FocusGroup)
+type EntryShow = IO ()
+type EntryHide = IO ()
+
+data Entry = forall a. (Show a) => Entry
+    { entryWidget :: Widget a
+    , entryFocusGroup :: Widget FocusGroup
+    , entryShowCallback :: EntryShow
+    , entryHideCallback :: EntryHide
+    }
 
 data CollectionData =
     CollectionData { entries :: [Entry]
@@ -116,10 +142,7 @@ instance Show CollectionData where
                                           ]
 
 entryRenderAndPosition :: Entry -> DisplayRegion -> DisplayRegion -> RenderContext -> IO Image
-entryRenderAndPosition (Entry w _) = renderAndPosition w
-
-entryFocusGroup :: Entry -> Widget FocusGroup
-entryFocusGroup (Entry _ fg) = fg
+entryRenderAndPosition (Entry { entryWidget = w }) = renderAndPosition w
 
 -- |Create a new collection.
 newCollection :: IO Collection
@@ -128,24 +151,35 @@ newCollection =
                               , currentEntryNum = -1
                               }
 
-getCurrentEntry :: Collection -> IO Entry
-getCurrentEntry cRef = do
+getMaybeCurrentEntry :: Collection -> IO (Maybe Entry)
+getMaybeCurrentEntry cRef = do
   cur <- currentEntryNum <~ cRef
   es <- entries <~ cRef
-  if cur == -1 then
-      throw $ BadCollectionIndex cur else
-      if cur >= 0 && cur < length es then
-          return $ es !! cur else
-          throw $ BadCollectionIndex cur
+  if cur == -1
+    then return Nothing
+    else if cur >= 0 && cur < length es
+      then return . Just $ es !! cur
+      else return Nothing
+
+getCurrentEntry :: Collection -> IO Entry
+getCurrentEntry cRef = do
+  maybeEntry <- getMaybeCurrentEntry cRef
+  cur <- currentEntryNum <~ cRef
+  case maybeEntry of
+    Nothing -> throw $ BadCollectionIndex cur
+    Just entry -> return entry
 
 -- |Add a widget and its focus group to a collection.  Returns an
 -- action which, when invoked, will switch to the interface specified
 -- in the call.
 addToCollection :: (Show a) => Collection -> Widget a -> Widget FocusGroup -> IO (IO ())
-addToCollection cRef wRef fg = do
+addToCollection cRef wRef fg = addToCollectionWithCallbacks cRef wRef fg (return ()) (return ())
+
+addToCollectionWithCallbacks :: (Show a) => Collection -> Widget a -> Widget FocusGroup -> EntryShow -> EntryHide -> IO (IO ())
+addToCollectionWithCallbacks cRef wRef fg onShowCb onHideCb = do
   i <- (length . entries) <~ cRef
   modifyIORef cRef $ \st ->
-      st { entries = (entries st) ++ [Entry wRef fg]
+      st { entries = (entries st) ++ [Entry wRef fg onShowCb onHideCb]
          , currentEntryNum = if currentEntryNum st == -1
                              then 0
                              else currentEntryNum st
@@ -156,9 +190,18 @@ addToCollection cRef wRef fg = do
 setCurrentEntry :: Collection -> Int -> IO ()
 setCurrentEntry cRef i = do
   st <- readIORef cRef
-  if i < length (entries st) && i >= 0 then
-      (modifyIORef cRef $ \s -> s { currentEntryNum = i }) else
-      throw $ BadCollectionIndex i
+
+  if i < length (entries st) && i >= 0
+    then do
+      -- Let the old entry know it's no longer current.
+      maybeOldEntry <- getMaybeCurrentEntry cRef
+      case maybeOldEntry of
+        Nothing -> return ()
+        Just oldEntry -> entryHideCallback oldEntry
+      -- Set the current entry index.
+      (modifyIORef cRef $ \s -> s { currentEntryNum = i })
+    else throw $ BadCollectionIndex i
 
   e <- getCurrentEntry cRef
+  entryShowCallback e
   resetFocusGroup $ entryFocusGroup e

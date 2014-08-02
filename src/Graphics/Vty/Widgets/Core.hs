@@ -53,6 +53,7 @@ module Graphics.Vty.Widgets.Core
     , onKeyPressed
     , onGainFocus
     , onLoseFocus
+    , onResize
     , relayKeyEvents
     , relayFocusEvents
 
@@ -194,6 +195,8 @@ data WidgetImpl a = WidgetImpl {
     -- event.
     , gainFocusHandlers :: Handlers (Widget a)
     -- ^List of handlers to be invoked when the widget gains focus.
+    , resizeHandlers :: Handlers (DisplayRegion, DisplayRegion)
+    -- ^List of handlers to be invoked when the widget's size changes.
     , loseFocusHandlers :: Handlers (Widget a)
     -- ^List of handlers to be invoked when the widget loses focus.
     , focused :: Bool
@@ -310,12 +313,15 @@ renderAndPosition wRef pos sz ctx = do
   setCurrentPosition wRef pos
   return img
 
--- |Set the current size of a widget.  Exported for internal use.
+-- |Set the current size of a widget.  Exported for internal use.  When the
+-- size changes from its previous value, resize event handlers will be invoked.
 setCurrentSize :: Widget a -> DisplayRegion -> IO ()
-setCurrentSize wRef newSize =
+setCurrentSize wRef newSize = do
+    oldSize <- getCurrentSize wRef
     modifyIORef wRef $ \w ->
         let new =  w { currentSize = newSize }
         in seq new new
+    when (oldSize /= newSize) $ handleResizeEvent wRef (oldSize, newSize)
 
 -- |Get the current size of the widget (its size after its most recent
 -- rendering).
@@ -342,6 +348,7 @@ newWidget :: a
 newWidget initState f = do
   gfhs <- newHandlers
   lfhs <- newHandlers
+  rhs <- newHandlers
 
   wRef <- newIORef $
           WidgetImpl { state = initState
@@ -354,6 +361,7 @@ newWidget initState f = do
                      , focused = False
                      , visible = True
                      , gainFocusHandlers = gfhs
+                     , resizeHandlers = rhs
                      , loseFocusHandlers = lfhs
                      , keyEventHandler = \_ _ _ -> return False
                      , getCursorPosition_ = defaultCursorInfo
@@ -380,6 +388,11 @@ handleKeyEvent :: Widget a -> Key -> [Modifier] -> IO Bool
 handleKeyEvent wRef keyEvent mods = do
   act <- keyEventHandler <~ wRef
   act wRef keyEvent mods
+
+-- |Given a widget, invoke its resize event handlers with the old and new
+-- sizes.
+handleResizeEvent :: Widget a -> (DisplayRegion, DisplayRegion) -> IO ()
+handleResizeEvent wRef szs = fireEvent wRef (resizeHandlers <~) szs
 
 -- |Given widgets A and B, causes any key events on widget A to be
 -- relayed to widget B.  Note that this does behavior constitutes an
@@ -437,6 +450,17 @@ unfocus wRef = do
 -- focus.
 onGainFocus :: Widget a -> (Widget a -> IO ()) -> IO ()
 onGainFocus = addHandler (gainFocusHandlers <~)
+
+-- |Given a widget and a resize event handler, add the handler to the widget.
+-- The handler will be invoked when the widget's size changes.  This includes
+-- the first rendering, at which point its size changes from (0, 0).  Note that
+-- if the resize handler needs to change the visual appearance of the widget
+-- when its size changes, be sure to use 'schedule' to ensure that visual
+-- changes are reflected immediately, and be absolutely sure that those changes
+-- will not cause further size changes; that will cause a resize event handler
+-- loop that will consume your CPU!
+onResize :: Widget a -> ((DisplayRegion, DisplayRegion) -> IO ()) -> IO ()
+onResize = addHandler (resizeHandlers <~)
 
 -- |Given a widget and a focus loss event handler, add the handler to
 -- the widget.  The handler will be invoked when the widget loses
@@ -522,7 +546,7 @@ newFocusGroup = do
   let initSt = FocusGroup { entries = []
                           , currentEntryNum = -1
                           , nextKey = (KASCII '\t', [])
-                          , prevKey = (KASCII '\t', [MShift])
+                          , prevKey = (KBackTab, [])
                           }
 
   wRef <- newWidget initSt $ \w ->
@@ -565,9 +589,9 @@ setFocusGroupPrevKey fg k mods =
     updateWidgetState fg $ \s -> s { prevKey = (k, mods) }
 
 -- |Merge two focus groups.  Given two focus groups A and B, this
--- returns a new focus group with all of the entries from A and B
--- added to it, in that order.  Both A and B must be non-empty or
--- 'FocusGroupEmpty' will be thrown.
+-- returns a new focus group with all of the entries from A and B added to it,
+-- in that order.  At least one A and B must be non-empty or 'FocusGroupEmpty'
+-- will be thrown.
 mergeFocusGroups :: Widget FocusGroup -> Widget FocusGroup -> IO (Widget FocusGroup)
 mergeFocusGroups a b = do
   c <- newFocusGroup
@@ -575,7 +599,7 @@ mergeFocusGroups a b = do
   aEntries <- entries <~~ a
   bEntries <- entries <~~ b
 
-  when (null aEntries || null bEntries) $
+  when (null aEntries && null bEntries) $
        throw FocusGroupEmpty
 
   updateWidgetState c $ \s -> s { entries = aEntries ++ bEntries

@@ -36,16 +36,15 @@ parameters are as follows:
 Lists are created with the \fw{newList} function:
 
 \begin{haskellcode}
- lst <- newList attr
+ lst <- newList attr 1
 \end{haskellcode}
 
-\fw{newList} takes one parameter: the attribute of the
-currently-selected item to be used when the list is \textit{not}
-focused.  The \fw{List} uses its own focus attribute (Section
-\ref{sec:attributes}) as the attribute of the currently-selected item
-when it has the focus.  The widget type of the list (\fw{b} above)
-won't be chosen by the type system until you actually add something to
-the list.
+\fw{newList} takes two parameters: the attribute of the currently-selected item
+to be used when the list is \textit{not} focused, and the height, in rows, of
+each widget in the list.  The \fw{List} uses its own focus attribute (Section
+\ref{sec:attributes}) as the attribute of the currently-selected item when it
+has the focus.  The widget type of the list (\fw{b} above) won't be chosen by
+the type system until you actually add something to the list.
 
 Items may be added to a \fw{List} with the \fw{addToList} function,
 which takes an internal value (e.g., \fw{String}) and a widget of the
@@ -59,21 +58,19 @@ appropriate type:
 In addition, items may be inserted into a \fw{List} at any position with
 the \fw{insertIntoList} function.
 
-There are two restrictions on the widget type that can be used with
-\fw{List}s:
+When it comes to how \fw{List}s render item widgets, there are two behaviors to
+know about:
 
 \begin{itemize}
-\item The \fw{Widget b} type \textit{must not grow vertically}.  This
-  is because all \fw{List} item widgets must take up a fixed amount of
-  vertical space so the \fw{List} can manage scrolling.  If the widget
-  grows vertically, \fw{addToList} will throw a \fw{ListError}
-  exception.
-\item All widgets added to the \fw{List} \textit{must have the same
-  height}.  This is because the list uses the item height to calculate
-  how many items can be displayed, given the space available to the
-  rendered \fw{List}.  If you specify a widget whose rendered size
-  doesn't match that of the rest of the wigets of the list, layout
-  problems are likely to ensue.
+\item \textit{All widgets rendered by the list must have the same height}.
+  This is because the list uses the item height to calculate how many
+  items can be displayed, given the space available to the rendered \fw{List}.
+  This is why the height of list items must be passed to \fw{newList}.
+\item \textit{The item widgets will be height-restricted}.  This is because all
+  \fw{List} item widgets must take up a fixed amount of vertical space so the
+  \fw{List} can manage scrolling state.  Internally the \fw{List} widget uses
+  \fw{vLimit} and \fw{vFixed} wrappers to render each item widget to guarantee
+  that all items have the same height.
 \end{itemize}
 
 Items may be removed from \fw{List}s with the \fw{removeFromList}
@@ -113,7 +110,7 @@ the state of a \fw{List}:
   value, and widget of the currently-selected list item.
 \item \fw{getListItem} -- takes a \fw{Widget (List a b)} and an index
   and returns \fw{Nothing} if the \fw{List} has no item at the
-  specified index item or returns \fw{Just (pos, (val, widget))}
+  specified index item or returns \fw{Just (val, widget)}
   corresponding to the list index.
 \end{itemize}
 

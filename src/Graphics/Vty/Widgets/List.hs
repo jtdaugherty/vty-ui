@@ -19,10 +19,14 @@ module Graphics.Vty.Widgets.List
     , addToList
     , insertIntoList
     , removeFromList
+    , setSelectedFocusedAttr
+    , setSelectedUnfocusedAttr
     -- ** List manipulation
     , scrollBy
     , scrollUp
     , scrollDown
+    , scrollToEnd
+    , scrollToBeginning
     , pageUp
     , pageDown
     , onSelectionChange
@@ -33,6 +37,8 @@ module Graphics.Vty.Widgets.List
     , clearList
     , setSelected
     -- ** List inspection
+    , listFindFirst
+    , listFindAll
     , getListSize
     , getSelected
     , getListItem
@@ -47,6 +53,8 @@ import qualified Data.Vector as V
 import Graphics.Vty
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
+import Graphics.Vty.Widgets.Fixed
+import Graphics.Vty.Widgets.Limits
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
 
@@ -54,9 +62,6 @@ data ListError = BadItemIndex Int
                -- ^The specified position could not be used to remove
                -- an item from the list.
                | ResizeError
-               | BadListWidgetSizePolicy
-               -- ^The type of widgets added to the list grow
-               -- vertically, which is not permitted.
                  deriving (Show, Typeable)
 
 instance Exception ListError
@@ -89,7 +94,8 @@ data ActivateItemEvent a b = ActivateItemEvent Int a (Widget b)
 -- /value type/ @a@, the type of internal values used to refer to the
 -- visible representations of the list contents, and the /widget type/
 -- @b@, the type of widgets used to represent the list visually.
-data List a b = List { selectedUnfocusedAttr :: !Attr
+data List a b = List { selectedUnfocusedAttr :: Maybe Attr
+                     , selectedFocusedAttr :: Maybe Attr
                      , selectedIndex :: !Int
                      -- ^The currently selected list index.
                      , scrollTopIndex :: !Int
@@ -109,6 +115,7 @@ data List a b = List { selectedUnfocusedAttr :: !Attr
 instance Show (List a b) where
     show lst = concat [ "List { "
                       , "selectedUnfocusedAttr = ", show $ selectedUnfocusedAttr lst
+                      , ", selectedFocusedAttr = ", show $ selectedFocusedAttr lst
                       , ", selectedIndex = ", show $ selectedIndex lst
                       , ", scrollTopIndex = ", show $ scrollTopIndex lst
                       , ", scrollWindowSize = ", show $ scrollWindowSize lst
@@ -117,15 +124,16 @@ instance Show (List a b) where
                       , " }"
                       ]
 
-newListData :: Attr -- ^The attribute of the selected item
+newListData :: Int -- ^Item widget height in rows
             -> IO (List a b)
-newListData selAttr = do
+newListData h = do
   schs <- newHandlers
   iahs <- newHandlers
   irhs <- newHandlers
   iacths <- newHandlers
 
-  return $ List { selectedUnfocusedAttr = selAttr
+  return $ List { selectedUnfocusedAttr = Nothing
+                , selectedFocusedAttr = Nothing
                 , selectedIndex = -1
                 , scrollTopIndex = 0
                 , scrollWindowSize = 0
@@ -134,7 +142,7 @@ newListData selAttr = do
                 , itemAddHandlers = iahs
                 , itemRemoveHandlers = irhs
                 , itemActivateHandlers = iacths
-                , itemHeight = 0
+                , itemHeight = h
                 }
 
 -- |Get the length of the list in elements.
@@ -209,6 +217,18 @@ removeFromList list pos = do
   -- Return the removed item.
   return (label, w)
 
+-- |Sets the attributes to be merged on the selected list item when the list
+-- widget has the focus.
+setSelectedFocusedAttr :: Widget (List a b) -> Maybe Attr -> IO ()
+setSelectedFocusedAttr w attr = do
+  updateWidgetState w $ \l -> l { selectedFocusedAttr = attr }
+
+-- |Sets the attributes to be merged on the selected list item when the list
+-- widget does not have the focus.
+setSelectedUnfocusedAttr :: Widget (List a b) -> Maybe Attr -> IO ()
+setSelectedUnfocusedAttr w attr = do
+  updateWidgetState w $ \l -> l { selectedUnfocusedAttr = attr }
+
 -- |Add an item to the list.  Its widget will be constructed from the
 -- specified internal value using the widget constructor passed to
 -- 'newList'.
@@ -222,22 +242,6 @@ addToList list key w = do
 insertIntoList :: (Show b) => Widget (List a b) -> a -> Widget b -> Int -> IO ()
 insertIntoList list key w pos = do
   numItems <- (V.length . listItems) <~~ list
-
-  v <- growVertical w
-  when (v) $ throw BadListWidgetSizePolicy
-
-  h <- case numItems of
-         0 -> do
-           -- We're adding the first element to the list, so we need
-           -- to compute the item height based on this widget.  We
-           -- just render it in an unreasonably large space (since,
-           -- really, list items should never be THAT big) and measure
-           -- the result, assuming that all list widgets will have the
-           -- same size.  If you violate this, you'll have interesting
-           -- results!
-           img <- render w (DisplayRegion 100 100) defaultContext
-           return $ max 1 $ fromEnum $ image_height img
-         _ -> itemHeight <~~ list
 
   -- Calculate the new selected index.
   oldSel <- selectedIndex <~~ list
@@ -263,13 +267,12 @@ insertIntoList list key w pos = do
                    then V.snoc (listItems s) (key, w)
                    else vInject pos (key, w) (listItems s)
 
-  updateWidgetState list $ \s -> s { itemHeight = h
-                                   , listItems = V.force $ newItems s
+  updateWidgetState list $ \s -> s { listItems = V.force $ newItems s
                                    , selectedIndex = newSelIndex
                                    , scrollTopIndex = newScrollTop
                                    }
 
-  notifyItemAddHandler list (numItems + 1) key w
+  notifyItemAddHandler list (min numItems pos) key w
 
   when (numItems == 0) $
        do
@@ -317,10 +320,10 @@ clearList w = do
 -- |Create a new list using the specified attribute for the
 -- currently-selected element when the list does NOT have focus.
 newList :: (Show b) =>
-           Attr -- ^The attribute of the selected item
+           Int -- ^Height of list item widgets in rows
         -> IO (Widget (List a b))
-newList selAttr = do
-  list <- newListData selAttr
+newList ht = do
+  list <- newListData ht
   wRef <- newWidget list $ \w ->
       w { keyEventHandler = listKeyEvent
 
@@ -345,10 +348,7 @@ newList selAttr = do
               when (h > 0) $
                    resize this (max 1 ((fromEnum $ region_height sz) `div` h))
 
-              listData <- getState this
-              foc <- focused <~ this
-
-              renderListWidget foc listData sz ctx
+              renderListWidget this sz ctx
 
         , setCurrentPosition_ =
             \this pos -> do
@@ -386,9 +386,14 @@ listKeyEvent w k mods = do
     Nothing -> return False
     Just (_, (_, e)) -> handleKeyEvent e k mods
 
-renderListWidget :: (Show b) => Bool -> List a b -> DisplayRegion -> RenderContext -> IO Image
-renderListWidget foc list s ctx = do
+renderListWidget :: (Show b) => Widget (List a b) -> DisplayRegion -> RenderContext -> IO Image
+renderListWidget this s ctx = do
+  list <- getState this
+  foc <- focused <~ this
+
   let items = map (\((_, w), sel) -> (w, sel)) $ getVisibleItems_ list
+      childSelFocAttr   = (maybe (focusAttr ctx) id) $ selectedFocusedAttr list
+      childSelUnfocAttr = (maybe (focusAttr ctx) id) $ selectedUnfocusedAttr list
       defaultAttr = mergeAttrs [ overrideAttr ctx
                                , normalAttr ctx
                                ]
@@ -397,12 +402,14 @@ renderListWidget foc list s ctx = do
       renderVisible ((w, sel):ws) = do
         let att = if sel
                   then if foc
-                       then focusAttr ctx
-                       else mergeAttrs [ selectedUnfocusedAttr list
-                                       , defaultAttr
-                                       ]
+                       then mergeAttrs [ childSelFocAttr, defaultAttr ]
+                       else mergeAttrs [ childSelUnfocAttr, defaultAttr ]
                   else defaultAttr
-        img <- render w s $ ctx { overrideAttr = att }
+
+        -- Height-limit the widget by wrapping it with a VFixed/VLimit
+        limited <- vLimit (itemHeight list) =<< vFixed (itemHeight list) w
+
+        img <- render limited s $ ctx { overrideAttr = att }
 
         let actualHeight = min (region_height s) (toEnum $ itemHeight list)
             img' = img <|> char_fill att ' '
@@ -423,11 +430,11 @@ renderListWidget foc list s ctx = do
 -- |A convenience function to create a new list using 'Text' values as
 -- the internal values and 'FormattedText' widgets to represent those
 -- strings.
-newTextList :: Attr -- ^The attribute of the selected item
-            -> [T.Text] -- ^The list items
+newTextList :: [T.Text] -- ^The list items
+            -> Int -- ^Maximum number of rows of text to show per list item
             -> IO (Widget (List T.Text FormattedText))
-newTextList selAttr labels = do
-  list <- newList selAttr
+newTextList labels h = do
+  list <- newList h
   forM_ labels $ \l ->
       (addToList list l =<< plainText l)
   return list
@@ -467,6 +474,23 @@ setSelected wRef newPos = do
   case selectedIndex list of
     (-1) -> return ()
     curPos -> scrollBy wRef (newPos - curPos)
+
+-- |Find the first index of the specified key in the list.  If the key does not
+-- exist, return Nothing.
+listFindFirst :: (Eq a) => Widget (List a b) -> a -> IO (Maybe Int)
+listFindFirst wRef item = do
+  list <- state <~ wRef
+  return $ V.findIndex matcher (listItems list)
+  where
+    matcher = \(match, _) -> item == match
+
+-- |Find all indicies of the specified key in the list.
+listFindAll :: (Eq a) => Widget (List a b) -> a -> IO [Int]
+listFindAll wRef item = do
+  list <- state <~ wRef
+  return $ V.toList $ V.findIndices matcher (listItems list)
+  where
+    matcher = \(match, _) -> item == match
 
 resize :: Widget (List a b) -> Int -> IO ()
 resize wRef newSize = do
@@ -523,19 +547,21 @@ scrollBy wRef amount = do
   notifySelectionHandler wRef
 
 scrollBy' :: Int -> List a b -> List a b
-scrollBy' amount list =
-  let sel = selectedIndex list
-      lastPos = (V.length $ listItems list) - 1
-      validPositions = [0..lastPos]
-      newPosition = sel + amount
+scrollBy' amt list =
+    case selectedIndex list of
+        (-1) -> list
+        i -> let dest = i + amt
+                 sz = V.length $ listItems list
+                 newDest = if dest < 0
+                           then 0
+                           else if dest >= sz
+                                then sz - 1
+                                else dest
+             in scrollTo newDest list
 
-      newSelected = if newPosition `elem` validPositions
-                    then newPosition
-                    else if newPosition > lastPos
-                         then lastPos
-                         else 0
-
-      bottomPosition = min (scrollTopIndex list + scrollWindowSize list - 1)
+scrollTo :: Int -> List a b -> List a b
+scrollTo newSelected list =
+  let bottomPosition = min (scrollTopIndex list + scrollWindowSize list - 1)
                        ((V.length $ listItems list) - 1)
       topPosition = scrollTopIndex list
       windowPositions = [topPosition..bottomPosition]
@@ -546,10 +572,11 @@ scrollBy' amount list =
                          then newSelected - scrollWindowSize list + 1
                          else newSelected
 
-  in if scrollWindowSize list == 0
-     then list
-     else list { scrollTopIndex = adjustedTop
-               , selectedIndex = newSelected }
+  in list { scrollTopIndex = adjustedTop
+          , selectedIndex = newSelected
+          }
+
+
 
 notifySelectionHandler :: Widget (List a b) -> IO ()
 notifySelectionHandler wRef = do
@@ -567,6 +594,23 @@ notifyItemRemoveHandler wRef pos k w =
 notifyItemAddHandler :: Widget (List a b) -> Int -> a -> Widget b -> IO ()
 notifyItemAddHandler wRef pos k w =
     fireEvent wRef (itemAddHandlers <~~) $ NewItemEvent pos k w
+
+-- |Scroll to the last list position.
+scrollToEnd :: Widget (List a b) -> IO ()
+scrollToEnd wRef = do
+    cur <- getSelected wRef
+    sz <- getListSize wRef
+    case cur of
+        Nothing -> return ()
+        Just (pos, _) -> scrollBy wRef (sz - pos)
+
+-- |Scroll to the first list position.
+scrollToBeginning :: Widget (List a b) -> IO ()
+scrollToBeginning wRef = do
+    cur <- getSelected wRef
+    case cur of
+        Nothing -> return ()
+        Just (pos, _) -> scrollBy wRef (-1 * pos)
 
 -- |Scroll a list down by one position.
 scrollDown :: Widget (List a b) -> IO ()

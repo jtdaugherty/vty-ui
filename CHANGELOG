@@ -1,3 +1,71 @@
+1.6.1 -> 1.7
+------------
+
+Package changes:
+ * Relaxed version bounds for 'array' and 'unix' packages to permit GHC 7.8
+   builds
+
+API changes:
+ * List: list creation now requires specification of item widget height
+ * List: removed BadListWidgetSizePolicy exception
+ * List: added scrollToBeginning, scrollToEnd functions
+ * Added Graphics.Vty.Widgets.Text
+      .appendText
+      .prependText
+      .appendTextWithAttrs
+      .prependTextWithAttrs
+ * Added Graphics.Vty.Widgets.Core.onResize to register event handlers for when
+   a widget's size changes at render time
+ * Added List functions listFindFirst and listFindAll (thanks Moritz Angermann
+   <moritz.angermann@stoeger-it.de>)
+
+Bug fixes:
+ * Fixed documentation bugs in Chapter 3 (thanks Alexander Berntsen
+   <alexander@plaimi.net>)
+ * Fixed bugs in example code (thanks Adam Wheeler <adamwhlr@gmail.com>)
+ * List: scrolling a list with no elements no longer crashes with V.! error
+ * Core: Use correct constructor to set Shift-Tab as the previous focus
+   keybinding (fixes #31)
+ * Edit: now supports limiting line length via set/getEditMaxLength (fixes #33)
+ * TextZipper: ignore more invalid cursor positions (fixes #29)
+ * h/vFixed: add sufficient padding to prevent empty images from disrupting
+   fixed dimensions (fixes #34)
+ * Corrected documentation for boxFixed
+ * TextZipper: permit setting cursor position to column after end of line
+   (fixes #41)
+
+Other changes:
+ * List widgets now permit selecting elements before the first time the list
+   has been rendered (thanks Moritz Angermann <moritz.angermann@stoeger-it.de>)
+ * Edit widgets now bring in old content on the left on backspace rather than
+   hiding what is being deleted (fixes #35
+ * List: the list item widget's default attribute apply to any padding added to
+   it
+ * mergeFocusGroups now just requires at least one non-empty group
+ * Fixed the documentation for hFill
+ * Added a collection programming demo
+
+1.6 -> 1.6.1
+------------
+
+Bug fixes:
+ * Group: forward position to current child widget (fixes #24) (thanks
+   github.com/zydeon)
+ * List: report correct item position in NewItemEvents
+   Adding an item to a list previously emitted a NewItemEvent with the new
+   size of the list as first parameter even though the documentation says
+   otherwise, so we now report the position of the new item instead of the
+   list size (thanks, Hans-Peter Deifel <hpdeifel@gmx.de>)
+ * Performance: event loop now reads and processes all available events
+   between UI updates
+ * Only show cursor in widgets that need it: hides the cursor in static
+   widgets like borders or texts. Also, container widgets like padding or
+   centering now show the cursor only if their clients would (thanks,
+   Hans-Peter Deifel <hpdeifel@gmx.de>)
+
+Package changes:
+ * Allow building against QuickCheck 2.7 (fixes #21)
+
 1.5.1 -> 1.6
 ------------
 

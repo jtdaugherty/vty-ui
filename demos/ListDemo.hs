@@ -11,7 +11,6 @@ data AppElements =
     AppElements { theList :: Widget (List T.Text FormattedText)
                 , theBody :: Widget FormattedText
                 , theFooter :: Widget FormattedText
-                , theListLimit :: Widget (VLimit (List T.Text FormattedText))
                 , uis :: Collection
                 }
 
@@ -62,7 +61,8 @@ buildUi appst = do
 -- Construct the application statea using the message map.
 mkAppElements :: IO AppElements
 mkAppElements = do
-  lw <- newTextList selAttr []
+  lw <- newTextList [] 1
+  setSelectedUnfocusedAttr lw $ Just selAttr
   b <- textWidget wrap T.empty
   ft <- plainText T.empty >>= withNormalAttribute titleAttr
   ll <- vLimit 5 lw
@@ -72,7 +72,6 @@ mkAppElements = do
   return $ AppElements { theList = lw
                        , theBody = b
                        , theFooter = ft
-                       , theListLimit = ll
                        , uis = c
                        }
 
