@@ -41,16 +41,15 @@ the code:
 
 \begin{haskellcode}
  let st = Counter initialValue
- wRef <- newWidget st $ \w -> ...
+ newWidget st $ \w -> ...
 \end{haskellcode}
 
 The \fw{Core} module's \fw{newWidget} function creates a new
 \fw{IORef} wrapping a \fw{WidgetImpl a}.  The \fw{WidgetImpl} type is
 where all of the widget logic is actually implemented.  You implement
 this logic by overriding the fields of the \fw{WidgetImpl} type, such
-as \fw{render\_}.  We call \fw{newWidget}'s result \fw{wRef} because
-it is a reference to a widget, and this helps distinguish it from the
-actual widget data in the next step.
+as \fw{render\_}. The \fw{newWidget} function will return the
+\fw{IORef} as \fw{Widget Counter}; \fw{Widget} is a type alias.
 
 The \fw{newWidget} function takes an initial state of the widget (of
 type \fw{a}) and a transformation function \fw{WidgetImpl a ->
