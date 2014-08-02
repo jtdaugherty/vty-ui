@@ -236,7 +236,7 @@ getCheckboxLabel :: Widget (CheckBox a) -> IO T.Text
 getCheckboxLabel = (checkboxLabel <~~)
 
 radioKeyEvent :: (Eq a) => Widget (CheckBox a) -> Key -> [Modifier] -> IO Bool
-radioKeyEvent this (KASCII ' ') [] = cycleCheckbox this >> return True
+radioKeyEvent this (KChar ' ') [] = cycleCheckbox this >> return True
 radioKeyEvent this KEnter [] = cycleCheckbox this >> return True
 radioKeyEvent _ _ _ = return False
 
