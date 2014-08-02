@@ -21,9 +21,14 @@ count f (a:as) = count f as + if f a then 1 else 0
 numNewlines :: T.Text -> Int
 numNewlines = count (== '\n') . T.unpack
 
+sizeGen :: Gen DisplayRegion
+sizeGen = (,)
+          <$> (arbitrary `suchThat` (>= 0))
+          <*> (arbitrary `suchThat` (>= 0))
+
 sizeTest :: (Show a) => IO (Widget a) -> PropertyM IO Bool
 sizeTest mkWidget =
-    forAllM arbitrary $ \sz -> do
+    forAllM sizeGen $ \sz -> do
       w <- run mkWidget
       img <- run $ render w sz defaultContext
       if regionHeight sz == 0 || regionWidth sz == 0 then
