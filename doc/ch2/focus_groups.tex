@@ -68,7 +68,7 @@ widget if the \fw{FocusGroup} has no matching handler.
 \begin{haskellcode}
  fg <- newFocusGroup
  fg `onKeyPressed` \_ key _ ->
-   if key == KASCII 'q' then
+   if key == KChar 'q' then
      exitSuccess else return False
 \end{haskellcode}
 

@@ -9,7 +9,7 @@ A \fw{FormattedText} widget can be created from a \fw{String} with the
 \fw{plainText} function and can be laid out in the usual way:
 
 \begin{haskellcode}
- t1 <- plainText "blue" >>= withNormalAttribute (fgColor blue)
+ t1 <- plainText "blue" >>= withNormal (fgColor blue)
  t2 <- plainText "green" >>= withNormalAttribute (fgColor green)
  ui <- (return t1) <++> (return t2)
 \end{haskellcode}
@@ -28,7 +28,7 @@ The contents of a text widget can be set in one of three ways:
 All text widget update functions \textit{tokenize} their inputs,
 finding contiguous sequences of whitespace and non-whitespace
 characters and newlines, and store the list of tokens in the widget.
-Each token is assigned a default attribute of \fw{def\_attr}, which
+Each token is assigned a default attribute of \fw{defAttr}, which
 defaults to the ``normal'' attribute of the widget (see Section
 \ref{sec:attributes} for more information on attributes).
 
@@ -48,9 +48,9 @@ string with different attributes for each of the words:
 \begin{haskellcode}
  t <- plainText ""
  setTextWithAttrs t [ ("foo", fgColor green)
-                    , (" ", def_attr)
+                    , (" ", defAttr)
                     , ("bar", fgColor yellow)
-                    , (" ", def_attr)
+                    , (" ", defAttr)
                     , ("baz", red `on` blue)
                     ]
 \end{haskellcode}

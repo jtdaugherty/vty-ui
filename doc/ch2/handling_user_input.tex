@@ -28,12 +28,12 @@ the \fw{'q'} key event but the second one will process it:
 
 \begin{haskellcode}
  w `onKeyPressed` \_ key _ ->
-   if key == KASCII 'f' then
+   if key == KChar 'f' then
      (launchTheMissiles >> return True) else
      return False
 
  w `onKeyPressed` \_ key _ ->
-   if key == KASCII 'q' then
+   if key == KChar 'q' then
      exitSuccess else return False
 \end{haskellcode}
 

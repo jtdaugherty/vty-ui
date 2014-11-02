@@ -36,15 +36,20 @@ parameters are as follows:
 Lists are created with the \fw{newList} function:
 
 \begin{haskellcode}
- lst <- newList attr 1
+ lst <- newList 1
 \end{haskellcode}
 
-\fw{newList} takes two parameters: the attribute of the currently-selected item
-to be used when the list is \textit{not} focused, and the height, in rows, of
-each widget in the list.  The \fw{List} uses its own focus attribute (Section
+\fw{newList} takes one parameter: the height, in rows, of each widget in the
+list.  The \fw{List} uses its own focus attribute (Section
 \ref{sec:attributes}) as the attribute of the currently-selected item when it
 has the focus.  The widget type of the list (\fw{b} above) won't be chosen by
 the type system until you actually add something to the list.
+
+The \fw{List} widget uses the default focus attribute of the rendering context
+to render the selected item when the list has the focus.  To control how the
+selected item appears when the list has or lacks focus, use see
+\fw{set\-Selected\-Focused\-Attr} and
+\fw{set\-Se\-lec\-ted\-Un\-fo\-cused\-Attr}.
 
 Items may be added to a \fw{List} with the \fw{addToList} function,
 which takes an internal value (e.g., \fw{String}) and a widget of the

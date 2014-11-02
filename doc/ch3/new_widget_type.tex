@@ -66,7 +66,7 @@ Here is the \fw{render\_} function which will actually construct a Vty
    \this size ctx -> do
      (Counter v) <- getState this
      let s = T.pack $ show v
-         width = (fromEnum $ region_width size) -
+         width = (fromEnum $ regionWidth size) -
                  (fromEnum $ textWidth s)
          (truncated, _, _) = clip1d (Phys 0) (Phys width) s
      return $ string (getNormalAttr ctx) $ T.unpack truncated
@@ -116,7 +116,7 @@ the latest state value at the time \fw{render\_} is called.
 
 \begin{haskellcode}
  let s = T.pack $ show v
-     width = (fromEnum $ region_width size) -
+     width = (fromEnum $ regionWidth size) -
              (fromEnum $ textWidth s)
      (truncated, _, _) = clip1d (Phys 0) (Phys width) s
 \end{haskellcode}
