@@ -12,6 +12,8 @@ module Graphics.Vty.Widgets.EventLoop
     , addToCollection
     , addToCollectionWithCallbacks
     , setCurrentEntry
+    , EntryHide
+    , EntryShow
     )
 where
 
@@ -176,7 +178,13 @@ getCurrentEntry cRef = do
 addToCollection :: (Show a) => Collection -> Widget a -> Widget FocusGroup -> IO (IO ())
 addToCollection cRef wRef fg = addToCollectionWithCallbacks cRef wRef fg (return ()) (return ())
 
-addToCollectionWithCallbacks :: (Show a) => Collection -> Widget a -> Widget FocusGroup -> EntryShow -> EntryHide -> IO (IO ())
+-- |Add a widget and its focus group to a collection.  In addition, two
+-- callbacks -- one to call when showing the widget and one to call when hiding
+-- it (i.e. showing some other widget) -- must be provided.  Returns an action
+-- which, when invoked, will switch to the interface specified.
+addToCollectionWithCallbacks :: (Show a) => Collection -> Widget a
+                             -> Widget FocusGroup -> EntryShow
+                             -> EntryHide -> IO (IO ())
 addToCollectionWithCallbacks cRef wRef fg onShowCb onHideCb = do
   i <- (length . entries) <~ cRef
   modifyIORef cRef $ \st ->

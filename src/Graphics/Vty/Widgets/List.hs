@@ -317,8 +317,8 @@ clearList w = do
         , listItems = V.empty
         }
 
--- |Create a new list using the specified attribute for the
--- currently-selected element when the list does NOT have focus.
+-- |Create a new list.  The list's item widgets will be rendered using the
+-- specified height in rows.
 newList :: (Show b) =>
            Int -- ^Height of list item widgets in rows
         -> IO (Widget (List a b))
