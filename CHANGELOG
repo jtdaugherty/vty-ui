@@ -1,3 +1,41 @@
+
+1.7.1 -> 1.8
+------------
+
+Package changes:
+ * Now builds against vty >= 5.  Note: this release of vty-ui does NOT make
+   any special effort to support the new features in vty 5.  Rather, this
+   release is intended only to permit users to avoid building vty 4.  A future
+   release of vty-ui will include support for vty 5 features.
+ * All demo programs are compiledd with -threaded due to vty5 requirement
+
+API changes:
+ * Util: replace region_* functions from vty 4
+ * Edit: added setCharFilter to control which characters are permitted
+ * Added support for callbacks on entry-switch events for collections
+   - Added addToCollectionWithCallbacks which behaves like addToCollection
+     except that it accepts two callbacks.
+   - Those callbacks are invoked when switching views in a collection.
+ * List: Changed how the selection attributes are set and used when rendering
+     the list.
+   - Removed the attribute parameter to list constructors.  Instead, the
+     attributes from the context are used as defaults and setters (specified
+     here) are used to set focus attributes.
+   - Added two functions to set the selection attributes for list items when
+     the list is focused and unfocused: setSelectedUnfocusedAttr and
+     setSelectedFocusedAttr
+ * API: add setEditRewriter to control presentation of edit widget contents
+   (e.g. to support password editors) (fixes #47)
+
+Bug fixes:
+ * Check lower size bounds correctly when deciding whether to bail on padding
+   a widget (fixes #46)
+ * Docs: remove stale mention of wRef binding (fixes #54)
+ * List: item widget focus attributes take precedence over list focus
+   attributes (fixes #49)
+ * Mention enumitem.sty dependency in README (addresses #48)
+ * Manual: correct description of getListItem's return value
+
 1.7 -> 1.7.1
 ------------
 
