@@ -1,3 +1,10 @@
+1.7 -> 1.7.1
+------------
+
+Package changes:
+ * Add an explicit upper bound on vty < 5
+ * Allow mtl-2.2, QucikCheck-2.7
+
 1.6.1 -> 1.7
 ------------
 
