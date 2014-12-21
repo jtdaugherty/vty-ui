@@ -38,7 +38,9 @@ module Graphics.Vty.Widgets.List
     , setSelected
     -- ** List inspection
     , listFindFirst
+    , listFindFirstBy
     , listFindAll
+    , listFindAllBy
     , getListSize
     , getSelected
     , getListItem
@@ -478,19 +480,28 @@ setSelected wRef newPos = do
 -- |Find the first index of the specified key in the list.  If the key does not
 -- exist, return Nothing.
 listFindFirst :: (Eq a) => Widget (List a b) -> a -> IO (Maybe Int)
-listFindFirst wRef item = do
+listFindFirst wRef item = listFindFirstBy (== item) wRef
+
+-- |Find the first index in the list for which the predicate is true.
+-- If no item in the list matches the given predicate, return Nothing.
+listFindFirstBy :: (a -> Bool) -> Widget (List a b) -> IO (Maybe Int)
+listFindFirstBy p wRef = do
   list <- state <~ wRef
   return $ V.findIndex matcher (listItems list)
   where
-    matcher = \(match, _) -> item == match
+    matcher = \(match, _) -> p match
 
 -- |Find all indicies of the specified key in the list.
 listFindAll :: (Eq a) => Widget (List a b) -> a -> IO [Int]
-listFindAll wRef item = do
+listFindAll wRef item = listFindAllBy (== item) wRef
+
+-- |Find all indices in the list matching the given predicate.
+listFindAllBy :: (a -> Bool) -> Widget (List a b) -> IO [Int]
+listFindAllBy p wRef = do
   list <- state <~ wRef
   return $ V.toList $ V.findIndices matcher (listItems list)
   where
-    matcher = \(match, _) -> item == match
+    matcher = \(match, _) -> p match
 
 resizeList :: Widget (List a b) -> Int -> IO ()
 resizeList wRef newSize = do
