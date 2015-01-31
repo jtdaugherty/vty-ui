@@ -161,47 +161,51 @@ data WidgetImpl a = WidgetImpl {
     -- ^The state of the widget.
     , visible :: !Bool
     -- ^Whether the widget is visible.
-    , render_ :: Widget a -> DisplayRegion -> RenderContext -> IO Image
+    , render_ :: !(Widget a -> DisplayRegion -> RenderContext -> IO Image)
     -- ^The rendering routine of the widget.  Takes the widget itself,
     -- a region indicating how much space the rendering process has to
     -- work with, and a rendering context to be used to determine
     -- attribute and skin settings.  This MUST return an image which
     -- is no larger than the specified rendering region.
-    , growHorizontal_ :: a -> IO Bool
+    , growHorizontal_ :: !(a -> IO Bool)
     -- ^Returns whether the widget will automatically grow to fill
     -- available horizontal space.
-    , growVertical_ :: a -> IO Bool
+    , growVertical_ :: !(a -> IO Bool)
     -- ^Returns whether the widget will automatically grow to fill
     -- available vertical space.
-    , currentSize :: DisplayRegion
+    , currentSize :: !DisplayRegion
     -- ^The size of the widget after its most recent rendering pass.
-    , currentPosition :: DisplayRegion
+
+    -- NOTE: DisplayRegion is a lazy tuple.
+    , currentPosition :: !DisplayRegion
     -- ^The position of the widget after its most recent rendering
     -- pass.
-    , normalAttribute :: Attr
+
+    -- NOTE: DisplayRegion is a lazy tuple.
+    , normalAttribute :: !Attr
     -- ^The normal (unfocused) attribute of the wiget.
-    , focusAttribute :: Attr
+    , focusAttribute :: !Attr
     -- ^The focused attribute of the widget.
-    , setCurrentPosition_ :: Widget a -> DisplayRegion -> IO ()
+    , setCurrentPosition_ :: !(Widget a -> DisplayRegion -> IO ())
     -- ^Sets the current position of the widget.  Takes a widget
     -- reference and a display region indicating the coordinates of
     -- the widget's upper left corner.
-    , keyEventHandler :: Widget a -> Key -> [Modifier] -> IO Bool
+    , keyEventHandler :: !(Widget a -> Key -> [Modifier] -> IO Bool)
     -- ^The widget's key event handler.  Takes a widget reference, a
     -- key event, and a list of keyboard modifiers.  Returns whether
     -- the keyboard event was handled.  True indicates that the event
     -- was handled and that event processing should halt; False
     -- indicates that other event handlers, if present, may handle the
     -- event.
-    , gainFocusHandlers :: Handlers (Widget a)
+    , gainFocusHandlers :: !(Handlers (Widget a))
     -- ^List of handlers to be invoked when the widget gains focus.
-    , resizeHandlers :: Handlers (DisplayRegion, DisplayRegion)
+    , resizeHandlers :: !(Handlers (DisplayRegion, DisplayRegion))
     -- ^List of handlers to be invoked when the widget's size changes.
-    , loseFocusHandlers :: Handlers (Widget a)
+    , loseFocusHandlers :: !(Handlers (Widget a))
     -- ^List of handlers to be invoked when the widget loses focus.
-    , focused :: Bool
+    , focused :: !Bool
     -- ^Whether the widget is focused.
-    , getCursorPosition_ :: Widget a -> IO (Maybe DisplayRegion)
+    , getCursorPosition_ :: !(Widget a -> IO (Maybe DisplayRegion))
     -- ^Returns the current terminal cursor position.  Should return
     -- Nothing if the widget does not need to show a cursor, or Just
     -- if it does.  (For example, widgets receiving keyboard input for
@@ -319,10 +323,9 @@ renderAndPosition wRef pos sz ctx = do
 setCurrentSize :: Widget a -> DisplayRegion -> IO ()
 setCurrentSize wRef newSize = do
     oldSize <- getCurrentSize wRef
-    modifyIORef wRef $ \w ->
-        let new =  w { currentSize = newSize }
-        in seq new new
-    when (oldSize /= newSize) $ handleResizeEvent wRef (oldSize, newSize)
+    when (oldSize /= newSize) $ do
+      atomicModifyIORef' wRef $ \w -> (w { currentSize = newSize }, ())
+      handleResizeEvent wRef (oldSize, newSize)
 
 -- |Get the current size of the widget (its size after its most recent
 -- rendering).
@@ -480,8 +483,7 @@ onLoseFocus = addHandler (loseFocusHandlers <~)
 -- |Given a widget and an implementation transformer, apply the
 -- transformer to the widget's implementation.
 updateWidget :: Widget a -> (WidgetImpl a -> WidgetImpl a) -> IO ()
-updateWidget wRef f = modifyIORef wRef $ \val -> let new = f val
-                                                 in seq new new
+updateWidget wRef f = atomicModifyIORef' wRef (\w -> (f w, ()))
 
 -- |Get the state value of a widget.
 getState :: Widget a -> IO a
@@ -489,10 +491,8 @@ getState wRef = state <~ wRef
 
 -- |Apply a state transformation function to a widget's state.
 updateWidgetState :: Widget a -> (a -> a) -> IO ()
-updateWidgetState wRef f = do
-  w <- readIORef wRef
-  writeIORef wRef $ let new = w { state = f (state w) }
-                    in seq new new
+updateWidgetState wRef f =
+  updateWidget wRef (\w -> w { state = f (state w) })
 
 -- |Focus group handling errors.
 data FocusGroupError = FocusGroupEmpty
