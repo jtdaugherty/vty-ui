@@ -3,7 +3,12 @@
 module Main where
 
 import System.Exit ( exitSuccess )
-import System.Locale
+{-
+ - As of time-1.5, Data.Time.Format re-exports the names we use from
+ - System.Locale; to be compatible with both time-1.4 and time-1.5, we refer to
+ - them by a qualified reference to System.Locale.
+ -}
+import qualified System.Locale as SL
 import qualified Data.Text as T
 import Control.Monad
 import Control.Concurrent
@@ -152,7 +157,7 @@ main = do
          schedule $ do
            t <- getCurrentTime
            setText timeText $ T.pack $
-                   formatTime defaultTimeLocale rfc822DateFormat t
+                   formatTime SL.defaultTimeLocale SL.rfc822DateFormat t
          threadDelay $ 1 * 1000 * 1000
 
   forkIO $ forever $ do
