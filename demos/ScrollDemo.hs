@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings, ScopedTypeVariables #-}
 module Main where
 
-import Control.Monad (forM_)
+import Control.Monad (forM_, forM)
 import System.Exit
 import qualified Data.Text as T
 import Graphics.Vty hiding (pad)
@@ -19,28 +19,30 @@ buildUi = do
            withBorderAttribute (fgColor green)
 
   addHeadingRow_ table (yellow `on` blue) ["Column 1", "Column 2"]
-  forM_ [1..50] $ \(i::Int) -> do
+  es <- forM [1..50] $ \(i::Int) -> do
       tLeft <- plainText $ T.pack $ "Left (" ++ show i ++ ")"
-      tRight <- plainText $ T.pack $ "Right (" ++ show i ++ ")"
+      tRight <- editWidget
       addRow table $ tLeft .|. tRight
+      return tRight
 
-  centered =<< hLimit 55 =<<
+  w <- centered =<< hLimit 55 =<<
     ((vLimit 25 =<< vScroll table) >>= bordered)
+  return (w, es)
 
 main :: IO ()
 main = do
   c <- newCollection
-  ui <- buildUi
+  (ui, es) <- buildUi
   fg <- newFocusGroup
 
   _ <- addToCollection c ui fg
-  _ <- addToFocusGroup fg ui
+  forM_ es $ addToFocusGroup fg
 
-  fg `onKeyPressed` \_ k _ -> do
+  fg `onKeyPressed` \_ k ms -> do
          case k of
            (KChar 'q') -> exitSuccess
-           _ -> return False
+           _ -> handleKeyEvent ui k ms
 
   runUi c $ defaultContext { normalAttr = white `on` black
-                           , focusAttr = white `on` blue
+                           , focusAttr = black `on` yellow
                            }
