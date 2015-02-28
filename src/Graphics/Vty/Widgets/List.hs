@@ -22,13 +22,6 @@ module Graphics.Vty.Widgets.List
     , setSelectedFocusedAttr
     , setSelectedUnfocusedAttr
     -- ** List manipulation
-    , scrollBy
-    , scrollUp
-    , scrollDown
-    , scrollToEnd
-    , scrollToBeginning
-    , pageUp
-    , pageDown
     , onSelectionChange
     , onItemAdded
     , onItemRemoved
@@ -59,6 +52,7 @@ import Graphics.Vty.Widgets.Fixed
 import Graphics.Vty.Widgets.Limits
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Util
+import Graphics.Vty.Widgets.Scrollable
 
 data ListError = BadItemIndex Int
                -- ^The specified position could not be used to remove
@@ -533,12 +527,19 @@ resizeList wRef newSize = do
                                             , scrollTopIndex = newScrollTopIndex
                                             }
 
+instance Scrollable (Widget (List a b)) where
+    scrollBy = listScrollBy
+    pageUp = listPageUp
+    pageDown = listPageDown
+    scrollToBeginning = listScrollToBeginning
+    scrollToEnd = listScrollToEnd
+
 -- |Scroll a list up or down by the specified number of positions.
 -- Scrolling by a positive amount scrolls downward and scrolling by a
 -- negative amount scrolls upward.  This automatically takes care of
 -- managing internal list state and invoking event handlers.
-scrollBy :: Widget (List a b) -> Int -> IO ()
-scrollBy wRef amount = do
+listScrollBy :: Widget (List a b) -> Int -> IO ()
+listScrollBy wRef amount = do
   foc <- focused <~ wRef
 
   -- Unfocus the currently-selected item.
@@ -587,8 +588,6 @@ scrollTo newSelected list =
           , selectedIndex = newSelected
           }
 
-
-
 notifySelectionHandler :: Widget (List a b) -> IO ()
 notifySelectionHandler wRef = do
   sel <- getSelected wRef
@@ -607,8 +606,8 @@ notifyItemAddHandler wRef pos k w =
     fireEvent wRef (itemAddHandlers <~~) $ NewItemEvent pos k w
 
 -- |Scroll to the last list position.
-scrollToEnd :: Widget (List a b) -> IO ()
-scrollToEnd wRef = do
+listScrollToEnd :: Widget (List a b) -> IO ()
+listScrollToEnd wRef = do
     cur <- getSelected wRef
     sz <- getListSize wRef
     case cur of
@@ -616,30 +615,22 @@ scrollToEnd wRef = do
         Just (pos, _) -> scrollBy wRef (sz - pos)
 
 -- |Scroll to the first list position.
-scrollToBeginning :: Widget (List a b) -> IO ()
-scrollToBeginning wRef = do
+listScrollToBeginning :: Widget (List a b) -> IO ()
+listScrollToBeginning wRef = do
     cur <- getSelected wRef
     case cur of
         Nothing -> return ()
         Just (pos, _) -> scrollBy wRef (-1 * pos)
 
--- |Scroll a list down by one position.
-scrollDown :: Widget (List a b) -> IO ()
-scrollDown wRef = scrollBy wRef 1
-
--- |Scroll a list up by one position.
-scrollUp :: Widget (List a b) -> IO ()
-scrollUp wRef = scrollBy wRef (-1)
-
 -- |Scroll a list down by one page from the current cursor position.
-pageDown :: Widget (List a b) -> IO ()
-pageDown wRef = do
+listPageDown :: Widget (List a b) -> IO ()
+listPageDown wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy wRef amt
 
 -- |Scroll a list up by one page from the current cursor position.
-pageUp :: Widget (List a b) -> IO ()
-pageUp wRef = do
+listPageUp :: Widget (List a b) -> IO ()
+listPageUp wRef = do
   amt <- scrollWindowSize <~~ wRef
   scrollBy wRef (-1 * amt)
 

@@ -31,6 +31,7 @@ import Graphics.Vty.Widgets.Box
 import Graphics.Vty.Widgets.Fills
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Events
+import Graphics.Vty.Widgets.Scrollable
 import System.Directory
 import System.FilePath
 import System.Posix.Files

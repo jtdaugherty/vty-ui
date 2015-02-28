@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 module Graphics.Vty.Widgets.VScroll
   ( vScroll
   )
@@ -8,8 +9,9 @@ import Graphics.Vty.Input
 
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Util
+import Graphics.Vty.Widgets.Scrollable
 
-data VScroll a =
+data VScroll =
     VScroll { vScrollTop :: Int
             , vScrollWindow :: Int
             , vLastHeight :: Int
@@ -19,7 +21,7 @@ data VScroll a =
 infHeight :: Int
 infHeight = 1000000
 
-vScroll :: (Show a) => Widget a -> IO (Widget (VScroll a))
+vScroll :: (Show a) => Widget a -> IO (Widget VScroll)
 vScroll child = do
   let initSt = VScroll 0 0 0
   wRef <- newWidget initSt $ \w ->
@@ -39,29 +41,25 @@ vScroll child = do
         }
   return wRef
 
-vScrollKeyHandler :: Widget (VScroll a) -> Key -> [Modifier] -> IO Bool
-vScrollKeyHandler w KPageUp _ = do
-    vs <- getState w
-    let newST = max (vScrollTop vs - (vScrollWindow vs)) 0
-    updateWidgetState w (\vs' -> vs' { vScrollTop = newST })
-    return True
-vScrollKeyHandler w KPageDown _ = do
-    vs <- getState w
-    let newST = min (vScrollTop vs + (vScrollWindow vs)) (vLastHeight vs - vScrollWindow vs)
-    updateWidgetState w (\vs' -> vs' { vScrollTop = newST })
-    return True
-vScrollKeyHandler w KUp _ = do
-    vs <- getState w
-    let newST = vScrollTop vs - 1
-    case newST < 0 of
-        True -> return ()
-        False -> updateWidgetState w (\vs' -> vs' { vScrollTop = newST })
-    return True
-vScrollKeyHandler w KDown _ = do
-    vs <- getState w
-    let newST = vScrollTop vs + 1
-    case (vLastHeight vs - newST) < vScrollWindow vs of
-        True -> return ()
-        False -> updateWidgetState w (\vs' -> vs' { vScrollTop = newST })
-    return True
+vScrollKeyHandler :: Widget VScroll -> Key -> [Modifier] -> IO Bool
+vScrollKeyHandler w KPageUp _ = pageUp w >> return True
+vScrollKeyHandler w KPageDown _ = pageDown w >> return True
+vScrollKeyHandler w KUp _ = scrollUp w >> return True
+vScrollKeyHandler w KDown _ = scrollDown w >> return True
 vScrollKeyHandler _ _ _ = return False
+
+instance Scrollable (Widget VScroll) where
+    scrollBy w amt = do
+        vs <- getState w
+        let newST = min (max (vScrollTop vs + amt) 0) (vLastHeight vs - vScrollWindow vs)
+        updateWidgetState w (\vs' -> vs' { vScrollTop = newST })
+    pageUp w = do
+        vs <- getState w
+        scrollBy w (-1 * vScrollWindow vs)
+    pageDown w = do
+        vs <- getState w
+        scrollBy w (vScrollWindow vs)
+    scrollToBeginning w =
+        updateWidgetState w (\vs -> vs { vScrollTop = 0 })
+    scrollToEnd w =
+        updateWidgetState w (\vs -> vs { vScrollTop = vLastHeight vs - vScrollWindow vs })
