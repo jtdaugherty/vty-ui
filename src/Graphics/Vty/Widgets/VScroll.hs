@@ -11,6 +11,8 @@ import Graphics.Vty.Widgets.Util
 
 data VScroll a =
     VScroll { vScrollTop :: Int
+            , vScrollWindow :: Int
+            , vLastHeight :: Int
             }
     deriving (Show)
 
@@ -19,14 +21,19 @@ infHeight = 1000000
 
 vScroll :: (Show a) => Widget a -> IO (Widget (VScroll a))
 vScroll child = do
-  let initSt = VScroll 0
+  let initSt = VScroll 0 0 0
   wRef <- newWidget initSt $ \w ->
       w { keyEventHandler = vScrollKeyHandler
         , render_ =
             \this size ctx -> do
-              (VScroll cropAmt) <- getState this
               wholeImg <- render child (size `withHeight` infHeight) ctx
-              let cropped1 = cropTop (imageHeight wholeImg - cropAmt) wholeImg
+              updateWidgetState this (\s -> s { vScrollWindow = regionHeight size
+                                              , vLastHeight = imageHeight wholeImg
+                                              }
+                                     )
+
+              st <- getState this
+              let cropped1 = cropTop (imageHeight wholeImg - (vScrollTop st)) wholeImg
                   cropped2 = cropBottom (regionHeight size) cropped1
               return cropped2
         }
@@ -34,9 +41,17 @@ vScroll child = do
 
 vScrollKeyHandler :: Widget (VScroll a) -> Key -> [Modifier] -> IO Bool
 vScrollKeyHandler w KUp _ = do
-    updateWidgetState w (\(VScroll t) -> VScroll (t - 1))
+    vs <- getState w
+    let newST = vScrollTop vs - 1
+    case newST < 0 of
+        True -> return ()
+        False -> updateWidgetState w (\vs' -> vs' { vScrollTop = newST })
     return True
 vScrollKeyHandler w KDown _ = do
-    updateWidgetState w (\(VScroll t) -> VScroll (t + 1))
+    vs <- getState w
+    let newST = vScrollTop vs + 1
+    case (vLastHeight vs - newST) < vScrollWindow vs of
+        True -> return ()
+        False -> updateWidgetState w (\vs' -> vs' { vScrollTop = newST })
     return True
 vScrollKeyHandler _ _ _ = return False
