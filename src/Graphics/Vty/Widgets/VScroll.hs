@@ -26,6 +26,13 @@ vScroll child = do
   let initSt = VScroll 0 0 0
   wRef <- newWidget initSt $ \w ->
       w { keyEventHandler = vScrollKeyHandler
+        , setCurrentPosition_ = \this pos -> do
+              vs <- getState this
+              -- Set the position of the child so that its visible
+              -- portion's position is correct.
+              let newPos = pos `plusHeight` (-1 * vScrollTop vs)
+              setCurrentPosition child newPos
+
         , render_ =
             \this size ctx -> do
               wholeImg <- render child (size `withHeight` infHeight) ctx
