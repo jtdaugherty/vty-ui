@@ -26,8 +26,7 @@ vScroll child = do
             \this size ctx -> do
               (VScroll cropAmt) <- getState this
               wholeImg <- render child (size `withHeight` infHeight) ctx
-              -- Now crop the image.
-              let cropped1 = cropTop (regionHeight size - cropAmt) wholeImg
+              let cropped1 = cropTop (imageHeight wholeImg - cropAmt) wholeImg
                   cropped2 = cropBottom (regionHeight size) cropped1
               return cropped2
         }
