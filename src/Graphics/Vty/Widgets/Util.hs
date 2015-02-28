@@ -107,17 +107,11 @@ withHeight (w, _) h = (w, h)
 
 -- |Modify the width component of a 'DisplayRegion'.
 plusWidth :: DisplayRegion -> Int -> DisplayRegion
-plusWidth (w', h) w =
-    if (w' + w < 0)
-    then error $ "plusWidth: would overflow on " ++ (show w') ++ " + " ++ (show w)
-    else ((w + w'), h)
+plusWidth (w', h) w = ((w + w'), h)
 
 -- |Modify the height component of a 'DisplayRegion'.
 plusHeight :: DisplayRegion -> Int -> DisplayRegion
-plusHeight (w, h') h =
-    if (h' + h < 0)
-    then error $ "plusHeight: would overflow on " ++ (show h') ++ " + " ++ (show h)
-    else (w, (h + h'))
+plusHeight (w, h') h = (w, (h + h'))
 
 remove :: Int -> [a] -> [a]
 remove pos as = (take pos as) ++ (drop (pos + 1) as)
