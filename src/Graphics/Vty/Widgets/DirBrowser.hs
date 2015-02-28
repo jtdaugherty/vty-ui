@@ -311,7 +311,7 @@ setDirBrowserPath b path = do
     sel <- getSelection b path
     case sel of
       Nothing -> return ()
-      Just i -> scrollBy (dirBrowserList b) i
+      Just i -> scrollVerticallyBy (dirBrowserList b) i
 
     fireEvent b (return . dirBrowserPathChangeHandlers) cPath
 

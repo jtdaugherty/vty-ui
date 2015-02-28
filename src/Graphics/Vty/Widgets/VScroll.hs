@@ -48,17 +48,17 @@ vScrollKeyHandler w KUp _ = scrollUp w >> return True
 vScrollKeyHandler w KDown _ = scrollDown w >> return True
 vScrollKeyHandler _ _ _ = return False
 
-instance Scrollable (Widget VScroll) where
-    scrollBy w amt = do
+instance ScrollVertically (Widget VScroll) where
+    scrollVerticallyBy w amt = do
         vs <- getState w
         let newST = min (max (vScrollTop vs + amt) 0) (vLastHeight vs - vScrollWindow vs)
         updateWidgetState w (\vs' -> vs' { vScrollTop = newST })
     pageUp w = do
         vs <- getState w
-        scrollBy w (-1 * vScrollWindow vs)
+        scrollVerticallyBy w (-1 * vScrollWindow vs)
     pageDown w = do
         vs <- getState w
-        scrollBy w (vScrollWindow vs)
+        scrollVerticallyBy w (vScrollWindow vs)
     scrollToBeginning w =
         updateWidgetState w (\vs -> vs { vScrollTop = 0 })
     scrollToEnd w =

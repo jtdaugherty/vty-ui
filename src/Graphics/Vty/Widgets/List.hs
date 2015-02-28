@@ -469,7 +469,7 @@ setSelected wRef newPos = do
   list <- state <~ wRef
   case selectedIndex list of
     (-1) -> return ()
-    curPos -> scrollBy wRef (newPos - curPos)
+    curPos -> scrollVerticallyBy wRef (newPos - curPos)
 
 -- |Find the first index of the specified key in the list.  If the key does not
 -- exist, return Nothing.
@@ -527,8 +527,8 @@ resizeList wRef newSize = do
                                             , scrollTopIndex = newScrollTopIndex
                                             }
 
-instance Scrollable (Widget (List a b)) where
-    scrollBy = listScrollBy
+instance ScrollVertically (Widget (List a b)) where
+    scrollVerticallyBy = listScrollBy
     pageUp = listPageUp
     pageDown = listPageDown
     scrollToBeginning = listScrollToBeginning
@@ -612,7 +612,7 @@ listScrollToEnd wRef = do
     sz <- getListSize wRef
     case cur of
         Nothing -> return ()
-        Just (pos, _) -> scrollBy wRef (sz - pos)
+        Just (pos, _) -> scrollVerticallyBy wRef (sz - pos)
 
 -- |Scroll to the first list position.
 listScrollToBeginning :: Widget (List a b) -> IO ()
@@ -620,19 +620,19 @@ listScrollToBeginning wRef = do
     cur <- getSelected wRef
     case cur of
         Nothing -> return ()
-        Just (pos, _) -> scrollBy wRef (-1 * pos)
+        Just (pos, _) -> scrollVerticallyBy wRef (-1 * pos)
 
 -- |Scroll a list down by one page from the current cursor position.
 listPageDown :: Widget (List a b) -> IO ()
 listPageDown wRef = do
   amt <- scrollWindowSize <~~ wRef
-  scrollBy wRef amt
+  scrollVerticallyBy wRef amt
 
 -- |Scroll a list up by one page from the current cursor position.
 listPageUp :: Widget (List a b) -> IO ()
 listPageUp wRef = do
   amt <- scrollWindowSize <~~ wRef
-  scrollBy wRef (-1 * amt)
+  scrollVerticallyBy wRef (-1 * amt)
 
 getVisibleItems :: Widget (List a b) -> IO [(ListItem a b, Bool)]
 getVisibleItems wRef = do

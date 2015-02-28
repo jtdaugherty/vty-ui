@@ -1,16 +1,16 @@
 module Graphics.Vty.Widgets.Scrollable
-    ( Scrollable(..)
+    ( ScrollVertically(..)
     )
 where
 
-class Scrollable a where
-    scrollBy :: a -> Int -> IO ()
+class ScrollVertically a where
+    scrollVerticallyBy :: a -> Int -> IO ()
     pageUp :: a -> IO ()
     pageDown :: a -> IO ()
     scrollToBeginning :: a -> IO ()
     scrollToEnd :: a -> IO ()
 
     scrollUp :: a -> IO ()
-    scrollUp w = scrollBy w (-1)
+    scrollUp w = scrollVerticallyBy w (-1)
     scrollDown :: a -> IO ()
-    scrollDown w = scrollBy w 1
+    scrollDown w = scrollVerticallyBy w 1
