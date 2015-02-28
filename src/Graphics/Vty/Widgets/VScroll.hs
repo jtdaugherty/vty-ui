@@ -40,6 +40,16 @@ vScroll child = do
   return wRef
 
 vScrollKeyHandler :: Widget (VScroll a) -> Key -> [Modifier] -> IO Bool
+vScrollKeyHandler w KPageUp _ = do
+    vs <- getState w
+    let newST = max (vScrollTop vs - (vScrollWindow vs)) 0
+    updateWidgetState w (\vs' -> vs' { vScrollTop = newST })
+    return True
+vScrollKeyHandler w KPageDown _ = do
+    vs <- getState w
+    let newST = min (vScrollTop vs + (vScrollWindow vs)) (vLastHeight vs - vScrollWindow vs)
+    updateWidgetState w (\vs' -> vs' { vScrollTop = newST })
+    return True
 vScrollKeyHandler w KUp _ = do
     vs <- getState w
     let newST = vScrollTop vs - 1
