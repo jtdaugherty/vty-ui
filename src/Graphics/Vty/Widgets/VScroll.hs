@@ -39,6 +39,9 @@ vScroll child = do
                   cropped2 = cropBottom (regionHeight size) cropped1
               return cropped2
         }
+
+  wRef `relayKeyEvents` child
+  wRef `relayFocusEvents` child
   return wRef
 
 vScrollKeyHandler :: Widget VScroll -> Key -> [Modifier] -> IO Bool
