@@ -132,6 +132,7 @@ Library
           Graphics.Vty.Widgets.ProgressBar
           Graphics.Vty.Widgets.DirBrowser
           Graphics.Vty.Widgets.Group
+          Graphics.Vty.Widgets.VScroll
           Text.Trans.Tokenize
 
 Executable vty-ui-tests
@@ -165,6 +166,19 @@ Executable vty-ui-collection-demo
   Hs-Source-Dirs:  demos
   GHC-Options:     -Wall -threaded
   Main-is:         CollectionDemo.hs
+  Build-Depends:
+    base >= 4 && < 5,
+    mtl >= 2.0 && < 2.3,
+    vty >= 5.1.0,
+    text,
+    vty-ui
+  if !flag(demos)
+    Buildable: False
+
+Executable vty-ui-scroll-demo
+  Hs-Source-Dirs:  demos
+  GHC-Options:     -Wall -threaded
+  Main-is:         ScrollDemo.hs
   Build-Depends:
     base >= 4 && < 5,
     mtl >= 2.0 && < 2.3,
