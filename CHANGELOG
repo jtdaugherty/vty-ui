@@ -1,4 +1,17 @@
 
+1.8 -> 1.9
+----------
+
+Package changes:
+ * Depend on newer time 1.5 that has absorbed old-locale (fixes #67)
+ * Expand version bounds on filepath dependency to support GHC 7.10
+
+API changes:
+ * API: List: Add listFind*By functions.
+
+Bug fixes:
+ * Fixed space leaks by making some things strict
+
 1.7.1 -> 1.8
 ------------
 
