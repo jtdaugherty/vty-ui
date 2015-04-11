@@ -8,7 +8,6 @@ import System.Exit ( exitSuccess )
  - System.Locale; to be compatible with both time-1.4 and time-1.5, we refer to
  - them by a qualified reference to System.Locale.
  -}
-import qualified System.Locale as SL
 import qualified Data.Text as T
 import Control.Monad
 import Control.Concurrent
@@ -157,7 +156,7 @@ main = do
          schedule $ do
            t <- getCurrentTime
            setText timeText $ T.pack $
-                   formatTime SL.defaultTimeLocale SL.rfc822DateFormat t
+                   formatTime defaultTimeLocale rfc822DateFormat t
          threadDelay $ 1 * 1000 * 1000
 
   forkIO $ forever $ do
