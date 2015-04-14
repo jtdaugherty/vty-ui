@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -fno-warn-missing-signatures -fno-warn-unused-do-bind #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TupleSections #-}
 module Main where
 
 import System.Exit ( exitSuccess )
@@ -32,11 +33,19 @@ message2 = [ ("- Press ", defAttr), ("q", keyAttr), (" to quit\n", defAttr)
            , ("- Press ", defAttr), ("-", keyAttr)
            , (" / ", defAttr), ("d", keyAttr)
            , (" to remove the selected list item\n", defAttr)
+           , ("- Press ", defAttr), ("l", keyAttr)
+           , (" to append 10000 items\n", defAttr)
+           , ("- Press ", defAttr), ("i", keyAttr)
+           , (" to insert multiple items at the selection\n", defAttr)
+           , ("- Press ", defAttr), ("t", keyAttr)
+           , (" to insert multiple items at the top\n", defAttr)
            , ("- Press ", defAttr)
            , ("up", keyAttr), (" / ", defAttr)
            , ("down", keyAttr), (" / ", defAttr)
            , ("page up", keyAttr), (" / ", defAttr)
-           , ("page down", keyAttr)
+           , ("page down", keyAttr), (" / ", defAttr)
+           , ("home", keyAttr), (" / ", defAttr)
+           , ("end", keyAttr)
            , (" to navigate the list\n", defAttr)
            ]
 
@@ -110,6 +119,20 @@ main = do
       addNewItem =
           (plainText "a list item") >>=
                     addToList (theList st) "unused"
+      addMany = do
+         let texts = map (T.append "item " . T.pack . show) [1..10000]
+         widgets <- mapM plainText texts
+         addMultipleToList (theList st) $ map ("unused",) widgets
+      insertItemsAtIndex index = do
+         let texts = map (T.append "inserted " . T.pack . show ) [1..5]
+         moreWidgets <- mapM plainText texts
+         let items = map ("unused",) moreWidgets
+         insertMultipleIntoList (theList st) items index
+      insertNewItems = do
+         selected <- getSelected (theList st)
+         case selected of
+           Nothing -> insertItemsAtIndex 0
+           Just (index, _) -> insertItemsAtIndex index
 
   (theList st) `onKeyPressed` \_ k _ -> do
          case k of
@@ -118,6 +141,11 @@ main = do
            (KChar 'd') -> removeCurrentItem >> return True
            (KChar '+') -> addNewItem >> return True
            (KChar 'a') -> addNewItem >> return True
+           (KChar 'i') -> insertNewItems >> return True
+           (KChar 'l') -> addMany >> return True
+           (KChar 't') -> insertItemsAtIndex 0 >> return True
+           KHome -> scrollToBeginning (theList st) >> return True
+           KEnd -> scrollToEnd (theList st) >> return True
            _ -> return False
 
   -- We need to call these handlers manually because while they will
