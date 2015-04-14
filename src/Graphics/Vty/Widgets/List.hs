@@ -264,7 +264,7 @@ insertMultipleIntoList list widgets pos = do
   oldScr <- scrollTopIndex <~~ list
   swSize <- scrollWindowSize <~~ list
 
-  let newSelIndex = if numItems == 0
+  let newSelIndex = if numItems == 0 && numNewItems > 0
                     then 0
                     else if pos <= oldSel
                          then oldSel + numNewItems
