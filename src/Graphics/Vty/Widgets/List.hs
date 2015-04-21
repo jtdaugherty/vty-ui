@@ -241,9 +241,9 @@ addToList list key w = do
 
 -- |Add a list of items to the list.
 addMultipleToList :: (Show b) => Widget (List a b) -> [(a, Widget b)] -> IO ()
-addMultipleToList list widgets = do
+addMultipleToList list pairs = do
   numItems <- (V.length . listItems) <~~ list
-  insertMultipleIntoList list widgets numItems
+  insertMultipleIntoList list pairs numItems
 
 -- |Insert an element into the list at the specified position.  If the
 -- position exceeds the length of the list, it is inserted at the end.
