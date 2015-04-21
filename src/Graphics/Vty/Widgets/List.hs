@@ -255,16 +255,17 @@ insertIntoList list key w pos = insertMultipleIntoList list [(key, w)] pos
 -- This is much more efficient than multiple calls to insertIntoList for very
 -- large lists of widgets.
 insertMultipleIntoList :: (Show b) => Widget (List a b) -> [(a, Widget b)] -> Int -> IO ()
-insertMultipleIntoList list widgets pos = do
+insertMultipleIntoList _ [] _ = return ()
+insertMultipleIntoList list pairs pos = do
   numItems <- (V.length . listItems) <~~ list
-  let numNewItems = length widgets
+  let numNewItems = length pairs
 
   -- Calculate the new selected index.
   oldSel <- selectedIndex <~~ list
   oldScr <- scrollTopIndex <~~ list
   swSize <- scrollWindowSize <~~ list
 
-  let newSelIndex = if numItems == 0 && numNewItems > 0
+  let newSelIndex = if numItems == 0
                     then 0
                     else if pos <= oldSel
                          then oldSel + numNewItems
@@ -279,20 +280,20 @@ insertMultipleIntoList list widgets pos = do
 
   -- Optimize the append case.
   let newItems s = if pos >= numItems
-                   then (listItems s) V.++ (V.fromList widgets)
-                   else vInject pos (V.fromList widgets) (listItems s)
+                   then (listItems s) V.++ (V.fromList pairs)
+                   else vInject pos (V.fromList pairs) (listItems s)
 
   updateWidgetState list $ \s -> s { listItems = V.force $ newItems s
                                    , selectedIndex = newSelIndex
                                    , scrollTopIndex = newScrollTop
                                    }
 
-  mapM_ (uncurry $ notifyItemAddHandler list (min numItems pos)) widgets
+  mapM_ (uncurry $ notifyItemAddHandler list (min numItems pos)) pairs
 
-  when (numItems == 0 && numNewItems > 0) $
+  when (numItems == 0) $
        do
          foc <- focused <~ list
-         when foc $ focus $ snd $ head widgets
+         when foc $ focus $ snd $ head pairs
 
   when (oldSel /= newSelIndex) $ notifySelectionHandler list
 
