@@ -63,6 +63,16 @@ appropriate type:
 In addition, items may be inserted into a \fw{List} at any position with
 the \fw{insertIntoList} function.
 
+There are also functions to efficiently add or insert multiple items to a
+\fw{List}, namely \fw{addMultipleToList} and \fw{insertMultipleIntoList}. These
+functions take lists of pairs of the internal items and widgets:
+
+\begin{haskellcode}
+  let internalValues = ["foo", "bar", "baz"]
+  widgets <- mapM plainText internalValues
+  addMultipleToList lst (zip internalValues widgets)
+\end{haskellcode}
+
 When it comes to how \fw{List}s render item widgets, there are two behaviors to
 know about:
 

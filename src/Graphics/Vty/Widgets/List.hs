@@ -17,7 +17,9 @@ module Graphics.Vty.Widgets.List
     , newTextList
     , newList
     , addToList
+    , addMultipleToList
     , insertIntoList
+    , insertMultipleIntoList
     , removeFromList
     , setSelectedFocusedAttr
     , setSelectedUnfocusedAttr
@@ -231,19 +233,32 @@ setSelectedUnfocusedAttr :: Widget (List a b) -> Maybe Attr -> IO ()
 setSelectedUnfocusedAttr w attr = do
   updateWidgetState w $ \l -> l { selectedUnfocusedAttr = attr }
 
--- |Add an item to the list.  Its widget will be constructed from the
--- specified internal value using the widget constructor passed to
--- 'newList'.
+-- |Add an item to the list.
 addToList :: (Show b) => Widget (List a b) -> a -> Widget b -> IO ()
 addToList list key w = do
   numItems <- (V.length . listItems) <~~ list
   insertIntoList list key w numItems
 
+-- |Add a list of items to the list.
+addMultipleToList :: (Show b) => Widget (List a b) -> [(a, Widget b)] -> IO ()
+addMultipleToList list pairs = do
+  numItems <- (V.length . listItems) <~~ list
+  insertMultipleIntoList list pairs numItems
+
 -- |Insert an element into the list at the specified position.  If the
 -- position exceeds the length of the list, it is inserted at the end.
 insertIntoList :: (Show b) => Widget (List a b) -> a -> Widget b -> Int -> IO ()
-insertIntoList list key w pos = do
+insertIntoList list key w pos = insertMultipleIntoList list [(key, w)] pos
+
+-- |Insert a list of elements into the list at the specified position.  If the
+-- position exceeds the length of the list, they are inserted at the end.
+-- This is much more efficient than multiple calls to insertIntoList for very
+-- large lists of widgets.
+insertMultipleIntoList :: (Show b) => Widget (List a b) -> [(a, Widget b)] -> Int -> IO ()
+insertMultipleIntoList _ [] _ = return ()
+insertMultipleIntoList list pairs pos = do
   numItems <- (V.length . listItems) <~~ list
+  let numNewItems = length pairs
 
   -- Calculate the new selected index.
   oldSel <- selectedIndex <~~ list
@@ -253,33 +268,32 @@ insertIntoList list key w pos = do
   let newSelIndex = if numItems == 0
                     then 0
                     else if pos <= oldSel
-                         then oldSel + 1
+                         then oldSel + numNewItems
                          else oldSel
-      newScrollTop = if pos <= oldSel
-                     then if (oldSel - oldScr + 1) == swSize
-                          then oldScr + 1
-                          else oldScr
+      pastBottom = newSelIndex - oldScr - swSize
+      newScrollTop = if pos <= oldSel && pastBottom > 0
+                     then oldScr + pastBottom + 1
                      else oldScr
 
-  let vInject atPos a as = let (hd, t) = (V.take atPos as, V.drop atPos as)
-                           in hd V.++ (V.cons a t)
+  let vInject atPos new as = let (hd, t) = (V.take atPos as, V.drop atPos as)
+                           in hd V.++ new V.++ t
 
   -- Optimize the append case.
   let newItems s = if pos >= numItems
-                   then V.snoc (listItems s) (key, w)
-                   else vInject pos (key, w) (listItems s)
+                   then (listItems s) V.++ (V.fromList pairs)
+                   else vInject pos (V.fromList pairs) (listItems s)
 
   updateWidgetState list $ \s -> s { listItems = V.force $ newItems s
                                    , selectedIndex = newSelIndex
                                    , scrollTopIndex = newScrollTop
                                    }
 
-  notifyItemAddHandler list (min numItems pos) key w
+  mapM_ (uncurry $ notifyItemAddHandler list (min numItems pos)) pairs
 
   when (numItems == 0) $
        do
          foc <- focused <~ list
-         when foc $ focus w
+         when foc $ focus $ snd $ head pairs
 
   when (oldSel /= newSelIndex) $ notifySelectionHandler list
 
