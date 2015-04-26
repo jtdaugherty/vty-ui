@@ -416,11 +416,15 @@ renderListWidget this s ctx = do
 
       renderVisible [] = return []
       renderVisible ((w, sel):ws) = do
+        widgetDefaultAttr <- normalAttribute <~ w
+
         let att = if sel
                   then if foc
-                       then mergeAttrs [ childSelFocAttr, defaultAttr ]
-                       else mergeAttrs [ childSelUnfocAttr, defaultAttr ]
-                  else defaultAttr
+                       then mergeAttrs [ childSelFocAttr, widgetDefaultAttr, defaultAttr ]
+                       else mergeAttrs [ childSelUnfocAttr, widgetDefaultAttr, defaultAttr ]
+                  else mergeAttrs [ widgetDefaultAttr
+                                  , defaultAttr
+                                  ]
 
         -- Height-limit the widget by wrapping it with a VFixed/VLimit
         limited <- vLimit (itemHeight list) =<< vFixed (itemHeight list) w
