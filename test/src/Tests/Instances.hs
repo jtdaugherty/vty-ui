@@ -8,7 +8,7 @@ import Control.Applicative ( (<*>), (<$>), pure )
 import Graphics.Vty
 import Graphics.Vty.Widgets.Util
 
-instance (Show a, Arbitrary a, Eq a) => Arbitrary (MaybeDefault a) where
+instance (Show a, Read a, Arbitrary a, Eq a) => Arbitrary (MaybeDefault a) where
     arbitrary = oneof [ pure Default
                       , pure KeepCurrent
                       , SetTo <$> arbitrary
