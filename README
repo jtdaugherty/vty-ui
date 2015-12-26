@@ -3,7 +3,7 @@ vty-ui
 
 NOTE! This package has been deprecated in favor of brick:
 
-http://jtdaugherty.github.com/vty-ui/
+http://hackage.haskell.org/package/brick
 
 Project homepage: http://jtdaugherty.github.com/vty-ui/
 
