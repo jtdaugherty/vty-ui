@@ -31,7 +31,7 @@ import Graphics.Vty.Widgets.Box
 import Graphics.Vty.Widgets.Fills
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Events
-import System.Directory
+import System.Directory hiding (isSymbolicLink)
 import System.FilePath
 import System.Posix.Files
 import System.IO.Error
