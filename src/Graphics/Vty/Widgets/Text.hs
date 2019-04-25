@@ -42,10 +42,13 @@ import Graphics.Vty.Widgets.Util
 -- of screen area available for formatting.
 newtype Formatter = Formatter (DisplayRegion -> TextStream Attr -> IO (TextStream Attr))
 
+instance Semigroup Formatter where
+    (<>) (Formatter f1) (Formatter f2) =
+        Formatter (\sz t -> f1 sz t >>= f2 sz)
+
 instance Monoid Formatter where
     mempty = nullFormatter
-    mappend (Formatter f1) (Formatter f2) =
-        Formatter (\sz t -> f1 sz t >>= f2 sz)
+    mappend = (<>)
 
 applyFormatter :: Formatter -> DisplayRegion -> TextStream Attr -> IO (TextStream Attr)
 applyFormatter (Formatter f) sz t = f sz t

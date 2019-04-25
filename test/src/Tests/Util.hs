@@ -2,7 +2,7 @@ module Tests.Util where
 
 import Control.Applicative
 import qualified Data.Text as T
-import Graphics.Vty
+import Graphics.Vty hiding (regionHeight, regionWidth)
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Util
 import Text.Trans.Tokenize

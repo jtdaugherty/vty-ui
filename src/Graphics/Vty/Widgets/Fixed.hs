@@ -19,7 +19,7 @@ module Graphics.Vty.Widgets.Fixed
 where
 
 import Control.Monad
-import Graphics.Vty
+import Graphics.Vty hiding (regionHeight, regionWidth)
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Util
 

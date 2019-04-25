@@ -79,7 +79,7 @@ import Data.IORef
 import Control.Applicative
 import Control.Monad
 import Control.Exception
-import Graphics.Vty
+import Graphics.Vty hiding (regionWidth, regionHeight)
 import Graphics.Vty.Widgets.Util
 import Graphics.Vty.Widgets.Skins
 import Graphics.Vty.Widgets.Events

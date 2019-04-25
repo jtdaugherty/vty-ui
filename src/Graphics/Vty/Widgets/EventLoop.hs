@@ -19,7 +19,6 @@ where
 
 import Data.IORef
 import Data.Typeable
-import Data.Default (def)
 import Control.Concurrent ( forkIO )
 import Control.Concurrent.STM ( atomically )
 import Control.Concurrent.STM.TChan
@@ -46,7 +45,7 @@ eventChan = unsafePerformIO newTChanIO
 -- 'Collection' is empty.
 runUi :: Collection -> RenderContext -> IO ()
 runUi collection ctx = do
-  vty <- mkVty def
+  vty <- mkVty defaultConfig
 
   -- Create VTY event listener thread
   _ <- forkIO $ vtyEventListener vty eventChan
