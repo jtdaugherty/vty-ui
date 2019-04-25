@@ -26,7 +26,7 @@ where
 
 import Control.Applicative
 import qualified Data.Text as T
-import Graphics.Vty
+import Graphics.Vty hiding (regionWidth, regionHeight)
 
 -- A newtype to wrap physical screen coordinates, as opposed to
 -- character-logical coordinates.  Used when transforming cursor

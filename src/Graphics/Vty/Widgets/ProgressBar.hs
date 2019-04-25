@@ -16,7 +16,7 @@ where
 
 import Control.Monad
 import qualified Data.Text as T
-import Graphics.Vty
+import Graphics.Vty hiding (regionHeight, regionWidth)
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Events
 import Graphics.Vty.Widgets.Text

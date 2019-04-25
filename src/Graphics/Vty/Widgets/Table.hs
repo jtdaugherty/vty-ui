@@ -32,7 +32,7 @@ import Data.List
 import Control.Applicative hiding ((<|>))
 import Control.Exception
 import Control.Monad
-import Graphics.Vty
+import Graphics.Vty hiding (regionHeight, regionWidth)
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Centering
@@ -153,9 +153,12 @@ instance (RowLike a) => RowLike [a] where
       (TableRow cs) = mkRow a
       (TableRow ds) = mkRow b
 
+instance Semigroup TableRow where
+    (<>) (TableRow as) (TableRow bs) = TableRow $ as ++ bs
+
 instance Monoid TableRow where
     mempty = TableRow []
-    (TableRow as) `mappend` (TableRow bs) = TableRow $ as ++ bs
+    mappend = (<>)
 
 infixl 2 .|.
 

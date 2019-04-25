@@ -6,7 +6,7 @@ import Test.QuickCheck.Monadic
 import Control.Applicative
 import qualified Data.Text as T
 
-import Graphics.Vty
+import Graphics.Vty hiding (regionHeight, regionWidth)
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Util

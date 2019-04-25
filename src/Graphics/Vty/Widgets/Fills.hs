@@ -9,7 +9,7 @@ module Graphics.Vty.Widgets.Fills
     )
 where
 
-import Graphics.Vty
+import Graphics.Vty hiding (regionHeight, regionWidth)
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Util
 

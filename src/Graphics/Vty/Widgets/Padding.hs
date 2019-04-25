@@ -20,7 +20,7 @@ module Graphics.Vty.Widgets.Padding
 where
 
 import Data.Monoid
-import Graphics.Vty
+import Graphics.Vty hiding (regionWidth, regionHeight)
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Util
 
@@ -37,10 +37,13 @@ instance Show Padded where
                                , ", ... }"
                                ]
 
+instance Semigroup Padding where
+    (<>) (Padding a1 a2 a3 a4) (Padding b1 b2 b3 b4) =
+        Padding (a1 + b1) (a2 + b2) (a3 + b3) (a4 + b4)
+
 instance Monoid Padding where
     mempty = Padding 0 0 0 0
-    mappend (Padding a1 a2 a3 a4) (Padding b1 b2 b3 b4) =
-        Padding (a1 + b1) (a2 + b2) (a3 + b3) (a4 + b4)
+    mappend = (<>)
 
 (+++) :: (Monoid a) => a -> a -> a
 (+++) = mappend

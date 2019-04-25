@@ -12,7 +12,7 @@ module Graphics.Vty.Widgets.Centering
 where
 
 import Graphics.Vty.Widgets.Core
-import Graphics.Vty
+import Graphics.Vty hiding (regionHeight, regionWidth)
 import Graphics.Vty.Widgets.Util
 
 data HCentered a = (Show a) => HCentered (Widget a)

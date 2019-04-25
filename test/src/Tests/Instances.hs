@@ -4,6 +4,7 @@ module Tests.Instances where
 import Test.QuickCheck
 import System.Random
 import Control.Applicative ( (<*>), (<$>), pure )
+import Data.Text.Arbitrary
 
 import Graphics.Vty
 import Graphics.Vty.Widgets.Util
@@ -20,7 +21,7 @@ instance Arbitrary Color where
                       ]
 
 instance Arbitrary Attr where
-    arbitrary = Attr <$> arbitrary <*> arbitrary <*> arbitrary
+    arbitrary = Attr <$> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Random Phys where
     random g =

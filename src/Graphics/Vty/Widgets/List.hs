@@ -54,7 +54,7 @@ import Control.Exception hiding (Handler)
 import Control.Monad
 import qualified Data.Text as T
 import qualified Data.Vector as V
-import Graphics.Vty
+import Graphics.Vty hiding (regionHeight, regionWidth)
 import Graphics.Vty.Widgets.Core
 import Graphics.Vty.Widgets.Text
 import Graphics.Vty.Widgets.Fixed
